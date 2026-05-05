@@ -16,7 +16,7 @@ import {
   SkeletonHero,
   SkeletonText,
   SkeletonCard } from
-'../components/ui/Skeleton';
+'../../components/ui/Skeleton';
 import { getIcon } from '../../utils/iconRegistry';
 import { getContactInfo } from '../../services/api/cms.api';
 // FAQ Accordion Item

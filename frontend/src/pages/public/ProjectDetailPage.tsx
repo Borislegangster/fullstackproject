@@ -22,7 +22,7 @@ import {
   SkeletonHero,
   SkeletonText,
   SkeletonCard } from
-'../components/ui/Skeleton';
+'../../components/ui/Skeleton';
 export function ProjectDetailPage() {
   const { slug } = useParams<{
     slug: string;
