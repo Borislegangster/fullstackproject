@@ -1,0 +1,15 @@
+export { HeroSection } from './HeroSection';
+export { EngagementsBar } from './EngagementsBar';
+export { AboutSection } from './AboutSection';
+export { MethodologySection } from './MethodologySection';
+export { StatsBar } from './StatsBar';
+export { ServicesSection } from './ServicesSection';
+export { CTABanner } from './CTABanner';
+export { PortfolioSection } from './PortfolioSection';
+export { GuaranteesSection } from './GuaranteesSection';
+export { VideoSection } from './VideoSection';
+export { TeamSection } from './TeamSection';
+export { PartnersSection } from './PartnersSection';
+export { TestimonialsSection } from './TestimonialsSection';
+export { FAQSection } from './FAQSection';
+export { BlogSection } from './BlogSection';
