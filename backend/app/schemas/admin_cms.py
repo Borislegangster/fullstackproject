@@ -192,6 +192,7 @@ class HeroSlideIn(BaseModel):
     cta1_href: str = ""
     cta2_text: str = ""
     cta2_href: str = ""
+    is_active: bool = True
     sort_order: int = 0
 
 

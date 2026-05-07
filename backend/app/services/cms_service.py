@@ -25,7 +25,7 @@ async def get_about_content(db: AsyncSession):
     return result.scalars().first()
 
 async def get_hero_slides(db: AsyncSession):
-    result = await db.execute(select(CMSHeroSlide).order_by(CMSHeroSlide.sort_order))
+    result = await db.execute(select(CMSHeroSlide).where(CMSHeroSlide.is_active == True).order_by(CMSHeroSlide.sort_order))
     return list(result.scalars().all())
 
 async def get_engagements(db: AsyncSession):

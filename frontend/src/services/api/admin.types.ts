@@ -123,6 +123,7 @@ export interface AdminHeroSlide {
   cta1_href: string;
   cta2_text: string;
   cta2_href: string;
+  is_active: boolean;
   sort_order: number;
 }
 

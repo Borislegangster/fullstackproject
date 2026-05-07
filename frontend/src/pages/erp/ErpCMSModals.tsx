@@ -5,7 +5,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  XIcon, SaveIcon, Loader2Icon, Trash2Icon, PlusIcon,
+  XIcon, SaveIcon, Loader2Icon, Trash2Icon, PlusIcon, FolderOpenIcon,
 } from 'lucide-react';
 
 // ── Shared Modal Shell ───────────────────────────────────────
@@ -303,6 +303,7 @@ interface EntityModalProps {
   onSave: (e: React.FormEvent) => void;
   isEdit: boolean;
   loading: boolean;
+  onPickMedia?: (callback: (url: string) => void) => void;
 }
 
 // ── Service Modal ────────────────────────────────────────────
@@ -567,7 +568,7 @@ export function FaqCategoryModal({ show, onClose, formData, setFormData, onSave,
 }
 
 // ── Hero Slide Modal ─────────────────────────────────────────
-export function HeroSlideModal({ show, onClose, formData, setFormData, onSave, isEdit, loading }: EntityModalProps) {
+export function HeroSlideModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
   const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
   return (
     <ModalShell show={show} title={isEdit ? 'Modifier le Slide' : 'Nouveau Slide Hero'} onClose={onClose} maxWidth="max-w-3xl">
@@ -575,7 +576,23 @@ export function HeroSlideModal({ show, onClose, formData, setFormData, onSave, i
         <Field label="Tag"><input type="text" value={formData.tag || ''} onChange={e => upd('tag', e.target.value)} className={inputCls} placeholder="BTP & Construction" /></Field>
         <Field label="Titre"><input type="text" value={formData.title || ''} onChange={e => upd('title', e.target.value)} className={inputCls} required /></Field>
         <Field label="Sous-titre"><textarea rows={2} value={formData.subtitle || ''} onChange={e => upd('subtitle', e.target.value)} className={textareaCls} /></Field>
-        <Field label="Image URL"><input type="text" value={formData.image || ''} onChange={e => upd('image', e.target.value)} className={inputCls} /></Field>
+        <Field label="Image URL">
+          <div className="flex gap-2 items-center">
+            <input type="text" value={formData.image || ''} onChange={e => upd('image', e.target.value)} className={inputCls + ' flex-1'} />
+            {onPickMedia && (
+              <button type="button" onClick={() => onPickMedia((url) => upd('image', url))}
+                className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
+                title="Choisir depuis la médiathèque">
+                <FolderOpenIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {formData.image && (
+            <div className="mt-2">
+              <img src={formData.image} alt="Preview" className="h-32 rounded-lg object-cover border border-gray-200" />
+            </div>
+          )}
+        </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="CTA 1 — Texte"><input type="text" value={formData.cta1_text || ''} onChange={e => upd('cta1_text', e.target.value)} className={inputCls} /></Field>
           <Field label="CTA 1 — Lien"><input type="text" value={formData.cta1_href || ''} onChange={e => upd('cta1_href', e.target.value)} className={inputCls} /></Field>
@@ -730,5 +747,112 @@ export function ContactMessageModal({ show, onClose, message, replyText, setRepl
         </motion.div>
       </div>
     </AnimatePresence>
+  );
+}
+
+// ── Engagement Modal ─────────────────────────────────────────
+export function EngagementModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
+  const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
+  return (
+    <ModalShell show={show} title={isEdit ? "Modifier l'Engagement" : 'Nouvel Engagement'} onClose={onClose}>
+      <form onSubmit={onSave} className="space-y-4">
+        <Field label="Icône (Clé Lucide)"><input type="text" value={formData.icon_key || ''} onChange={e => upd('icon_key', e.target.value)} className={inputCls} placeholder="HardHatIcon" required /></Field>
+        <Field label="Titre"><input type="text" value={formData.title || ''} onChange={e => upd('title', e.target.value)} className={inputCls} placeholder="Expertise Technique" required /></Field>
+        <Field label="Description"><textarea value={formData.desc || ''} onChange={e => upd('desc', e.target.value)} className={inputCls} rows={3} placeholder="Description courte..." /></Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Couleur de fond (Classe Tailwind)"><input type="text" value={formData.bg_color || ''} onChange={e => upd('bg_color', e.target.value)} className={inputCls} placeholder="bg-globus-blue" /></Field>
+          <Field label="Couleur de texte (Classe Tailwind)"><input type="text" value={formData.text_color || ''} onChange={e => upd('text_color', e.target.value)} className={inputCls} placeholder="text-white" /></Field>
+        </div>
+        <Field label="Ordre (Tri)"><input type="number" value={formData.sort_order || 0} onChange={e => upd('sort_order', parseInt(e.target.value))} className={inputCls} /></Field>
+        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
+          <SaveBtn loading={loading} />
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ── Methodology Step Modal ───────────────────────────────────
+export function MethodologyStepModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
+  const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
+  return (
+    <ModalShell show={show} title={isEdit ? "Modifier l'Étape" : 'Nouvelle Étape de Méthodologie'} onClose={onClose} maxWidth="max-w-3xl">
+      <form onSubmit={onSave} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Icône (Clé Lucide)"><input type="text" value={formData.icon_key || ''} onChange={e => upd('icon_key', e.target.value)} className={inputCls} placeholder="PencilRulerIcon" required /></Field>
+          <Field label="Ordre (Tri)"><input type="number" value={formData.sort_order || 0} onChange={e => upd('sort_order', parseInt(e.target.value))} className={inputCls} /></Field>
+        </div>
+        <Field label="Titre"><input type="text" value={formData.title || ''} onChange={e => upd('title', e.target.value)} className={inputCls} placeholder="Étude & Conception" required /></Field>
+        <Field label="Description"><textarea value={formData.desc || ''} onChange={e => upd('desc', e.target.value)} className={inputCls} rows={4} placeholder="Description détaillée..." /></Field>
+        
+        <Field label="Image">
+          <div className="flex gap-2">
+            <input type="text" value={formData.image || ''} onChange={e => upd('image', e.target.value)} className={inputCls} placeholder="https://..." />
+            {onPickMedia && (
+              <button type="button" onClick={() => onPickMedia((url) => upd('image', url))} className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 shrink-0">
+                <FolderOpenIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          {formData.image && <img src={formData.image} alt="Preview" className="mt-2 h-32 rounded-lg object-cover border border-gray-200" />}
+        </Field>
+
+        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
+          <SaveBtn loading={loading} />
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ── Guarantee Modal ──────────────────────────────────────────
+export function GuaranteeModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
+  const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
+  return (
+    <ModalShell show={show} title={isEdit ? "Modifier la Garantie" : 'Nouvelle Garantie'} onClose={onClose}>
+      <form onSubmit={onSave} className="space-y-4">
+        <Field label="Icône (Clé Lucide)"><input type="text" value={formData.icon_key || ''} onChange={e => upd('icon_key', e.target.value)} className={inputCls} placeholder="CheckCircleIcon" required /></Field>
+        <Field label="Titre"><input type="text" value={formData.title || ''} onChange={e => upd('title', e.target.value)} className={inputCls} placeholder="Garantie Décennale" required /></Field>
+        <Field label="Description"><textarea value={formData.desc || ''} onChange={e => upd('desc', e.target.value)} className={inputCls} rows={3} placeholder="Description..." /></Field>
+        <Field label="Ordre (Tri)"><input type="number" value={formData.sort_order || 0} onChange={e => upd('sort_order', parseInt(e.target.value))} className={inputCls} /></Field>
+        
+        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
+          <SaveBtn loading={loading} />
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+export function StatModal({ show, onClose, formData, setFormData, onSave, isEdit, loading }: EntityModalProps) {
+  if (!show) return null;
+  return (
+    <ModalShell show={show} onClose={onClose} title={isEdit ? "Modifier la Statistique" : "Nouvelle Statistique"}>
+      <form onSubmit={onSave} className="space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Valeur</label>
+          <input type="text" required value={formData.value || ''} onChange={e => setFormData({ ...formData, value: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="ex: 150+" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Libellé</label>
+          <input type="text" required value={formData.label || ''} onChange={e => setFormData({ ...formData, label: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="ex: Projets Réalisés" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Clé Icône (Optionnel)</label>
+          <input type="text" value={formData.iconKey || ''} onChange={e => setFormData({ ...formData, iconKey: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="ex: BriefcaseIcon" />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">Ordre d'affichage</label>
+          <input type="number" required value={formData.sort_order || 0} onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+        </div>
+        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
+          <SaveBtn loading={loading} />
+        </div>
+      </form>
+    </ModalShell>
   );
 }

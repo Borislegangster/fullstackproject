@@ -4,6 +4,7 @@ import {
   ArticleModal, ArticlePreviewModal, ProjectModal, ServiceModal, TeamModal,
   TestimonialModal, PartnerModal, FaqItemModal, FaqCategoryModal,
   HeroSlideModal, DeleteConfirmModal, ContactMessageModal,
+  EngagementModal, MethodologyStepModal, GuaranteeModal, StatModal
 } from './ErpCMSModals';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -254,6 +255,10 @@ export function ErpCMS() {
   const [showFaqItemModal, setShowFaqItemModal] = useState(false);
   const [showFaqCategoryModal, setShowFaqCategoryModal] = useState(false);
   const [showHeroSlideModal, setShowHeroSlideModal] = useState(false);
+  const [showEngagementModal, setShowEngagementModal] = useState(false);
+  const [showMethodologyModal, setShowMethodologyModal] = useState(false);
+  const [showGuaranteeModal, setShowGuaranteeModal] = useState(false);
+  const [showStatModal, setShowStatModal] = useState(false);
 
   // Contact message modal
   const [showContactViewModal, setShowContactViewModal] = useState(false);
@@ -305,6 +310,17 @@ export function ErpCMS() {
     setIsProcessing(null);
     setShowEditModal(false);
     setEditItem(null);
+  };
+
+  const handleSaveAbout = async () => {
+    setIsProcessing('save-about');
+    try {
+      await updateAbout(aboutForm);
+      showToast('Modifications "À Propos" enregistrées avec succès');
+    } catch {
+      showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
   };
 
   const handlePublishToggle = async (id: string, currentStatus: string) => {
@@ -419,7 +435,10 @@ export function ErpCMS() {
     else if (type === 'partner') setShowPartnerModal(true);
     else if (type === 'faqItem') setShowFaqItemModal(true);
     else if (type === 'faqCategory') setShowFaqCategoryModal(true);
-    else if (type === 'heroSlide') setShowHeroSlideModal(true);
+    else if (type === 'engagement') setShowEngagementModal(true);
+    else if (type === 'methodology') setShowMethodologyModal(true);
+    else if (type === 'guarantee') setShowGuaranteeModal(true);
+    else if (type === 'stat') setShowStatModal(true);
   };
 
   const closeEntityModal = () => {
@@ -427,6 +446,8 @@ export function ErpCMS() {
     setShowTeamModal(false); setShowTestimonialModal(false);
     setShowPartnerModal(false); setShowFaqItemModal(false);
     setShowFaqCategoryModal(false); setShowHeroSlideModal(false);
+    setShowEngagementModal(false); setShowMethodologyModal(false);
+    setShowGuaranteeModal(false); setShowStatModal(false);
     setEditItem(null); setFormData({}); setEditEntityType('');
   };
 
@@ -438,8 +459,13 @@ export function ErpCMS() {
       const crud = type === 'project' ? projectsCrud : type === 'service' ? servicesCrud :
         type === 'team' ? teamCrud : type === 'testimonial' ? testimonialsCrud :
           type === 'partner' ? partnersCrud : type === 'faqItem' ? faqItemsCrud :
-            type === 'faqCategory' ? faqCategoriesCrud : type === 'heroSlide' ? heroSlidesCrud : null;
-      if (!crud) return;
+            type === 'faqCategory' ? faqCategoriesCrud : type === 'heroSlide' ? heroSlidesCrud :
+              type === 'engagement' ? engagementsCrud : type === 'methodology' ? methodologyCrud :
+                type === 'guarantee' ? guaranteesCrud : type === 'stat' ? statsCrud : null;
+      if (!crud) {
+        showToast(`Erreur: Type d'entité inconnu (${type})`, 'error');
+        return;
+      }
       if (editItem?.id) {
         await crud.update(editItem.id, formData);
         showToast('Élément modifié avec succès');
@@ -448,10 +474,12 @@ export function ErpCMS() {
         showToast('Élément créé avec succès');
       }
       closeEntityModal();
-    } catch {
+    } catch (error) {
+      console.error(error);
       showToast('Erreur lors de la sauvegarde', 'error');
+    } finally {
+      setIsProcessing(null);
     }
-    setIsProcessing(null);
   };
 
   // ── Loading state ─────────────────────────────────────────
@@ -803,11 +831,7 @@ export function ErpCMS() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <button
-                        onClick={() => {
-                          setEditItem(project);
-                          setFormData({ ...project });
-                          setShowProjectModal(true);
-                        }}
+                        onClick={() => openEntityModal('project', project)}
                         className="text-sm font-semibold text-gray-500 hover:text-globus-blue flex items-center gap-1">
                         <EditIcon className="w-4 h-4" /> Modifier
                       </button>
@@ -877,11 +901,7 @@ export function ErpCMS() {
                         {'Actif'}
                       </span>
                       <button
-                        onClick={() => {
-                          setEditItem(service);
-                          setFormData({ ...service });
-                          setShowServiceModal(true);
-                        }}
+                        onClick={() => openEntityModal('service', service)}
                         className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
                         <EditIcon className="w-4 h-4" />
                       </button>
@@ -931,11 +951,7 @@ export function ErpCMS() {
 
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                       <button
-                        onClick={() => {
-                          setEditItem(member);
-                          setFormData({ ...member });
-                          setShowTeamModal(true);
-                        }}
+                        onClick={() => openEntityModal('team', member)}
                         className="p-1 text-gray-400 hover:text-globus-blue">
                         <EditIcon className="w-3.5 h-3.5" />
                       </button>
@@ -1008,11 +1024,7 @@ export function ErpCMS() {
                     </p>
                     <div className="flex justify-end gap-2 mt-3">
                       <button
-                        onClick={() => {
-                          setEditItem(testi);
-                          setFormData({ ...testi });
-                          setShowTestimonialModal(true);
-                        }}
+                        onClick={() => openEntityModal('testimonial', testi)}
                         className="text-xs font-semibold text-gray-500 hover:text-globus-blue">
                         Modifier
                       </button>
@@ -1071,11 +1083,7 @@ export function ErpCMS() {
                         <span className="font-montserrat font-bold text-sm text-globus-blue-dark">{cat.name}</span>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => {
-                              setEditItem(cat);
-                              setFormData({ ...cat });
-                              setShowFaqCategoryModal(true);
-                            }}
+                            onClick={() => openEntityModal('faqCategory', cat)}
                             className="p-1 text-gray-400 hover:text-globus-blue" title="Modifier">
                             <EditIcon className="w-3.5 h-3.5" />
                           </button>
@@ -1098,11 +1106,7 @@ export function ErpCMS() {
                             </div>
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
                               <button
-                                onClick={() => {
-                                  setEditItem(faq);
-                                  setFormData({ ...faq });
-                                  setShowFaqItemModal(true);
-                                }}
+                                onClick={() => openEntityModal('faqItem', faq)}
                                 className="p-1 text-gray-400 hover:text-globus-blue">
                                 <EditIcon className="w-4 h-4" />
                               </button>
@@ -1236,16 +1240,20 @@ export function ErpCMS() {
                               setMediaFilter('video');
                               setShowMediaPicker(true);
                               setMediaPickerCallback(
-                                () => (url: string) =>
-                                  console.log('Selected:', url)
+                                () => (url: string) => setSf("hero_video_src", url)
                               );
                             }}
-                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
                             title="Choisir depuis la médiathèque">
 
                             <FolderOpenIcon className="w-4 h-4" />
                           </button>
                         </div>
+                        {sf("hero_video_src") && (
+                          <div className="mt-2 relative group rounded overflow-hidden">
+                            <video src={sf("hero_video_src")} className="w-full h-24 object-cover border border-gray-200 bg-black" controls muted />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -1262,16 +1270,20 @@ export function ErpCMS() {
                               setMediaFilter('image');
                               setShowMediaPicker(true);
                               setMediaPickerCallback(
-                                () => (url: string) =>
-                                  console.log('Selected:', url)
+                                () => (url: string) => setSf("hero_video_poster", url)
                               );
                             }}
-                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
                             title="Choisir depuis la médiathèque">
 
                             <FolderOpenIcon className="w-4 h-4" />
                           </button>
                         </div>
+                        {sf("hero_video_poster") && (
+                          <div className="mt-2">
+                            <img src={sf("hero_video_poster")} alt="Poster" className="w-full h-24 object-cover rounded border border-gray-200" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -1290,7 +1302,7 @@ export function ErpCMS() {
                       Slides du Carousel
                     </h4>
                     <button
-                      onClick={() => showToast('Nouveau slide ajouté', 'info')}
+                      onClick={() => openEntityModal('heroSlide')}
                       className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
 
                       <PlusIcon className="w-4 h-4" /> Ajouter
@@ -1314,9 +1326,12 @@ export function ErpCMS() {
                               <span className="px-2 py-0.5 bg-globus-orange/10 text-globus-orange rounded text-[10px] font-bold">
                                 {slide.tag}
                               </span>
-                              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase">
-                                {'Actif'}
-                              </span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); heroSlidesCrud.update(slide.id, { ...slide, is_active: !slide.is_active }); }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors ${slide.is_active !== false ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                                title={slide.is_active !== false ? 'Désactiver' : 'Activer'}>
+                                {slide.is_active !== false ? 'Actif' : 'Inactif'}
+                              </button>
                             </div>
                             <h5 className="font-montserrat font-bold text-sm text-gray-800 truncate">
                               {slide.title}
@@ -1335,19 +1350,13 @@ export function ErpCMS() {
                           </div>
                           <div className="flex gap-1 shrink-0">
                             <button
-                              onClick={() => {
-                                setEditItem(slide);
-                                setShowEditModal(true);
-                              }}
+                              onClick={() => openEntityModal('heroSlide', slide)}
                               className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
 
                               <EditIcon className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => {
-                                setItemToDelete(slide);
-                                setShowDeleteModal(true);
-                              }}
+                              onClick={() => confirmDelete(slide, 'heroSlide')}
                               className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded">
 
                               <Trash2Icon className="w-4 h-4" />
@@ -1427,17 +1436,19 @@ export function ErpCMS() {
                         {eng.bg_color}
                       </span>
                       <button
-                        onClick={() => {
-                          setEditItem(eng);
-                          setShowEditModal(true);
-                        }}
+                        onClick={() => openEntityModal('engagement', eng)}
                         className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
 
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => openEntityModal('engagement')}
+                      className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
+                      <PlusIcon className="w-4 h-4" /> Ajouter
+                    </button>
                     <button
                       onClick={handleSaveGeneric}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
@@ -1509,24 +1520,79 @@ export function ErpCMS() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Vidéo Source (URL)
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={aboutForm?.video_src || ""} onChange={e => setAboutForm((p:any) => ({...p, video_src: e.target.value}))}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                      <button
+                        onClick={() => {
+                          setMediaFilter('video');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(() => (url: string) => setAboutForm((p:any) => ({...p, video_src: url})));
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+                        <FolderOpenIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Vidéo Poster (Image URL)
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={aboutForm?.video_poster || ""} onChange={e => setAboutForm((p:any) => ({...p, video_poster: e.target.value}))}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                      <button
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(() => (url: string) => setAboutForm((p:any) => ({...p, video_poster: url})));
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+                        <FolderOpenIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Points Clés
                     </label>
-                    {aboutSectionData.bulletPoints.map((bp, i) =>
+                    {(aboutForm?.highlights || []).map((bp: string, i: number) =>
                       <div key={i} className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4">
                           {i + 1}.
                         </span>
                         <input
                           type="text"
-                          defaultValue={bp}
+                          value={bp}
+                          onChange={e => {
+                            const arr = [...(aboutForm?.highlights || [])];
+                            arr[i] = e.target.value;
+                            setAboutForm((p:any) => ({...p, highlights: arr}));
+                          }}
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
 
-                        <button className="p-1 text-gray-400 hover:text-red-500">
+                        <button 
+                          onClick={() => {
+                            const arr = [...(aboutForm?.highlights || [])];
+                            arr.splice(i, 1);
+                            setAboutForm((p:any) => ({...p, highlights: arr}));
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-500">
                           <Trash2Icon className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     )}
-                    <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <button 
+                      onClick={() => setAboutForm((p:any) => ({...p, highlights: [...(p.highlights||[]), "Nouveau point"]}))}
+                      className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                       <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                     </button>
                   </div>
@@ -1535,14 +1601,20 @@ export function ErpCMS() {
                       Images Carousel
                     </label>
                     <div className="flex gap-2 flex-wrap">
-                      {aboutSectionData.images.map((img, i) =>
+                      {(aboutForm?.images || []).map((img: string, i: number) =>
                         <div key={i} className="relative group">
                           <img
                             src={img}
                             alt=""
                             className="w-20 h-14 object-cover rounded-lg border border-gray-200" />
 
-                          <button className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => {
+                              const arr = [...(aboutForm?.images || [])];
+                              arr.splice(i, 1);
+                              setAboutForm((p:any) => ({...p, images: arr}));
+                            }}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <XIcon className="w-3 h-3" />
                           </button>
                         </div>
@@ -1552,8 +1624,9 @@ export function ErpCMS() {
                           setMediaFilter('image');
                           setShowMediaPicker(true);
                           setMediaPickerCallback(
-                            () => (url: string) =>
-                              console.log('Selected:', url)
+                            () => (url: string) => {
+                              setAboutForm((p:any) => ({...p, images: [...(p?.images||[]), url]}));
+                            }
                           );
                         }}
                         className="w-20 h-14 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-globus-orange hover:text-globus-orange transition-colors"
@@ -1565,7 +1638,7 @@ export function ErpCMS() {
                   </div>
                   <div className="flex justify-end">
                     <button
-                      onClick={handleSaveGeneric}
+                      onClick={handleSaveAbout}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
 
                       <SaveIcon className="w-4 h-4" /> Enregistrer
@@ -1628,17 +1701,19 @@ export function ErpCMS() {
                         </p>
                       </div>
                       <button
-                        onClick={() => {
-                          setEditItem(step);
-                          setShowEditModal(true);
-                        }}
+                        onClick={() => openEntityModal('methodology', step)}
                         className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
 
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => openEntityModal('methodology')}
+                      className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
+                      <PlusIcon className="w-4 h-4" /> Ajouter
+                    </button>
                     <button
                       onClick={handleSaveGeneric}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
@@ -1682,27 +1757,36 @@ export function ErpCMS() {
                     {statsBarData.map((stat) =>
                       <div
                         key={stat.id}
-                        className="border border-gray-200 rounded-lg p-4 text-center">
-
-                        <input
-                          type="text"
-                          defaultValue={stat.value}
-                          className="w-full text-center text-2xl font-montserrat font-bold text-globus-blue-dark border-b border-gray-200 pb-2 mb-2 focus:outline-none focus:border-globus-orange" />
-
-                        <input
-                          type="text"
-                          defaultValue={stat.label}
-                          className="w-full text-center text-sm text-gray-500 focus:outline-none focus:border-globus-orange" />
-
+                        className="border border-gray-200 rounded-lg p-4 text-center group relative">
+                        <div className="text-2xl font-montserrat font-bold text-globus-blue-dark border-b border-gray-200 pb-2 mb-2">{stat.value}</div>
+                        <div className="text-sm text-gray-500">{stat.label}</div>
+                        
+                        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openEntityModal('stat', stat)}
+                            className="p-1.5 bg-white text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded shadow-sm border border-gray-100">
+                            <EditIcon className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(stat, 'stat')}
+                            className="p-1.5 bg-white text-gray-400 hover:text-red-500 hover:bg-red-50 rounded shadow-sm border border-gray-100">
+                            <Trash2Icon className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <div className="flex justify-end mt-4">
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => openEntityModal('stat')}
+                      className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
+                      <PlusIcon className="w-4 h-4" /> Ajouter
+                    </button>
                     <button
                       onClick={handleSaveGeneric}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
 
-                      <SaveIcon className="w-4 h-4" /> Enregistrer
+                      <SaveIcon className="w-4 h-4" /> Enregistrer ordre
                     </button>
                   </div>
                 </div>
@@ -1750,17 +1834,19 @@ export function ErpCMS() {
                         <p className="text-xs text-gray-500">{g.desc}</p>
                       </div>
                       <button
-                        onClick={() => {
-                          setEditItem(g);
-                          setShowEditModal(true);
-                        }}
+                        onClick={() => openEntityModal('guarantee', g)}
                         className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
 
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => openEntityModal('guarantee')}
+                      className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
+                      <PlusIcon className="w-4 h-4" /> Ajouter
+                    </button>
                     <button
                       onClick={handleSaveGeneric}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
@@ -1814,10 +1900,7 @@ export function ErpCMS() {
                         onClick={() => {
                           setMediaFilter('video');
                           setShowMediaPicker(true);
-                          setMediaPickerCallback(
-                            () => (url: string) =>
-                              console.log('Selected:', url)
-                          );
+                          setMediaPickerCallback(() => (url: string) => setSf("video_section_youtube_url", url));
                         }}
                         className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
                         title="Choisir depuis la médiathèque">
@@ -1825,6 +1908,70 @@ export function ErpCMS() {
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
+                    {sf("video_section_youtube_url") && (
+                      <div className="mt-2 relative w-full aspect-video rounded overflow-hidden border border-gray-200">
+                        <iframe 
+                          src={sf("video_section_youtube_url")} 
+                          className="w-full h-full" 
+                          allowFullScreen />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Vidéo d'arrière-plan (URL)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={sf("video_section_bg_video_src")} onChange={e => setSf("video_section_bg_video_src", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
+                      <button
+                        onClick={() => {
+                          setMediaFilter('video');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(() => (url: string) => setSf("video_section_bg_video_src", url));
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
+                        title="Choisir depuis la médiathèque">
+
+                        <FolderOpenIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                    {sf("video_section_bg_video_src") && (
+                      <div className="mt-2 relative rounded overflow-hidden">
+                        <video src={sf("video_section_bg_video_src")} className="w-full h-24 object-cover border border-gray-200 bg-black" controls muted />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Vidéo d'arrière-plan Poster (Image URL)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={sf("video_section_bg_video_poster")} onChange={e => setSf("video_section_bg_video_poster", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
+                      <button
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(() => (url: string) => setSf("video_section_bg_video_poster", url));
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
+                        title="Choisir depuis la médiathèque">
+
+                        <FolderOpenIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                    {sf("video_section_bg_video_poster") && (
+                      <div className="mt-2">
+                        <img src={sf("video_section_bg_video_poster")} alt="Poster" className="h-20 rounded border border-gray-200 object-cover" />
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1892,18 +2039,21 @@ export function ErpCMS() {
                     {partnersData.map((p) =>
                       <div
                         key={p.id}
-                        className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full group">
+                        className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full group cursor-pointer"
+                        onClick={() => openEntityModal('partner', p)}>
 
                         <span className="text-sm font-semibold text-gray-700">
                           {p.name}
                         </span>
-                        <button className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); confirmDelete(p, 'partner'); }}
+                          className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                           <XIcon className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     )}
                     <button
-                      onClick={() => showToast('Partenaire ajouté', 'info')}
+                      onClick={() => openEntityModal('partner')}
                       className="flex items-center gap-1 bg-globus-orange/10 text-globus-orange px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-globus-orange/20">
 
                       <PlusIcon className="w-3.5 h-3.5" /> Ajouter
@@ -1914,7 +2064,7 @@ export function ErpCMS() {
                       onClick={handleSaveGeneric}
                       className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
 
-                      <SaveIcon className="w-4 h-4" /> Enregistrer
+                      <SaveIcon className="w-4 h-4" /> Enregistrer ordre
                     </button>
                   </div>
                 </div>
@@ -2444,10 +2594,52 @@ export function ErpCMS() {
 
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2">
-                    Valeurs ({aboutPageData.values.length})
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Vidéo Source (URL)
                   </label>
-                  {aboutPageData.values.map((v, i) =>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={aboutForm?.video_src || ""} onChange={e => setAboutForm((p:any) => ({...p, video_src: e.target.value}))}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                    <button
+                      onClick={() => {
+                        setMediaFilter('video');
+                        setShowMediaPicker(true);
+                        setMediaPickerCallback(() => (url: string) => setAboutForm((p:any) => ({...p, video_src: url})));
+                      }}
+                      className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                      title="Choisir depuis la médiathèque">
+                      <FolderOpenIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Vidéo Poster (Image URL)
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={aboutForm?.video_poster || ""} onChange={e => setAboutForm((p:any) => ({...p, video_poster: e.target.value}))}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                    <button
+                      onClick={() => {
+                        setMediaFilter('image');
+                        setShowMediaPicker(true);
+                        setMediaPickerCallback(() => (url: string) => setAboutForm((p:any) => ({...p, video_poster: url})));
+                      }}
+                      className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                      title="Choisir depuis la médiathèque">
+                      <FolderOpenIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-2">
+                    Valeurs ({(aboutForm?.values || []).length})
+                  </label>
+                  {(aboutForm?.values || []).map((v: any, i: number) =>
                     <div
                       key={i}
                       className="flex gap-3 mb-3 p-3 border border-gray-200 rounded-lg">
@@ -2455,45 +2647,79 @@ export function ErpCMS() {
                       <div className="flex-1">
                         <input
                           type="text"
-                          defaultValue={v.title}
+                          value={v.title}
+                          onChange={e => {
+                            const arr = [...(aboutForm?.values || [])];
+                            arr[i] = { ...arr[i], title: e.target.value };
+                            setAboutForm((p:any) => ({...p, values: arr}));
+                          }}
                           className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm mb-1 focus:outline-none focus:border-globus-blue font-semibold" />
 
                         <input
                           type="text"
-                          defaultValue={v.desc}
+                          value={v.desc}
+                          onChange={e => {
+                            const arr = [...(aboutForm?.values || [])];
+                            arr[i] = { ...arr[i], desc: e.target.value };
+                            setAboutForm((p:any) => ({...p, values: arr}));
+                          }}
                           className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
 
                       </div>
-                      <button className="p-1.5 text-gray-400 hover:text-red-500 self-center">
+                      <button 
+                        onClick={() => {
+                          const arr = [...(aboutForm?.values || [])];
+                          arr.splice(i, 1);
+                          setAboutForm((p:any) => ({...p, values: arr}));
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-red-500 self-center">
                         <Trash2Icon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
+                  <button 
+                    onClick={() => setAboutForm((p:any) => ({...p, values: [...(p.values||[]), {title: "Nouvelle valeur", desc: "Description...", iconKey: "StarIcon"}]}))}
+                    className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <PlusIcon className="w-3.5 h-3.5" /> Ajouter
+                  </button>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-2">
-                    Certifications ({aboutPageData.certifications.length})
+                    Certifications ({(aboutForm?.certifications || []).length})
                   </label>
-                  {aboutPageData.certifications.map((c, i) =>
+                  {(aboutForm?.certifications || []).map((c: string, i: number) =>
                     <div key={i} className="flex items-center gap-2 mb-2">
                       <CheckCircle2Icon className="w-4 h-4 text-globus-orange shrink-0" />
                       <input
                         type="text"
-                        defaultValue={c}
+                        value={c}
+                        onChange={e => {
+                          const arr = [...(aboutForm?.certifications || [])];
+                          arr[i] = e.target.value;
+                          setAboutForm((p:any) => ({...p, certifications: arr}));
+                        }}
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
 
-                      <button className="p-1 text-gray-400 hover:text-red-500">
+                      <button 
+                        onClick={() => {
+                          const arr = [...(aboutForm?.certifications || [])];
+                          arr.splice(i, 1);
+                          setAboutForm((p:any) => ({...p, certifications: arr}));
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
-                  <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                  <button 
+                    onClick={() => setAboutForm((p:any) => ({...p, certifications: [...(p.certifications||[]), "Nouvelle certification"]}))}
+                    className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                     <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                   </button>
                 </div>
                 <div className="flex justify-end">
                   <button
-                    onClick={handleSaveGeneric}
+                    onClick={handleSaveAbout}
                     className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
 
                     <SaveIcon className="w-4 h-4" /> Enregistrer
@@ -3968,6 +4194,36 @@ export function ErpCMS() {
 
       <HeroSlideModal
         show={showHeroSlideModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <EngagementModal
+        show={showEngagementModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <MethodologyStepModal
+        show={showMethodologyModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <GuaranteeModal
+        show={showGuaranteeModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <StatModal
+        show={showStatModal} onClose={closeEntityModal}
         formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
         isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
 

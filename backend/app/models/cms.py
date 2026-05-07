@@ -74,6 +74,7 @@ class CMSHeroSlide(Base):
     cta1_href = Column(String, default="")
     cta2_text = Column(String, default="")
     cta2_href = Column(String, default="")
+    is_active = Column(Boolean, default=True)
     sort_order = Column(Integer, default=0)
 
 
