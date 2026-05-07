@@ -1,4 +1,10 @@
-import React, { useState, Children } from 'react';
+import React, { useState, useRef } from 'react';
+import { useAdminCMS } from '../../hooks/useAdminCMS';
+import {
+  ArticleModal, ArticlePreviewModal, ProjectModal, ServiceModal, TeamModal,
+  TestimonialModal, PartnerModal, FaqItemModal, FaqCategoryModal,
+  HeroSlideModal, DeleteConfirmModal, ContactMessageModal,
+} from './ErpCMSModals';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileTextIcon,
@@ -49,973 +55,68 @@ import {
   TagIcon,
   CodeIcon,
   MapIcon,
-  RefreshCwIcon } from
-'lucide-react';
+  RefreshCwIcon
+} from
+  'lucide-react';
 const tabs = [
-{
-  id: 'blog',
-  label: 'Articles Blog',
-  icon: FileTextIcon
-},
-{
-  id: 'portfolio',
-  label: 'Projets & Portfolio',
-  icon: ImageIcon
-},
-{
-  id: 'services',
-  label: 'Services',
-  icon: BriefcaseIcon
-},
-{
-  id: 'team',
-  label: 'Équipe & Témoignages',
-  icon: UsersIcon
-},
-{
-  id: 'faq',
-  label: 'FAQ & Contact',
-  icon: HelpCircleIcon
-},
-{
-  id: 'homepage',
-  label: 'Accueil & Sections',
-  icon: LayoutDashboardIcon
-},
-{
-  id: 'settings',
-  label: 'Paramètres Site',
-  icon: SettingsIcon
-},
-{
-  id: 'pages',
-  label: 'Pages Publiques',
-  icon: GlobeIcon
-},
-{
-  id: 'legal',
-  label: 'Pages Légales',
-  icon: ScaleIcon
-},
-{
-  id: 'media',
-  label: 'Médiathèque',
-  icon: FolderOpenIcon
-},
-{
-  id: 'seo',
-  label: 'SEO & Tracking',
-  icon: SearchIcon
-}];
-
-const blogData = [
-{
-  id: 1,
-  title: "Les 5 erreurs à éviter avant d'acheter un terrain",
-  category: 'Conseils',
-  author: 'Jean Dupont',
-  date: '12/10/2023',
-  status: 'Publié'
-},
-{
-  id: 2,
-  title: 'Comment choisir les finitions intérieures',
-  category: 'Design',
-  author: 'Sarah Koné',
-  date: '28/09/2023',
-  status: 'Publié'
-},
-{
-  id: 3,
-  title: 'Visite de la Résidence Horizon',
-  category: 'Actualités',
-  author: 'Amina Diallo',
-  date: '15/09/2023',
-  status: 'Publié'
-},
-{
-  id: 4,
-  title: 'Normes environnementales 2024',
-  category: 'Réglementation',
-  author: 'Marc Lemaire',
-  date: '02/09/2023',
-  status: 'Publié'
-},
-{
-  id: 5,
-  title: 'Guide du premier achat immobilier',
-  category: 'Conseils',
-  author: 'Jean Dupont',
-  date: '-',
-  status: 'Brouillon'
-},
-{
-  id: 6,
-  title: 'Tendances architecture 2026',
-  category: 'Design',
-  author: 'Sarah Koné',
-  date: '25/04/2026',
-  status: 'Planifié'
-}];
-
-const projectsData = [
-{
-  id: 1,
-  title: 'Villa Les Alizés',
-  category: 'Résidentiel',
-  location: 'Douala',
-  progress: 100,
-  status: 'Publié',
-  image:
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=150&q=80'
-},
-{
-  id: 2,
-  title: 'Complexe Horizon',
-  category: 'Commercial',
-  location: 'Yaoundé',
-  progress: 100,
-  status: 'Publié',
-  image:
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=150&q=80'
-},
-{
-  id: 3,
-  title: 'Hôpital Régional',
-  category: 'Institutionnel',
-  location: 'Bafoussam',
-  progress: 65,
-  status: 'Publié',
-  image:
-  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=150&q=80'
-},
-{
-  id: 4,
-  title: 'Tour Zenith',
-  category: 'Commercial',
-  location: 'Douala',
-  progress: 45,
-  status: 'Publié',
-  image:
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=150&q=80'
-},
-{
-  id: 5,
-  title: 'Résidence Palmiers',
-  category: 'Résidentiel',
-  location: 'Douala',
-  progress: 30,
-  status: 'Brouillon',
-  image:
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=150&q=80'
-}];
-
-const servicesData = [
-{
-  id: 1,
-  title: 'Construction de Bâtiments',
-  subtitle: 'Résidentiel / Commercial / Industriel',
-  status: 'Publié'
-},
-{
-  id: 2,
-  title: 'Conception Architecturale',
-  subtitle: 'Plans 2D/3D & Design',
-  status: 'Publié'
-},
-{
-  id: 3,
-  title: 'Génie Civil & Travaux Publics',
-  subtitle: 'Infrastructures complexes',
-  status: 'Publié'
-},
-{
-  id: 4,
-  title: 'Rénovation et Aménagement',
-  subtitle: 'Réhabilitation & Second Œuvre',
-  status: 'Publié'
-}];
-
-const teamData = [
-{
-  id: 1,
-  name: 'Jean-Paul Kamga',
-  role: 'Directeur Général'
-},
-{
-  id: 2,
-  name: 'Marie-Claire Fotso',
-  role: 'Architecte en Chef'
-},
-{
-  id: 3,
-  name: 'Alain Mbarga',
-  role: 'Directeur Technique'
-},
-{
-  id: 4,
-  name: 'Sophie Ndjock',
-  role: 'Responsable QHSE'
-}];
-
-const testimonialsData = [
-{
-  id: 1,
-  name: 'M. Essomba',
-  role: 'Propriétaire Villa',
-  quote: "Une équipe professionnelle et à l'écoute...",
-  status: 'Publié'
-},
-{
-  id: 2,
-  name: 'SCI Akwa Center',
-  role: 'Promoteur Immobilier',
-  quote: 'Respect strict des délais et du budget...',
-  status: 'Publié'
-},
-{
-  id: 3,
-  name: 'Mme Ndiaye',
-  role: 'Investisseur',
-  quote: 'La qualité des finitions est exceptionnelle...',
-  status: 'Brouillon'
-}];
-
-const faqData = [
-{
-  id: 1,
-  question: 'Quels sont vos délais moyens de construction ?',
-  status: 'Publié'
-},
-{
-  id: 2,
-  question: 'Proposez-vous des garanties décennales ?',
-  status: 'Publié'
-},
-{
-  id: 3,
-  question: 'Comment se déroule le paiement ?',
-  status: 'Publié'
-},
-{
-  id: 4,
-  question: 'Prenez-vous en charge les démarches administratives ?',
-  status: 'Publié'
-},
-{
-  id: 5,
-  question: 'Quels matériaux utilisez-vous ?',
-  status: 'Brouillon'
-}];
-
-const contactData = [
-{
-  id: 1,
-  name: 'Pierre Talla',
-  email: 'p.talla@email.com',
-  subject: 'Devis construction villa',
-  date: '23/03/2026',
-  status: 'Nouveau'
-},
-{
-  id: 2,
-  name: 'Entreprise ABC',
-  email: 'contact@abc.com',
-  subject: 'Partenariat sous-traitance',
-  date: '22/03/2026',
-  status: 'Lu'
-},
-{
-  id: 3,
-  name: 'Jeanne Eto',
-  email: 'j.eto@email.com',
-  subject: 'Rénovation appartement',
-  date: '20/03/2026',
-  status: 'Répondu'
-},
-{
-  id: 4,
-  name: 'Mairie Douala',
-  email: 'urbanisme@douala.cm',
-  subject: "Dossier appel d'offres",
-  date: '18/03/2026',
-  status: 'Répondu'
-}];
-
-// ===== NEW: Homepage Sections Data =====
-const heroSlidesData = [
-{
-  id: 1,
-  tag: 'BTP & Construction Clé en main',
-  title: 'Bâtissez votre avenir en toute sérénité.',
-  subtitle:
-  "Ensemble vers la perfection !!! De la conception architecturale à la remise des clés, nous gérons l'intégralité de votre projet avec rigueur et passion.",
-  image:
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=400&q=80',
-  cta1Text: 'Estimer mon budget',
-  cta1Href: '#estimateur',
-  cta2Text: 'Découvrir nos réalisations',
-  cta2Href: '#projets',
-  status: 'Actif'
-},
-{
-  id: 2,
-  tag: 'Expertise & Savoir-faire',
-  title: 'Des constructions solides, durables et esthétiques.',
-  subtitle:
-  'Plus de 50 projets livrés avec succès. Nos ingénieurs qualifiés transforment vos visions en réalités concrètes.',
-  image:
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
-  cta1Text: 'Voir nos projets',
-  cta1Href: '#projets',
-  cta2Text: 'Nos services',
-  cta2Href: '#services'
-},
-{
-  id: 3,
-  tag: 'Architecture & Design',
-  title: "De l'esquisse à la réalité, votre vision prend forme.",
-  subtitle:
-  'Conception architecturale sur-mesure, modélisation 3D et plans détaillés pour un résultat à la hauteur de vos ambitions.',
-  image:
-  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80',
-  cta1Text: 'Demander un devis',
-  cta1Href: '#contact',
-  cta2Text: 'Notre méthodologie',
-  cta2Href: '#methodologie'
-},
-{
-  id: 4,
-  tag: 'Qualité & Garanties',
-  title: 'Garantie décennale et matériaux certifiés.',
-  subtitle:
-  "Votre tranquillité d'esprit est notre priorité. Chaque ouvrage est couvert et réalisé avec des matériaux normés et testés.",
-  image:
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&q=80',
-  cta1Text: 'Nos garanties',
-  cta1Href: '#garanties',
-  cta2Text: 'Contactez-nous',
-  cta2Href: '#contact'
-}];
-
-const heroVideoData = {
-  url: 'https://videos.pexels.com/video-files/2835509/2835509-hd_1920_1080_30fps.mp4',
-  poster:
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=400&q=80',
-  duration: 6
-};
-const engagementsData = [
-{
-  id: 1,
-  title: 'Expertise Technique',
-  description:
-  "Plus de 15 ans d'expérience dans le BTP avec des ingénieurs certifiés.",
-  icon: 'ShieldCheck',
-  bgColor: 'blue'
-},
-{
-  id: 2,
-  title: '100% Clé en main',
-  description:
-  'De la conception à la livraison, un seul interlocuteur pour tout votre projet.',
-  icon: 'Key',
-  bgColor: 'orange'
-},
-{
-  id: 3,
-  title: 'Qualité et Délais',
-  description:
-  'Matériaux normés, garantie décennale et respect strict du planning.',
-  icon: 'Clock',
-  bgColor: 'green'
-}];
-
-const aboutSectionData = {
-  paragraph1:
-  "Fondée avec la conviction que chaque bâtiment doit être une œuvre durable, Globus Engineering SARL est née de la passion d'ingénieurs et d'architectes visionnaires.",
-  paragraph2:
-  'Notre mission est simple : offrir un service "clé en main" irréprochable, de la conception architecturale à la remise des clés.',
-  bulletPoints: [
-  'Construction résidentielle & commerciale',
-  'Conception architecturale sur-mesure',
-  'Génie civil & travaux publics',
-  'Rénovation et réhabilitation'],
-
-  badgeText: '15+ années',
-  images: [
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=300&q=80',
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&q=80',
-  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=300&q=80',
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&q=80',
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=80']
-
-};
-const methodologyData = [
-{
-  id: 1,
-  title: 'Étude & Conception',
-  description:
-  'Analyse de vos besoins, étude de faisabilité et conception architecturale détaillée.',
-  image:
-  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=300&q=80'
-},
-{
-  id: 2,
-  title: 'Démarches Administratives',
-  description:
-  'Obtention des permis, autorisations et conformité réglementaire.',
-  image:
-  'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=300&q=80'
-},
-{
-  id: 3,
-  title: 'Gros Œuvre',
-  description:
-  'Fondations, élévation des murs, dalles et charpente avec contrôle qualité.',
-  image:
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&q=80'
-},
-{
-  id: 4,
-  title: 'Second Œuvre & Finitions',
-  description:
-  'Plomberie, électricité, revêtements et finitions intérieures.',
-  image:
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=300&q=80'
-},
-{
-  id: 5,
-  title: 'Remise des Clés',
-  description:
-  'Inspection finale, levée des réserves et remise du dossier technique.',
-  image:
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=300&q=80'
-}];
-
-const statsBarData = [
-{
-  id: 1,
-  value: '50+',
-  label: 'Projets Livrés'
-},
-{
-  id: 2,
-  value: '100%',
-  label: 'Clients Satisfaits'
-},
-{
-  id: 3,
-  value: '30+',
-  label: 'Experts'
-},
-{
-  id: 4,
-  value: '15',
-  label: "Années d'expérience"
-}];
-
-const guaranteesData = [
-{
-  id: 1,
-  title: 'Garantie Décennale',
-  description:
-  'Couverture complète de la structure pendant 10 ans après livraison.'
-},
-{
-  id: 2,
-  title: 'Matériaux Normés',
-  description:
-  'Utilisation exclusive de matériaux certifiés et testés en laboratoire.'
-},
-{
-  id: 3,
-  title: 'Service Après-Vente',
-  description:
-  'Équipe SAV dédiée pour intervenir rapidement en cas de besoin.'
-},
-{
-  id: 4,
-  title: 'Sécurité sur Chantier',
-  description:
-  'Protocoles HSE stricts et équipements de protection pour tous.'
-}];
-
-const videoSectionData = {
-  youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  title: 'Notre Promesse',
-  subtitle:
-  'Découvrez comment Globus Engineering transforme vos projets en réalités durables.'
-};
-const partnersData = [
-{
-  id: 1,
-  name: 'CIMENCAM'
-},
-{
-  id: 2,
-  name: 'AFRICA STEEL'
-},
-{
-  id: 3,
-  name: 'LAFARGE'
-},
-{
-  id: 4,
-  name: 'SOGEA'
-},
-{
-  id: 5,
-  name: 'BTP MATÉRIAUX'
-},
-{
-  id: 6,
-  name: 'ECO-BUILD'
-},
-{
-  id: 7,
-  name: 'TECHNO-STRUCT'
-},
-{
-  id: 8,
-  name: 'GLOBAL PAINT'
-}];
-
-const ctaBannerData = {
-  title: 'Prêt à concrétiser votre projet ?',
-  subtitle:
-  "Contactez-nous dès aujourd'hui pour une étude gratuite et personnalisée.",
-  buttonText: 'Demander un devis gratuit',
-  buttonLink: '#contact'
-};
-// ===== NEW: Site Settings Data =====
-const headerSettingsData = {
-  logoUrl: "/globusLogo.jpg",
-
-  phone: '+33 1 23 45 67 89',
-  email: 'contact@globus-btp.com',
-  hours: 'Lun-Sam 08:00-18:00'
-};
-const footerSettingsData = {
-  description:
-  'Globus Engineering SARL est votre partenaire de confiance pour tous vos projets de construction "clé en main". Solidité, esthétique et respect des délais.',
-  address: '123 Avenue de la Construction, Quartier des Affaires, Ville',
-  phone: '+33 1 23 45 67 89',
-  email: 'contact@globus-btp.com',
-  facebook: '#',
-  twitter: '#',
-  linkedin: '#',
-  instagram: '#',
-  newsletterEnabled: true
-};
-const seoSettingsData = {
-  metaTitle: 'Globus Engineering SARL - Construction BTP Clé en Main',
-  metaDescription:
-  'Votre partenaire de confiance pour la construction, la rénovation et le génie civil au Cameroun.',
-  ogImage: ''
-};
-// ===== NEW: Public Pages Data =====
-const aboutPageData = {
-  heroImage:
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
-  historyTitle: 'Notre Histoire & Notre Vision',
-  historyP1:
-  "Fondée avec la conviction que chaque bâtiment doit être une œuvre durable, Globus Engineering SARL est née de la passion d'ingénieurs et d'architectes visionnaires. Depuis plus de 15 ans, nous transformons les paysages urbains.",
-  historyP2:
-  'Notre mission est simple : offrir un service "clé en main" irréprochable. Nous déchargeons nos clients de toute la complexité technique et administrative.',
-  values: [
   {
-    title: 'Sécurité & Qualité',
-    desc: 'La sécurité de nos équipes et la qualité de nos ouvrages sont non-négociables.'
+    id: 'blog',
+    label: 'Articles Blog',
+    icon: FileTextIcon
   },
   {
-    title: 'Innovation',
-    desc: 'Nous intégrons les dernières technologies pour des constructions plus intelligentes.'
+    id: 'portfolio',
+    label: 'Projets & Portfolio',
+    icon: ImageIcon
   },
   {
-    title: 'Transparence',
-    desc: 'Une communication claire et honnête à chaque étape de votre projet.'
-  }],
+    id: 'services',
+    label: 'Services',
+    icon: BriefcaseIcon
+  },
+  {
+    id: 'team',
+    label: 'Équipe & Témoignages',
+    icon: UsersIcon
+  },
+  {
+    id: 'faq',
+    label: 'FAQ & Contact',
+    icon: HelpCircleIcon
+  },
+  {
+    id: 'homepage',
+    label: 'Accueil & Sections',
+    icon: LayoutDashboardIcon
+  },
+  {
+    id: 'settings',
+    label: 'Paramètres Site',
+    icon: SettingsIcon
+  },
+  {
+    id: 'pages',
+    label: 'Pages Publiques',
+    icon: GlobeIcon
+  },
+  {
+    id: 'legal',
+    label: 'Pages Légales',
+    icon: ScaleIcon
+  },
+  {
+    id: 'media',
+    label: 'Médiathèque',
+    icon: FolderOpenIcon
+  },
+  {
+    id: 'seo',
+    label: 'SEO & Tracking',
+    icon: SearchIcon
+  }];
 
-  certifications: [
-  'Certification ISO 9001 (Qualité)',
-  'Certification ISO 45001 (Santé & Sécurité)',
-  "Agrément d'État Catégorie A",
-  'Garatnie Décennale Assurée',
-  'Normes Environnementales HQE',
-  'Membres de la Fédération du BTP']
-
-};
-const contactPageData = {
-  address: '123 Avenue de la Construction\nQuartier des Affaires, Ville',
-  phoneStandard: '+33 1 23 45 67 89',
-  phoneWhatsApp: '+33 6 12 34 56 78',
-  emailContact: 'contact@globus-btp.com',
-  emailDevis: 'devis@globus-btp.com',
-  hoursWeekday: 'Lundi - Vendredi : 08:00 - 18:00',
-  hoursSaturday: 'Samedi : 09:00 - 13:00',
-  mapUrl:
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2624.9916256937595!2d2.292292615509614!3d48.85837007928746',
-  formSubjects: [
-  'Demande de devis',
-  'Renseignement général',
-  'Candidature / Emploi',
-  'Autre demande']
-
-};
-const faqPageData = [
-{
-  id: 1,
-  category: 'Devis & Tarifs',
-  items: [
-  {
-    q: "Combien coûte la construction d'une maison clé en main ?",
-    a: 'Le coût varie en fonction de la surface, des matériaux choisis et des finitions.'
-  },
-  {
-    q: 'Les devis sont-ils gratuits ?',
-    a: "Oui, la première étude et l'établissement du devis initial sont entièrement gratuits."
-  },
-  {
-    q: 'Quelles sont les modalités de paiement ?',
-    a: "Le paiement s'effectue par appels de fonds échelonnés selon l'avancement des travaux."
-  },
-  {
-    q: 'Le prix annoncé peut-il évoluer ?',
-    a: 'Nos devis sont fermes et définitifs pour les prestations décrites.'
-  }]
-
-},
-{
-  id: 2,
-  category: 'Délais de Construction',
-  items: [
-  {
-    q: 'Quels sont les délais moyens de construction ?',
-    a: 'Pour une villa standard, comptez entre 6 et 8 mois.'
-  },
-  {
-    q: 'Que se passe-t-il en cas de retard ?',
-    a: 'Nos contrats incluent des pénalités de retard.'
-  },
-  {
-    q: 'Puis-je visiter le chantier pendant les travaux ?',
-    a: 'Oui, nous organisons des visites régulières avec le chef de chantier.'
-  }]
-
-},
-{
-  id: 3,
-  category: 'Garanties',
-  items: [
-  {
-    q: 'Proposez-vous une garantie sur vos constructions ?',
-    a: 'Toutes nos constructions sont couvertes par la garantie décennale.'
-  },
-  {
-    q: "Qu'est-ce que la garantie de parfait achèvement ?",
-    a: 'Elle couvre pendant un an tous les désordres signalés.'
-  },
-  {
-    q: "Qu'est-ce que la garantie biennale ?",
-    a: 'Elle couvre pendant deux ans les équipements dissociables.'
-  }]
-
-},
-{
-  id: 4,
-  category: 'Administratif',
-  items: [
-  {
-    q: "Gérez-vous l'obtention du permis de construire ?",
-    a: 'Oui, notre service inclut la constitution du dossier et le suivi administratif.'
-  },
-  {
-    q: 'Faut-il souscrire une assurance dommages-ouvrage ?',
-    a: "Oui, c'est obligatoire pour le maître d'ouvrage."
-  },
-  {
-    q: 'Quels documents dois-je fournir ?',
-    a: 'Titre de propriété, plan de situation, et relevé topographique.'
-  }]
-
-}];
-
-const helpCenterData = {
-  supportEmail: 'support@globus-btp.com',
-  whatsappNumber: '+33 6 12 34 56 78',
-  faqDesc:
-  'Trouvez des réponses immédiates aux questions les plus fréquemment posées.',
-  whatsappDesc:
-  'Discutez en direct avec un conseiller pour une assistance rapide.',
-  emailDesc: 'Envoyez-nous un email détaillé. Réponse sous 24h ouvrées.'
-};
-// ===== NEW: Legal Pages Data =====
-const legalPagesData = {
-  legalNotice: {
-    lastUpdated: '15 mars 2026',
-    companyName: 'Globus Engineering SARL',
-    legalForm: 'SARL au capital de 500 000 FCFA',
-    rccm: 'RC/DLA/2020/B/1234',
-    address:
-    '123 Avenue de la Construction, Quartier des Affaires, Douala, Cameroun',
-    director: 'M. Jean-Pierre Nkoulou',
-    contact: 'contact@globus-btp.com | +33 1 23 45 67 89',
-    hostName: 'OVH SAS',
-    hostAddress: '2 rue Kellermann, 59100 Roubaix - France'
-  },
-  privacyPolicy: {
-    lastUpdated: '15 mars 2026',
-    sections: 5
-  },
-  terms: {
-    lastUpdated: '15 mars 2026',
-    sections: 5
-  },
-  cookiePolicy: {
-    lastUpdated: '15 mars 2026',
-    sections: 4
-  }
-};
-// ===== NEW: Media Library Data =====
-const mediaData = [
-{
-  id: 1,
-  name: 'Hero Slide 1 - Construction',
-  url: 'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=400&q=80',
-  type: 'image',
-  size: '2.4 MB',
-  uploadDate: '10/03/2026',
-  usageCount: 3,
-  thumbnail:
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=400&q=80'
-},
-{
-  id: 2,
-  name: 'Hero Slide 2 - Expertise',
-  url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
-  type: 'image',
-  size: '1.8 MB',
-  uploadDate: '10/03/2026',
-  usageCount: 2,
-  thumbnail:
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80'
-},
-{
-  id: 3,
-  name: 'Hero Slide 3 - Architecture',
-  url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80',
-  type: 'image',
-  size: '3.1 MB',
-  uploadDate: '10/03/2026',
-  usageCount: 2,
-  thumbnail:
-  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=400&q=80'
-},
-{
-  id: 4,
-  name: 'Hero Slide 4 - Qualité',
-  url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&q=80',
-  type: 'image',
-  size: '2.2 MB',
-  uploadDate: '10/03/2026',
-  usageCount: 2,
-  thumbnail:
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&q=80'
-},
-{
-  id: 5,
-  name: 'Vidéo Intro Accueil',
-  url: 'https://videos.pexels.com/video-files/2835509/2835509-hd_1920_1080_30fps.mp4',
-  type: 'video',
-  size: '15.6 MB',
-  uploadDate: '12/03/2026',
-  usageCount: 1,
-  thumbnail:
-  'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=400&q=80'
-},
-{
-  id: 6,
-  name: 'Projet Villa Les Alizés',
-  url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80',
-  type: 'image',
-  size: '1.5 MB',
-  uploadDate: '14/03/2026',
-  usageCount: 2,
-  thumbnail:
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&q=80'
-},
-{
-  id: 7,
-  name: 'Logo Globus Engineering',
-  url: "/globusLogo.jpg",
-  type: 'image',
-  size: '0.5 MB',
-  uploadDate: '01/01/2026',
-  usageCount: 5,
-  thumbnail: "/globusLogo.jpg"
-
-},
-{
-  id: 8,
-  name: 'Méthodologie - Démarches',
-  url: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&q=80',
-  type: 'image',
-  size: '1.2 MB',
-  uploadDate: '15/03/2026',
-  usageCount: 1,
-  thumbnail:
-  'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=400&q=80'
-},
-{
-  id: 9,
-  name: 'Méthodologie - Second Oeuvre',
-  url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80',
-  type: 'image',
-  size: '2.1 MB',
-  uploadDate: '15/03/2026',
-  usageCount: 1,
-  thumbnail:
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&q=80'
-},
-{
-  id: 10,
-  name: 'Plaquette Commerciale 2026',
-  url: '#',
-  type: 'document',
-  size: '4.8 MB',
-  uploadDate: '20/03/2026',
-  usageCount: 0,
-  thumbnail: ''
-}];
-
-// ===== NEW: SEO & Tracking Data =====
-const seoPageData = [
-{
-  id: 'home',
-  page: 'Accueil',
-  path: '/',
-  title: 'Construction BTP Clé en Main à Douala',
-  description:
-  'Globus Engineering SARL, votre partenaire de confiance pour la construction, rénovation et génie civil au Cameroun. Devis gratuit.',
-  ogImage: '',
-  keywords: 'construction, BTP, Douala, Cameroun, clé en main, génie civil',
-  status: 'Configuré'
-},
-{
-  id: 'about',
-  page: 'À Propos',
-  path: '/a-propos',
-  title: 'À Propos',
-  description:
-  "Découvrez Globus Engineering SARL, plus de 15 ans d'expérience dans le BTP. Notre histoire, nos valeurs et nos certifications.",
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'services',
-  page: 'Nos Services',
-  path: '/services',
-  title: 'Nos Services',
-  description:
-  'Construction de bâtiments, conception architecturale, génie civil et rénovation. Découvrez tous nos services BTP.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'projects',
-  page: 'Nos Réalisations',
-  path: '/projets',
-  title: 'Nos Réalisations',
-  description: 'Découvrez nos projets de construction au Cameroun.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'blog',
-  page: 'Blog & Actualités',
-  path: '/blog',
-  title: 'Blog & Actualités',
-  description:
-  'Conseils construction, tendances architecture et actualités BTP.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'contact',
-  page: 'Contactez-nous',
-  path: '/contact',
-  title: 'Contactez-nous',
-  description:
-  'Contactez Globus Engineering pour vos projets. Devis gratuit, réponse sous 24h.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'faq',
-  page: 'Questions Fréquentes',
-  path: '/faq',
-  title: 'Questions Fréquentes',
-  description:
-  'Réponses à vos questions sur nos services, délais, garanties et tarifs.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'aide',
-  page: "Centre d'Aide",
-  path: '/aide',
-  title: "Centre d'Aide",
-  description: "Besoin d'assistance ? Support WhatsApp, email ou FAQ.",
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'legal',
-  page: 'Mentions Légales',
-  path: '/mentions-legales',
-  title: 'Mentions Légales',
-  description: 'Mentions légales de Globus Engineering SARL.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'privacy',
-  page: 'Politique de Confidentialité',
-  path: '/politique-de-confidentialite',
-  title: 'Politique de Confidentialité',
-  description: 'Protection des données personnelles.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'terms',
-  page: 'Conditions Générales',
-  path: '/termes-et-conditions',
-  title: 'Conditions Générales',
-  description: 'CGU du site Globus Engineering SARL.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-},
-{
-  id: 'cookies',
-  page: 'Politique de Cookies',
-  path: '/cookies',
-  title: 'Politique de Cookies',
-  description: 'Cookies utilisés et gestion.',
-  ogImage: '',
-  keywords: '',
-  status: 'Configuré'
-}];
+// ── All data now fetched from backend via useAdminCMS hook ──
+// ── All data now fetched from backend via useAdminCMS hook ──
 
 const stagger = {
   hidden: {},
@@ -1039,6 +140,74 @@ const fadeUp = {
   }
 };
 export function ErpCMS() {
+  // ── Backend data via hook ─────────────────────────────────
+  const cms = useAdminCMS();
+  const {
+    blog, projects, services, team, testimonials, partners,
+    faqCategories, faqItems, heroSlides, engagements,
+    methodology, stats, guarantees, contacts, mediaItems,
+    siteSettings, aboutContent, legalPages,
+    blogStats, mediaStats, contactStats,
+    createBlog, updateBlog, deleteBlog,
+    projectsCrud, servicesCrud, teamCrud, testimonialsCrud,
+    partnersCrud, faqCategoriesCrud, faqItemsCrud, heroSlidesCrud,
+    engagementsCrud, methodologyCrud, statsCrud, guaranteesCrud,
+    updateSettings, updateAbout, updateLegal,
+    markContactRead, replyContact, uploadMedia, importYouTube, deleteMedia,
+    loading, isSaving,
+  } = cms;
+
+  // ── Aliases for template compatibility ────────────────────
+  const blogData = blog;
+  const projectsData = projects;
+  const servicesData = services;
+  const teamData = team;
+  const testimonialsData = testimonials;
+  const faqData = faqItems;
+  const contactData = contacts.map(c => ({
+    ...c, date: new Date(c.created_at).toLocaleDateString('fr-FR'),
+    status: c.replied ? 'Répondu' : c.is_read ? 'Lu' : 'Nouveau',
+  }));
+  const heroSlidesData = heroSlides;
+  const engagementsData = engagements;
+  const methodologyData = methodology;
+  const statsBarData = stats;
+  const guaranteesData = guarantees;
+  const partnersData = partners;
+  const mediaData = mediaItems.map(m => ({
+    ...m, uploadDate: m.uploaded_at ? new Date(m.uploaded_at).toLocaleDateString('fr-FR') : '',
+    usageCount: m.usage_count || 0,
+  }));
+  // Settings aliases (fallback to empty object)
+  const s = siteSettings || {} as any;
+  const heroVideoData = { url: s.hero_video_src || '', poster: s.hero_video_poster || '', duration: 6 };
+  const aboutSectionData = {
+    paragraph1: aboutContent?.paragraphs?.[0] || '',
+    paragraph2: aboutContent?.paragraphs?.[1] || '',
+    bulletPoints: aboutContent?.highlights || [],
+    badgeText: aboutContent?.badge_value || '',
+    images: aboutContent?.images || [],
+  };
+  const videoSectionData = { youtubeUrl: s.video_section_youtube_url || '', title: s.video_section_title || '', subtitle: s.video_section_subtitle || '' };
+  const ctaBannerData = { title: s.cta_title || '', subtitle: s.cta_subtitle || '', buttonText: s.cta_text || '', buttonLink: s.cta_href || '' };
+  const headerSettingsData = { logoUrl: s.logo || '/globusLogo.jpg', phone: s.phone || '', email: s.email || '', hours: s.top_bar_text || '' };
+  const footerSettingsData = { description: s.footer_description || '', address: s.address || '', phone: s.phone || '', email: s.email || '', facebook: s.social_links?.facebook || '', twitter: s.social_links?.twitter || '', linkedin: s.social_links?.linkedin || '', instagram: s.social_links?.instagram || '', newsletterEnabled: true };
+  const seoSettingsData = { metaTitle: '', metaDescription: '', ogImage: '' };
+  const aboutPageData = { heroImage: aboutContent?.hero_image || '', historyTitle: aboutContent?.hero_title || '', historyP1: aboutContent?.paragraphs?.[0] || '', historyP2: aboutContent?.paragraphs?.[1] || '', values: aboutContent?.values || [], certifications: aboutContent?.certifications || [] };
+  const contactPageData = { address: s.contact_address || '', phoneStandard: s.contact_phone || '', phoneWhatsApp: s.contact_whatsapp || '', emailContact: s.contact_email || '', emailDevis: s.email || '', hoursWeekday: s.contact_hours || '', hoursSaturday: '', mapUrl: s.contact_map_embed_url || '', formSubjects: ['Demande de devis', 'Renseignement général', 'Candidature / Emploi', 'Autre demande'] };
+  const faqPageData = faqCategories.map(cat => ({
+    id: cat.id, category: cat.name,
+    items: faqItems.filter(item => item.category_id === cat.id).map(item => ({ q: item.question, a: item.answer })),
+  }));
+  const helpCenterData = { supportEmail: s.contact_email || '', whatsappNumber: s.contact_whatsapp || '', faqDesc: 'Trouvez des réponses immédiates.', whatsappDesc: 'Discutez en direct.', emailDesc: 'Réponse sous 24h.' };
+  const legalPagesData = {
+    legalNotice: legalPages['legalNotice'] || { lastUpdated: '-', companyName: '', legalForm: '', rccm: '', address: '', director: '', contact: '', hostName: '', hostAddress: '' } as any,
+    privacyPolicy: legalPages['privacy'] || { lastUpdated: '-', sections: 5 } as any,
+    terms: legalPages['terms'] || { lastUpdated: '-', sections: 5 } as any,
+    cookiePolicy: legalPages['cookies'] || { lastUpdated: '-', sections: 4 } as any,
+  };
+
+  // ── Local UI state ────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('blog');
   const [toast, setToast] = useState<{
     message: string;
@@ -1046,8 +215,15 @@ export function ErpCMS() {
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [showArticleModal, setShowArticleModal] = useState(false);
+  // Blog search & filter
+  const [blogSearchTerm, setBlogSearchTerm] = useState('');
+  const [blogCategoryFilter, setBlogCategoryFilter] = useState('');
+  // Blog article preview
+  const [showArticlePreview, setShowArticlePreview] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<any>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [deleteEntityType, setDeleteEntityType] = useState<string>('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>('hero');
@@ -1056,88 +232,261 @@ export function ErpCMS() {
   const [activeLegalTab, setActiveLegalTab] = useState('legalNotice');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [editEntityType, setEditEntityType] = useState<string>('');
   // Media Tab State
   const [mediaFilter, setMediaFilter] = useState('all');
   const [mediaSearch, setMediaSearch] = useState('');
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [mediaPickerCallback, setMediaPickerCallback] = useState<
     ((url: string) => void) | null>(
-    null);
+      null);
   // SEO Tab State
   const [activeSeoTab, setActiveSeoTab] = useState('pages');
+  // Form modal state
+  const [formData, setFormData] = useState<any>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Entity modals state
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showTestimonialModal, setShowTestimonialModal] = useState(false);
+  const [showPartnerModal, setShowPartnerModal] = useState(false);
+  const [showFaqItemModal, setShowFaqItemModal] = useState(false);
+  const [showFaqCategoryModal, setShowFaqCategoryModal] = useState(false);
+  const [showHeroSlideModal, setShowHeroSlideModal] = useState(false);
+
+  // Contact message modal
+  const [showContactViewModal, setShowContactViewModal] = useState(false);
+  const [contactViewItem, setContactViewItem] = useState<any>(null);
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
+
+  // Settings form state — initialized from siteSettings, synced on save
+  const [settingsForm, setSettingsForm] = useState<any>({});
+  const [aboutForm, setAboutForm] = useState<any>({});
+  const sfInit = useRef(false);
+  const afInit = useRef(false);
+  // Sync settings form when data loads
+  if (siteSettings && !sfInit.current) {
+    sfInit.current = true;
+    setSettingsForm({ ...siteSettings });
+  }
+  if (aboutContent && !afInit.current) {
+    afInit.current = true;
+    setAboutForm({ ...aboutContent });
+  }
+  const sf = (k: string) => settingsForm[k] ?? '';
+  const setSf = (k: string, v: any) => setSettingsForm((p: any) => ({ ...p, [k]: v }));
+
   const toggleSection = (id: string) =>
-  setExpandedSection(expandedSection === id ? null : id);
-  const handleSaveGeneric = () => {
-    setIsProcessing('save-generic');
-    setTimeout(() => {
-      setIsProcessing(null);
-      setShowEditModal(false);
-      setEditItem(null);
-      showToast('Modifications enregistrées avec succès');
-    }, 1500);
-  };
+    setExpandedSection(expandedSection === id ? null : id);
+
+  // ── Toast helper ──────────────────────────────────────────
   const showToast = (
-  message: string,
-  type: 'success' | 'error' | 'info' = 'success') =>
-  {
+    message: string,
+    type: 'success' | 'error' | 'info' = 'success') => {
     setToast({
       message,
       type
     });
     setTimeout(() => setToast(null), 3000);
   };
-  const handlePublishToggle = (id: number, currentStatus: string) => {
+
+  // ── Real API handlers ─────────────────────────────────────
+
+  const handleSaveGeneric = async () => {
+    setIsProcessing('save-generic');
+    try {
+      await updateSettings(settingsForm);
+      showToast('Modifications enregistrées avec succès');
+    } catch {
+      showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
+    setShowEditModal(false);
+    setEditItem(null);
+  };
+
+  const handlePublishToggle = async (id: string, currentStatus: string) => {
     setIsProcessing(`publish-${id}`);
-    setTimeout(() => {
-      setIsProcessing(null);
-      showToast(
-        currentStatus === 'Publié' ?
-        'Article dépublié avec succès' :
-        'Article publié avec succès'
-      );
-    }, 1500);
+    try {
+      const newStatus = currentStatus === 'published' || currentStatus === 'Publié' ? 'draft' : 'published';
+      await updateBlog(id, { status: newStatus });
+      showToast(newStatus === 'draft' ? 'Article dépublié avec succès' : 'Article publié avec succès');
+    } catch {
+      showToast('Erreur lors de la mise à jour', 'error');
+    }
+    setIsProcessing(null);
   };
-  const handleDelete = () => {
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
     setIsProcessing('delete');
-    setTimeout(() => {
-      setIsProcessing(null);
-      setShowDeleteModal(false);
-      setItemToDelete(null);
+    try {
+      const type = deleteEntityType;
+      const id = itemToDelete.id;
+      if (type === 'blog') await deleteBlog(id);
+      else if (type === 'project') await projectsCrud.delete(id);
+      else if (type === 'service') await servicesCrud.delete(id);
+      else if (type === 'team') await teamCrud.delete(id);
+      else if (type === 'testimonial') await testimonialsCrud.delete(id);
+      else if (type === 'partner') await partnersCrud.delete(id);
+      else if (type === 'faqItem') await faqItemsCrud.delete(id);
+      else if (type === 'faqCategory') await faqCategoriesCrud.delete(id);
+      else if (type === 'heroSlide') await heroSlidesCrud.delete(id);
+      else if (type === 'engagement') await engagementsCrud.delete(id);
+      else if (type === 'methodology') await methodologyCrud.delete(id);
+      else if (type === 'stat') await statsCrud.delete(id);
+      else if (type === 'guarantee') await guaranteesCrud.delete(id);
+      else if (type === 'media') await deleteMedia(id);
       showToast('Élément supprimé avec succès');
-    }, 1500);
+    } catch {
+      showToast('Erreur lors de la suppression', 'error');
+    }
+    setIsProcessing(null);
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+    setDeleteEntityType('');
   };
-  const handleSaveArticle = (e: React.FormEvent) => {
+
+  const confirmDelete = (item: any, entityType: string) => {
+    setItemToDelete(item);
+    setDeleteEntityType(entityType);
+    setShowDeleteModal(true);
+  };
+
+  const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing('save-article');
-    setTimeout(() => {
-      setIsProcessing(null);
+    try {
+      const now = new Date();
+      const months = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+      const dateStr = `${String(now.getDate()).padStart(2,'0')} ${months[now.getMonth()]} ${now.getFullYear()}`;
+      const payload = { ...formData };
+      if (!editItem?.id) {
+        // Auto-set date and read_time on creation
+        payload.date = dateStr;
+        if (!payload.read_time) payload.read_time = '3 min';
+      }
+      if (editItem?.id) {
+        await updateBlog(editItem.id, payload);
+        showToast('Article modifié avec succès');
+      } else {
+        await createBlog(payload);
+        showToast('Article créé avec succès');
+      }
       setShowArticleModal(false);
-      showToast('Article enregistré avec succès');
-    }, 1500);
+      setEditItem(null);
+      setFormData({});
+    } catch {
+      showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
   };
+
+  const openArticleModal = (item?: any) => {
+    if (item) {
+      setEditItem(item);
+      setFormData({ title: item.title, category: item.category, author: item.author, excerpt: item.excerpt || '', status: item.status, image: item.image || '', html_content: item.html_content || '' });
+    } else {
+      setEditItem(null);
+      setFormData({ title: '', category: '', author: '', excerpt: '', status: 'draft', image: '', html_content: '' });
+    }
+    setShowArticleModal(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadMedia(file);
+      showToast('Fichier uploadé avec succès');
+    } catch {
+      showToast('Erreur lors de l\'upload', 'error');
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // ── Generic entity modal helpers ────────────────────────────
+  const openEntityModal = (type: string, item?: any) => {
+    setEditItem(item || null);
+    setFormData(item ? { ...item } : {});
+    setEditEntityType(type);
+    if (type === 'project') setShowProjectModal(true);
+    else if (type === 'service') setShowServiceModal(true);
+    else if (type === 'team') setShowTeamModal(true);
+    else if (type === 'testimonial') setShowTestimonialModal(true);
+    else if (type === 'partner') setShowPartnerModal(true);
+    else if (type === 'faqItem') setShowFaqItemModal(true);
+    else if (type === 'faqCategory') setShowFaqCategoryModal(true);
+    else if (type === 'heroSlide') setShowHeroSlideModal(true);
+  };
+
+  const closeEntityModal = () => {
+    setShowProjectModal(false); setShowServiceModal(false);
+    setShowTeamModal(false); setShowTestimonialModal(false);
+    setShowPartnerModal(false); setShowFaqItemModal(false);
+    setShowFaqCategoryModal(false); setShowHeroSlideModal(false);
+    setEditItem(null); setFormData({}); setEditEntityType('');
+  };
+
+  const handleSaveEntity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing('save-entity');
+    try {
+      const type = editEntityType;
+      const crud = type === 'project' ? projectsCrud : type === 'service' ? servicesCrud :
+        type === 'team' ? teamCrud : type === 'testimonial' ? testimonialsCrud :
+          type === 'partner' ? partnersCrud : type === 'faqItem' ? faqItemsCrud :
+            type === 'faqCategory' ? faqCategoriesCrud : type === 'heroSlide' ? heroSlidesCrud : null;
+      if (!crud) return;
+      if (editItem?.id) {
+        await crud.update(editItem.id, formData);
+        showToast('Élément modifié avec succès');
+      } else {
+        await crud.create(formData);
+        showToast('Élément créé avec succès');
+      }
+      closeEntityModal();
+    } catch {
+      showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
+  };
+
+  // ── Loading state ─────────────────────────────────────────
+  if (loading.global) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2Icon className="w-8 h-8 animate-spin text-globus-orange" />
+        <span className="ml-3 font-montserrat font-semibold text-gray-500">Chargement du CMS...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-6 relative">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast &&
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 50
-          }}
-          animate={{
-            opacity: 1,
-            y: 0
-          }}
-          exit={{
-            opacity: 0,
-            y: 50
-          }}
-          className={`fixed bottom-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 text-white font-opensans text-sm ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`}>
-          
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 50
+            }}
+            animate={{
+              opacity: 1,
+              y: 0
+            }}
+            exit={{
+              opacity: 0,
+              y: 50
+            }}
+            className={`fixed bottom-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 text-white font-opensans text-sm ${toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`}>
+
             {toast.type === 'success' &&
-          <CheckCircle2Icon className="w-5 h-5" />
-          }
+              <CheckCircle2Icon className="w-5 h-5" />
+            }
             {toast.message}
           </motion.div>
         }
@@ -1165,13 +514,13 @@ export function ErpCMS() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-6 py-4 font-montserrat font-semibold text-sm transition-colors relative whitespace-nowrap ${isActive ? 'text-globus-orange' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
-                
+
                 <Icon className="w-4 h-4" />
                 {tab.label}
                 {isActive &&
-                <motion.div
-                  layoutId="cms-tab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-globus-orange" />
+                  <motion.div
+                    layoutId="cms-tab"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-globus-orange" />
 
                 }
               </button>);
@@ -1183,25 +532,25 @@ export function ErpCMS() {
       <AnimatePresence mode="wait">
         {/* TAB 1: BLOG */}
         {activeTab === 'blog' &&
-        <motion.div
-          key="blog"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="blog"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-bold uppercase">
                     Publiés
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-green-600">
-                    4
+                    {blogStats.published}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
@@ -1214,7 +563,7 @@ export function ErpCMS() {
                     Brouillons
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-gray-600">
-                    1
+                    {blogStats.draft}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
@@ -1227,7 +576,7 @@ export function ErpCMS() {
                     Planifiés
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-blue-600">
-                    1
+                    {blogStats.scheduled}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
@@ -1240,7 +589,7 @@ export function ErpCMS() {
                     Vues ce mois
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-globus-blue-dark">
-                    2,450
+                    —
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
@@ -1250,30 +599,35 @@ export function ErpCMS() {
             </motion.div>
 
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <div className="relative flex-1 sm:w-64">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
-                    type="text"
-                    placeholder="Rechercher un article..."
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                      type="text"
+                      placeholder="Rechercher un article..."
+                      value={blogSearchTerm}
+                      onChange={e => setBlogSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
-                  <select className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue">
-                    <option>Toutes catégories</option>
-                    <option>Conseils</option>
-                    <option>Design</option>
-                    <option>Actualités</option>
+                  <select
+                    value={blogCategoryFilter}
+                    onChange={e => setBlogCategoryFilter(e.target.value)}
+                    className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue">
+                    <option value="">Toutes catégories</option>
+                    {[...new Set(blogData.map(p => p.category).filter(Boolean))].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
                 <button
-                onClick={() => setShowArticleModal(true)}
-                className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm">
-                
+                  onClick={() => openArticleModal()}
+                  className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm">
+
                   <PlusIcon className="w-4 h-4" /> Nouvel Article
                 </button>
               </div>
@@ -1290,11 +644,14 @@ export function ErpCMS() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-sm font-opensans">
-                    {blogData.map((post) =>
-                  <tr
-                    key={post.id}
-                    className="hover:bg-gray-50 transition-colors">
-                    
+                    {blogData
+                      .filter(p => !blogSearchTerm || p.title.toLowerCase().includes(blogSearchTerm.toLowerCase()) || p.author?.toLowerCase().includes(blogSearchTerm.toLowerCase()))
+                      .filter(p => !blogCategoryFilter || p.category === blogCategoryFilter)
+                      .map((post) =>
+                      <tr
+                        key={post.id}
+                        className="hover:bg-gray-50 transition-colors">
+
                         <td className="py-3 px-5 font-semibold text-gray-800">
                           {post.title}
                         </td>
@@ -1307,64 +664,61 @@ export function ErpCMS() {
                         <td className="py-3 px-5 text-gray-500">{post.date}</td>
                         <td className="py-3 px-5">
                           <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${post.status === 'Publié' ? 'bg-green-100 text-green-700' : post.status === 'Planifié' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                        
-                            {post.status}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase ${post.status === 'published' ? 'bg-green-100 text-green-700' : post.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+
+                            {post.status === 'published' ? 'PUBLIÉ' : post.status === 'scheduled' ? 'PLANIFIÉ' : 'BROUILLON'}
                           </span>
                         </td>
                         <td className="py-3 px-5 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                          onClick={() => {
-                            setPreviewItem(post);
-                            setShowPreviewModal(true);
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
-                          title="Aperçu">
-                          
+                              onClick={() => {
+                                setPreviewArticle(post);
+                                setShowArticlePreview(true);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
+                              title="Aperçu">
+
                               <SearchIcon className="w-4 h-4" />
                             </button>
                             <button
-                          onClick={() => setShowArticleModal(true)}
-                          className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
-                          title="Modifier">
-                          
+                              onClick={() => openArticleModal(post)}
+                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
+                              title="Modifier">
+
                               <EditIcon className="w-4 h-4" />
                             </button>
                             <button
-                          onClick={() =>
-                          handlePublishToggle(post.id, post.status)
-                          }
-                          disabled={isProcessing === `publish-${post.id}`}
-                          className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors disabled:opacity-50"
-                          title={
-                          post.status === 'Publié' ?
-                          'Dépublier' :
-                          'Publier'
-                          }>
-                          
-                              {isProcessing === `publish-${post.id}` ?
-                          <Loader2Icon className="w-4 h-4 animate-spin" /> :
-                          post.status === 'Publié' ?
-                          <EyeOffIcon className="w-4 h-4" /> :
+                              onClick={() =>
+                                handlePublishToggle(post.id, post.status)
+                              }
+                              disabled={isProcessing === `publish-${post.id}`}
+                              className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-colors disabled:opacity-50"
+                              title={
+                                post.status === 'published' ?
+                                  'Dépublier' :
+                                  'Publier'
+                              }>
 
-                          <EyeIcon className="w-4 h-4" />
-                          }
+                              {isProcessing === `publish-${post.id}` ?
+                                <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                                post.status === 'published' ?
+                                  <EyeOffIcon className="w-4 h-4" /> :
+
+                                  <EyeIcon className="w-4 h-4" />
+                              }
                             </button>
                             <button
-                          onClick={() => {
-                            setItemToDelete(post);
-                            setShowDeleteModal(true);
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                          title="Supprimer">
-                          
+                              onClick={() => confirmDelete(post, 'blog')}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Supprimer">
+
                               <Trash2Icon className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                       </tr>
-                  )}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -1374,48 +728,46 @@ export function ErpCMS() {
 
         {/* TAB 2: PORTFOLIO */}
         {activeTab === 'portfolio' &&
-        <motion.div
-          key="portfolio"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="portfolio"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-            
+              variants={fadeUp}
+              className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+
               <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                 Projets du Portfolio
               </h3>
               <button
-              onClick={() =>
-              showToast('Fonctionnalité en cours de développement', 'info')
-              }
-              className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
-              
+                onClick={() => openEntityModal('project')}
+                className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
+
                 <PlusIcon className="w-4 h-4" /> Ajouter un Projet
               </button>
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projectsData.map((project) =>
-            <motion.div
-              key={project.id}
-              variants={fadeUp}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group">
-              
+                <motion.div
+                  key={project.id}
+                  variants={fadeUp}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group">
+
                   <div className="h-40 relative overflow-hidden">
                     <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                
+                      src={project.images?.[0] || ''}
+                      alt={project.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+
                     <div className="absolute top-3 right-3">
                       <span
-                    className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${project.status === 'Publié' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
-                    
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase shadow-sm ${project.status === 'Publié' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
+
                         {project.status}
                       </span>
                     </div>
@@ -1441,72 +793,71 @@ export function ErpCMS() {
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div
-                      className="bg-globus-blue h-1.5 rounded-full"
-                      style={{
-                        width: `${project.progress}%`
-                      }}>
-                    </div>
+                          className="bg-globus-blue h-1.5 rounded-full"
+                          style={{
+                            width: `${project.progress}%`
+                          }}>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <button className="text-sm font-semibold text-gray-500 hover:text-globus-blue flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          setEditItem(project);
+                          setFormData({ ...project });
+                          setShowProjectModal(true);
+                        }}
+                        className="text-sm font-semibold text-gray-500 hover:text-globus-blue flex items-center gap-1">
                         <EditIcon className="w-4 h-4" /> Modifier
                       </button>
                       <button
-                    onClick={() => {
-                      setItemToDelete(project);
-                      setShowDeleteModal(true);
-                    }}
-                    className="text-sm font-semibold text-gray-400 hover:text-red-500 flex items-center gap-1">
-                    
+                        onClick={() => confirmDelete(project, 'project')}
+                        className="text-sm font-semibold text-gray-400 hover:text-red-500 flex items-center gap-1">
+
                         <Trash2Icon className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 </motion.div>
-            )}
+              )}
             </div>
           </motion.div>
         }
 
         {/* TAB 3: SERVICES */}
         {activeTab === 'services' &&
-        <motion.div
-          key="services"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="services"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Services Proposés
                 </h3>
                 <button
-                onClick={() =>
-                showToast(
-                  'Fonctionnalité en cours de développement',
-                  'info'
-                )
-                }
-                className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
-                
+                  onClick={() => openEntityModal('service')}
+
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
+
                   <PlusIcon className="w-4 h-4" /> Ajouter un Service
                 </button>
               </div>
 
               <div className="space-y-3">
                 {servicesData.map((service) =>
-              <div
-                key={service.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg bg-white hover:border-globus-blue/50 transition-colors group">
-                
+                  <div
+                    key={service.id}
+                    className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg bg-white hover:border-globus-blue/50 transition-colors group">
+
                     <div className="cursor-grab text-gray-300 hover:text-gray-500">
                       <GripVerticalIcon className="w-5 h-5" />
                     </div>
@@ -1523,23 +874,26 @@ export function ErpCMS() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700">
-                        {service.status}
+                        {'Actif'}
                       </span>
-                      <button className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
+                      <button
+                        onClick={() => {
+                          setEditItem(service);
+                          setFormData({ ...service });
+                          setShowServiceModal(true);
+                        }}
+                        className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
                         <EditIcon className="w-4 h-4" />
                       </button>
                       <button
-                    onClick={() => {
-                      setItemToDelete(service);
-                      setShowDeleteModal(true);
-                    }}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
-                    
+                        onClick={() => confirmDelete(service, 'service')}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
+
                         <Trash2Icon className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-              )}
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -1547,96 +901,129 @@ export function ErpCMS() {
 
         {/* TAB 4: TEAM & TESTIMONIALS */}
         {activeTab === 'team' &&
-        <motion.div
-          key="team"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+          <motion.div
+            key="team"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Équipe Dirigeante
                 </h3>
-                <button className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
+                <button
+                  onClick={() => openEntityModal('team')}
+                  className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
                   <PlusIcon className="w-4 h-4" /> Ajouter
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {teamData.map((member) =>
-              <div
-                key={member.id}
-                className="border border-gray-100 rounded-lg p-4 text-center relative group hover:border-globus-blue/30 transition-colors">
-                
+                  <div
+                    key={member.id}
+                    className="border border-gray-100 rounded-lg p-4 text-center relative group hover:border-globus-blue/30 transition-colors">
+
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      <button className="p-1 text-gray-400 hover:text-globus-blue">
+                      <button
+                        onClick={() => {
+                          setEditItem(member);
+                          setFormData({ ...member });
+                          setShowTeamModal(true);
+                        }}
+                        className="p-1 text-gray-400 hover:text-globus-blue">
                         <EditIcon className="w-3.5 h-3.5" />
                       </button>
-                      <button className="p-1 text-gray-400 hover:text-red-500">
+                      <button
+                        onClick={() => confirmDelete(member, 'team')}
+                        className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="w-16 h-16 mx-auto bg-gray-200 rounded-full mb-3 flex items-center justify-center">
-                      <UsersIcon className="w-8 h-8 text-gray-400" />
+                    <div className="w-16 h-16 mx-auto rounded-full mb-3 flex items-center justify-center overflow-hidden bg-gray-200">
+                      {member.photo ? (
+                        <img src={member.photo} alt={member.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <UsersIcon className="w-8 h-8 text-gray-400" />
+                      )}
                     </div>
                     <h4 className="font-montserrat font-bold text-sm text-gray-800">
                       {member.name}
                     </h4>
                     <p className="text-xs text-gray-500 mt-1">{member.role}</p>
                   </div>
-              )}
+                )}
               </div>
             </motion.div>
 
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Témoignages Clients
                 </h3>
-                <button className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
+                <button
+                  onClick={() => openEntityModal('testimonial')}
+                  className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
                   <PlusIcon className="w-4 h-4" /> Ajouter
                 </button>
               </div>
               <div className="space-y-4">
                 {testimonialsData.map((testi) =>
-              <div
-                key={testi.id}
-                className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
-                
+                  <div
+                    key={testi.id}
+                    className="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+
                     <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-montserrat font-bold text-sm text-gray-800">
-                          {testi.name}
-                        </h4>
-                        <p className="text-xs text-gray-500">{testi.role}</p>
+                      <div className="flex items-center gap-3">
+                        {testi.photo && (
+                          <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                            <img src={testi.photo} alt={testi.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-montserrat font-bold text-sm text-gray-800">
+                            {testi.name}
+                          </h4>
+                          <p className="text-xs text-gray-500">{testi.project}</p>
+                        </div>
                       </div>
-                      <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${testi.status === 'Publié' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                    
-                        {testi.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400 text-sm">{'★'.repeat(testi.rating || 5)}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${testi.is_published !== false ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                          {testi.is_published !== false ? 'Publié' : 'Brouillon'}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-sm text-gray-600 italic">
-                      "{testi.quote}"
+                      "{testi.text}"
                     </p>
                     <div className="flex justify-end gap-2 mt-3">
-                      <button className="text-xs font-semibold text-gray-500 hover:text-globus-blue">
+                      <button
+                        onClick={() => {
+                          setEditItem(testi);
+                          setFormData({ ...testi });
+                          setShowTestimonialModal(true);
+                        }}
+                        className="text-xs font-semibold text-gray-500 hover:text-globus-blue">
                         Modifier
                       </button>
-                      <button className="text-xs font-semibold text-gray-400 hover:text-red-500">
+                      <button
+                        onClick={() => confirmDelete(testi, 'testimonial')}
+                        className="text-xs font-semibold text-gray-400 hover:text-red-500">
                         Supprimer
                       </button>
                     </div>
                   </div>
-              )}
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -1644,77 +1031,118 @@ export function ErpCMS() {
 
         {/* TAB 5: FAQ & CONTACT */}
         {activeTab === 'faq' &&
-        <motion.div
-          key="faq"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+          <motion.div
+            key="faq"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            
-              <div className="flex justify-between items-center mb-6">
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
+              <div className="flex justify-between items-center mb-4">
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Foire Aux Questions
                 </h3>
-                <button className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
-                  <PlusIcon className="w-4 h-4" /> Ajouter
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEntityModal('faqCategory')}
+                    className="text-xs font-semibold text-gray-500 hover:text-globus-blue border border-gray-200 px-2 py-1 rounded-lg flex items-center gap-1">
+                    <PlusIcon className="w-3 h-3" /> Catégorie
+                  </button>
+                  <button
+                    onClick={() => openEntityModal('faqItem')}
+                    className="text-sm font-semibold text-globus-blue hover:underline flex items-center gap-1">
+                    <PlusIcon className="w-4 h-4" /> Question
+                  </button>
+                </div>
               </div>
-              <div className="space-y-3">
-                {faqData.map((faq) =>
-              <div
-                key={faq.id}
-                className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors group">
-                
-                    <GripVerticalIcon className="w-4 h-4 text-gray-300 mt-1 cursor-grab" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm text-gray-800">
-                        {faq.question}
-                      </p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${faq.status === 'Publié' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                      
-                          {faq.status}
-                        </span>
+
+              {/* FAQ grouped by category */}
+              <div className="space-y-4">
+                {faqCategories.map((cat) => {
+                  const catItems = faqItems.filter((f: any) => f.category_id === cat.id);
+                  return (
+                    <div key={cat.id} className="border border-gray-100 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-100">
+                        <span className="font-montserrat font-bold text-sm text-globus-blue-dark">{cat.name}</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setEditItem(cat);
+                              setFormData({ ...cat });
+                              setShowFaqCategoryModal(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-globus-blue" title="Modifier">
+                            <EditIcon className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(cat, 'faqCategory')}
+                            className="p-1 text-gray-400 hover:text-red-500" title="Supprimer">
+                            <Trash2Icon className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
+                      {catItems.length === 0 ? (
+                        <p className="px-4 py-3 text-xs text-gray-400 italic">Aucune question dans cette catégorie</p>
+                      ) : (
+                        catItems.map((faq: any) => (
+                          <div key={faq.id} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors group">
+                            <GripVerticalIcon className="w-4 h-4 text-gray-300 mt-0.5 cursor-grab shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm text-gray-800 truncate">{faq.question}</p>
+                              <p className="text-xs text-gray-500 truncate mt-0.5">{faq.answer}</p>
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
+                              <button
+                                onClick={() => {
+                                  setEditItem(faq);
+                                  setFormData({ ...faq });
+                                  setShowFaqItemModal(true);
+                                }}
+                                className="p-1 text-gray-400 hover:text-globus-blue">
+                                <EditIcon className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => confirmDelete(faq, 'faqItem')}
+                                className="p-1 text-gray-400 hover:text-red-500">
+                                <Trash2Icon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      <button className="p-1 text-gray-400 hover:text-globus-blue">
-                        <EditIcon className="w-4 h-4" />
-                      </button>
-                      <button className="p-1 text-gray-400 hover:text-red-500">
-                        <Trash2Icon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-              )}
+                  );
+                })}
+                {faqCategories.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-6">Aucune catégorie FAQ. Commencez par en créer une.</p>
+                )}
               </div>
             </motion.div>
 
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
               <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-6 flex items-center gap-2">
                 <MailIcon className="w-5 h-5 text-gray-400" />
                 Soumissions Formulaire Contact
               </h3>
               <div className="space-y-3">
                 {contactData.map((msg) =>
-              <div
-                key={msg.id}
-                className={`p-4 rounded-lg border ${msg.status === 'Nouveau' ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100 bg-white'}`}>
-                
+                  <div
+                    key={msg.id}
+                    className={`p-4 rounded-lg border ${msg.status === 'Nouveau' ? 'border-blue-200 bg-blue-50/30' : msg.status === 'Répondu' ? 'border-green-200 bg-green-50/30' : 'border-gray-100 bg-white'}`}>
+
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
                         {msg.status === 'Nouveau' &&
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    }
+                          <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        }
                         <h4 className="font-montserrat font-bold text-sm text-gray-800">
                           {msg.name}
                         </h4>
@@ -1727,22 +1155,23 @@ export function ErpCMS() {
                     </p>
                     <div className="flex justify-between items-center">
                       <span
-                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${msg.status === 'Nouveau' ? 'bg-blue-100 text-blue-700' : msg.status === 'Répondu' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    
+                        className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${msg.status === 'Nouveau' ? 'bg-blue-100 text-blue-700' : msg.status === 'Répondu' ? 'bg-green-100 text-green-700' : msg.status === 'Lu' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
                         {msg.status}
                       </span>
                       <button
-                    onClick={() => {
-                      setPreviewItem(msg);
-                      setShowPreviewModal(true);
-                    }}
-                    className="text-xs font-semibold text-globus-blue hover:underline">
-                    
+                        onClick={() => {
+                          setContactViewItem(msg);
+                          setShowContactViewModal(true);
+                        }}
+                        className="text-xs font-semibold text-globus-blue hover:underline">
                         Voir le message
                       </button>
                     </div>
                   </div>
-              )}
+                )}
+                {contactData.length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-6">Aucun message reçu.</p>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -1750,23 +1179,23 @@ export function ErpCMS() {
 
         {/* TAB 6: ACCUEIL & SECTIONS */}
         {activeTab === 'homepage' &&
-        <motion.div
-          key="homepage"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-4">
-          
+          <motion.div
+            key="homepage"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-4">
+
             {/* Hero Carousel */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('hero')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('hero')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-globus-blue-dark flex items-center justify-center">
                     <PlayCircleIcon className="w-5 h-5 text-white" />
@@ -1782,11 +1211,11 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'hero' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'hero' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'hero' &&
-            <div className="p-5 border-t border-gray-100 space-y-4">
+                <div className="p-5 border-t border-gray-100 space-y-4">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-montserrat font-bold text-sm text-gray-700 mb-3">
                       Vidéo d'introduction
@@ -1798,22 +1227,22 @@ export function ErpCMS() {
                         </label>
                         <div className="flex gap-2">
                           <input
-                        type="text"
-                        defaultValue={heroVideoData.url}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                      
+                            type="text"
+                            value={sf("hero_video_src")} onChange={e => setSf("hero_video_src", e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                           <button
-                        onClick={() => {
-                          setMediaFilter('video');
-                          setShowMediaPicker(true);
-                          setMediaPickerCallback(
-                            () => (url: string) =>
-                            console.log('Selected:', url)
-                          );
-                        }}
-                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
-                        title="Choisir depuis la médiathèque">
-                        
+                            onClick={() => {
+                              setMediaFilter('video');
+                              setShowMediaPicker(true);
+                              setMediaPickerCallback(
+                                () => (url: string) =>
+                                  console.log('Selected:', url)
+                              );
+                            }}
+                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                            title="Choisir depuis la médiathèque">
+
                             <FolderOpenIcon className="w-4 h-4" />
                           </button>
                         </div>
@@ -1824,22 +1253,22 @@ export function ErpCMS() {
                         </label>
                         <div className="flex gap-2">
                           <input
-                        type="text"
-                        defaultValue={heroVideoData.poster}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                      
+                            type="text"
+                            value={sf("hero_video_poster")} onChange={e => setSf("hero_video_poster", e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                           <button
-                        onClick={() => {
-                          setMediaFilter('image');
-                          setShowMediaPicker(true);
-                          setMediaPickerCallback(
-                            () => (url: string) =>
-                            console.log('Selected:', url)
-                          );
-                        }}
-                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
-                        title="Choisir depuis la médiathèque">
-                        
+                            onClick={() => {
+                              setMediaFilter('image');
+                              setShowMediaPicker(true);
+                              setMediaPickerCallback(
+                                () => (url: string) =>
+                                  console.log('Selected:', url)
+                              );
+                            }}
+                            className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                            title="Choisir depuis la médiathèque">
+
                             <FolderOpenIcon className="w-4 h-4" />
                           </button>
                         </div>
@@ -1849,10 +1278,10 @@ export function ErpCMS() {
                           Durée (sec)
                         </label>
                         <input
-                      type="number"
-                      defaultValue={heroVideoData.duration}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                    
+                          type="number"
+                          value={sf("hero_video_duration") || 6} onChange={e => setSf("hero_video_duration", e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                     </div>
                   </div>
@@ -1861,32 +1290,32 @@ export function ErpCMS() {
                       Slides du Carousel
                     </h4>
                     <button
-                  onClick={() => showToast('Nouveau slide ajouté', 'info')}
-                  className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
-                  
+                      onClick={() => showToast('Nouveau slide ajouté', 'info')}
+                      className="text-sm font-semibold text-globus-orange hover:underline flex items-center gap-1">
+
                       <PlusIcon className="w-4 h-4" /> Ajouter
                     </button>
                   </div>
                   <div className="space-y-3">
                     {heroSlidesData.map((slide) =>
-                <div
-                  key={slide.id}
-                  className="border border-gray-200 rounded-lg p-4 bg-white hover:border-globus-blue/30 transition-colors">
-                  
+                      <div
+                        key={slide.id}
+                        className="border border-gray-200 rounded-lg p-4 bg-white hover:border-globus-blue/30 transition-colors">
+
                         <div className="flex items-start gap-4">
                           <GripVerticalIcon className="w-5 h-5 text-gray-300 mt-1 cursor-grab shrink-0" />
                           <img
-                      src={slide.image}
-                      alt=""
-                      className="w-20 h-14 object-cover rounded-lg shrink-0" />
-                    
+                            src={slide.image}
+                            alt=""
+                            className="w-20 h-14 object-cover rounded-lg shrink-0" />
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="px-2 py-0.5 bg-globus-orange/10 text-globus-orange rounded text-[10px] font-bold">
                                 {slide.tag}
                               </span>
                               <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase">
-                                {slide.status}
+                                {'Actif'}
                               </span>
                             </div>
                             <h5 className="font-montserrat font-bold text-sm text-gray-800 truncate">
@@ -1897,68 +1326,68 @@ export function ErpCMS() {
                             </p>
                             <div className="flex gap-2 mt-1">
                               <span className="text-[10px] text-gray-400">
-                                CTA1: {slide.cta1Text}
+                                CTA1: {slide.cta1_text}
                               </span>
                               <span className="text-[10px] text-gray-400">
-                                CTA2: {slide.cta2Text}
+                                CTA2: {slide.cta2_text}
                               </span>
                             </div>
                           </div>
                           <div className="flex gap-1 shrink-0">
                             <button
-                        onClick={() => {
-                          setEditItem(slide);
-                          setShowEditModal(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
-                        
+                              onClick={() => {
+                                setEditItem(slide);
+                                setShowEditModal(true);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
+
                               <EditIcon className="w-4 h-4" />
                             </button>
                             <button
-                        onClick={() => {
-                          setItemToDelete(slide);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded">
-                        
+                              onClick={() => {
+                                setItemToDelete(slide);
+                                setShowDeleteModal(true);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded">
+
                               <Trash2Icon className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
                       </div>
-                )}
+                    )}
                   </div>
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  disabled={isProcessing === 'save-generic'}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-70">
-                  
+                      onClick={handleSaveGeneric}
+                      disabled={isProcessing === 'save-generic'}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-70">
+
                       {isProcessing === 'save-generic' ?
-                  <>
+                        <>
                           <Loader2Icon className="w-4 h-4 animate-spin" />{' '}
                           Enregistrement...
                         </> :
 
-                  <>
+                        <>
                           <SaveIcon className="w-4 h-4" /> Enregistrer
                         </>
-                  }
+                      }
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Engagements Bar */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('engagements')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('engagements')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-globus-orange flex items-center justify-center">
                     <ShieldCheckIcon className="w-5 h-5 text-white" />
@@ -1973,62 +1402,62 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'engagements' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'engagements' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'engagements' &&
-            <div className="p-5 border-t border-gray-100 space-y-3">
+                <div className="p-5 border-t border-gray-100 space-y-3">
                   {engagementsData.map((eng) =>
-              <div
-                key={eng.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
-                
+                    <div
+                      key={eng.id}
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
+
                       <GripVerticalIcon className="w-5 h-5 text-gray-300 cursor-grab" />
                       <div className="flex-1">
                         <h4 className="font-montserrat font-bold text-sm text-gray-800">
                           {eng.title}
                         </h4>
                         <p className="text-xs text-gray-500">
-                          {eng.description}
+                          {eng.desc}
                         </p>
                       </div>
                       <span
-                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${eng.bgColor === 'blue' ? 'bg-blue-100 text-blue-700' : eng.bgColor === 'orange' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                  
-                        {eng.bgColor}
+                        className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${eng.bg_color === 'bg-globus-blue' ? 'bg-blue-100 text-blue-700' : eng.bg_color === 'bg-globus-orange' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+
+                        {eng.bg_color}
                       </span>
                       <button
-                  onClick={() => {
-                    setEditItem(eng);
-                    setShowEditModal(true);
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
-                  
+                        onClick={() => {
+                          setEditItem(eng);
+                          setShowEditModal(true);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
+
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
-              )}
+                  )}
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* About Section */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('about')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('about')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-globus-blue flex items-center justify-center">
                     <FileTextIcon className="w-5 h-5 text-white" />
@@ -2043,60 +1472,60 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'about' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'about' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'about' &&
-            <div className="p-5 border-t border-gray-100 space-y-4">
+                <div className="p-5 border-t border-gray-100 space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Paragraphe 1
                     </label>
                     <textarea
-                  defaultValue={aboutSectionData.paragraph1}
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-                
+                      value={aboutForm?.paragraphs?.[0] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [e.target.value, p?.paragraphs?.[1]||""]}))}
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Paragraphe 2
                     </label>
                     <textarea
-                  defaultValue={aboutSectionData.paragraph2}
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-                
+                      value={aboutForm?.paragraphs?.[1] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [p?.paragraphs?.[0]||"", e.target.value]}))}
+                      rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Badge
                     </label>
                     <input
-                  type="text"
-                  defaultValue={aboutSectionData.badgeText}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={aboutForm?.badge_value || ""} onChange={e => setAboutForm((p:any) => ({...p, badge_value: e.target.value}))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Points Clés
                     </label>
                     {aboutSectionData.bulletPoints.map((bp, i) =>
-                <div key={i} className="flex items-center gap-2 mb-2">
+                      <div key={i} className="flex items-center gap-2 mb-2">
                         <span className="text-xs text-gray-400 w-4">
                           {i + 1}.
                         </span>
                         <input
-                    type="text"
-                    defaultValue={bp}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                          type="text"
+                          defaultValue={bp}
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+
                         <button className="p-1 text-gray-400 hover:text-red-500">
                           <Trash2Icon className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                )}
+                    )}
                     <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                       <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                     </button>
@@ -2107,54 +1536,54 @@ export function ErpCMS() {
                     </label>
                     <div className="flex gap-2 flex-wrap">
                       {aboutSectionData.images.map((img, i) =>
-                  <div key={i} className="relative group">
+                        <div key={i} className="relative group">
                           <img
-                      src={img}
-                      alt=""
-                      className="w-20 h-14 object-cover rounded-lg border border-gray-200" />
-                    
+                            src={img}
+                            alt=""
+                            className="w-20 h-14 object-cover rounded-lg border border-gray-200" />
+
                           <button className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <XIcon className="w-3 h-3" />
                           </button>
                         </div>
-                  )}
+                      )}
                       <button
-                    onClick={() => {
-                      setMediaFilter('image');
-                      setShowMediaPicker(true);
-                      setMediaPickerCallback(
-                        () => (url: string) =>
-                        console.log('Selected:', url)
-                      );
-                    }}
-                    className="w-20 h-14 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-globus-orange hover:text-globus-orange transition-colors"
-                    title="Choisir depuis la médiathèque">
-                    
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(
+                            () => (url: string) =>
+                              console.log('Selected:', url)
+                          );
+                        }}
+                        className="w-20 h-14 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-globus-orange hover:text-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Methodology */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('methodology')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('methodology')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center">
                     <HashIcon className="w-5 h-5 text-white" />
@@ -2169,16 +1598,16 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'methodology' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'methodology' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'methodology' &&
-            <div className="p-5 border-t border-gray-100 space-y-3">
+                <div className="p-5 border-t border-gray-100 space-y-3">
                   {methodologyData.map((step) =>
-              <div
-                key={step.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
-                
+                    <div
+                      key={step.id}
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
+
                       <GripVerticalIcon className="w-5 h-5 text-gray-300 cursor-grab" />
                       <div className="w-8 h-8 rounded-full bg-globus-blue-dark flex items-center justify-center shrink-0">
                         <span className="text-white font-bold text-sm">
@@ -2186,50 +1615,50 @@ export function ErpCMS() {
                         </span>
                       </div>
                       <img
-                  src={step.image}
-                  alt=""
-                  className="w-16 h-12 object-cover rounded-lg shrink-0" />
-                
+                        src={step.image}
+                        alt=""
+                        className="w-16 h-12 object-cover rounded-lg shrink-0" />
+
                       <div className="flex-1 min-w-0">
                         <h4 className="font-montserrat font-bold text-sm text-gray-800">
                           {step.title}
                         </h4>
                         <p className="text-xs text-gray-500 truncate">
-                          {step.description}
+                          {step.desc}
                         </p>
                       </div>
                       <button
-                  onClick={() => {
-                    setEditItem(step);
-                    setShowEditModal(true);
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
-                  
+                        onClick={() => {
+                          setEditItem(step);
+                          setShowEditModal(true);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
+
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
-              )}
+                  )}
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Stats Bar */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('stats')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('stats')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center">
                     <StarIcon className="w-5 h-5 text-white" />
@@ -2244,51 +1673,51 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'stats' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'stats' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'stats' &&
-            <div className="p-5 border-t border-gray-100">
+                <div className="p-5 border-t border-gray-100">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {statsBarData.map((stat) =>
-                <div
-                  key={stat.id}
-                  className="border border-gray-200 rounded-lg p-4 text-center">
-                  
+                      <div
+                        key={stat.id}
+                        className="border border-gray-200 rounded-lg p-4 text-center">
+
                         <input
-                    type="text"
-                    defaultValue={stat.value}
-                    className="w-full text-center text-2xl font-montserrat font-bold text-globus-blue-dark border-b border-gray-200 pb-2 mb-2 focus:outline-none focus:border-globus-orange" />
-                  
+                          type="text"
+                          defaultValue={stat.value}
+                          className="w-full text-center text-2xl font-montserrat font-bold text-globus-blue-dark border-b border-gray-200 pb-2 mb-2 focus:outline-none focus:border-globus-orange" />
+
                         <input
-                    type="text"
-                    defaultValue={stat.label}
-                    className="w-full text-center text-sm text-gray-500 focus:outline-none focus:border-globus-orange" />
-                  
+                          type="text"
+                          defaultValue={stat.label}
+                          className="w-full text-center text-sm text-gray-500 focus:outline-none focus:border-globus-orange" />
+
                       </div>
-                )}
+                    )}
                   </div>
                   <div className="flex justify-end mt-4">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Guarantees */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('guarantees')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('guarantees')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">
                     <ShieldCheckIcon className="w-5 h-5 text-white" />
@@ -2303,55 +1732,55 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'guarantees' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'guarantees' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'guarantees' &&
-            <div className="p-5 border-t border-gray-100 space-y-3">
+                <div className="p-5 border-t border-gray-100 space-y-3">
                   {guaranteesData.map((g) =>
-              <div
-                key={g.id}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
-                
+                    <div
+                      key={g.id}
+                      className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-globus-blue/30 transition-colors">
+
                       <GripVerticalIcon className="w-5 h-5 text-gray-300 cursor-grab" />
                       <div className="flex-1">
                         <h4 className="font-montserrat font-bold text-sm text-gray-800">
                           {g.title}
                         </h4>
-                        <p className="text-xs text-gray-500">{g.description}</p>
+                        <p className="text-xs text-gray-500">{g.desc}</p>
                       </div>
                       <button
-                  onClick={() => {
-                    setEditItem(g);
-                    setShowEditModal(true);
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
-                  
+                        onClick={() => {
+                          setEditItem(g);
+                          setShowEditModal(true);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded">
+
                         <EditIcon className="w-4 h-4" />
                       </button>
                     </div>
-              )}
+                  )}
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Video Section */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('video')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('video')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center">
                     <VideoIcon className="w-5 h-5 text-white" />
@@ -2366,33 +1795,33 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'video' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'video' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'video' &&
-            <div className="p-5 border-t border-gray-100 space-y-4">
+                <div className="p-5 border-t border-gray-100 space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       URL YouTube (embed)
                     </label>
                     <div className="flex gap-2">
                       <input
-                    type="text"
-                    defaultValue={videoSectionData.youtubeUrl}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("video_section_youtube_url")} onChange={e => setSf("video_section_youtube_url", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       <button
-                    onClick={() => {
-                      setMediaFilter('video');
-                      setShowMediaPicker(true);
-                      setMediaPickerCallback(
-                        () => (url: string) =>
-                        console.log('Selected:', url)
-                      );
-                    }}
-                    className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
-                    title="Choisir depuis la médiathèque">
-                    
+                        onClick={() => {
+                          setMediaFilter('video');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(
+                            () => (url: string) =>
+                              console.log('Selected:', url)
+                          );
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
+                        title="Choisir depuis la médiathèque">
+
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
@@ -2403,43 +1832,43 @@ export function ErpCMS() {
                         Titre
                       </label>
                       <input
-                    type="text"
-                    defaultValue={videoSectionData.title}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("video_section_title")} onChange={e => setSf("video_section_title", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         Sous-titre
                       </label>
                       <input
-                    type="text"
-                    defaultValue={videoSectionData.subtitle}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("video_section_subtitle")} onChange={e => setSf("video_section_subtitle", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* Partners */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('partners')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('partners')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center">
                     <HandshakeIcon className="w-5 h-5 text-white" />
@@ -2454,17 +1883,17 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'partners' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'partners' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'partners' &&
-            <div className="p-5 border-t border-gray-100">
+                <div className="p-5 border-t border-gray-100">
                   <div className="flex flex-wrap gap-2 mb-4">
                     {partnersData.map((p) =>
-                <div
-                  key={p.id}
-                  className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full group">
-                  
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full group">
+
                         <span className="text-sm font-semibold text-gray-700">
                           {p.name}
                         </span>
@@ -2472,35 +1901,35 @@ export function ErpCMS() {
                           <XIcon className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                )}
+                    )}
                     <button
-                  onClick={() => showToast('Partenaire ajouté', 'info')}
-                  className="flex items-center gap-1 bg-globus-orange/10 text-globus-orange px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-globus-orange/20">
-                  
+                      onClick={() => showToast('Partenaire ajouté', 'info')}
+                      className="flex items-center gap-1 bg-globus-orange/10 text-globus-orange px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-globus-orange/20">
+
                       <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                     </button>
                   </div>
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
 
             {/* CTA Banner */}
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <button
-              onClick={() => toggleSection('cta')}
-              className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              
+                onClick={() => toggleSection('cta')}
+                className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-globus-orange flex items-center justify-center">
                     <TypeIcon className="w-5 h-5 text-white" />
@@ -2513,30 +1942,30 @@ export function ErpCMS() {
                   </div>
                 </div>
                 <ChevronDownIcon
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'cta' ? 'rotate-180' : ''}`} />
-              
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedSection === 'cta' ? 'rotate-180' : ''}`} />
+
               </button>
               {expandedSection === 'cta' &&
-            <div className="p-5 border-t border-gray-100 space-y-4">
+                <div className="p-5 border-t border-gray-100 space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Titre
                     </label>
                     <input
-                  type="text"
-                  defaultValue={ctaBannerData.title}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("cta_title")} onChange={e => setSf("cta_title", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Sous-titre
                     </label>
                     <input
-                  type="text"
-                  defaultValue={ctaBannerData.subtitle}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("cta_subtitle")} onChange={e => setSf("cta_subtitle", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -2544,88 +1973,88 @@ export function ErpCMS() {
                         Texte du bouton
                       </label>
                       <input
-                    type="text"
-                    defaultValue={ctaBannerData.buttonText}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("cta_text")} onChange={e => setSf("cta_text", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         Lien du bouton
                       </label>
                       <input
-                    type="text"
-                    defaultValue={ctaBannerData.buttonLink}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("cta_href")} onChange={e => setSf("cta_href", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                   <div className="flex justify-end">
                     <button
-                  onClick={handleSaveGeneric}
-                  className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                  
+                      onClick={handleSaveGeneric}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                       <SaveIcon className="w-4 h-4" /> Enregistrer
                     </button>
                   </div>
                 </div>
-            }
+              }
             </motion.div>
           </motion.div>
         }
 
         {/* TAB 7: PARAMÈTRES SITE */}
         {activeTab === 'settings' &&
-        <motion.div
-          key="settings"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="settings"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-            
+              variants={fadeUp}
+              className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+
               {[
-            {
-              id: 'header',
-              label: 'En-tête',
-              icon: LayoutDashboardIcon
-            },
-            {
-              id: 'footer',
-              label: 'Pied de page',
-              icon: FileTextIcon
-            },
-            {
-              id: 'seo',
-              label: 'SEO & Méta',
-              icon: SearchIcon
-            },
-            {
-              id: 'social',
-              label: 'Réseaux Sociaux',
-              icon: LinkIcon
-            }].
-            map((t) =>
-            <button
-              key={t.id}
-              onClick={() => setActiveSettingsTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSettingsTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-              
-                  <t.icon className="w-4 h-4" />
-                  {t.label}
-                </button>
-            )}
+                {
+                  id: 'header',
+                  label: 'En-tête',
+                  icon: LayoutDashboardIcon
+                },
+                {
+                  id: 'footer',
+                  label: 'Pied de page',
+                  icon: FileTextIcon
+                },
+                {
+                  id: 'seo',
+                  label: 'SEO & Méta',
+                  icon: SearchIcon
+                },
+                {
+                  id: 'social',
+                  label: 'Réseaux Sociaux',
+                  icon: LinkIcon
+                }].
+                map((t) =>
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveSettingsTab(t.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSettingsTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+
+                    <t.icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                )}
             </motion.div>
 
             {activeSettingsTab === 'header' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Paramètres de l'En-tête
                 </h3>
@@ -2636,30 +2065,30 @@ export function ErpCMS() {
                   <div className="flex gap-3 items-center">
                     <div className="flex-1 flex gap-2">
                       <input
-                    type="text"
-                    defaultValue={headerSettingsData.logoUrl}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("logo")} onChange={e => setSf("logo", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       <button
-                    onClick={() => {
-                      setMediaFilter('image');
-                      setShowMediaPicker(true);
-                      setMediaPickerCallback(
-                        () => (url: string) =>
-                        console.log('Selected:', url)
-                      );
-                    }}
-                    className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
-                    title="Choisir depuis la médiathèque">
-                    
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(
+                            () => (url: string) =>
+                              console.log('Selected:', url)
+                          );
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
                     <img
-                  src={headerSettingsData.logoUrl}
-                  alt="Logo"
-                  className="h-10 bg-white border rounded p-1" />
-                
+                      src={headerSettingsData.logoUrl}
+                      alt="Logo"
+                      className="h-10 bg-white border rounded p-1" />
+
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2668,48 +2097,48 @@ export function ErpCMS() {
                       Téléphone
                     </label>
                     <input
-                  type="text"
-                  defaultValue={headerSettingsData.phone}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("phone")} onChange={e => setSf("phone", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Email
                     </label>
                     <input
-                  type="text"
-                  defaultValue={headerSettingsData.email}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("email")} onChange={e => setSf("email", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Horaires
                     </label>
                     <input
-                  type="text"
-                  defaultValue={headerSettingsData.hours}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("top_bar_text")} onChange={e => setSf("top_bar_text", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSettingsTab === 'footer' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Paramètres du Pied de Page
                 </h3>
@@ -2718,10 +2147,10 @@ export function ErpCMS() {
                     Description entreprise
                   </label>
                   <textarea
-                defaultValue={footerSettingsData.description}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={sf("footer_description")} onChange={e => setSf("footer_description", e.target.value)}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -2729,58 +2158,58 @@ export function ErpCMS() {
                       Adresse
                     </label>
                     <input
-                  type="text"
-                  defaultValue={footerSettingsData.address}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("address")} onChange={e => setSf("address", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Téléphone
                     </label>
                     <input
-                  type="text"
-                  defaultValue={footerSettingsData.phone}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("phone")} onChange={e => setSf("phone", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Email
                     </label>
                     <input
-                  type="text"
-                  defaultValue={footerSettingsData.email}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("email")} onChange={e => setSf("email", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <input
-                type="checkbox"
-                defaultChecked={footerSettingsData.newsletterEnabled}
-                className="w-4 h-4 accent-globus-orange" />
-              
+                    type="checkbox"
+                    checked={true} onChange={() => {}}
+                    className="w-4 h-4 accent-globus-orange" />
+
                   <span className="text-sm font-semibold text-gray-700">
                     Activer le formulaire Newsletter
                   </span>
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSettingsTab === 'seo' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   SEO & Métadonnées
                 </h3>
@@ -2789,20 +2218,20 @@ export function ErpCMS() {
                     Meta Title
                   </label>
                   <input
-                type="text"
-                defaultValue={seoSettingsData.metaTitle}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={sf("meta_title") || ""} onChange={e => setSf("meta_title", e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Meta Description
                   </label>
                   <textarea
-                defaultValue={seoSettingsData.metaDescription}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={sf("meta_description") || ""} onChange={e => setSf("meta_description", e.target.value)}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -2810,144 +2239,144 @@ export function ErpCMS() {
                   </label>
                   <div className="flex gap-2">
                     <input
-                  type="text"
-                  defaultValue={seoSettingsData.ogImage}
-                  placeholder="https://..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("og_image") || ""} onChange={e => setSf("og_image", e.target.value)}
+                      placeholder="https://..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     <button
-                  onClick={() => {
-                    setMediaFilter('image');
-                    setShowMediaPicker(true);
-                    setMediaPickerCallback(
-                      () => (url: string) => console.log('Selected:', url)
-                    );
-                  }}
-                  className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
-                  title="Choisir depuis la médiathèque">
-                  
+                      onClick={() => {
+                        setMediaFilter('image');
+                        setShowMediaPicker(true);
+                        setMediaPickerCallback(
+                          () => (url: string) => console.log('Selected:', url)
+                        );
+                      }}
+                      className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
+                      title="Choisir depuis la médiathèque">
+
                       <FolderOpenIcon className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSettingsTab === 'social' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Réseaux Sociaux
                 </h3>
                 {[
-            {
-              icon: FacebookIcon,
-              label: 'Facebook',
-              value: footerSettingsData.facebook,
-              color: 'text-[#4267B2]'
-            },
-            {
-              icon: TwitterIcon,
-              label: 'Twitter / X',
-              value: footerSettingsData.twitter,
-              color: 'text-[#1DA1F2]'
-            },
-            {
-              icon: LinkedinIcon,
-              label: 'LinkedIn',
-              value: footerSettingsData.linkedin,
-              color: 'text-[#0077b5]'
-            },
-            {
-              icon: InstagramIcon,
-              label: 'Instagram',
-              value: footerSettingsData.instagram,
-              color: 'text-[#E4405F]'
-            }].
-            map((s, i) =>
-            <div key={i} className="flex items-center gap-3">
-                    <s.icon className={`w-6 h-6 ${s.color} shrink-0`} />
-                    <label className="w-24 text-sm font-semibold text-gray-700 shrink-0">
-                      {s.label}
-                    </label>
-                    <input
-                type="text"
-                defaultValue={s.value}
-                placeholder="https://..."
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
-                  </div>
-            )}
+                  {
+                    icon: FacebookIcon,
+                    label: 'Facebook',
+                    value: footerSettingsData.facebook,
+                    color: 'text-[#4267B2]'
+                  },
+                  {
+                    icon: TwitterIcon,
+                    label: 'Twitter / X',
+                    value: footerSettingsData.twitter,
+                    color: 'text-[#1DA1F2]'
+                  },
+                  {
+                    icon: LinkedinIcon,
+                    label: 'LinkedIn',
+                    value: footerSettingsData.linkedin,
+                    color: 'text-[#0077b5]'
+                  },
+                  {
+                    icon: InstagramIcon,
+                    label: 'Instagram',
+                    value: footerSettingsData.instagram,
+                    color: 'text-[#E4405F]'
+                  }].
+                  map((s, i) =>
+                    <div key={i} className="flex items-center gap-3">
+                      <s.icon className={`w-6 h-6 ${s.color} shrink-0`} />
+                      <label className="w-24 text-sm font-semibold text-gray-700 shrink-0">
+                        {s.label}
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={s.value}
+                        placeholder="https://..."
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
+                    </div>
+                  )}
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
           </motion.div>
         }
 
         {/* TAB 8: PAGES PUBLIQUES */}
         {activeTab === 'pages' &&
-        <motion.div
-          key="pages"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="pages"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-            
+              variants={fadeUp}
+              className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+
               {[
-            {
-              id: 'about',
-              label: 'Page À Propos'
-            },
-            {
-              id: 'contact',
-              label: 'Page Contact'
-            },
-            {
-              id: 'faqpage',
-              label: 'FAQ Complète'
-            },
-            {
-              id: 'helpcenter',
-              label: "Centre d'Aide"
-            }].
-            map((t) =>
-            <button
-              key={t.id}
-              onClick={() => setActivePagesTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activePagesTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-              
-                  {t.label}
-                </button>
-            )}
+                {
+                  id: 'about',
+                  label: 'Page À Propos'
+                },
+                {
+                  id: 'contact',
+                  label: 'Page Contact'
+                },
+                {
+                  id: 'faqpage',
+                  label: 'FAQ Complète'
+                },
+                {
+                  id: 'helpcenter',
+                  label: "Centre d'Aide"
+                }].
+                map((t) =>
+                  <button
+                    key={t.id}
+                    onClick={() => setActivePagesTab(t.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activePagesTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+
+                    {t.label}
+                  </button>
+                )}
             </motion.div>
 
             {activePagesTab === 'about' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Page À Propos
                 </h3>
@@ -2958,30 +2387,30 @@ export function ErpCMS() {
                   <div className="flex gap-3 items-center">
                     <div className="flex-1 flex gap-2">
                       <input
-                    type="text"
-                    defaultValue={aboutPageData.heroImage}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={aboutForm?.hero_image || ""} onChange={e => setAboutForm((p:any) => ({...p, hero_image: e.target.value}))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       <button
-                    onClick={() => {
-                      setMediaFilter('image');
-                      setShowMediaPicker(true);
-                      setMediaPickerCallback(
-                        () => (url: string) =>
-                        console.log('Selected:', url)
-                      );
-                    }}
-                    className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
-                    title="Choisir depuis la médiathèque">
-                    
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(
+                            () => (url: string) =>
+                              console.log('Selected:', url)
+                          );
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
                     <img
-                  src={aboutPageData.heroImage}
-                  alt=""
-                  className="h-12 rounded" />
-                
+                      src={aboutPageData.heroImage}
+                      alt=""
+                      className="h-12 rounded" />
+
                   </div>
                 </div>
                 <div>
@@ -2989,95 +2418,95 @@ export function ErpCMS() {
                     Titre
                   </label>
                   <input
-                type="text"
-                defaultValue={aboutPageData.historyTitle}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={aboutForm?.hero_title || ""} onChange={e => setAboutForm((p:any) => ({...p, hero_title: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Paragraphe 1
                   </label>
                   <textarea
-                defaultValue={aboutPageData.historyP1}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={aboutForm?.paragraphs?.[0] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [e.target.value, p?.paragraphs?.[1]||""]}))}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Paragraphe 2
                   </label>
                   <textarea
-                defaultValue={aboutPageData.historyP2}
-                rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={aboutForm?.paragraphs?.[1] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [p?.paragraphs?.[0]||"", e.target.value]}))}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-2">
                     Valeurs ({aboutPageData.values.length})
                   </label>
                   {aboutPageData.values.map((v, i) =>
-              <div
-                key={i}
-                className="flex gap-3 mb-3 p-3 border border-gray-200 rounded-lg">
-                
+                    <div
+                      key={i}
+                      className="flex gap-3 mb-3 p-3 border border-gray-200 rounded-lg">
+
                       <div className="flex-1">
                         <input
-                    type="text"
-                    defaultValue={v.title}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm mb-1 focus:outline-none focus:border-globus-blue font-semibold" />
-                  
+                          type="text"
+                          defaultValue={v.title}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm mb-1 focus:outline-none focus:border-globus-blue font-semibold" />
+
                         <input
-                    type="text"
-                    defaultValue={v.desc}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                          type="text"
+                          defaultValue={v.desc}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                       <button className="p-1.5 text-gray-400 hover:text-red-500 self-center">
                         <Trash2Icon className="w-4 h-4" />
                       </button>
                     </div>
-              )}
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-2">
                     Certifications ({aboutPageData.certifications.length})
                   </label>
                   {aboutPageData.certifications.map((c, i) =>
-              <div key={i} className="flex items-center gap-2 mb-2">
+                    <div key={i} className="flex items-center gap-2 mb-2">
                       <CheckCircle2Icon className="w-4 h-4 text-globus-orange shrink-0" />
                       <input
-                  type="text"
-                  defaultValue={c}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                        type="text"
+                        defaultValue={c}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+
                       <button className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </div>
-              )}
+                  )}
                   <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                     <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                   </button>
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activePagesTab === 'contact' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Page Contact
                 </h3>
@@ -3087,10 +2516,10 @@ export function ErpCMS() {
                       Adresse
                     </label>
                     <textarea
-                  defaultValue={contactPageData.address}
-                  rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-                
+                      value={sf("contact_address")} onChange={e => setSf("contact_address", e.target.value)}
+                      rows={2}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -3098,20 +2527,20 @@ export function ErpCMS() {
                         Tél. Standard
                       </label>
                       <input
-                    type="text"
-                    defaultValue={contactPageData.phoneStandard}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("contact_phone") || sf("phone")} onChange={e => setSf("contact_phone", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         WhatsApp
                       </label>
                       <input
-                    type="text"
-                    defaultValue={contactPageData.phoneWhatsApp}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={sf("contact_whatsapp")} onChange={e => setSf("contact_whatsapp", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                 </div>
@@ -3121,20 +2550,20 @@ export function ErpCMS() {
                       Email Contact
                     </label>
                     <input
-                  type="text"
-                  defaultValue={contactPageData.emailContact}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("contact_email")} onChange={e => setSf("contact_email", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Email Devis
                     </label>
                     <input
-                  type="text"
-                  defaultValue={contactPageData.emailDevis}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("email")} onChange={e => setSf("email", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3143,20 +2572,20 @@ export function ErpCMS() {
                       Horaires semaine
                     </label>
                     <input
-                  type="text"
-                  defaultValue={contactPageData.hoursWeekday}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("contact_hours")} onChange={e => setSf("contact_hours", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Horaires samedi
                     </label>
                     <input
-                  type="text"
-                  defaultValue={contactPageData.hoursSaturday}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={""} onChange={() => {}}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div>
@@ -3164,47 +2593,47 @@ export function ErpCMS() {
                     URL Google Maps (embed)
                   </label>
                   <input
-                type="text"
-                defaultValue={contactPageData.mapUrl}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={sf("contact_map_embed_url")} onChange={e => setSf("contact_map_embed_url", e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-2">
                     Options formulaire
                   </label>
                   {contactPageData.formSubjects.map((s, i) =>
-              <div key={i} className="flex items-center gap-2 mb-2">
+                    <div key={i} className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-gray-400 w-4">
                         {i + 1}.
                       </span>
                       <input
-                  type="text"
-                  defaultValue={s}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                        type="text"
+                        defaultValue={s}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+
                       <button className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </div>
-              )}
+                  )}
                   <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                     <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                   </button>
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activePagesTab === 'faqpage' &&
-          <motion.div variants={fadeUp} className="space-y-6">
+              <motion.div variants={fadeUp} className="space-y-6">
                 <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     FAQ Complète —{' '}
@@ -3212,17 +2641,17 @@ export function ErpCMS() {
                     questions
                   </h3>
                   <button
-                onClick={() => showToast('Catégorie ajoutée', 'info')}
-                className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={() => showToast('Catégorie ajoutée', 'info')}
+                    className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
+
                     <PlusIcon className="w-4 h-4" /> Catégorie
                   </button>
                 </div>
                 {faqPageData.map((cat) =>
-            <div
-              key={cat.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              
+                  <div
+                    key={cat.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="font-montserrat font-bold text-globus-blue-dark flex items-center gap-2">
                         <div className="w-2 h-5 bg-globus-orange rounded-full"></div>
@@ -3234,10 +2663,10 @@ export function ErpCMS() {
                     </div>
                     <div className="space-y-2">
                       {cat.items.map((item, idx) =>
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors group">
-                  
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors group">
+
                           <GripVerticalIcon className="w-4 h-4 text-gray-300 mt-1 cursor-grab" />
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm text-gray-800">
@@ -3256,18 +2685,18 @@ export function ErpCMS() {
                             </button>
                           </div>
                         </div>
-                )}
+                      )}
                     </div>
                   </div>
-            )}
+                )}
               </motion.div>
-          }
+            }
 
             {activePagesTab === 'helpcenter' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                   Centre d'Aide
                 </h3>
@@ -3277,20 +2706,20 @@ export function ErpCMS() {
                       Email Support
                     </label>
                     <input
-                  type="text"
-                  defaultValue={helpCenterData.supportEmail}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("contact_email")} onChange={e => setSf("contact_email", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Numéro WhatsApp
                     </label>
                     <input
-                  type="text"
-                  defaultValue={helpCenterData.whatsappNumber}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={sf("contact_whatsapp")} onChange={e => setSf("contact_whatsapp", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div>
@@ -3298,97 +2727,97 @@ export function ErpCMS() {
                     Description carte FAQ
                   </label>
                   <textarea
-                defaultValue={helpCenterData.faqDesc}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={"Trouvez des r\u00e9ponses imm\u00e9diates."} onChange={() => {}}
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Description carte WhatsApp
                   </label>
                   <textarea
-                defaultValue={helpCenterData.whatsappDesc}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={"Discutez en direct."} onChange={() => {}}
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Description carte Email
                   </label>
                   <textarea
-                defaultValue={helpCenterData.emailDesc}
-                rows={2}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    value={"R\u00e9ponse sous 24h."} onChange={() => {}}
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
           </motion.div>
         }
 
         {/* TAB 9: PAGES LÉGALES */}
         {activeTab === 'legal' &&
-        <motion.div
-          key="legal"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="legal"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-            
+              variants={fadeUp}
+              className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+
               {[
-            {
-              id: 'legalNotice',
-              label: 'Mentions Légales'
-            },
-            {
-              id: 'privacy',
-              label: 'Confidentialité'
-            },
-            {
-              id: 'terms',
-              label: 'Termes & Conditions'
-            },
-            {
-              id: 'cookies',
-              label: 'Cookies'
-            }].
-            map((t) =>
-            <button
-              key={t.id}
-              onClick={() => setActiveLegalTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeLegalTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-              
-                  {t.label}
-                </button>
-            )}
+                {
+                  id: 'legalNotice',
+                  label: 'Mentions Légales'
+                },
+                {
+                  id: 'privacy',
+                  label: 'Confidentialité'
+                },
+                {
+                  id: 'terms',
+                  label: 'Termes & Conditions'
+                },
+                {
+                  id: 'cookies',
+                  label: 'Cookies'
+                }].
+                map((t) =>
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveLegalTab(t.id)}
+                    className={`px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeLegalTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+
+                    {t.label}
+                  </button>
+                )}
             </motion.div>
 
             {activeLegalTab === 'legalNotice' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Mentions Légales
                   </h3>
                   <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.legalNotice.lastUpdated}
+                    MAJ: {legalPagesData.legalNotice.last_updated}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3397,40 +2826,40 @@ export function ErpCMS() {
                       Dénomination
                     </label>
                     <input
-                  type="text"
-                  defaultValue={legalPagesData.legalNotice.companyName}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={legalPages["legalNotice"]?.company_name || ""} readOnly
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Forme juridique
                     </label>
                     <input
-                  type="text"
-                  defaultValue={legalPagesData.legalNotice.legalForm}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={legalPages["legalNotice"]?.legal_form || ""} readOnly
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       RCCM
                     </label>
                     <input
-                  type="text"
-                  defaultValue={legalPagesData.legalNotice.rccm}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={legalPages["legalNotice"]?.rccm || ""} readOnly
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
                       Directeur
                     </label>
                     <input
-                  type="text"
-                  defaultValue={legalPagesData.legalNotice.director}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                
+                      type="text"
+                      value={legalPages["legalNotice"]?.director || ""} readOnly
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                 </div>
                 <div>
@@ -3438,20 +2867,20 @@ export function ErpCMS() {
                     Siège social
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.legalNotice.address}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["legalNotice"]?.address || ""} readOnly
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Contact
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.legalNotice.contact}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["legalNotice"]?.contact || ""} readOnly
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="border-t border-gray-100 pt-4">
                   <h4 className="font-montserrat font-bold text-sm text-gray-700 mb-3">
@@ -3463,20 +2892,20 @@ export function ErpCMS() {
                         Nom
                       </label>
                       <input
-                    type="text"
-                    defaultValue={legalPagesData.legalNotice.hostName}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={legalPages["legalNotice"]?.host_name || ""} readOnly
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         Adresse
                       </label>
                       <input
-                    type="text"
-                    defaultValue={legalPagesData.legalNotice.hostAddress}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        value={legalPages["legalNotice"]?.host_address || ""} readOnly
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                 </div>
@@ -3485,203 +2914,203 @@ export function ErpCMS() {
                     Contenu complémentaire
                   </label>
                   <textarea
-                rows={5}
-                defaultValue="L'ensemble de ce site relève de la législation internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
+                    rows={5}
+                    defaultValue="L'ensemble de ce site relève de la législation internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Date MAJ
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.legalNotice.lastUpdated}
-                className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["legalNotice"]?.last_updated || "-"} readOnly
+                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeLegalTab === 'privacy' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Politique de Confidentialité
                   </h3>
                   <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.privacyPolicy.lastUpdated}
+                    MAJ: {legalPagesData.privacyPolicy.last_updated}
                   </span>
                 </div>
                 {[
-            '1. Données collectées',
-            '2. Finalité du traitement',
-            '3. Base légale et durée',
-            '4. Droits des utilisateurs',
-            '5. Sécurité et Contact DPO'].
-            map((title, i) =>
-            <div key={i}>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      {title}
-                    </label>
-                    <textarea
-                rows={4}
-                defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
-                  </div>
-            )}
+                  '1. Données collectées',
+                  '2. Finalité du traitement',
+                  '3. Base légale et durée',
+                  '4. Droits des utilisateurs',
+                  '5. Sécurité et Contact DPO'].
+                  map((title, i) =>
+                    <div key={i}>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">
+                        {title}
+                      </label>
+                      <textarea
+                        rows={4}
+                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
+                    </div>
+                  )}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Date MAJ
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.privacyPolicy.lastUpdated}
-                className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["privacy"]?.last_updated || "-"} readOnly
+                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeLegalTab === 'terms' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Termes & Conditions
                   </h3>
                   <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.terms.lastUpdated}
+                    MAJ: {legalPagesData.terms.last_updated}
                   </span>
                 </div>
                 {[
-            '1. Objet',
-            '2. Acceptation des CGU',
-            '3. Services et Devis',
-            '4. Responsabilités',
-            '5. Droit applicable'].
-            map((title, i) =>
-            <div key={i}>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      {title}
-                    </label>
-                    <textarea
-                rows={4}
-                defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
-                  </div>
-            )}
+                  '1. Objet',
+                  '2. Acceptation des CGU',
+                  '3. Services et Devis',
+                  '4. Responsabilités',
+                  '5. Droit applicable'].
+                  map((title, i) =>
+                    <div key={i}>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">
+                        {title}
+                      </label>
+                      <textarea
+                        rows={4}
+                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
+                    </div>
+                  )}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Date MAJ
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.terms.lastUpdated}
-                className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["terms"]?.last_updated || "-"} readOnly
+                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeLegalTab === 'cookies' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Politique des Cookies
                   </h3>
                   <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.cookiePolicy.lastUpdated}
+                    MAJ: {legalPagesData.cookiePolicy.last_updated}
                   </span>
                 </div>
                 {[
-            "1. Qu'est-ce qu'un cookie ?",
-            '2. Cookies utilisés',
-            '3. Gestion des cookies',
-            '4. Durée de conservation'].
-            map((title, i) =>
-            <div key={i}>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      {title}
-                    </label>
-                    <textarea
-                rows={4}
-                defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-              
-                  </div>
-            )}
+                  "1. Qu'est-ce qu'un cookie ?",
+                  '2. Cookies utilisés',
+                  '3. Gestion des cookies',
+                  '4. Durée de conservation'].
+                  map((title, i) =>
+                    <div key={i}>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">
+                        {title}
+                      </label>
+                      <textarea
+                        rows={4}
+                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
+                    </div>
+                  )}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Date MAJ
                   </label>
                   <input
-                type="text"
-                defaultValue={legalPagesData.cookiePolicy.lastUpdated}
-                className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-              
+                    type="text"
+                    value={legalPages["cookies"]?.last_updated || "-"} readOnly
+                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="flex justify-end">
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
               </motion.div>
-          }
+            }
           </motion.div>
         }
 
         {/* TAB 10: MÉDIATHÈQUE */}
         {activeTab === 'media' &&
-        <motion.div
-          key="media"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="media"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            
+              variants={fadeUp}
+              className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 font-bold uppercase">
@@ -3737,55 +3166,51 @@ export function ErpCMS() {
             </motion.div>
 
             <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
+              variants={fadeUp}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
               <div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row gap-4 justify-between items-center">
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
                   <div className="relative w-full sm:w-64">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
-                    type="text"
-                    placeholder="Rechercher un fichier..."
-                    value={mediaSearch}
-                    onChange={(e) => setMediaSearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                      type="text"
+                      placeholder="Rechercher un fichier..."
+                      value={mediaSearch}
+                      onChange={(e) => setMediaSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
+
                   </div>
                   <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto overflow-x-auto hide-scrollbar">
                     {[
-                  {
-                    id: 'all',
-                    label: 'Tous'
-                  },
-                  {
-                    id: 'image',
-                    label: 'Images'
-                  },
-                  {
-                    id: 'video',
-                    label: 'Vidéos'
-                  }].
-                  map((f) =>
-                  <button
-                    key={f.id}
-                    onClick={() => setMediaFilter(f.id)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${mediaFilter === f.id ? 'bg-gray-100 text-globus-blue-dark shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                    
-                        {f.label}
-                      </button>
-                  )}
+                      {
+                        id: 'all',
+                        label: 'Tous'
+                      },
+                      {
+                        id: 'image',
+                        label: 'Images'
+                      },
+                      {
+                        id: 'video',
+                        label: 'Vidéos'
+                      }].
+                      map((f) =>
+                        <button
+                          key={f.id}
+                          onClick={() => setMediaFilter(f.id)}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${mediaFilter === f.id ? 'bg-gray-100 text-globus-blue-dark shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+
+                          {f.label}
+                        </button>
+                      )}
                   </div>
                 </div>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*,video/*,.pdf,.doc,.docx" />
                 <button
-                onClick={() =>
-                showToast(
-                  'Fonctionnalité en cours de développement',
-                  'info'
-                )
-                }
-                className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm whitespace-nowrap">
-                
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+
                   <PlusIcon className="w-4 h-4" /> Ajouter un fichier
                 </button>
               </div>
@@ -3805,41 +3230,41 @@ export function ErpCMS() {
               <div className="p-5">
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {mediaData.
-                filter(
-                  (m) => mediaFilter === 'all' || m.type === mediaFilter
-                ).
-                filter((m) =>
-                m.name.toLowerCase().includes(mediaSearch.toLowerCase())
-                ).
-                map((media) =>
-                <div
-                  key={media.id}
-                  className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-globus-blue/30 hover:shadow-md transition-all">
-                  
+                    filter(
+                      (m) => mediaFilter === 'all' || m.type === mediaFilter
+                    ).
+                    filter((m) =>
+                      m.name.toLowerCase().includes(mediaSearch.toLowerCase())
+                    ).
+                    map((media) =>
+                      <div
+                        key={media.id}
+                        className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-globus-blue/30 hover:shadow-md transition-all">
+
                         <div className="h-32 bg-gray-100 relative flex items-center justify-center overflow-hidden">
                           {media.type === 'image' ?
-                    <img
-                      src={media.url}
-                      alt={media.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> :
+                            <img
+                              src={media.url}
+                              alt={media.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> :
 
-                    media.type === 'video' ?
-                    <div className="w-full h-full flex items-center justify-center">
-                              <VideoIcon className="w-12 h-12 text-gray-400" />
-                            </div> :
+                            media.type === 'video' ?
+                              <div className="w-full h-full flex items-center justify-center">
+                                <VideoIcon className="w-12 h-12 text-gray-400" />
+                              </div> :
 
-                    <div className="w-full h-full flex items-center justify-center">
-                              <FileIcon className="w-12 h-12 text-gray-400" />
-                            </div>
-                    }
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FileIcon className="w-12 h-12 text-gray-400" />
+                              </div>
+                          }
                           <div className="absolute top-2 right-2">
                             <button
-                        onClick={() => {
-                          setEditItem(media);
-                          setShowEditModal(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
-                        
+                              onClick={() => {
+                                setEditItem(media);
+                                setShowEditModal(true);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
+
                               <EditIcon className="w-4 h-4" />
                             </button>
                           </div>
@@ -3860,15 +3285,15 @@ export function ErpCMS() {
                             </span>
                             <span className="text-xs text-gray-400">
                               {media.type === 'image' ?
-                        'Image' :
-                        media.type === 'video' ?
-                        'Vidéo' :
-                        'Document'}
+                                'Image' :
+                                media.type === 'video' ?
+                                  'Vidéo' :
+                                  'Document'}
                             </span>
                           </div>
                         </div>
                       </div>
-                )}
+                    )}
                 </div>
               </div>
             </motion.div>
@@ -3877,64 +3302,64 @@ export function ErpCMS() {
 
         {/* TAB 11: SEO & TRACKING */}
         {activeTab === 'seo' &&
-        <motion.div
-          key="seo"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={stagger}
-          className="space-y-6">
-          
+          <motion.div
+            key="seo"
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={stagger}
+            className="space-y-6">
+
             <motion.div
-            variants={fadeUp}
-            className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-            
+              variants={fadeUp}
+              className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+
               {[
-            {
-              id: 'pages',
-              label: 'SEO par Page',
-              icon: GlobeIcon
-            },
-            {
-              id: 'schema',
-              label: 'Schema.org',
-              icon: CodeIcon
-            },
-            {
-              id: 'tracking',
-              label: 'Tracking & Analytics',
-              icon: BarChart3Icon
-            },
-            {
-              id: 'sitemap',
-              label: 'Sitemap XML',
-              icon: MapIcon
-            }].
-            map((t) =>
-            <button
-              key={t.id}
-              onClick={() => setActiveSeoTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSeoTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-              
-                  <t.icon className="w-4 h-4" />
-                  {t.label}
-                </button>
-            )}
+                {
+                  id: 'pages',
+                  label: 'SEO par Page',
+                  icon: GlobeIcon
+                },
+                {
+                  id: 'schema',
+                  label: 'Schema.org',
+                  icon: CodeIcon
+                },
+                {
+                  id: 'tracking',
+                  label: 'Tracking & Analytics',
+                  icon: BarChart3Icon
+                },
+                {
+                  id: 'sitemap',
+                  label: 'Sitemap XML',
+                  icon: MapIcon
+                }].
+                map((t) =>
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveSeoTab(t.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSeoTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+
+                    <t.icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                )}
             </motion.div>
 
             {activeSeoTab === 'pages' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     SEO par Page
                   </h3>
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Tout Enregistrer
                   </button>
                 </div>
@@ -3950,11 +3375,19 @@ export function ErpCMS() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm font-opensans">
-                      {seoPageData.map((page) =>
-                  <tr
-                    key={page.id}
-                    className="hover:bg-gray-50 transition-colors">
-                    
+                      {[
+                        { id: '1', page: 'Accueil', path: '/', title: 'Globus BTP — Construction Clé en Main', status: 'Configuré' },
+                        { id: '2', page: 'À Propos', path: '/a-propos', title: 'Qui Sommes-Nous — Globus BTP', status: 'Configuré' },
+                        { id: '3', page: 'Services', path: '/services', title: 'Nos Services — Globus BTP', status: 'Configuré' },
+                        { id: '4', page: 'Projets', path: '/projets', title: 'Réalisations — Globus BTP', status: 'Configuré' },
+                        { id: '5', page: 'Blog', path: '/blog', title: 'Blog & Actualités — Globus BTP', status: 'Configuré' },
+                        { id: '6', page: 'Contact', path: '/contact', title: 'Contactez-Nous — Globus BTP', status: 'Configuré' },
+                        { id: '7', page: 'FAQ', path: '/faq', title: 'Questions Fréquentes — Globus BTP', status: 'Configuré' },
+                      ].map((page) =>
+                        <tr
+                          key={page.id}
+                          className="hover:bg-gray-50 transition-colors">
+
                           <td className="py-3 px-4 font-semibold text-gray-800">
                             {page.page}
                           </td>
@@ -3971,37 +3404,37 @@ export function ErpCMS() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <button
-                        onClick={() => {
-                          setEditItem(page);
-                          setShowEditModal(true);
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
-                        title="Modifier">
-                        
+                              onClick={() => {
+                                setEditItem(page);
+                                setShowEditModal(true);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
+                              title="Modifier">
+
                               <EditIcon className="w-4 h-4" />
                             </button>
                           </td>
                         </tr>
-                  )}
+                      )}
                     </tbody>
                   </table>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSeoTab === 'schema' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Données Structurées (Schema.org LocalBusiness)
                   </h3>
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Enregistrer
                   </button>
                 </div>
@@ -4012,20 +3445,20 @@ export function ErpCMS() {
                         Nom de l'entreprise
                       </label>
                       <input
-                    type="text"
-                    defaultValue="Globus Engineering SARL"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="Globus Engineering SARL"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         Description
                       </label>
                       <textarea
-                    rows={3}
-                    defaultValue="Votre partenaire de confiance pour la construction BTP clé en main au Cameroun."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-                  
+                        rows={3}
+                        defaultValue="Votre partenaire de confiance pour la construction BTP clé en main au Cameroun."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -4033,20 +3466,20 @@ export function ErpCMS() {
                           Téléphone
                         </label>
                         <input
-                      type="text"
-                      defaultValue="+33 1 23 45 67 89"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                    
+                          type="text"
+                          defaultValue="+33 1 23 45 67 89"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">
                           Email
                         </label>
                         <input
-                      type="text"
-                      defaultValue="contact@globus-btp.com"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                    
+                          type="text"
+                          defaultValue="contact@globus-btp.com"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                     </div>
                   </div>
@@ -4056,24 +3489,24 @@ export function ErpCMS() {
                         Adresse complète
                       </label>
                       <input
-                    type="text"
-                    defaultValue="123 Avenue de la Construction"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue mb-2"
-                    placeholder="Rue" />
-                  
+                        type="text"
+                        defaultValue="123 Avenue de la Construction"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue mb-2"
+                        placeholder="Rue" />
+
                       <div className="grid grid-cols-2 gap-2">
                         <input
-                      type="text"
-                      defaultValue="Douala"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
-                      placeholder="Ville" />
-                    
+                          type="text"
+                          defaultValue="Douala"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
+                          placeholder="Ville" />
+
                         <input
-                      type="text"
-                      defaultValue="CM"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
-                      placeholder="Pays (Code)" />
-                    
+                          type="text"
+                          defaultValue="CM"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
+                          placeholder="Pays (Code)" />
+
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -4082,20 +3515,20 @@ export function ErpCMS() {
                           Latitude
                         </label>
                         <input
-                      type="text"
-                      defaultValue="4.0511"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                    
+                          type="text"
+                          defaultValue="4.0511"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">
                           Longitude
                         </label>
                         <input
-                      type="text"
-                      defaultValue="9.7679"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                    
+                          type="text"
+                          defaultValue="9.7679"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                       </div>
                     </div>
                     <div>
@@ -4103,26 +3536,26 @@ export function ErpCMS() {
                         Horaires d'ouverture
                       </label>
                       <input
-                    type="text"
-                    defaultValue="Mo-Fr 08:00-18:00, Sa 09:00-13:00"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="Mo-Fr 08:00-18:00, Sa 09:00-13:00"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSeoTab === 'tracking' &&
-          <motion.div variants={fadeUp} className="space-y-4">
+              <motion.div variants={fadeUp} className="space-y-4">
                 <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Tracking & Analytics
                   </h3>
                   <button
-                onClick={handleSaveGeneric}
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={handleSaveGeneric}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <SaveIcon className="w-4 h-4" /> Tout Enregistrer
                   </button>
                 </div>
@@ -4143,10 +3576,10 @@ export function ErpCMS() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      defaultChecked />
-                    
+                          type="checkbox"
+                          className="sr-only peer"
+                          defaultChecked />
+
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
@@ -4155,10 +3588,10 @@ export function ErpCMS() {
                         Measurement ID
                       </label>
                       <input
-                    type="text"
-                    defaultValue="G-DEMO123456"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="G-DEMO123456"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                   {/* GTM */}
@@ -4177,10 +3610,10 @@ export function ErpCMS() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      defaultChecked />
-                    
+                          type="checkbox"
+                          className="sr-only peer"
+                          defaultChecked />
+
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
@@ -4189,10 +3622,10 @@ export function ErpCMS() {
                         Container ID
                       </label>
                       <input
-                    type="text"
-                    defaultValue="GTM-DEMO123"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="GTM-DEMO123"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                   {/* FB Pixel */}
@@ -4211,10 +3644,10 @@ export function ErpCMS() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      defaultChecked />
-                    
+                          type="checkbox"
+                          className="sr-only peer"
+                          defaultChecked />
+
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
@@ -4223,10 +3656,10 @@ export function ErpCMS() {
                         Pixel ID
                       </label>
                       <input
-                    type="text"
-                    defaultValue="123456789"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="123456789"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                   {/* TikTok Pixel */}
@@ -4245,10 +3678,10 @@ export function ErpCMS() {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      defaultChecked />
-                    
+                          type="checkbox"
+                          className="sr-only peer"
+                          defaultChecked />
+
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
@@ -4257,31 +3690,31 @@ export function ErpCMS() {
                         Pixel ID
                       </label>
                       <input
-                    type="text"
-                    defaultValue="DEMO123"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                  
+                        type="text"
+                        defaultValue="DEMO123"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+
                     </div>
                   </div>
                 </div>
               </motion.div>
-          }
+            }
 
             {activeSeoTab === 'sitemap' &&
-          <motion.div
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            
+              <motion.div
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+
                 <div className="flex justify-between items-center">
                   <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
                     Sitemap XML
                   </h3>
                   <button
-                onClick={() =>
-                showToast('Sitemap régénéré avec succès', 'success')
-                }
-                className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-                
+                    onClick={() =>
+                      showToast('Sitemap régénéré avec succès', 'success')
+                    }
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
+
                     <RefreshCwIcon className="w-4 h-4" /> Régénérer le Sitemap
                   </button>
                 </div>
@@ -4306,7 +3739,7 @@ export function ErpCMS() {
                   </pre>
                 </div>
               </motion.div>
-          }
+            }
           </motion.div>
         }
       </AnimatePresence>
@@ -4314,35 +3747,35 @@ export function ErpCMS() {
       {/* Media Picker Modal */}
       <AnimatePresence>
         {showMediaPicker &&
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95
-            }}
-            className="bg-white rounded-xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}>
-            
+              initial={{
+                opacity: 0,
+                scale: 0.95
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.95
+              }}
+              className="bg-white rounded-xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}>
+
               <div className="bg-globus-blue-dark p-4 flex justify-between items-center shrink-0">
                 <h3 className="text-white font-montserrat font-bold text-lg flex items-center gap-2">
                   <FolderOpenIcon className="w-5 h-5" /> Sélectionner depuis la
                   Médiathèque
                 </h3>
                 <button
-                onClick={() => {
-                  setShowMediaPicker(false);
-                  setMediaPickerCallback(null);
-                }}
-                className="text-white/70 hover:text-white transition-colors">
-                
+                  onClick={() => {
+                    setShowMediaPicker(false);
+                    setMediaPickerCallback(null);
+                  }}
+                  className="text-white/70 hover:text-white transition-colors">
+
                   <XIcon className="w-6 h-6" />
                 </button>
               </div>
@@ -4351,98 +3784,98 @@ export function ErpCMS() {
                 <div className="relative w-full sm:w-64">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  value={mediaSearch}
-                  onChange={(e) => setMediaSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
-                
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={mediaSearch}
+                    onChange={(e) => setMediaSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-globus-blue" />
+
                 </div>
                 <div className="flex bg-white border border-gray-200 p-1 rounded-lg w-full sm:w-auto overflow-x-auto hide-scrollbar">
                   {[
-                {
-                  id: 'all',
-                  label: 'Tous'
-                },
-                {
-                  id: 'image',
-                  label: 'Images'
-                },
-                {
-                  id: 'video',
-                  label: 'Vidéos'
-                }].
-                map((f) =>
-                <button
-                  key={f.id}
-                  onClick={() => setMediaFilter(f.id)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${mediaFilter === f.id ? 'bg-gray-100 text-globus-blue-dark' : 'text-gray-500 hover:text-gray-700'}`}>
-                  
-                      {f.label}
-                    </button>
-                )}
+                    {
+                      id: 'all',
+                      label: 'Tous'
+                    },
+                    {
+                      id: 'image',
+                      label: 'Images'
+                    },
+                    {
+                      id: 'video',
+                      label: 'Vidéos'
+                    }].
+                    map((f) =>
+                      <button
+                        key={f.id}
+                        onClick={() => setMediaFilter(f.id)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors ${mediaFilter === f.id ? 'bg-gray-100 text-globus-blue-dark' : 'text-gray-500 hover:text-gray-700'}`}>
+
+                        {f.label}
+                      </button>
+                    )}
                 </div>
               </div>
 
               <div className="p-4 overflow-y-auto flex-1 bg-gray-50/30">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {mediaData.
-                filter(
-                  (m) => mediaFilter === 'all' || m.type === mediaFilter
-                ).
-                filter((m) =>
-                m.name.toLowerCase().includes(mediaSearch.toLowerCase())
-                ).
-                map((media) =>
-                <div
-                  key={media.id}
-                  onClick={() => {
-                    if (mediaPickerCallback) {
-                      mediaPickerCallback(media.url);
-                    }
-                    setShowMediaPicker(false);
-                    setMediaPickerCallback(null);
-                    showToast('Fichier sélectionné avec succès');
-                  }}
-                  className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-globus-orange hover:ring-2 hover:ring-globus-orange/50 hover:shadow-md transition-all cursor-pointer">
-                  
+                    filter(
+                      (m) => mediaFilter === 'all' || m.type === mediaFilter
+                    ).
+                    filter((m) =>
+                      m.name.toLowerCase().includes(mediaSearch.toLowerCase())
+                    ).
+                    map((media) =>
+                      <div
+                        key={media.id}
+                        onClick={() => {
+                          if (mediaPickerCallback) {
+                            mediaPickerCallback(media.url);
+                          }
+                          setShowMediaPicker(false);
+                          setMediaPickerCallback(null);
+                          showToast('Fichier sélectionné avec succès');
+                        }}
+                        className="group border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-globus-orange hover:ring-2 hover:ring-globus-orange/50 hover:shadow-md transition-all cursor-pointer">
+
                         <div className="h-28 bg-gray-100 relative flex items-center justify-center overflow-hidden">
                           {media.type === 'image' ?
-                    <img
-                      src={media.thumbnail}
-                      alt={media.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> :
+                            <img
+                              src={media.thumbnail}
+                              alt={media.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> :
 
-                    media.type === 'video' ?
-                    <>
-                              <img
-                        src={media.thumbnail}
-                        alt={media.name}
-                        className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-300" />
-                      
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                  <PlayCircleIcon className="w-5 h-5 text-white" />
+                            media.type === 'video' ?
+                              <>
+                                <img
+                                  src={media.thumbnail}
+                                  alt={media.name}
+                                  className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-300" />
+
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-8 h-8 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                    <PlayCircleIcon className="w-5 h-5 text-white" />
+                                  </div>
                                 </div>
-                              </div>
-                            </> :
-                    media.type === 'document' ?
-                    <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-globus-orange transition-colors" /> :
+                              </> :
+                              media.type === 'document' ?
+                                <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-globus-orange transition-colors" /> :
 
-                    <MusicIcon className="w-10 h-10 text-gray-400 group-hover:text-globus-orange transition-colors" />
-                    }
+                                <MusicIcon className="w-10 h-10 text-gray-400 group-hover:text-globus-orange transition-colors" />
+                          }
                         </div>
                         <div className="p-2">
                           <h4
-                      className="text-[11px] font-bold text-gray-800 truncate mb-1"
-                      title={media.name}>
-                      
+                            className="text-[11px] font-bold text-gray-800 truncate mb-1"
+                            title={media.name}>
+
                             {media.name}
                           </h4>
                           <div className="flex items-center justify-between">
                             <span
-                        className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${media.type === 'image' ? 'bg-blue-100 text-blue-700' : media.type === 'video' ? 'bg-purple-100 text-purple-700' : media.type === 'document' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                        
+                              className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${media.type === 'image' ? 'bg-blue-100 text-blue-700' : media.type === 'video' ? 'bg-purple-100 text-purple-700' : media.type === 'document' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+
                               {media.type}
                             </span>
                             <span className="text-[9px] text-gray-500 font-medium">
@@ -4451,13 +3884,125 @@ export function ErpCMS() {
                           </div>
                         </div>
                       </div>
-                )}
+                    )}
                 </div>
               </div>
             </motion.div>
           </div>
         }
       </AnimatePresence>
+
+      {/* ── CRUD Modals ───────────────────────────────────────── */}
+      <ArticleModal
+        show={showArticleModal} onClose={() => { setShowArticleModal(false); setEditItem(null); setFormData({}); }}
+        formData={formData} setFormData={setFormData} onSave={handleSaveArticle}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-article'}
+        onPickMedia={() => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => (url: string) => {
+            setFormData((prev: any) => ({ ...prev, image: url }));
+          });
+        }} />
+
+      <ArticlePreviewModal
+        show={showArticlePreview}
+        onClose={() => { setShowArticlePreview(false); setPreviewArticle(null); }}
+        article={previewArticle} />
+
+      <ProjectModal
+        show={showProjectModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <ServiceModal
+        show={showServiceModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <TeamModal
+        show={showTeamModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <TestimonialModal
+        show={showTestimonialModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        onPickMedia={(callback) => {
+          setMediaFilter('image');
+          setShowMediaPicker(true);
+          setMediaPickerCallback(() => callback);
+        }} />
+
+      <PartnerModal
+        show={showPartnerModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <FaqItemModal
+        show={showFaqItemModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'}
+        categories={faqCategories.map(c => ({ id: c.id, name: c.name }))} />
+
+      <FaqCategoryModal
+        show={showFaqCategoryModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <HeroSlideModal
+        show={showHeroSlideModal} onClose={closeEntityModal}
+        formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
+        isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setItemToDelete(null); setDeleteEntityType(''); }}
+        onConfirm={handleDelete}
+        loading={isProcessing === 'delete'}
+        itemName={itemToDelete?.title || itemToDelete?.name || itemToDelete?.question || ''} />
+
+      <ContactMessageModal
+        show={showContactViewModal}
+        onClose={() => { setShowContactViewModal(false); setContactViewItem(null); setReplyText(''); }}
+        message={contactViewItem}
+        replyText={replyText}
+        setReplyText={setReplyText}
+        onMarkRead={async () => {
+          if (contactViewItem) {
+            await markContactRead(contactViewItem.id);
+            setContactViewItem((prev: any) => prev ? { ...prev, status: 'Lu', is_read: true } : prev);
+          }
+        }}
+        onReply={async () => {
+          if (contactViewItem && replyText.trim()) {
+            setIsReplying(true);
+            try {
+              await replyContact(contactViewItem.id, replyText);
+              setContactViewItem((prev: any) => prev ? { ...prev, status: 'Répondu', replied: true, is_read: true } : prev);
+              setReplyText('');
+            } catch (e) { console.error('Reply failed:', e); }
+            setIsReplying(false);
+          }
+        }}
+        isReplying={isReplying} />
+
     </div>);
 
 }

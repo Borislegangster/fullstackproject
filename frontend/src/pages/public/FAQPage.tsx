@@ -118,7 +118,7 @@ export function FAQPage() {
           <div key={catIdx}>
                 <h2 className="font-montserrat font-bold text-2xl text-globus-blue-dark mb-6 flex items-center gap-3">
                   <div className="w-2 h-6 bg-globus-orange rounded-full"></div>
-                  {category.category}
+                  {category.name}
                 </h2>
                 <div className="space-y-4">
                   {category.items.map((item, itemIdx) => {
