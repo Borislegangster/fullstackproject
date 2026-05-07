@@ -394,6 +394,81 @@ async def submit_contact(data: ContactFormIn, db: AsyncSession = Depends(get_db)
         "subject": data.subject, "message": data.message,
         "project_type": data.projectType or "",
     })
+
+    # Emails notification (Admin + Visiteur) via SMTP
+    import smtplib, os
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    smtp_host = os.getenv("SMTP_HOST", "")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER", "")
+    smtp_pass = os.getenv("SMTP_PASS", "")
+    from_email = os.getenv("SMTP_FROM", smtp_user or "contact@globus-btp.com")
+    admin_email = os.getenv("ADMIN_EMAIL", from_email)
+
+    if smtp_host and smtp_user:
+        try:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+
+                # 1. Email to Admin
+                if admin_email:
+                    msg_admin = MIMEMultipart("alternative")
+                    msg_admin["Subject"] = f"Nouveau message de contact: {data.subject or 'Demande'}"
+                    msg_admin["From"] = f"Site Web Globus <{from_email}>"
+                    msg_admin["To"] = admin_email
+                    msg_admin["Reply-To"] = data.email
+
+                    html_admin = f"""
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                      <div style="background:#1e3a5f;padding:20px;text-align:center;">
+                        <h2 style="color:#fff;margin:0;">Nouveau Message de Contact</h2>
+                      </div>
+                      <div style="padding:24px;background:#fff;border:1px solid #eee;">
+                        <p><strong>Nom:</strong> {data.name}</p>
+                        <p><strong>Email:</strong> {data.email}</p>
+                        <p><strong>Téléphone:</strong> {data.phone}</p>
+                        <p><strong>Sujet:</strong> {data.subject}</p>
+                        <div style="background:#f8f9fa;border-left:4px solid #e8750a;padding:16px;margin:16px 0;border-radius:4px;white-space:pre-wrap;">
+                          {data.message}
+                        </div>
+                      </div>
+                    </div>
+                    """
+                    msg_admin.attach(MIMEText(html_admin, "html"))
+                    server.sendmail(from_email, admin_email, msg_admin.as_string())
+
+                # 2. Confirmation Email to Visitor
+                msg_visitor = MIMEMultipart("alternative")
+                msg_visitor["Subject"] = "Confirmation de réception de votre message"
+                msg_visitor["From"] = f"Globus Engineering <{from_email}>"
+                msg_visitor["To"] = data.email
+
+                html_visitor = f"""
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <div style="background:#1e3a5f;padding:20px;text-align:center;">
+                    <h2 style="color:#fff;margin:0;">Globus Engineering</h2>
+                  </div>
+                  <div style="padding:24px;background:#fff;border:1px solid #eee;">
+                    <p>Bonjour {data.name},</p>
+                    <p>Nous avons bien reçu votre message concernant <strong>"{data.subject}"</strong>.</p>
+                    <p>Notre équipe commerciale l'examinera dans les plus brefs délais et vous répondra très rapidement.</p>
+                    <p>Merci pour votre confiance,</p>
+                    <p><strong>L'équipe Globus Engineering</strong></p>
+                  </div>
+                  <div style="background:#f1f5f9;padding:12px;text-align:center;font-size:12px;color:#64748b;">
+                    Ceci est un e-mail automatique, veuillez ne pas y répondre directement.
+                  </div>
+                </div>
+                """
+                msg_visitor.attach(MIMEText(html_visitor, "html"))
+                server.sendmail(from_email, data.email, msg_visitor.as_string())
+
+        except Exception as e:
+            print(f"[WARN] Email send failed: {e}")
+
     return FormResponse(success=True, message="Message envoyé avec succès !")
 
 

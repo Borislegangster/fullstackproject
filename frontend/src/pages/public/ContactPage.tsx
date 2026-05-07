@@ -6,7 +6,8 @@ import {
   MailIcon,
   ClockIcon,
   SendIcon,
-  MessageCircleIcon } from
+  MessageCircleIcon,
+  CheckCircleIcon } from
 'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
