@@ -182,8 +182,8 @@ export const mockServices: ServiceItem[] = [
   'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80']
-
+  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+  slug: 'construction-batiments'
 },
 {
   title: 'Conception Architecturale',
@@ -194,8 +194,8 @@ export const mockServices: ServiceItem[] = [
   'https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1574958269340-fa927503f3dd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80']
-
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+  slug: 'conception-architecturale'
 },
 {
   title: 'Génie Civil & Rénovation',
@@ -206,8 +206,8 @@ export const mockServices: ServiceItem[] = [
   'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1504307651254-35680f356dfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1582063289852-62e3ba2747f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1590725121839-892b458a74fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80']
-
+  'https://images.unsplash.com/photo-1590725121839-892b458a74fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+  slug: 'genie-civil-renovation'
 }];
 
 

@@ -98,6 +98,7 @@ async def get_services(db: AsyncSession = Depends(get_db)):
         ServiceItemOut(
             title=s.title, subtitle=s.subtitle, desc=s.desc,
             iconKey=s.icon_key, images=s.images or [],
+            slug=s.slug,
         )
         for s in services
     ]

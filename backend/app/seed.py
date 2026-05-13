@@ -45,6 +45,18 @@ async def seed():
             contact_whatsapp="+33 6 12 34 56 78",
             contact_map_embed_url="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1m3!1d2624.9916256937595!2d2.292292615509614!3d48.85837007928746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e66e2964e34e2d%3A0x8ddca9ee380ef7e0!2sTour%20Eiffel!5e0!3m2!1sfr!2sfr!4v1647874587301!5m2!1sfr!2sfr",
             contact_hours="Lundi - Vendredi : 08:00 - 18:00 | Samedi : 09:00 - 13:00",
+            seo_pages=[
+                {"page":"Accueil","path":"/","title":"Globus BTP — Construction Clé en Main","description":"Globus Engineering SARL, votre partenaire pour la construction clé en main au Cameroun.","og_image":"","keywords":"BTP, construction, clé en main, Cameroun"},
+                {"page":"À Propos","path":"/a-propos","title":"Qui Sommes-Nous — Globus BTP","description":"Découvrez l'histoire et les valeurs de Globus Engineering.","og_image":"","keywords":"à propos, histoire, Globus Engineering"},
+                {"page":"Services","path":"/services","title":"Nos Services — Globus BTP","description":"Construction résidentielle, commerciale, génie civil et rénovation.","og_image":"","keywords":"services, construction, rénovation, génie civil"},
+                {"page":"Projets","path":"/projets","title":"Réalisations — Globus BTP","description":"Découvrez nos projets livrés et en cours.","og_image":"","keywords":"projets, réalisations, portfolio"},
+                {"page":"Blog","path":"/blog","title":"Blog & Actualités — Globus BTP","description":"Actualités, conseils et tendances du BTP.","og_image":"","keywords":"blog, actualités, BTP"},
+                {"page":"Contact","path":"/contact","title":"Contactez-Nous — Globus BTP","description":"Demandez un devis gratuit ou contactez notre équipe.","og_image":"","keywords":"contact, devis, Globus"},
+                {"page":"FAQ","path":"/faq","title":"Questions Fréquentes — Globus BTP","description":"Trouvez des réponses à vos questions sur nos services.","og_image":"","keywords":"FAQ, questions, aide"},
+            ],
+            schema_org={"name":"Globus Engineering SARL","description":"Votre partenaire de confiance pour la construction BTP clé en main au Cameroun.","phone":"+33 1 23 45 67 89","email":"contact@globus-btp.com","street":"123 Avenue de la Construction","city":"Douala","country":"CM","lat":"4.0511","lng":"9.7679","openingHours":"Mo-Fr 08:00-18:00, Sa 09:00-13:00"},
+            tracking={"ga_enabled":True,"ga_id":"G-DEMO123456","gtm_enabled":True,"gtm_id":"GTM-DEMO123","fb_enabled":True,"fb_id":"123456789","tiktok_enabled":False,"tiktok_id":""},
+            sitemap_config={"base_url":"https://www.globus-btp.com"},
         ))
 
         # ── Hero Slides ───────────────────────────────────────

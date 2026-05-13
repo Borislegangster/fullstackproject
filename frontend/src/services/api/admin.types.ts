@@ -198,6 +198,11 @@ export interface AdminSiteSettings {
   contact_whatsapp: string;
   contact_map_embed_url: string;
   contact_hours: string;
+  // SEO & Tracking
+  seo_pages: Array<{ page: string; path: string; title: string; description: string; og_image: string; keywords: string }>;
+  schema_org: Record<string, string>;
+  tracking: Record<string, any>;
+  sitemap_config: Record<string, any>;
 }
 
 // ── About Content (singleton) ────────────────────────────────
@@ -230,15 +235,6 @@ export interface AdminLegalPage {
   title: string;
   last_updated: string;
   sections: Array<{ title: string; content: string }>;
-  // Optional fields for mentions légales
-  company_name?: string;
-  legal_form?: string;
-  rccm?: string;
-  director?: string;
-  address?: string;
-  contact?: string;
-  host_name?: string;
-  host_address?: string;
 }
 
 // ── Contact Submissions ──────────────────────────────────────

@@ -72,6 +72,7 @@ class ServiceItemOut(BaseModel):
     desc: str
     iconKey: str
     images: list[str]
+    slug: str
 
 
 class ServiceDetailOut(BaseModel):

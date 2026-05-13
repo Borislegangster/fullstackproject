@@ -4,7 +4,8 @@ import {
   ArticleModal, ArticlePreviewModal, ProjectModal, ServiceModal, TeamModal,
   TestimonialModal, PartnerModal, FaqItemModal, FaqCategoryModal,
   HeroSlideModal, DeleteConfirmModal, ContactMessageModal,
-  EngagementModal, MethodologyStepModal, GuaranteeModal, StatModal
+  EngagementModal, MethodologyStepModal, GuaranteeModal, StatModal,
+  YouTubeImportModal
 } from './ErpCMSModals';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -198,15 +199,10 @@ export function ErpCMS() {
   const contactPageData = { address: s.contact_address || '', phoneStandard: s.contact_phone || '', phoneWhatsApp: s.contact_whatsapp || '', emailContact: s.contact_email || '', emailDevis: s.email || '', hoursWeekday: s.contact_hours || '', hoursSaturday: '', mapUrl: s.contact_map_embed_url || '', formSubjects: ['Demande de devis', 'Renseignement général', 'Candidature / Emploi', 'Autre demande'] };
   const faqPageData = faqCategories.map(cat => ({
     id: cat.id, category: cat.name,
-    items: faqItems.filter(item => item.category_id === cat.id).map(item => ({ q: item.question, a: item.answer })),
+    items: faqItems.filter(item => item.category_id === cat.id).map(item => ({ id: item.id, q: item.question, a: item.answer, category_id: item.category_id, sort_order: item.sort_order })),
   }));
   const helpCenterData = { supportEmail: s.contact_email || '', whatsappNumber: s.contact_whatsapp || '', faqDesc: 'Trouvez des réponses immédiates.', whatsappDesc: 'Discutez en direct.', emailDesc: 'Réponse sous 24h.' };
-  const legalPagesData = {
-    legalNotice: legalPages['legalNotice'] || { lastUpdated: '-', companyName: '', legalForm: '', rccm: '', address: '', director: '', contact: '', hostName: '', hostAddress: '' } as any,
-    privacyPolicy: legalPages['privacy'] || { lastUpdated: '-', sections: 5 } as any,
-    terms: legalPages['terms'] || { lastUpdated: '-', sections: 5 } as any,
-    cookiePolicy: legalPages['cookies'] || { lastUpdated: '-', sections: 4 } as any,
-  };
+
 
   // ── Local UI state ────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('blog');
@@ -259,6 +255,7 @@ export function ErpCMS() {
   const [showMethodologyModal, setShowMethodologyModal] = useState(false);
   const [showGuaranteeModal, setShowGuaranteeModal] = useState(false);
   const [showStatModal, setShowStatModal] = useState(false);
+  const [showYouTubeModal, setShowYouTubeModal] = useState(false);
 
   // Contact message modal
   const [showContactViewModal, setShowContactViewModal] = useState(false);
@@ -269,8 +266,16 @@ export function ErpCMS() {
   // Settings form state — initialized from siteSettings, synced on save
   const [settingsForm, setSettingsForm] = useState<any>({});
   const [aboutForm, setAboutForm] = useState<any>({});
+  // Legal form state — keyed by tab id (legalNotice, privacy, terms, cookies)
+  const [legalForms, setLegalForms] = useState<Record<string, { title: string; last_updated: string; sections: Array<{ title: string; content: string }> }>>({
+    legalNotice: { title: '', last_updated: '', sections: [] },
+    privacy: { title: '', last_updated: '', sections: [] },
+    terms: { title: '', last_updated: '', sections: [] },
+    cookies: { title: '', last_updated: '', sections: [] },
+  });
   const sfInit = useRef(false);
   const afInit = useRef(false);
+  const lfInit = useRef(false);
   // Sync settings form when data loads
   if (siteSettings && !sfInit.current) {
     sfInit.current = true;
@@ -280,8 +285,47 @@ export function ErpCMS() {
     afInit.current = true;
     setAboutForm({ ...aboutContent });
   }
+  // Sync legal forms when data loads
+  if (Object.keys(legalPages).length > 0 && !lfInit.current) {
+    lfInit.current = true;
+    const forms: any = {};
+    for (const [key, page] of Object.entries(legalPages)) {
+      forms[key] = {
+        title: page.title || '',
+        last_updated: page.last_updated || '',
+        sections: (page.sections || []).map((s: any) => ({ title: s.title || '', content: s.content || '' })),
+      };
+    }
+    setLegalForms(prev => ({ ...prev, ...forms }));
+  }
   const sf = (k: string) => settingsForm[k] ?? '';
   const setSf = (k: string, v: any) => setSettingsForm((p: any) => ({ ...p, [k]: v }));
+
+  // Legal form helpers
+  const setLegalSection = (tabKey: string, sectionIndex: number, field: 'title' | 'content', value: string) => {
+    setLegalForms(prev => {
+      const form = { ...prev[tabKey] };
+      const sections = [...form.sections];
+      sections[sectionIndex] = { ...sections[sectionIndex], [field]: value };
+      return { ...prev, [tabKey]: { ...form, sections } };
+    });
+  };
+  const setLegalField = (tabKey: string, field: string, value: string) => {
+    setLegalForms(prev => ({ ...prev, [tabKey]: { ...prev[tabKey], [field]: value } }));
+  };
+  const addLegalSection = (tabKey: string) => {
+    setLegalForms(prev => {
+      const form = { ...prev[tabKey] };
+      return { ...prev, [tabKey]: { ...form, sections: [...form.sections, { title: '', content: '' }] } };
+    });
+  };
+  const removeLegalSection = (tabKey: string, index: number) => {
+    setLegalForms(prev => {
+      const form = { ...prev[tabKey] };
+      const sections = form.sections.filter((_: any, i: number) => i !== index);
+      return { ...prev, [tabKey]: { ...form, sections } };
+    });
+  };
 
   const toggleSection = (id: string) =>
     setExpandedSection(expandedSection === id ? null : id);
@@ -319,6 +363,75 @@ export function ErpCMS() {
       showToast('Modifications "À Propos" enregistrées avec succès');
     } catch {
       showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
+  };
+
+  // Slug mapping for legal tabs
+  const legalSlugMap: Record<string, string> = {
+    legalNotice: 'mentions-legales',
+    privacy: 'politique-de-confidentialite',
+    terms: 'termes-et-conditions',
+    cookies: 'cookies',
+  };
+
+  const handleSaveLegal = async (tabKey: string) => {
+    setIsProcessing(`save-legal-${tabKey}`);
+    try {
+      const slug = legalSlugMap[tabKey];
+      const form = legalForms[tabKey];
+      // Auto-update the last_updated date
+      const now = new Date();
+      const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+      const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+      const payload = {
+        title: form.title,
+        last_updated: dateStr,
+        sections: form.sections,
+      };
+      await updateLegal(slug, tabKey, payload);
+      // Update local form with new date
+      setLegalForms(prev => ({ ...prev, [tabKey]: { ...prev[tabKey], last_updated: dateStr } }));
+      showToast('Page légale enregistrée avec succès');
+    } catch {
+      showToast('Erreur lors de la sauvegarde', 'error');
+    }
+    setIsProcessing(null);
+  };
+
+  // SEO helpers
+  const seoPages = (settingsForm.seo_pages || []) as Array<{ page: string; path: string; title: string; description: string; og_image: string; keywords: string }>;
+  const schemaOrg = (settingsForm.schema_org || {}) as Record<string, string>;
+  const trackingData = (settingsForm.tracking || {}) as Record<string, any>;
+  const sitemapCfg = (settingsForm.sitemap_config || {}) as Record<string, any>;
+
+  const setSeoPage = (index: number, field: string, value: string) => {
+    const pages = [...seoPages];
+    pages[index] = { ...pages[index], [field]: value };
+    setSf('seo_pages', pages);
+  };
+  const setSchemaOrg = (field: string, value: string) => {
+    setSf('schema_org', { ...schemaOrg, [field]: value });
+  };
+  const setTracking = (field: string, value: any) => {
+    setSf('tracking', { ...trackingData, [field]: value });
+  };
+  const setSitemapCfg = (field: string, value: any) => {
+    setSf('sitemap_config', { ...sitemapCfg, [field]: value });
+  };
+
+  const handleSaveSeo = async (section?: string) => {
+    setIsProcessing('save-seo');
+    try {
+      await updateSettings({
+        seo_pages: settingsForm.seo_pages,
+        schema_org: settingsForm.schema_org,
+        tracking: settingsForm.tracking,
+        sitemap_config: settingsForm.sitemap_config,
+      });
+      showToast(section ? `${section} enregistré avec succès` : 'SEO enregistré avec succès');
+    } catch {
+      showToast('Erreur lors de la sauvegarde SEO', 'error');
     }
     setIsProcessing(null);
   };
@@ -2223,10 +2336,7 @@ export function ErpCMS() {
                         onClick={() => {
                           setMediaFilter('image');
                           setShowMediaPicker(true);
-                          setMediaPickerCallback(
-                            () => (url: string) =>
-                              console.log('Selected:', url)
-                          );
+                          setMediaPickerCallback(() => (url: string) => setSf("logo", url));
                         }}
                         className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
                         title="Choisir depuis la médiathèque">
@@ -2234,12 +2344,32 @@ export function ErpCMS() {
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
-                    <img
-                      src={headerSettingsData.logoUrl}
-                      alt="Logo"
-                      className="h-10 bg-white border rounded p-1" />
-
+                    {sf("logo") && (
+                      <img
+                        src={sf("logo")}
+                        alt="Logo"
+                        className="h-10 bg-white border rounded p-1" />
+                    )}
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Nom de l'entreprise
+                  </label>
+                  <input
+                    type="text"
+                    value={sf("company_name")} onChange={e => setSf("company_name", e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    URL WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={sf("whatsapp_url")} onChange={e => setSf("whatsapp_url", e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
+                    placeholder="https://wa.me/..." />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -2294,13 +2424,38 @@ export function ErpCMS() {
                 </h3>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Logo Pied de Page (URL)
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <div className="flex-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={sf("logo")} onChange={e => setSf("logo", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                      <button
+                        onClick={() => {
+                          setMediaFilter('image');
+                          setShowMediaPicker(true);
+                          setMediaPickerCallback(() => (url: string) => setSf("logo", url));
+                        }}
+                        className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
+                        title="Choisir depuis la médiathèque">
+                        <FolderOpenIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                    {sf("logo") && (
+                      <img src={sf("logo")} alt="Logo footer" className="h-10 bg-white border rounded p-1" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
                     Description entreprise
                   </label>
                   <textarea
                     value={sf("footer_description")} onChange={e => setSf("footer_description", e.target.value)}
                     rows={3}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -2311,7 +2466,6 @@ export function ErpCMS() {
                       type="text"
                       value={sf("address")} onChange={e => setSf("address", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -2321,7 +2475,6 @@ export function ErpCMS() {
                       type="text"
                       value={sf("phone")} onChange={e => setSf("phone", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -2331,15 +2484,23 @@ export function ErpCMS() {
                       type="text"
                       value={sf("email")} onChange={e => setSf("email", e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    URL WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={sf("whatsapp_url")} onChange={e => setSf("whatsapp_url", e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
+                    placeholder="https://wa.me/..." />
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <input
                     type="checkbox"
                     checked={true} onChange={() => {}}
                     className="w-4 h-4 accent-globus-orange" />
-
                   <span className="text-sm font-semibold text-gray-700">
                     Activer le formulaire Newsletter
                   </span>
@@ -2398,9 +2559,7 @@ export function ErpCMS() {
                       onClick={() => {
                         setMediaFilter('image');
                         setShowMediaPicker(true);
-                        setMediaPickerCallback(
-                          () => (url: string) => console.log('Selected:', url)
-                        );
+                        setMediaPickerCallback(() => (url: string) => setSf("og_image", url));
                       }}
                       className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
                       title="Choisir depuis la médiathèque">
@@ -2408,6 +2567,11 @@ export function ErpCMS() {
                       <FolderOpenIcon className="w-5 h-5" />
                     </button>
                   </div>
+                  {sf("og_image") && (
+                    <div className="mt-2">
+                      <img src={sf("og_image")} alt="OG Image" className="h-20 rounded border border-gray-200 object-cover" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end">
                   <button
@@ -2432,25 +2596,25 @@ export function ErpCMS() {
                   {
                     icon: FacebookIcon,
                     label: 'Facebook',
-                    value: footerSettingsData.facebook,
+                    key: 'facebook',
                     color: 'text-[#4267B2]'
                   },
                   {
                     icon: TwitterIcon,
                     label: 'Twitter / X',
-                    value: footerSettingsData.twitter,
+                    key: 'twitter',
                     color: 'text-[#1DA1F2]'
                   },
                   {
                     icon: LinkedinIcon,
                     label: 'LinkedIn',
-                    value: footerSettingsData.linkedin,
+                    key: 'linkedin',
                     color: 'text-[#0077b5]'
                   },
                   {
                     icon: InstagramIcon,
                     label: 'Instagram',
-                    value: footerSettingsData.instagram,
+                    key: 'instagram',
                     color: 'text-[#E4405F]'
                   }].
                   map((s, i) =>
@@ -2461,7 +2625,8 @@ export function ErpCMS() {
                       </label>
                       <input
                         type="text"
-                        defaultValue={s.value}
+                        value={(settingsForm.social_links || {})[s.key] || ''}
+                        onChange={e => setSf('social_links', { ...(settingsForm.social_links || {}), [s.key]: e.target.value })}
                         placeholder="https://..."
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
 
@@ -2545,22 +2710,16 @@ export function ErpCMS() {
                         onClick={() => {
                           setMediaFilter('image');
                           setShowMediaPicker(true);
-                          setMediaPickerCallback(
-                            () => (url: string) =>
-                              console.log('Selected:', url)
-                          );
+                          setMediaPickerCallback(() => (url: string) => setAboutForm((p:any) => ({...p, hero_image: url})));
                         }}
                         className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors"
                         title="Choisir depuis la médiathèque">
-
                         <FolderOpenIcon className="w-5 h-5" />
                       </button>
                     </div>
-                    <img
-                      src={aboutPageData.heroImage}
-                      alt=""
-                      className="h-12 rounded" />
-
+                    {aboutForm?.hero_image && (
+                      <img src={aboutForm.hero_image} alt="" className="h-12 rounded border" />
+                    )}
                   </div>
                 </div>
                 <div>
@@ -2573,25 +2732,86 @@ export function ErpCMS() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
 
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Paragraphe 1
-                  </label>
-                  <textarea
-                    value={aboutForm?.paragraphs?.[0] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [e.target.value, p?.paragraphs?.[1]||""]}))}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Section Tag</label>
+                    <input type="text" value={aboutForm?.section_tag || ""} onChange={e => setAboutForm((p:any) => ({...p, section_tag: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Titre Section</label>
+                    <input type="text" value={aboutForm?.title || ""} onChange={e => setAboutForm((p:any) => ({...p, title: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Paragraphe 2
-                  </label>
-                  <textarea
-                    value={aboutForm?.paragraphs?.[1] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [p?.paragraphs?.[0]||"", e.target.value]}))}
-                    rows={3}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Mission</label>
+                  <textarea value={aboutForm?.mission || ""} onChange={e => setAboutForm((p:any) => ({...p, mission: e.target.value}))} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Vision</label>
+                  <textarea value={aboutForm?.vision || ""} onChange={e => setAboutForm((p:any) => ({...p, vision: e.target.value}))} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Paragraphe 1</label>
+                  <textarea value={aboutForm?.paragraphs?.[0] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [e.target.value, p?.paragraphs?.[1]||""]}))}
+                    rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Paragraphe 2</label>
+                  <textarea value={aboutForm?.paragraphs?.[1] || ""} onChange={e => setAboutForm((p:any) => ({...p, paragraphs: [p?.paragraphs?.[0]||"", e.target.value]}))}
+                    rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Badge Valeur</label>
+                    <input type="text" value={aboutForm?.badge_value || ""} onChange={e => setAboutForm((p:any) => ({...p, badge_value: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="ex: 15+" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Badge Libellé</label>
+                    <input type="text" value={aboutForm?.badge_label || ""} onChange={e => setAboutForm((p:any) => ({...p, badge_label: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="ex: Années d'excellence" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">CTA Texte</label>
+                    <input type="text" value={aboutForm?.cta_text || ""} onChange={e => setAboutForm((p:any) => ({...p, cta_text: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">CTA Lien</label>
+                    <input type="text" value={aboutForm?.cta_href || ""} onChange={e => setAboutForm((p:any) => ({...p, cta_href: e.target.value}))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-2">Points Forts ({(aboutForm?.highlights || []).length})</label>
+                  {(aboutForm?.highlights || []).map((h: string, i: number) =>
+                    <div key={i} className="flex items-center gap-2 mb-2">
+                      <CheckCircle2Icon className="w-4 h-4 text-globus-orange shrink-0" />
+                      <input type="text" value={h} onChange={e => { const arr = [...(aboutForm?.highlights || [])]; arr[i] = e.target.value; setAboutForm((p:any) => ({...p, highlights: arr})); }} className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+                      <button onClick={() => { const arr = [...(aboutForm?.highlights || [])]; arr.splice(i, 1); setAboutForm((p:any) => ({...p, highlights: arr})); }} className="p-1 text-gray-400 hover:text-red-500">
+                        <Trash2Icon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  <button onClick={() => setAboutForm((p:any) => ({...p, highlights: [...(p.highlights||[]), "Nouveau point fort"]}))} className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <PlusIcon className="w-3.5 h-3.5" /> Ajouter
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-2">Images Galerie ({(aboutForm?.images || []).length})</label>
+                  {(aboutForm?.images || []).map((img: string, i: number) =>
+                    <div key={i} className="flex items-center gap-2 mb-2">
+                      {img && <img src={img} alt="" className="h-8 w-12 object-cover rounded border shrink-0" />}
+                      <input type="text" value={img} onChange={e => { const arr = [...(aboutForm?.images || [])]; arr[i] = e.target.value; setAboutForm((p:any) => ({...p, images: arr})); }} className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+                      <button onClick={() => { setMediaFilter('image'); setShowMediaPicker(true); setMediaPickerCallback(() => (url: string) => { const arr = [...(aboutForm?.images || [])]; arr[i] = url; setAboutForm((p:any) => ({...p, images: arr})); }); }} className="p-1.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white transition-colors">
+                        <FolderOpenIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => { const arr = [...(aboutForm?.images || [])]; arr.splice(i, 1); setAboutForm((p:any) => ({...p, images: arr})); }} className="p-1 text-gray-400 hover:text-red-500">
+                        <Trash2Icon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                  <button onClick={() => setAboutForm((p:any) => ({...p, images: [...(p.images||[]), ""]}))} className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                    <PlusIcon className="w-3.5 h-3.5" /> Ajouter une image
+                  </button>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">
@@ -2663,7 +2883,18 @@ export function ErpCMS() {
                             arr[i] = { ...arr[i], desc: e.target.value };
                             setAboutForm((p:any) => ({...p, values: arr}));
                           }}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm mb-1 focus:outline-none focus:border-globus-blue" />
+
+                        <input
+                          type="text"
+                          value={v.iconKey || ''}
+                          onChange={e => {
+                            const arr = [...(aboutForm?.values || [])];
+                            arr[i] = { ...arr[i], iconKey: e.target.value };
+                            setAboutForm((p:any) => ({...p, values: arr}));
+                          }}
+                          placeholder="ex: ShieldCheckIcon"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue text-gray-500" />
 
                       </div>
                       <button 
@@ -2809,8 +3040,9 @@ export function ErpCMS() {
                     </label>
                     <input
                       type="text"
-                      value={""} onChange={() => {}}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                      value={sf("contact_hours_saturday")} onChange={e => setSf("contact_hours_saturday", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
+                      placeholder="ex: 09:00 - 13:00" />
 
                   </div>
                 </div>
@@ -2828,22 +3060,39 @@ export function ErpCMS() {
                   <label className="block text-xs font-semibold text-gray-500 mb-2">
                     Options formulaire
                   </label>
-                  {contactPageData.formSubjects.map((s, i) =>
+                  {(settingsForm.contact_form_subjects || contactPageData.formSubjects || []).map((s: string, i: number) =>
                     <div key={i} className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-gray-400 w-4">
                         {i + 1}.
                       </span>
                       <input
                         type="text"
-                        defaultValue={s}
+                        value={s}
+                        onChange={e => {
+                          const arr = [...(settingsForm.contact_form_subjects || contactPageData.formSubjects || [])];
+                          arr[i] = e.target.value;
+                          setSf('contact_form_subjects', arr);
+                        }}
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-globus-blue" />
 
-                      <button className="p-1 text-gray-400 hover:text-red-500">
+                      <button 
+                        onClick={() => {
+                          const arr = [...(settingsForm.contact_form_subjects || contactPageData.formSubjects || [])];
+                          arr.splice(i, 1);
+                          setSf('contact_form_subjects', arr);
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
-                  <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
+                  <button 
+                    onClick={() => {
+                      const arr = [...(settingsForm.contact_form_subjects || contactPageData.formSubjects || [])];
+                      arr.push('Nouvelle option');
+                      setSf('contact_form_subjects', arr);
+                    }}
+                    className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1 mt-1">
                     <PlusIcon className="w-3.5 h-3.5" /> Ajouter
                   </button>
                 </div>
@@ -2867,7 +3116,7 @@ export function ErpCMS() {
                     questions
                   </h3>
                   <button
-                    onClick={() => showToast('Catégorie ajoutée', 'info')}
+                    onClick={() => openEntityModal('faqCategory')}
                     className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2">
 
                     <PlusIcon className="w-4 h-4" /> Catégorie
@@ -2883,9 +3132,23 @@ export function ErpCMS() {
                         <div className="w-2 h-5 bg-globus-orange rounded-full"></div>
                         {cat.category}
                       </h4>
-                      <button className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1">
-                        <PlusIcon className="w-3.5 h-3.5" /> Question
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => openEntityModal('faqItem', { category_id: cat.id, question: '', answer: '', sort_order: cat.items.length })}
+                          className="text-xs text-globus-orange font-semibold hover:underline flex items-center gap-1">
+                          <PlusIcon className="w-3.5 h-3.5" /> Question
+                        </button>
+                        <button 
+                          onClick={() => openEntityModal('faqCategory', { id: cat.id, name: cat.category })}
+                          className="p-1 text-gray-400 hover:text-globus-blue" title="Modifier">
+                          <EditIcon className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => confirmDelete({ id: cat.id, name: cat.category }, 'faqCategory')}
+                          className="p-1 text-gray-400 hover:text-red-500" title="Supprimer">
+                          <Trash2Icon className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       {cat.items.map((item, idx) =>
@@ -2903,10 +3166,14 @@ export function ErpCMS() {
                             </p>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
-                            <button className="p-1 text-gray-400 hover:text-globus-blue">
+                            <button 
+                              onClick={() => openEntityModal('faqItem', { id: item.id, question: item.q, answer: item.a, category_id: item.category_id, sort_order: item.sort_order })}
+                              className="p-1 text-gray-400 hover:text-globus-blue">
                               <EditIcon className="w-4 h-4" />
                             </button>
-                            <button className="p-1 text-gray-400 hover:text-red-500">
+                            <button 
+                              onClick={() => confirmDelete({ id: item.id, question: item.q }, 'faqItem')}
+                              className="p-1 text-gray-400 hover:text-red-500">
                               <Trash2Icon className="w-4 h-4" />
                             </button>
                           </div>
@@ -2953,7 +3220,7 @@ export function ErpCMS() {
                     Description carte FAQ
                   </label>
                   <textarea
-                    value={"Trouvez des r\u00e9ponses imm\u00e9diates."} onChange={() => {}}
+                    value={sf("help_faq_desc") || "Trouvez des r\u00e9ponses imm\u00e9diates."} onChange={e => setSf("help_faq_desc", e.target.value)}
                     rows={2}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
 
@@ -2963,7 +3230,7 @@ export function ErpCMS() {
                     Description carte WhatsApp
                   </label>
                   <textarea
-                    value={"Discutez en direct."} onChange={() => {}}
+                    value={sf("help_whatsapp_desc") || "Discutez en direct."} onChange={e => setSf("help_whatsapp_desc", e.target.value)}
                     rows={2}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
 
@@ -2973,7 +3240,7 @@ export function ErpCMS() {
                     Description carte Email
                   </label>
                   <textarea
-                    value={"R\u00e9ponse sous 24h."} onChange={() => {}}
+                    value={sf("help_email_desc") || "R\u00e9ponse sous 24h."} onChange={e => setSf("help_email_desc", e.target.value)}
                     rows={2}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
 
@@ -3033,293 +3300,102 @@ export function ErpCMS() {
                 )}
             </motion.div>
 
-            {activeLegalTab === 'legalNotice' &&
-              <motion.div
-                variants={fadeUp}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+            {/* Generic legal page editor — renders for whichever sub-tab is active */}
+            {(['legalNotice', 'privacy', 'terms', 'cookies'] as const).map(tabKey => {
+              if (activeLegalTab !== tabKey) return null;
+              const form = legalForms[tabKey];
+              const titleMap: Record<string, string> = {
+                legalNotice: 'Mentions Légales',
+                privacy: 'Politique de Confidentialité',
+                terms: 'Termes & Conditions',
+                cookies: 'Politique des Cookies',
+              };
+              return (
+                <motion.div
+                  key={tabKey}
+                  variants={fadeUp}
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
 
-                <div className="flex justify-between items-center">
-                  <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
-                    Mentions Légales
-                  </h3>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.legalNotice.last_updated}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
+                      {titleMap[tabKey]}
+                    </h3>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                      MAJ: {form.last_updated || '-'}
+                    </span>
+                  </div>
+
+                  {/* Titre de la page */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Dénomination
+                      Titre de la page
                     </label>
                     <input
                       type="text"
-                      value={legalPages["legalNotice"]?.company_name || ""} readOnly
+                      value={form.title}
+                      onChange={e => setLegalField(tabKey, 'title', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Forme juridique
-                    </label>
-                    <input
-                      type="text"
-                      value={legalPages["legalNotice"]?.legal_form || ""} readOnly
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
 
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      RCCM
-                    </label>
-                    <input
-                      type="text"
-                      value={legalPages["legalNotice"]?.rccm || ""} readOnly
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">
-                      Directeur
-                    </label>
-                    <input
-                      type="text"
-                      value={legalPages["legalNotice"]?.director || ""} readOnly
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Siège social
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["legalNotice"]?.address || ""} readOnly
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Contact
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["legalNotice"]?.contact || ""} readOnly
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div className="border-t border-gray-100 pt-4">
-                  <h4 className="font-montserrat font-bold text-sm text-gray-700 mb-3">
-                    Hébergeur
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Nom
-                      </label>
-                      <input
-                        type="text"
-                        value={legalPages["legalNotice"]?.host_name || ""} readOnly
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
+                  {/* Dynamic sections */}
+                  {form.sections.map((section, i) => (
+                    <div key={i} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50/50">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-globus-blue-dark uppercase">Section {i + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeLegalSection(tabKey, i)}
+                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Supprimer cette section">
+                          <Trash2Icon className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                          Titre de la section
+                        </label>
+                        <input
+                          type="text"
+                          value={section.title}
+                          onChange={e => setLegalSection(tabKey, i, 'title', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">
+                          Contenu
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={section.content}
+                          onChange={e => setLegalSection(tabKey, i, 'content', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Adresse
-                      </label>
-                      <input
-                        type="text"
-                        value={legalPages["legalNotice"]?.host_address || ""} readOnly
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                  ))}
 
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Contenu complémentaire
-                  </label>
-                  <textarea
-                    rows={5}
-                    defaultValue="L'ensemble de ce site relève de la législation internationale sur le droit d'auteur et la propriété intellectuelle. Tous les droits de reproduction sont réservés."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Date MAJ
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["legalNotice"]?.last_updated || "-"} readOnly
-                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div className="flex justify-end">
+                  {/* Add section button */}
                   <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Enregistrer
+                    type="button"
+                    onClick={() => addLegalSection(tabKey)}
+                    className="w-full border-2 border-dashed border-gray-300 hover:border-globus-blue rounded-lg py-3 text-sm text-gray-500 hover:text-globus-blue font-montserrat font-semibold transition-colors flex items-center justify-center gap-2">
+                    <PlusIcon className="w-4 h-4" /> Ajouter une section
                   </button>
-                </div>
-              </motion.div>
-            }
 
-            {activeLegalTab === 'privacy' &&
-              <motion.div
-                variants={fadeUp}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-
-                <div className="flex justify-between items-center">
-                  <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
-                    Politique de Confidentialité
-                  </h3>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.privacyPolicy.last_updated}
-                  </span>
-                </div>
-                {[
-                  '1. Données collectées',
-                  '2. Finalité du traitement',
-                  '3. Base légale et durée',
-                  '4. Droits des utilisateurs',
-                  '5. Sécurité et Contact DPO'].
-                  map((title, i) =>
-                    <div key={i}>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        {title}
-                      </label>
-                      <textarea
-                        rows={4}
-                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
-                    </div>
-                  )}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Date MAJ
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["privacy"]?.last_updated || "-"} readOnly
-                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Enregistrer
-                  </button>
-                </div>
-              </motion.div>
-            }
-
-            {activeLegalTab === 'terms' &&
-              <motion.div
-                variants={fadeUp}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-
-                <div className="flex justify-between items-center">
-                  <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
-                    Termes & Conditions
-                  </h3>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.terms.last_updated}
-                  </span>
-                </div>
-                {[
-                  '1. Objet',
-                  '2. Acceptation des CGU',
-                  '3. Services et Devis',
-                  '4. Responsabilités',
-                  '5. Droit applicable'].
-                  map((title, i) =>
-                    <div key={i}>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        {title}
-                      </label>
-                      <textarea
-                        rows={4}
-                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
-                    </div>
-                  )}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Date MAJ
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["terms"]?.last_updated || "-"} readOnly
-                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Enregistrer
-                  </button>
-                </div>
-              </motion.div>
-            }
-
-            {activeLegalTab === 'cookies' &&
-              <motion.div
-                variants={fadeUp}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-
-                <div className="flex justify-between items-center">
-                  <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
-                    Politique des Cookies
-                  </h3>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    MAJ: {legalPagesData.cookiePolicy.last_updated}
-                  </span>
-                </div>
-                {[
-                  "1. Qu'est-ce qu'un cookie ?",
-                  '2. Cookies utilisés',
-                  '3. Gestion des cookies',
-                  '4. Durée de conservation'].
-                  map((title, i) =>
-                    <div key={i}>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        {title}
-                      </label>
-                      <textarea
-                        rows={4}
-                        defaultValue={`Contenu de la section "${title}" — modifiable depuis le CMS.`}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
-                    </div>
-                  )}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">
-                    Date MAJ
-                  </label>
-                  <input
-                    type="text"
-                    value={legalPages["cookies"]?.last_updated || "-"} readOnly
-                    className="w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Enregistrer
-                  </button>
-                </div>
-              </motion.div>
-            }
+                  {/* Save button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => handleSaveLegal(tabKey)}
+                      disabled={isProcessing === `save-legal-${tabKey}`}
+                      className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                      {isProcessing === `save-legal-${tabKey}` ?
+                        <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                        <SaveIcon className="w-4 h-4" />
+                      } Enregistrer
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         }
 
@@ -3420,6 +3496,10 @@ export function ErpCMS() {
                       {
                         id: 'video',
                         label: 'Vidéos'
+                      },
+                      {
+                        id: 'youtube',
+                        label: 'YouTube'
                       }].
                       map((f) =>
                         <button
@@ -3432,17 +3512,36 @@ export function ErpCMS() {
                       )}
                   </div>
                 </div>
-                <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*,video/*,.pdf,.doc,.docx" />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileUpload} accept="image/*,video/*,.pdf,.doc,.docx" />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full sm:w-auto bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm whitespace-nowrap">
 
-                  <PlusIcon className="w-4 h-4" /> Ajouter un fichier
-                </button>
+                    <PlusIcon className="w-4 h-4" /> Ajouter un fichier
+                  </button>
+                  <button
+                    onClick={() => setShowYouTubeModal(true)}
+                    className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 text-sm whitespace-nowrap">
+                    
+                    <VideoIcon className="w-4 h-4" /> Importer YouTube
+                  </button>
+                </div>
               </div>
 
               <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center bg-white hover:bg-gray-50 hover:border-globus-blue/50 transition-colors cursor-pointer">
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      handleFileUpload({ target: { files: [file] } } as any);
+                    }
+                  }}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center bg-white hover:bg-gray-50 hover:border-globus-blue/50 transition-colors cursor-pointer">
                   <UploadCloudIcon className="w-10 h-10 text-gray-400 mb-3" />
                   <p className="text-sm text-gray-700 font-semibold mb-1 text-center">
                     Glissez vos fichiers ici ou cliquez pour parcourir
@@ -3478,12 +3577,21 @@ export function ErpCMS() {
                               <div className="w-full h-full flex items-center justify-center">
                                 <VideoIcon className="w-12 h-12 text-gray-400" />
                               </div> :
+                            media.type === 'youtube' ?
+                              <div className="w-full h-full relative">
+                                <img src={media.thumbnail || media.url} alt="YouTube" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white">
+                                    <VideoIcon className="w-5 h-5" />
+                                  </div>
+                                </div>
+                              </div> :
 
                               <div className="w-full h-full flex items-center justify-center">
                                 <FileIcon className="w-12 h-12 text-gray-400" />
                               </div>
                           }
-                          <div className="absolute top-2 right-2">
+                          <div className="absolute top-2 right-2 flex gap-1">
                             <button
                               onClick={() => {
                                 setEditItem(media);
@@ -3492,6 +3600,11 @@ export function ErpCMS() {
                               className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
 
                               <EditIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(media, 'media')}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
+                              <Trash2Icon className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -3541,38 +3654,22 @@ export function ErpCMS() {
               className="flex gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
 
               {[
-                {
-                  id: 'pages',
-                  label: 'SEO par Page',
-                  icon: GlobeIcon
-                },
-                {
-                  id: 'schema',
-                  label: 'Schema.org',
-                  icon: CodeIcon
-                },
-                {
-                  id: 'tracking',
-                  label: 'Tracking & Analytics',
-                  icon: BarChart3Icon
-                },
-                {
-                  id: 'sitemap',
-                  label: 'Sitemap XML',
-                  icon: MapIcon
-                }].
-                map((t) =>
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveSeoTab(t.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSeoTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-
-                    <t.icon className="w-4 h-4" />
-                    {t.label}
-                  </button>
-                )}
+                { id: 'pages', label: 'SEO par Page', icon: GlobeIcon },
+                { id: 'schema', label: 'Schema.org', icon: CodeIcon },
+                { id: 'tracking', label: 'Tracking & Analytics', icon: BarChart3Icon },
+                { id: 'sitemap', label: 'Sitemap XML', icon: MapIcon },
+              ].map((t) =>
+                <button
+                  key={t.id}
+                  onClick={() => setActiveSeoTab(t.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-montserrat font-semibold transition-colors whitespace-nowrap ${activeSeoTab === t.id ? 'bg-globus-blue-dark text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+                  <t.icon className="w-4 h-4" />
+                  {t.label}
+                </button>
+              )}
             </motion.div>
 
+            {/* ── SUB-TAB: SEO par Page ── */}
             {activeSeoTab === 'pages' &&
               <motion.div
                 variants={fadeUp}
@@ -3583,71 +3680,72 @@ export function ErpCMS() {
                     SEO par Page
                   </h3>
                   <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Tout Enregistrer
+                    onClick={() => handleSaveSeo('SEO par Page')}
+                    disabled={isProcessing === 'save-seo'}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                    {isProcessing === 'save-seo' ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <SaveIcon className="w-4 h-4" />} Tout Enregistrer
                   </button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50/50 border-b border-gray-100 text-xs font-montserrat font-bold text-gray-500 uppercase">
-                        <th className="py-3 px-4">Page</th>
-                        <th className="py-3 px-4">Chemin</th>
-                        <th className="py-3 px-4">Titre SEO</th>
-                        <th className="py-3 px-4">Statut</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm font-opensans">
-                      {[
-                        { id: '1', page: 'Accueil', path: '/', title: 'Globus BTP — Construction Clé en Main', status: 'Configuré' },
-                        { id: '2', page: 'À Propos', path: '/a-propos', title: 'Qui Sommes-Nous — Globus BTP', status: 'Configuré' },
-                        { id: '3', page: 'Services', path: '/services', title: 'Nos Services — Globus BTP', status: 'Configuré' },
-                        { id: '4', page: 'Projets', path: '/projets', title: 'Réalisations — Globus BTP', status: 'Configuré' },
-                        { id: '5', page: 'Blog', path: '/blog', title: 'Blog & Actualités — Globus BTP', status: 'Configuré' },
-                        { id: '6', page: 'Contact', path: '/contact', title: 'Contactez-Nous — Globus BTP', status: 'Configuré' },
-                        { id: '7', page: 'FAQ', path: '/faq', title: 'Questions Fréquentes — Globus BTP', status: 'Configuré' },
-                      ].map((page) =>
-                        <tr
-                          key={page.id}
-                          className="hover:bg-gray-50 transition-colors">
 
-                          <td className="py-3 px-4 font-semibold text-gray-800">
-                            {page.page}
-                          </td>
-                          <td className="py-3 px-4 text-gray-500 font-mono text-xs">
-                            {page.path}
-                          </td>
-                          <td className="py-3 px-4 text-gray-600 truncate max-w-[200px]">
-                            {page.title}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700">
-                              {page.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => {
-                                setEditItem(page);
-                                setShowEditModal(true);
-                              }}
-                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors"
-                              title="Modifier">
-
-                              <EditIcon className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {seoPages.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">Aucune page SEO configurée. Relancez le seed.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {seoPages.map((page, i) => (
+                      <div key={i} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50/50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-globus-blue-dark uppercase">{page.page}</span>
+                            <span className="text-xs text-gray-400 font-mono">{page.path}</span>
+                          </div>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-green-100 text-green-700">
+                            {page.title ? 'Configuré' : 'Non configuré'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Titre SEO</label>
+                            <input
+                              type="text"
+                              value={page.title}
+                              onChange={e => setSeoPage(i, 'title', e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Mots-clés</label>
+                            <input
+                              type="text"
+                              value={page.keywords || ''}
+                              onChange={e => setSeoPage(i, 'keywords', e.target.value)}
+                              placeholder="mot1, mot2, mot3"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1">Meta Description</label>
+                          <textarea
+                            rows={2}
+                            value={page.description || ''}
+                            onChange={e => setSeoPage(i, 'description', e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-500 mb-1">Image OG (URL)</label>
+                          <input
+                            type="text"
+                            value={page.og_image || ''}
+                            onChange={e => setSeoPage(i, 'og_image', e.target.value)}
+                            placeholder="https://..."
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             }
 
+            {/* ── SUB-TAB: Schema.org ── */}
             {activeSeoTab === 'schema' &&
               <motion.div
                 variants={fadeUp}
@@ -3658,120 +3756,72 @@ export function ErpCMS() {
                     Données Structurées (Schema.org LocalBusiness)
                   </h3>
                   <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Enregistrer
+                    onClick={() => handleSaveSeo('Schema.org')}
+                    disabled={isProcessing === 'save-seo'}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                    {isProcessing === 'save-seo' ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <SaveIcon className="w-4 h-4" />} Enregistrer
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Nom de l'entreprise
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="Globus Engineering SARL"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Nom de l'entreprise</label>
+                      <input type="text" value={schemaOrg.name || ''} onChange={e => setSchemaOrg('name', e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        rows={3}
-                        defaultValue="Votre partenaire de confiance pour la construction BTP clé en main au Cameroun."
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Description</label>
+                      <textarea rows={3} value={schemaOrg.description || ''} onChange={e => setSchemaOrg('description', e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue resize-none" />
-
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">
-                          Téléphone
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue="+33 1 23 45 67 89"
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Téléphone</label>
+                        <input type="text" value={schemaOrg.phone || ''} onChange={e => setSchemaOrg('phone', e.target.value)}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">
-                          Email
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue="contact@globus-btp.com"
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Email</label>
+                        <input type="text" value={schemaOrg.email || ''} onChange={e => setSchemaOrg('email', e.target.value)}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                       </div>
                     </div>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Adresse complète
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="123 Avenue de la Construction"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue mb-2"
-                        placeholder="Rue" />
-
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Adresse complète</label>
+                      <input type="text" value={schemaOrg.street || ''} onChange={e => setSchemaOrg('street', e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue mb-2" placeholder="Rue" />
                       <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          defaultValue="Douala"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
-                          placeholder="Ville" />
-
-                        <input
-                          type="text"
-                          defaultValue="CM"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue"
-                          placeholder="Pays (Code)" />
-
+                        <input type="text" value={schemaOrg.city || ''} onChange={e => setSchemaOrg('city', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="Ville" />
+                        <input type="text" value={schemaOrg.country || ''} onChange={e => setSchemaOrg('country', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" placeholder="Pays (Code)" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">
-                          Latitude
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue="4.0511"
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Latitude</label>
+                        <input type="text" value={schemaOrg.lat || ''} onChange={e => setSchemaOrg('lat', e.target.value)}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">
-                          Longitude
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue="9.7679"
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Longitude</label>
+                        <input type="text" value={schemaOrg.lng || ''} onChange={e => setSchemaOrg('lng', e.target.value)}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Horaires d'ouverture
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="Mo-Fr 08:00-18:00, Sa 09:00-13:00"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Horaires d'ouverture</label>
+                      <input type="text" value={schemaOrg.openingHours || ''} onChange={e => setSchemaOrg('openingHours', e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                   </div>
                 </div>
               </motion.div>
             }
 
+            {/* ── SUB-TAB: Tracking & Analytics ── */}
             {activeSeoTab === 'tracking' &&
               <motion.div variants={fadeUp} className="space-y-4">
                 <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -3779,10 +3829,10 @@ export function ErpCMS() {
                     Tracking & Analytics
                   </h3>
                   <button
-                    onClick={handleSaveGeneric}
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <SaveIcon className="w-4 h-4" /> Tout Enregistrer
+                    onClick={() => handleSaveSeo('Tracking')}
+                    disabled={isProcessing === 'save-seo'}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                    {isProcessing === 'save-seo' ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <SaveIcon className="w-4 h-4" />} Tout Enregistrer
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3794,30 +3844,22 @@ export function ErpCMS() {
                           <BarChart3Icon className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-800">
-                            Google Analytics
-                          </h4>
+                          <h4 className="font-bold text-gray-800">Google Analytics</h4>
                           <p className="text-xs text-gray-500">gtag.js</p>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked />
-
+                        <input type="checkbox" className="sr-only peer"
+                          checked={!!trackingData.ga_enabled}
+                          onChange={e => setTracking('ga_enabled', e.target.checked)} />
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Measurement ID
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="G-DEMO123456"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Measurement ID</label>
+                      <input type="text" value={trackingData.ga_id || ''} onChange={e => setTracking('ga_id', e.target.value)}
+                        placeholder="G-XXXXXXXXXX"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                   </div>
                   {/* GTM */}
@@ -3828,30 +3870,22 @@ export function ErpCMS() {
                           <TagIcon className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-800">
-                            Google Tag Manager
-                          </h4>
+                          <h4 className="font-bold text-gray-800">Google Tag Manager</h4>
                           <p className="text-xs text-gray-500">Container ID</p>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked />
-
+                        <input type="checkbox" className="sr-only peer"
+                          checked={!!trackingData.gtm_enabled}
+                          onChange={e => setTracking('gtm_enabled', e.target.checked)} />
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Container ID
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="GTM-DEMO123"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Container ID</label>
+                      <input type="text" value={trackingData.gtm_id || ''} onChange={e => setTracking('gtm_id', e.target.value)}
+                        placeholder="GTM-XXXXXXX"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                   </div>
                   {/* FB Pixel */}
@@ -3862,30 +3896,22 @@ export function ErpCMS() {
                           <FacebookIcon className="w-5 h-5 text-[#1877F2]" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-800">
-                            Facebook Pixel
-                          </h4>
+                          <h4 className="font-bold text-gray-800">Facebook Pixel</h4>
                           <p className="text-xs text-gray-500">Meta Ads</p>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked />
-
+                        <input type="checkbox" className="sr-only peer"
+                          checked={!!trackingData.fb_enabled}
+                          onChange={e => setTracking('fb_enabled', e.target.checked)} />
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Pixel ID
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="123456789"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Pixel ID</label>
+                      <input type="text" value={trackingData.fb_id || ''} onChange={e => setTracking('fb_id', e.target.value)}
+                        placeholder="123456789"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                   </div>
                   {/* TikTok Pixel */}
@@ -3896,36 +3922,29 @@ export function ErpCMS() {
                           <span className="font-bold text-lg">🎵</span>
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-800">
-                            TikTok Pixel
-                          </h4>
+                          <h4 className="font-bold text-gray-800">TikTok Pixel</h4>
                           <p className="text-xs text-gray-500">TikTok Ads</p>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked />
-
+                        <input type="checkbox" className="sr-only peer"
+                          checked={!!trackingData.tiktok_enabled}
+                          onChange={e => setTracking('tiktok_enabled', e.target.checked)} />
                         <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
                       </label>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">
-                        Pixel ID
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue="DEMO123"
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Pixel ID</label>
+                      <input type="text" value={trackingData.tiktok_id || ''} onChange={e => setTracking('tiktok_id', e.target.value)}
+                        placeholder="XXXXXXX"
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-
                     </div>
                   </div>
                 </div>
               </motion.div>
             }
 
+            {/* ── SUB-TAB: Sitemap XML ── */}
             {activeSeoTab === 'sitemap' &&
               <motion.div
                 variants={fadeUp}
@@ -3936,31 +3955,28 @@ export function ErpCMS() {
                     Sitemap XML
                   </h3>
                   <button
-                    onClick={() =>
-                      showToast('Sitemap régénéré avec succès', 'success')
-                    }
-                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2">
-
-                    <RefreshCwIcon className="w-4 h-4" /> Régénérer le Sitemap
+                    onClick={() => handleSaveSeo('Sitemap')}
+                    disabled={isProcessing === 'save-seo'}
+                    className="px-4 py-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-semibold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                    {isProcessing === 'save-seo' ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <RefreshCwIcon className="w-4 h-4" />} Enregistrer & Régénérer
                   </button>
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">URL de base du site</label>
+                  <input type="text" value={sitemapCfg.base_url || ''} onChange={e => setSitemapCfg('base_url', e.target.value)}
+                    placeholder="https://www.votre-site.com"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+                </div>
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                  <p className="text-xs text-gray-400 mb-2 font-semibold">Aperçu généré automatiquement :</p>
                   <pre className="text-green-400 font-mono text-xs">
                     {`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.globus-btp.com/</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://www.globus-btp.com/a-propos</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <!-- ... autres pages ... -->
+${seoPages.map(p => `  <url>
+    <loc>${sitemapCfg.base_url || 'https://www.example.com'}${p.path}</loc>
+    <changefreq>${p.path === '/' ? 'weekly' : 'monthly'}</changefreq>
+    <priority>${p.path === '/' ? '1.0' : '0.8'}</priority>
+  </url>`).join('\n')}
 </urlset>`}
                   </pre>
                 </div>
@@ -3969,6 +3985,8 @@ export function ErpCMS() {
           </motion.div>
         }
       </AnimatePresence>
+
+
 
       {/* Media Picker Modal */}
       <AnimatePresence>
@@ -4030,6 +4048,10 @@ export function ErpCMS() {
                     {
                       id: 'video',
                       label: 'Vidéos'
+                    },
+                    {
+                      id: 'youtube',
+                      label: 'YouTube'
                     }].
                     map((f) =>
                       <button
@@ -4085,6 +4107,15 @@ export function ErpCMS() {
                                   </div>
                                 </div>
                               </> :
+                            media.type === 'youtube' ?
+                              <div className="w-full h-full relative">
+                                <img src={media.thumbnail || media.url} alt="YouTube" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-70" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                                    <VideoIcon className="w-5 h-5" />
+                                  </div>
+                                </div>
+                              </div> :
                               media.type === 'document' ?
                                 <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-globus-orange transition-colors" /> :
 
@@ -4226,6 +4257,24 @@ export function ErpCMS() {
         show={showStatModal} onClose={closeEntityModal}
         formData={formData} setFormData={setFormData} onSave={handleSaveEntity}
         isEdit={!!editItem?.id} loading={isProcessing === 'save-entity'} />
+
+      <YouTubeImportModal 
+        show={showYouTubeModal} 
+        onClose={() => setShowYouTubeModal(false)}
+        loading={isProcessing === 'import-youtube'}
+        onImport={async (url) => {
+          setIsProcessing('import-youtube');
+          try {
+            await importYouTube(url, "Vidéo YouTube");
+            showToast("Vidéo importée avec succès");
+            setShowYouTubeModal(false);
+          } catch {
+            showToast("Erreur lors de l'import", "error");
+          } finally {
+            setIsProcessing(null);
+          }
+        }}
+      />
 
       <DeleteConfirmModal
         show={showDeleteModal}

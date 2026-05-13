@@ -10,10 +10,6 @@ function ProjectCarousel({
   images,
   height,
   title
-
-
-
-
 }: {images: string[];height: string;title: string;}) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
@@ -51,7 +47,6 @@ function ProjectCarousel({
         <div
           key={idx}
           className={`h-1 rounded-full transition-all duration-300 ${idx === current ? 'w-5 bg-globus-orange' : 'w-1.5 bg-white/50'}`} />
-
         )}
       </div>
     </div>);
@@ -421,52 +416,52 @@ export function PortfolioSection() {
               }}
               className={`group relative rounded-xl overflow-hidden shadow-lg cursor-pointer ${project.featured && activeFilter === 'Tous' ? 'md:col-span-2 md:row-span-2' : ''}`}>
               
-                <div className="absolute inset-0 bg-globus-blue-dark/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-end p-8">
-                  <span className="text-globus-orange font-montserrat font-bold text-sm mb-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                    {project.category}
-                  </span>
-                  <h3 className="text-white font-montserrat font-extrabold text-2xl mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
-                    {project.title}
-                  </h3>
-                  <div className="w-10 h-10 rounded-full bg-globus-orange flex items-center justify-center transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-150">
-                    <ArrowRightIcon className="w-5 h-5 text-white" />
+                <Link to={`/projets/${project.slug}`} className="block w-full h-full">
+                  <div className="absolute inset-0 bg-globus-blue-dark/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col justify-end p-8">
+                    <span className="text-globus-orange font-montserrat font-bold text-sm mb-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                      {project.category}
+                    </span>
+                    <h3 className="text-white font-montserrat font-extrabold text-2xl mb-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                      {project.title}
+                    </h3>
+                    <div className="w-10 h-10 rounded-full bg-globus-orange flex items-center justify-center transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 delay-150">
+                      <ArrowRightIcon className="w-5 h-5 text-white" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Featured project: video → carousel. Others: carousel only */}
-                {project.featured && activeFilter === 'Tous' ?
-              <FeaturedProjectMedia
-                images={project.images}
-                videoSrc={project.videoSrc} /> :
+                  {/* Featured project: video → carousel. Others: carousel only */}
+                  {project.featured && activeFilter === 'Tous' ?
+                <FeaturedProjectMedia
+                  images={project.images}
+                  videoSrc={project.videoSrc} /> :
 
-
-              <ProjectCarousel
-                images={project.images}
-                height={
-                project.featured && activeFilter === 'Tous' ?
-                'h-[600px]' :
-                'h-[300px]'
+                <ProjectCarousel
+                  images={project.images}
+                  height={
+                  project.featured && activeFilter === 'Tous' ?
+                  'h-[600px]' :
+                  'h-[300px]'
+                  }
+                  title={project.title} />
                 }
-                title={project.title} />
 
-              }
-
-                {/* Fallback height for featured */}
-                {project.featured && activeFilter === 'Tous' &&
-              <div className="h-[600px]" />
-              }
+                  {/* Fallback height for featured */}
+                  {project.featured && activeFilter === 'Tous' &&
+                <div className="h-[600px]" />
+                }
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         <div className="mt-16 text-center">
-          <a
-            href="#portfolio"
+          <Link
+            to="projets"
             className="inline-block border-2 border-globus-blue text-globus-blue hover:bg-globus-blue hover:text-white font-montserrat font-bold py-4 px-10 rounded-lg transition-all">
             
             Explorer l'intégralité du Portfolio
-          </a>
+          </Link>
         </div>
       </div>
     </section>);

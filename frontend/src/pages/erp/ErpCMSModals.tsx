@@ -2,7 +2,7 @@
    ErpCMS Modals — All CRUD modals for the CMS admin
    Extracted from ErpCMS.tsx for maintainability
    ────────────────────────────────────────────────────────────── */
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   XIcon, SaveIcon, Loader2Icon, Trash2Icon, PlusIcon, FolderOpenIcon,
@@ -851,6 +851,47 @@ export function StatModal({ show, onClose, formData, setFormData, onSave, isEdit
         <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
           <SaveBtn loading={loading} />
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+interface YouTubeImportModalProps {
+  show: boolean;
+  onClose: () => void;
+  onImport: (url: string) => void;
+  loading: boolean;
+}
+
+export function YouTubeImportModal({ show, onClose, onImport, loading }: YouTubeImportModalProps) {
+  const [url, setUrl] = useState('');
+
+  if (!show) return null;
+
+  return (
+    <ModalShell show={show} onClose={onClose} title="Importer une vidéo YouTube">
+      <form onSubmit={(e) => { e.preventDefault(); onImport(url); setUrl(''); }} className="space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">URL YouTube</label>
+          <input 
+            type="url" 
+            required 
+            value={url} 
+            onChange={e => setUrl(e.target.value)} 
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-600" 
+            placeholder="ex: https://www.youtube.com/watch?v=..." 
+          />
+        </div>
+        <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-500 hover:text-gray-700 font-semibold transition-colors">Annuler</button>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg flex items-center justify-center min-w-[120px] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2Icon className="w-5 h-5 animate-spin" /> : 'Importer'}
+          </button>
         </div>
       </form>
     </ModalShell>

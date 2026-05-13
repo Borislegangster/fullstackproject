@@ -58,6 +58,12 @@ class CMSSiteSettings(Base):
     contact_map_embed_url = Column(Text, default="")
     contact_hours = Column(String, default="")
 
+    # SEO & Tracking
+    seo_pages = Column(JSON, default=list)            # [{page, path, title, description, og_image, keywords}]
+    schema_org = Column(JSON, default=dict)            # {name, description, phone, email, street, city, country, lat, lng, openingHours}
+    tracking = Column(JSON, default=dict)              # {ga_enabled, ga_id, gtm_enabled, gtm_id, fb_enabled, fb_id, tiktok_enabled, tiktok_id}
+    sitemap_config = Column(JSON, default=dict)        # {base_url, extra_urls}
+
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, CalendarIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getLatestBlogPosts } from '../../services/api/cms.api';
 import { SkeletonGrid } from '../../components/ui/Skeleton';
@@ -62,8 +63,7 @@ export function BlogSection() {
               Le Blog Globus
             </motion.h2>
           </div>
-          <motion.a
-            href="#blog-complet"
+          <motion.div
             initial={{
               opacity: 0,
               x: 20
@@ -75,11 +75,14 @@ export function BlogSection() {
             viewport={{
               once: true
             }}
-            className="hidden md:inline-flex items-center gap-2 font-montserrat font-bold text-globus-blue hover:text-globus-orange transition-colors">
-            
-            Lire tous les articles
-            <ArrowRightIcon className="w-5 h-5" />
-          </motion.a>
+            className="hidden md:block">
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-2 font-montserrat font-bold text-globus-blue hover:text-globus-orange transition-colors">
+              Lire tous les articles
+              <ArrowRightIcon className="w-5 h-5" />
+            </Link>
+          </motion.div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -124,25 +127,25 @@ export function BlogSection() {
                 <p className="font-opensans text-globus-gray mb-6 flex-grow">
                   {post.excerpt}
                 </p>
-                <a
-                href={`#article-${index}`}
+                <Link
+                to={`/blog/${post.slug}`}
                 className="inline-flex items-center gap-2 font-montserrat font-bold text-globus-blue group-hover:text-globus-orange transition-colors mt-auto">
                 
                   Lire la suite
                   <ArrowRightIcon className="w-4 h-4" />
-                </a>
+                </Link>
               </div>
             </motion.article>
           )}
         </div>
 
         <div className="mt-8 text-center md:hidden">
-          <a
-            href="#blog-complet"
+          <Link
+            to="/blog"
             className="inline-flex items-center gap-2 font-montserrat font-bold text-globus-blue">
             
             Lire tous les articles <ArrowRightIcon className="w-5 h-5" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>);

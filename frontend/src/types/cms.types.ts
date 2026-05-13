@@ -64,6 +64,7 @@ export interface ServiceItem {
   desc: string;
   iconKey: string;
   images: string[];
+  slug: string;
 }
 
 // ── Services Page & Detail ───────────────────────────────────

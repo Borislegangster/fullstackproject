@@ -6,6 +6,7 @@ import {
   HardHatIcon,
   ArrowRightIcon } from
 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getServices } from '../../services/api/cms.api';
 import { getIcon } from '../../utils/iconRegistry';
@@ -13,9 +14,6 @@ import { SkeletonGrid } from '../../components/ui/Skeleton';
 function ServiceImageCarousel({
   images,
   title
-
-
-
 }: {images: string[];title: string;}) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
@@ -182,25 +180,25 @@ export function ServicesSection() {
                 <p className="font-opensans text-globus-gray mb-8 text-lg leading-relaxed">
                   {service.desc}
                 </p>
-                <a
-                href={`#service-${index}`}
+                <Link
+                to={`/services/${service.slug}`}
                 className="inline-flex items-center gap-2 font-montserrat font-bold text-globus-blue hover:text-globus-orange transition-colors group">
                 
                   Voir ce service en détail
                   <ArrowRightIcon className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
-                </a>
+                </Link>
               </motion.div>
             </div>
           )}
         </div>
 
         <div className="mt-20 text-center">
-          <a
-            href="#tous-les-services"
+          <Link
+            to="/services"
             className="inline-block bg-globus-blue hover:bg-globus-blue-dark text-white font-montserrat font-bold py-4 px-10 rounded-lg transition-all shadow-lg">
             
             Voir tous nos services en détail
-          </a>
+          </Link>
         </div>
       </div>
     </section>);

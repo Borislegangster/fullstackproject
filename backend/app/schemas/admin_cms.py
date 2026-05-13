@@ -262,6 +262,11 @@ class SiteSettingsIn(BaseModel):
     contact_whatsapp: Optional[str] = None
     contact_map_embed_url: Optional[str] = None
     contact_hours: Optional[str] = None
+    # SEO & Tracking
+    seo_pages: Optional[List[Any]] = None
+    schema_org: Optional[Any] = None
+    tracking: Optional[Any] = None
+    sitemap_config: Optional[Any] = None
 
 
 # ── About Content ────────────────────────────────────────────
