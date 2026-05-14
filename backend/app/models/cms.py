@@ -333,3 +333,16 @@ class SupportTicket(Base):
     message = Column(Text, default="")
     status = Column(String, default="open")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class CMSAnalyticsLog(Base):
+    __tablename__ = "cms_analytics_logs"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String, default="")
+    user_agent = Column(String, default="")
+    browser = Column(String, default="")
+    os = Column(String, default="")
+    device_type = Column(String, default="")
+    path = Column(String, default="")
+    country = Column(String, default="")

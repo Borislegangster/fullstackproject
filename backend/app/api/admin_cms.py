@@ -18,8 +18,9 @@ from app.schemas.admin_cms import (
     TeamMemberIn, TeamMemberUpdate, TestimonialIn, TestimonialUpdate,
     PartnerIn, FaqCategoryIn, FaqItemIn, HeroSlideIn,
     EngagementIn, MethodologyStepIn, StatIn, GuaranteeIn,
-    SiteSettingsIn, AboutContentIn, LegalPageIn,
+    SiteSettingsIn, AboutContentIn, LegalPageIn, AnalyticsStatsOut
 )
+from app.services import cms_service as svc
 
 router = APIRouter(prefix="/admin/cms", tags=["Admin - CMS"])
 _id = lambda: str(uuid.uuid4())
@@ -462,3 +463,34 @@ async def reply_contact(id: str, body: dict, db: AsyncSession = Depends(get_db),
     c.replied = True
     await db.commit()
     return FormResponse(success=True, message="Reponse envoyee")
+
+# ── Analytics ────────────────────────────────────────────────
+@router.get("/analytics", response_model=AnalyticsStatsOut)
+async def get_analytics(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin)
+):
+    stats = await svc.get_analytics_logs_and_stats(db)
+    
+    # Format logs for frontend
+    formatted_logs = []
+    for log in stats["logs"]:
+        formatted_logs.append({
+            "id": log.id,
+            "timestamp": log.timestamp.isoformat(),
+            "ip_address": log.ip_address,
+            "user_agent": log.user_agent,
+            "browser": log.browser,
+            "os": log.os,
+            "device_type": log.device_type,
+            "path": log.path
+        })
+        
+    return AnalyticsStatsOut(
+        total_views_month=stats["total_views_month"],
+        devices=stats["devices"],
+        browsers=stats["browsers"],
+        paths=stats["paths"],
+        countries=stats["countries"],
+        logs=formatted_logs
+    )

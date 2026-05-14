@@ -296,3 +296,12 @@ class LegalPageIn(BaseModel):
     title: Optional[str] = None
     last_updated: Optional[str] = None
     sections: Optional[List[Any]] = None
+
+# ── Analytics ────────────────────────────────────────────────
+class AnalyticsStatsOut(BaseModel):
+    total_views_month: int
+    devices: dict
+    browsers: dict
+    paths: dict
+    countries: dict
+    logs: List[Any]

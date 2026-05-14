@@ -4,8 +4,9 @@ Prefix: /cms (mounted at /api/v1 in main.py → final: /api/v1/cms/*)
 
 These endpoints match EXACTLY the paths in frontend/src/services/api/cms.api.ts
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from app.database import get_db
 from app.services import cms_service as svc
@@ -19,6 +20,7 @@ from app.schemas.cms import (
     BlogPostPageItem, ContactInfoOut, SiteSettingsOut, SocialLinksOut,
     NavLinkOut, LegalPageOut, LegalSectionOut, AboutPageOut, ValueItem,
     TimelineItem, ContactFormIn, NewsletterIn, SupportTicketIn, FormResponse,
+    AnalyticsLogIn,
 )
 
 router = APIRouter(prefix="/cms", tags=["CMS Public"])
@@ -486,3 +488,33 @@ async def submit_support(data: SupportTicketIn, db: AsyncSession = Depends(get_d
         "subject": data.subject, "message": data.message,
     })
     return FormResponse(success=True, message="Ticket envoyé avec succès !")
+
+@router.post("/analytics/track", response_model=FormResponse)
+async def track_analytics(data: AnalyticsLogIn, request: Request, db: AsyncSession = Depends(get_db)):
+    ip_address = request.client.host if request.client else "unknown"
+    # Support for proxies
+    if "x-forwarded-for" in request.headers:
+        ip_address = request.headers["x-forwarded-for"].split(",")[0]
+        
+    country = "Inconnu"
+    if ip_address not in ("127.0.0.1", "::1", "unknown", "localhost"):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(f"http://ip-api.com/json/{ip_address}?fields=country", timeout=2.0)
+                if response.status_code == 200:
+                    resp_data = response.json()
+                    if "country" in resp_data:
+                        country = resp_data["country"]
+        except Exception:
+            pass
+            
+    await svc.create_analytics_log(db, {
+        "ip_address": ip_address,
+        "user_agent": data.userAgent,
+        "device_type": data.deviceType,
+        "browser": data.browser,
+        "os": data.os,
+        "path": data.path,
+        "country": country
+    })
+    return FormResponse(success=True, message="Tracked")

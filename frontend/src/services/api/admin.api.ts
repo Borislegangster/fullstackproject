@@ -26,6 +26,7 @@ import type {
   AdminContact,
   AdminMedia,
   FormResponse,
+  AdminAnalyticsStats
 } from './admin.types';
 
 // ── Auth ─────────────────────────────────────────────────────
@@ -208,6 +209,11 @@ export const guaranteesApi = {
   update: (id: string, d: Partial<AdminGuarantee>) => adminPut(`/admin/cms/guarantees/${id}`, d),
   delete: (id: string) => adminDelete(`/admin/cms/guarantees/${id}`),
 };
+
+// ── Analytics ────────────────────────────────────────────────
+export function getAnalyticsStats() {
+  return adminGet<AdminAnalyticsStats>('/admin/cms/analytics');
+}
 
 // ── Singletons ───────────────────────────────────────────────
 

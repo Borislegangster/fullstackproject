@@ -9,6 +9,7 @@ import { TrackingScripts } from './components/seo/TrackingScripts';
 import { SchemaOrg } from './components/seo/SchemaOrg';
 import { QueryProvider } from './providers/QueryProvider';
 import { GlobusToaster } from './components/ui/Toast';
+import { useAnalyticsTracker } from './hooks/useAnalyticsTracker';
 // Lazy-loaded pages — Public
 const HomePage = lazy(() =>
 import('./pages/public/HomePage').then((m) => ({
@@ -272,7 +273,11 @@ function AppContent() {
   const location = useLocation();
   const isClientPortal = location.pathname.startsWith('/espace-client');
   const isErp = location.pathname.startsWith('/erp');
-  const isPortal = isClientPortal || isErp;
+  const isAuth = ['/connexion', '/inscription', '/mot-de-passe-oublie', '/reset-mot-de-passe', '/erp-login'].includes(location.pathname);
+  const isPortal = isClientPortal || isErp || isAuth;
+  
+  // Track page views
+  useAnalyticsTracker();
   return (
     <div
       className={`font-opensans text-globus-gray bg-white w-full min-h-screen flex flex-col ${isPortal ? 'h-screen overflow-hidden' : ''}`}>

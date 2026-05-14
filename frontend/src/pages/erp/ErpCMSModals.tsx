@@ -897,3 +897,78 @@ export function YouTubeImportModal({ show, onClose, onImport, loading }: YouTube
     </ModalShell>
   );
 }
+
+// ── Analytics Modal ─────────────────────────────────────────
+export function AnalyticsModal({ show, onClose, stats }: { show: boolean; onClose: () => void; stats: any }) {
+  if (!show || !stats) return null;
+
+  return (
+    <ModalShell show={show} onClose={onClose} title="Statistiques de Visite (Ce mois)" maxWidth="max-w-4xl">
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-sm font-bold text-gray-500 mb-2">Vues Totales</h4>
+            <p className="text-3xl font-montserrat font-bold text-globus-blue">{stats.total_views_month}</p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-sm font-bold text-gray-500 mb-2">Top Pays</h4>
+            <p className="text-xl font-montserrat font-bold text-green-600">
+              {Object.entries(stats.countries || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'N/A'}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-sm font-bold text-gray-500 mb-2">Top Navigateur</h4>
+            <p className="text-xl font-montserrat font-bold text-globus-orange">
+              {Object.entries(stats.browsers || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'N/A'}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="text-sm font-bold text-gray-500 mb-2">Top Appareil</h4>
+            <p className="text-xl font-montserrat font-bold text-globus-blue-dark">
+              {Object.entries(stats.devices || {}).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'N/A'}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-montserrat font-bold text-gray-800 mb-3 border-b pb-2">Dernières visites</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 text-gray-600 font-semibold uppercase text-[10px]">
+                <tr>
+                  <th className="px-4 py-3 rounded-tl-lg">Date</th>
+                  <th className="px-4 py-3">IP</th>
+                  <th className="px-4 py-3">Navigateur</th>
+                  <th className="px-4 py-3">OS</th>
+                  <th className="px-4 py-3">Appareil</th>
+                  <th className="px-4 py-3">Pays</th>
+                  <th className="px-4 py-3 rounded-tr-lg">Page</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {stats.logs?.slice(0, 50).map((log: any) => (
+                  <tr key={log.id} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{log.ip_address}</td>
+                    <td className="px-4 py-3">{log.browser}</td>
+                    <td className="px-4 py-3">{log.os}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${log.device_type === 'Mobile' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                        {log.device_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold text-green-700">{log.country || 'Inconnu'}</td>
+                    <td className="px-4 py-3 text-globus-blue truncate max-w-[200px]" title={log.path}>{log.path}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {stats.logs?.length === 0 && (
+              <p className="text-center py-6 text-gray-400 italic">Aucune donnée disponible ce mois-ci.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}

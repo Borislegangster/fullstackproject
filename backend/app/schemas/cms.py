@@ -347,3 +347,22 @@ class SupportTicketIn(BaseModel):
 class FormResponse(BaseModel):
     success: bool
     message: str
+
+# ── Analytics ───────────────────────────────────────────────
+class AnalyticsLogIn(BaseModel):
+    path: str
+    userAgent: str
+    deviceType: str
+    browser: str
+    os: str
+
+class AnalyticsLogOut(BaseModel):
+    id: str
+    timestamp: str
+    ip_address: str
+    user_agent: str
+    browser: str
+    os: str
+    device_type: str
+    path: str
+    country: str

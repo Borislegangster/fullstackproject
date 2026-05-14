@@ -269,3 +269,25 @@ export interface LoginResponse {
   access_token: string;
   user: { id: string; email: string; full_name: string; role: string };
 }
+
+// ── Analytics ────────────────────────────────────────────────
+export interface AdminAnalyticsLog {
+  id: string;
+  timestamp: string;
+  ip_address: string;
+  user_agent: string;
+  browser: string;
+  os: string;
+  device_type: string;
+  path: string;
+  country: string;
+}
+
+export interface AdminAnalyticsStats {
+  total_views_month: number;
+  devices: Record<string, number>;
+  browsers: Record<string, number>;
+  paths: Record<string, number>;
+  countries: Record<string, number>;
+  logs: AdminAnalyticsLog[];
+}

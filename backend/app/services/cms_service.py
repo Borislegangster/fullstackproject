@@ -12,7 +12,7 @@ from app.models.cms import (
     CMSMethodologyStep, CMSStat, CMSService, CMSProject, CMSGuarantee,
     CMSTeamMember, CMSPartner, CMSTestimonial, CMSFaqCategory, CMSFaqItem,
     CMSBlogPost, CMSLegalPage, ContactSubmission, NewsletterSubscriber,
-    SupportTicket,
+    SupportTicket, CMSAnalyticsLog
 )
 
 
@@ -133,3 +133,41 @@ async def create_support_ticket(db: AsyncSession, data: dict):
     await db.commit()
     await db.refresh(ticket)
     return ticket
+
+async def create_analytics_log(db: AsyncSession, data: dict):
+    log = CMSAnalyticsLog(**data)
+    db.add(log)
+    await db.commit()
+    await db.refresh(log)
+    return log
+
+async def get_analytics_logs_and_stats(db: AsyncSession):
+    # Fetch all logs for the current month
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    start_of_month = datetime(now.year, now.month, 1)
+    
+    result = await db.execute(select(CMSAnalyticsLog).where(CMSAnalyticsLog.timestamp >= start_of_month).order_by(CMSAnalyticsLog.timestamp.desc()))
+    logs = list(result.scalars().all())
+    
+    devices = {}
+    browsers = {}
+    paths = {}
+    countries = {}
+    
+    for log in logs:
+        devices[log.device_type] = devices.get(log.device_type, 0) + 1
+        browsers[log.browser] = browsers.get(log.browser, 0) + 1
+        paths[log.path] = paths.get(log.path, 0) + 1
+        
+        c = getattr(log, "country", None) or "Inconnu"
+        countries[c] = countries.get(c, 0) + 1
+        
+    return {
+        "total_views_month": len(logs),
+        "devices": devices,
+        "browsers": browsers,
+        "paths": paths,
+        "countries": countries,
+        "logs": logs
+    }

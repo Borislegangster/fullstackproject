@@ -5,8 +5,10 @@ import {
   TestimonialModal, PartnerModal, FaqItemModal, FaqCategoryModal,
   HeroSlideModal, DeleteConfirmModal, ContactMessageModal,
   EngagementModal, MethodologyStepModal, GuaranteeModal, StatModal,
-  YouTubeImportModal
+  YouTubeImportModal, AnalyticsModal
 } from './ErpCMSModals';
+import { useQuery } from '@tanstack/react-query';
+import { getAnalyticsStats } from '../../services/api/admin.api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileTextIcon,
@@ -206,6 +208,11 @@ export function ErpCMS() {
 
   // ── Local UI state ────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('blog');
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+  const { data: analyticsData } = useQuery({
+    queryKey: ['admin-analytics'],
+    queryFn: getAnalyticsStats,
+  });
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
@@ -724,17 +731,20 @@ export function ErpCMS() {
                   <ClockIcon className="w-5 h-5 text-blue-500" />
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between">
+              <div 
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center justify-between cursor-pointer hover:border-globus-blue transition-colors group"
+                onClick={() => setIsAnalyticsModalOpen(true)}
+              >
                 <div>
-                  <p className="text-xs text-gray-500 font-bold uppercase">
+                  <p className="text-xs text-gray-500 font-bold uppercase group-hover:text-globus-blue transition-colors">
                     Vues ce mois
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-globus-blue-dark">
-                    —
+                    {analyticsData?.total_views_month ?? '—'}
                   </p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                  <EyeIcon className="w-5 h-5 text-globus-blue" />
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-globus-blue transition-colors">
+                  <EyeIcon className="w-5 h-5 text-globus-blue group-hover:text-white transition-colors" />
                 </div>
               </div>
             </motion.div>
@@ -4307,6 +4317,13 @@ ${seoPages.map(p => `  <url>
           }
         }}
         isReplying={isReplying} />
+
+      {/* ── Analytics Modal ── */}
+      <AnalyticsModal
+        show={isAnalyticsModalOpen}
+        onClose={() => setIsAnalyticsModalOpen(false)}
+        stats={analyticsData}
+      />
 
     </div>);
 
