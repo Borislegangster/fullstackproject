@@ -81,7 +81,7 @@ export function FloatingWidgets() {
               y: 20,
               scale: 0.9
             }}
-            className="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 ease-in-out bottom-10 right-16 absolute">
+            className="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 ease-in-out bottom-2 right-2 absolute z-50">
             
               {/* Chat Header */}
               <div className="bg-globus-blue p-4 flex justify-between items-center">
