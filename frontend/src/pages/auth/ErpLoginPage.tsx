@@ -9,11 +9,7 @@ import {
   ShieldCheckIcon,
 } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-
-const MOCK_CREDENTIALS = {
-  email: 'admin@globus-btp.com',
-  password: 'AdminGlobus2024!',
-};
+import { useAuth } from '../../context/AuthContext';
 
 export function ErpLoginPage() {
   useEffect(() => {
@@ -21,29 +17,41 @@ export function ErpLoginPage() {
   }, []);
 
   const navigate = useNavigate();
+  const { login, isAuthenticated, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already authenticated as ADMIN
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'ADMIN') {
+      navigate('/erp', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      if (
-        email.toLowerCase() === MOCK_CREDENTIALS.email &&
-        password === MOCK_CREDENTIALS.password
-      ) {
-        navigate('/erp');
+    try {
+      await login({ email, password });
+      // After login we check the role — only ADMIN can access ERP
+      // The role check will happen via the ProtectedRoute wrapping /erp
+      navigate('/erp');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 429) {
+        setError('Trop de tentatives. Veuillez patienter avant de réessayer.');
+      } else if (status === 401) {
+        setError('Identifiants incorrects. Vérifiez votre email et mot de passe.');
       } else {
-        setError(
-          'Identifiants incorrects. Vérifiez votre email et mot de passe.'
-        );
-        setIsSubmitting(false);
+        setError('Une erreur est survenue. Veuillez réessayer plus tard.');
       }
-    }, 1200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,27 +77,6 @@ export function ErpLoginPage() {
       <p className="font-opensans text-sm text-globus-gray mb-8">
         Connexion à la plateforme de gestion interne.
       </p>
-
-      {/* Demo Credentials Banner */}
-      <div className="bg-globus-blue-dark/[0.03] border border-globus-blue-dark/10 rounded-xl p-4 mb-6">
-        <p className="font-montserrat font-bold text-[11px] text-globus-blue-dark mb-2 uppercase tracking-wider">
-          🔐 Identifiants de démonstration
-        </p>
-        <div className="space-y-1 font-opensans text-sm text-globus-gray">
-          <p>
-            Email :{' '}
-            <span className="font-mono font-semibold text-globus-blue-dark select-all">
-              admin@globus-btp.com
-            </span>
-          </p>
-          <p>
-            Mot de passe :{' '}
-            <span className="font-mono font-semibold text-globus-blue-dark select-all">
-              AdminGlobus2024!
-            </span>
-          </p>
-        </div>
-      </div>
 
       {/* Error */}
       {error && (

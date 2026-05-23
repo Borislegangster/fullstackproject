@@ -3,11 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { EyeIcon, EyeOffIcon, LogInIcon, AlertCircleIcon } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-
-const MOCK_CREDENTIALS = {
-  email: 'jean.talla@email.com',
-  password: 'Globus2024!',
-};
+import { useAuth } from '../../context/AuthContext';
 
 export function LoginPage() {
   useEffect(() => {
@@ -15,27 +11,39 @@ export function LoginPage() {
   }, []);
 
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/espace-client', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      if (
-        email.toLowerCase() === MOCK_CREDENTIALS.email &&
-        password === MOCK_CREDENTIALS.password
-      ) {
-        navigate('/espace-client');
-      } else {
+    try {
+      await login({ email, password });
+      navigate('/espace-client');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 429) {
+        setError('Trop de tentatives. Veuillez patienter avant de réessayer.');
+      } else if (status === 401) {
         setError('Email ou mot de passe incorrect. Veuillez réessayer.');
-        setIsSubmitting(false);
+      } else {
+        setError('Une erreur est survenue. Veuillez réessayer plus tard.');
       }
-    }, 1200);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,27 +60,6 @@ export function LoginPage() {
       <p className="font-opensans text-sm text-globus-gray mb-8">
         Connectez-vous à votre espace client.
       </p>
-
-      {/* Demo Credentials Banner */}
-      <div className="bg-globus-blue-dark/[0.03] border border-globus-blue-dark/10 rounded-xl p-4 mb-6">
-        <p className="font-montserrat font-bold text-[11px] text-globus-blue-dark mb-2 uppercase tracking-wider">
-          🔐 Identifiants de démonstration
-        </p>
-        <div className="space-y-1 font-opensans text-sm text-globus-gray">
-          <p>
-            Email :{' '}
-            <span className="font-mono font-semibold text-globus-blue-dark select-all">
-              jean.talla@email.com
-            </span>
-          </p>
-          <p>
-            Mot de passe :{' '}
-            <span className="font-mono font-semibold text-globus-blue-dark select-all">
-              Globus2024!
-            </span>
-          </p>
-        </div>
-      </div>
 
       {/* Error */}
       {error && (
@@ -106,7 +93,7 @@ export function LoginPage() {
               setError('');
             }}
             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-opensans text-sm focus:outline-none focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 transition-all placeholder:text-gray-400"
-            placeholder="jean.talla@email.com"
+            placeholder="votre@email.com"
           />
         </div>
 
@@ -206,15 +193,15 @@ export function LoginPage() {
         </button>
       </form>
 
-      {/* Divider */}
+      {/* Footer — ERP access link */}
       <div className="mt-8 pt-6 border-t border-gray-100 text-center">
         <p className="font-opensans text-sm text-globus-gray">
-          Pas encore de compte ?{' '}
+          Accès administrateur ?{' '}
           <Link
-            to="/inscription"
+            to="/erp-login"
             className="text-globus-orange font-bold hover:text-globus-orange-hover transition-colors"
           >
-            Créer un compte
+            Connexion ERP
           </Link>
         </p>
       </div>

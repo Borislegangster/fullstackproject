@@ -10,6 +10,8 @@ import { SchemaOrg } from './components/seo/SchemaOrg';
 import { QueryProvider } from './providers/QueryProvider';
 import { GlobusToaster } from './components/ui/Toast';
 import { useAnalyticsTracker } from './hooks/useAnalyticsTracker';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 // Lazy-loaded pages — Public
 const HomePage = lazy(() =>
 import('./pages/public/HomePage').then((m) => ({
@@ -89,11 +91,6 @@ import('./pages/public/CookiePolicyPage').then((m) => ({
 const LoginPage = lazy(() =>
 import('./pages/auth/LoginPage').then((m) => ({
   default: m.LoginPage
-}))
-);
-const RegisterPage = lazy(() =>
-import('./pages/auth/RegisterPage').then((m) => ({
-  default: m.RegisterPage
 }))
 );
 const ForgotPasswordPage = lazy(() =>
@@ -273,7 +270,7 @@ function AppContent() {
   const location = useLocation();
   const isClientPortal = location.pathname.startsWith('/espace-client');
   const isErp = location.pathname.startsWith('/erp');
-  const isAuth = ['/connexion', '/inscription', '/mot-de-passe-oublie', '/reset-mot-de-passe', '/erp-login'].includes(location.pathname);
+  const isAuth = ['/connexion', '/mot-de-passe-oublie', '/reset-mot-de-passe', '/erp-login'].includes(location.pathname);
   const isPortal = isClientPortal || isErp || isAuth;
   
   // Track page views
@@ -316,7 +313,6 @@ function AppContent() {
             <Route path="/termes-et-conditions" element={<TermsPage />} />
             <Route path="/cookies" element={<CookiePolicyPage />} />
             <Route path="/connexion" element={<LoginPage />} />
-            <Route path="/inscription" element={<RegisterPage />} />
             <Route
               path="/mot-de-passe-oublie"
               element={<ForgotPasswordPage />} />
@@ -324,7 +320,11 @@ function AppContent() {
             <Route path="/reset-mot-de-passe" element={<ResetPasswordPage />} />
             <Route path="/erp-login" element={<ErpLoginPage />} />
 
-            <Route path="/espace-client" element={<ClientLayout />}>
+            <Route path="/espace-client" element={
+              <ProtectedRoute>
+                <ClientLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<ClientDashboard />} />
               <Route path="chantier" element={<ClientChantier />} />
               <Route path="planning" element={<ClientPlanning />} />
@@ -336,7 +336,11 @@ function AppContent() {
               <Route path="notifications" element={<ClientNotifications />} />
             </Route>
 
-            <Route path="/erp" element={<ErpLayout />}>
+            <Route path="/erp" element={
+              <ProtectedRoute requiredRole="ADMIN" redirectTo="/erp-login">
+                <ErpLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<ErpDashboard />} />
               <Route path="chantiers" element={<ErpChantiers />} />
               <Route path="rh" element={<ErpRH />} />
@@ -375,8 +379,10 @@ export function App() {
   return (
     <QueryProvider>
       <BrowserRouter>
-        <GlobusToaster />
-        <AppContent />
+        <AuthProvider>
+          <GlobusToaster />
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </QueryProvider>);
 
