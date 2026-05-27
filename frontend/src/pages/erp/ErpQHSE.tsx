@@ -16,6 +16,7 @@ import {
   Loader2Icon,
   InfoIcon } from
 'lucide-react';
+import { useIncidents, useCreateIncident, useEPIData, useCreateEPIDistribution } from '../../hooks/useErp';
 const initialIncidents = [
 {
   id: 'INC-001',
@@ -177,6 +178,12 @@ const initialBriefings = [
 }];
 
 export function ErpQHSE() {
+  // API hooks
+  const { data: apiIncidents } = useIncidents();
+  const { data: apiEPIData } = useEPIData();
+  const createIncidentMutation = useCreateIncident();
+  const createEPIMutation = useCreateEPIDistribution();
+
   const [activeTab, setActiveTab] = useState('incidents');
   // Data States
   const [incidents, setIncidents] = useState(initialIncidents);

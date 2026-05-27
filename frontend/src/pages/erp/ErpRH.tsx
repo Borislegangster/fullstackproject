@@ -21,6 +21,7 @@ import {
   FileTextIcon,
   ScanIcon } from
 'lucide-react';
+import { useEmployees, useTempWorkers, useCreateEmployee, useCreateTempWorker } from '../../hooks/useErp';
 const tabs = [
 {
   id: 'employes',
@@ -295,6 +296,12 @@ const statusColor = (s: string) => {
   return 'bg-gray-100 text-gray-700';
 };
 export function ErpRH() {
+  // API hooks
+  const { data: apiEmployees } = useEmployees();
+  const { data: apiWorkers } = useTempWorkers();
+  const createEmployeeMutation = useCreateEmployee();
+  const createTempWorkerMutation = useCreateTempWorker();
+
   const [activeTab, setActiveTab] = useState('employes');
   // Search & Filter States
   const [empSearch, setEmpSearch] = useState('');

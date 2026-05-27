@@ -1,4 +1,4 @@
-import React, { useState, Children } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HardHatIcon,
@@ -33,6 +33,7 @@ import {
   ResponsiveContainer,
   Legend } from
 'recharts';
+import { useProjects, useCreateProject } from '../../hooks/useErp';
 const tabs = [
 {
   id: 'overview',
@@ -276,6 +277,10 @@ const fadeUp = {
   }
 };
 export function ErpChantiers() {
+  // API hooks
+  const { data: apiProjects } = useProjects();
+  const createProjectMutation = useCreateProject();
+
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tous');
@@ -283,6 +288,27 @@ export function ErpChantiers() {
   const [projects, setProjects] = useState(initialProjects);
   const [teamAssignments, setTeamAssignments] = useState(initialTeamAssignments);
   const [selectedProject, setSelectedProject] = useState(projects[0]);
+
+  // Sync API projects when available
+  useMemo(() => {
+    if (apiProjects && Array.isArray(apiProjects) && apiProjects.length > 0) {
+      const mapped = apiProjects.map((p: any) => ({
+        id: p.id || p.reference,
+        name: p.name || p.title || '',
+        client: p.client_name || '',
+        location: p.location || p.city || '',
+        progress: p.progress || 0,
+        budget: p.budget || 0,
+        spent: p.spent || 0,
+        status: p.status || 'En cours',
+        statusColor: p.status === 'En retard' ? 'bg-red-100 text-red-700' : p.status === 'En pause' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700',
+        startDate: p.start_date ? new Date(p.start_date).toLocaleDateString('fr-FR') : '',
+        endDate: p.end_date ? new Date(p.end_date).toLocaleDateString('fr-FR') : '',
+        team: p.team_initials || [],
+      }));
+      setProjects(mapped);
+    }
+  }, [apiProjects]);
   // UI States
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{

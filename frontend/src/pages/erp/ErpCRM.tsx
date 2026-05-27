@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TargetIcon,
@@ -24,6 +24,7 @@ import {
   WalletIcon,
   AlertTriangleIcon } from
 'lucide-react';
+import { useLeads, useCreateLead, useConvertLead } from '../../hooks/useErp';
 const initialPipelineColumns = [
 {
   id: 'prospect',
@@ -205,10 +206,53 @@ const fmtShort = (v: number) => {
   return fmt(v);
 };
 export function ErpCRM() {
+  // API hooks for CRM data
+  const { data: apiLeads } = useLeads();
+  const createLeadMutation = useCreateLead();
+  const convertLeadMutation = useConvertLead();
+
   const [activeTab, setActiveTab] = useState('pipeline');
-  // Data States
+  // Data States — use API data if available, else mock data
+  const apiPipelineColumns = useMemo(() => {
+    if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
+      // Group leads by status into pipeline columns
+      const statusMap: Record<string, any[]> = {
+        prospect: [], qualification: [], proposition: [], negotiation: [], gagné: []
+      };
+      apiLeads.forEach((lead: any) => {
+        const status = (lead.status || 'prospect').toLowerCase();
+        if (statusMap[status]) {
+          statusMap[status].push({
+            id: lead.id,
+            name: lead.contact_name || lead.company_name || '',
+            project: lead.project_description || '',
+            budget: lead.estimated_budget || 0,
+            source: lead.source || '',
+            date: lead.created_at ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '',
+            prob: lead.probability || 0,
+            phone: lead.phone || '',
+            email: lead.email || '',
+            location: lead.city || '',
+          });
+        }
+      });
+      return initialPipelineColumns.map(col => ({
+        ...col,
+        items: statusMap[col.id] && statusMap[col.id].length > 0 ? statusMap[col.id] : col.items,
+      }));
+    }
+    return null;
+  }, [apiLeads]);
+
   const [pipelineColumns, setPipelineColumns] = useState(initialPipelineColumns);
   const [quotes, setQuotes] = useState(initialQuotes);
+
+  // Sync API data into state when available
+  useMemo(() => {
+    if (apiPipelineColumns) {
+      setPipelineColumns(apiPipelineColumns);
+    }
+  }, [apiPipelineColumns]);
   // UI States
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [downloadState, setDownloadState] = useState({

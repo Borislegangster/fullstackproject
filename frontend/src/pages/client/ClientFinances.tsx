@@ -15,6 +15,7 @@ import {
   CheckIcon,
   EyeIcon } from
 'lucide-react';
+import { useClientFinances, useInitiatePayment } from '../../hooks/useClient';
 import {
   AreaChart,
   Area,
@@ -24,7 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer } from
 'recharts';
-import { mockUser } from '../../layout/ClientLayout';
+import { useClientUser } from '../../hooks/useClientUser';
 const appelsDeFonds = [
 {
   id: 1,
@@ -146,6 +147,10 @@ const receiptsData = [
 }];
 
 export function ClientFinances() {
+  const { data: financesData } = useClientFinances();
+  const initiatePaymentMutation = useInitiatePayment();
+  const [activeTab, setActiveTab] = useState('factures');
+  const clientUser = useClientUser();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [paymentState, setPaymentState] = useState<
@@ -948,13 +953,13 @@ export function ClientFinances() {
                     Facturé à
                   </p>
                   <p className="font-montserrat font-bold text-globus-blue-dark">
-                    {mockUser.name}
+                    {clientUser.name}
                   </p>
                   <p className="text-sm text-gray-600 font-opensans">
-                    {mockUser.email}
+                    {clientUser.email}
                   </p>
                   <p className="text-sm text-gray-600 font-opensans">
-                    {mockUser.phone}
+                    {clientUser.phone}
                   </p>
                 </div>
                 <div className="text-right">
@@ -962,7 +967,7 @@ export function ClientFinances() {
                     Projet
                   </p>
                   <p className="font-montserrat font-bold text-globus-blue-dark">
-                    {mockUser.projectName}
+                    {clientUser.projectName}
                   </p>
                   <p className="text-sm text-gray-600 font-opensans">
                     Réf: PRJ-2024-089

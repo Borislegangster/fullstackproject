@@ -16,6 +16,7 @@ import {
   DownloadIcon,
   EyeIcon } from
 'lucide-react';
+import { usePurchaseRequests, useCreatePR, useValidatePR, useStock } from '../../hooks/useErp';
 const tabs = [
 {
   id: 'da',
@@ -229,6 +230,12 @@ const statusBcColor = (s: string) => {
   return 'bg-yellow-100 text-yellow-700';
 };
 export function ErpAchats() {
+  // API hooks
+  const { data: apiPRs } = usePurchaseRequests();
+  const { data: apiStock } = useStock();
+  const createPRMutation = useCreatePR();
+  const validatePRMutation = useValidatePR();
+
   const [activeTab, setActiveTab] = useState('da');
   // Data States
   const [demandes, setDemandes] = useState<DA[]>(initialDemandes);

@@ -11,6 +11,7 @@ import {
   PlayCircleIcon,
   CalendarIcon } from
 'lucide-react';
+import { useClientProjectTimeline, useClientProjectGallery } from '../../hooks/useClient';
 const timelineData = [
 {
   step: 'Études et conception',
@@ -110,6 +111,8 @@ const photosData = [
 }];
 
 export function ClientChantier() {
+  const { data: timelineItems } = useClientProjectTimeline();
+  const { data: galleryItems } = useClientProjectGallery();
   const [activeTab, setActiveTab] = useState('timeline');
   const tabs = [
   {

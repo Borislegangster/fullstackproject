@@ -1,4 +1,4 @@
-import React, { useState, Children } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ReceiptIcon,
@@ -28,6 +28,7 @@ import {
   ResponsiveContainer,
   Cell } from
 'recharts';
+import { useInvoices, useCreateInvoice, useMarkInvoicePaid, useSendInvoice } from '../../hooks/useErp';
 interface Invoice {
   id: string;
   numero: string;
@@ -291,6 +292,12 @@ const fadeUp = {
   }
 };
 export function ErpFacturation() {
+  // API hooks
+  const { data: apiInvoices } = useInvoices();
+  const createInvoiceMutation = useCreateInvoice();
+  const markPaidMutation = useMarkInvoicePaid();
+  const sendInvoiceMutation = useSendInvoice();
+
   const [activeTab, setActiveTab] = useState('factures');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewInvoice, setShowNewInvoice] = useState(false);

@@ -1,4 +1,4 @@
-import React, { useState, Children } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ActivityIcon,
@@ -18,6 +18,7 @@ import {
   XIcon,
   CheckCircle2Icon } from
 'lucide-react';
+import { useActivityLogs } from '../../hooks/useErp';
 const activityLog = [
 {
   id: 1,
@@ -116,6 +117,33 @@ const activityLog = [
   bg: 'bg-gray-100'
 }];
 
+// Helper functions to map API data to UI
+function getIconForModule(module: string) {
+  const m = module.toLowerCase();
+  if (m.includes('auth') || m.includes('login')) return LogInIcon;
+  if (m.includes('ged') || m.includes('document')) return FileTextIcon;
+  if (m.includes('chantier') || m.includes('project')) return HardHatIcon;
+  if (m.includes('finance') || m.includes('invoice') || m.includes('payment')) return WalletIcon;
+  if (m.includes('security') || m.includes('sécurité')) return ShieldAlertIcon;
+  if (m.includes('user')) return UserIcon;
+  if (m.includes('config') || m.includes('setting')) return SettingsIcon;
+  return ActivityIcon;
+}
+function getColorForAction(action: string) {
+  const a = action.toLowerCase();
+  if (a.includes('delete') || a.includes('alert') || a.includes('suppr')) return 'text-red-600';
+  if (a.includes('create') || a.includes('login') || a.includes('pay') || a.includes('créé')) return 'text-green-600';
+  if (a.includes('update') || a.includes('modif')) return 'text-blue-600';
+  return 'text-gray-600';
+}
+function getBgForAction(action: string) {
+  const a = action.toLowerCase();
+  if (a.includes('delete') || a.includes('alert') || a.includes('suppr')) return 'bg-red-100';
+  if (a.includes('create') || a.includes('login') || a.includes('pay') || a.includes('créé')) return 'bg-green-100';
+  if (a.includes('update') || a.includes('modif')) return 'bg-blue-100';
+  return 'bg-gray-100';
+}
+
 const stagger = {
   hidden: {},
   visible: {
@@ -138,6 +166,7 @@ const fadeUp = {
   }
 };
 export function ErpJournalActivite() {
+  const { data: apiLogs } = useActivityLogs({ limit: 50 });
   const [searchQuery, setSearchQuery] = useState('');
   const [filterModule, setFilterModule] = useState('Tous');
   const [toast, setToast] = useState<{
@@ -147,6 +176,25 @@ export function ErpJournalActivite() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
+
+  // Map API logs or use fallback mock data
+  const displayLogs = useMemo(() => {
+    if (apiLogs && Array.isArray(apiLogs) && apiLogs.length > 0) {
+      return apiLogs.map((log: any, i: number) => ({
+        id: log.id || i + 1,
+        user: log.user_name || log.user_email || 'Système',
+        role: log.user_role || 'Automatique',
+        action: log.action || 'Action',
+        module: log.entity_type || 'Système',
+        details: log.details || log.description || '',
+        time: log.created_at ? new Date(log.created_at).toLocaleString('fr-FR') : '',
+        icon: getIconForModule(log.entity_type || ''),
+        color: getColorForAction(log.action || ''),
+        bg: getBgForAction(log.action || ''),
+      }));
+    }
+    return activityLog;
+  }, [apiLogs]);
   const showToast = (
   message: string,
   type: 'success' | 'error' | 'info' = 'success') =>
@@ -164,7 +212,7 @@ export function ErpJournalActivite() {
       showToast('Journal exporté avec succès');
     }, 2000);
   };
-  const filteredLogs = activityLog.filter((log) => {
+  const filteredLogs = displayLogs.filter((log) => {
     const matchesSearch =
     log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||

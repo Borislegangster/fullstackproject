@@ -27,7 +27,8 @@ import {
   ClockIcon } from
 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { mockUser } from '../../layout/ClientLayout';
+import { useClientUser } from '../../hooks/useClientUser';
+import { useClientProject, useClientFinances } from '../../hooks/useClient';
 const budgetData = [
 {
   name: 'Payé',
@@ -168,6 +169,9 @@ const weatherConditions = [
 
 export function ClientDashboard() {
   const navigate = useNavigate();
+  const clientUser = useClientUser();
+  const { data: projectData, isLoading: isLoadingProject } = useClientProject();
+  const { data: financesData } = useClientFinances();
   const [isAlertVisible, setIsAlertVisible] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Download
@@ -431,12 +435,12 @@ export function ClientDashboard() {
         
         <div>
           <h2 className="font-montserrat font-extrabold text-2xl text-globus-blue-dark mb-1">
-            Bonjour, {mockUser.name.split(' ')[0]} 👋
+            Bonjour, {clientUser.name.split(' ')[0]} 👋
           </h2>
           <p className="font-opensans text-globus-gray">
             Voici l'état d'avancement de votre projet{' '}
             <strong className="text-globus-blue-dark">
-              {mockUser.projectName}
+              {clientUser.projectName}
             </strong>
           </p>
         </div>
@@ -551,7 +555,7 @@ export function ClientDashboard() {
               </span>
             </div>
             <h3 className="font-montserrat font-extrabold text-2xl sm:text-3xl text-white mb-1">
-              {mockUser.projectName}
+              {clientUser.projectName}
             </h3>
             <p className="font-opensans text-white/80 text-sm">
               Douala, Quartier Bonapriso
@@ -1350,7 +1354,7 @@ export function ClientDashboard() {
                 'Téléchargement en cours...'}
                 </p>
                 <p className="font-opensans text-xs text-globus-gray">
-                  Rapport_Projet_{mockUser.projectName.replace(/\s/g, '_')}.pdf
+                  Rapport_Projet_{clientUser.projectName.replace(/\s/g, '_')}.pdf
                 </p>
               </div>
             </div>

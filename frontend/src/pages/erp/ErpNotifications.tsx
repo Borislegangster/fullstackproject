@@ -1,4 +1,4 @@
-import React, { useState, Children } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BellIcon,
@@ -16,6 +16,7 @@ import {
   TargetIcon,
   ShieldAlertIcon } from
 'lucide-react';
+import { useNotifications, useMarkRead, useMarkAllRead } from '../../hooks/useErp';
 const filters = [
 'Toutes',
 'Urgences',
@@ -171,8 +172,34 @@ const fadeUp = {
   }
 };
 export function ErpNotifications() {
+  const { data: apiNotifs } = useNotifications();
+  const markReadMutation = useMarkRead();
+  const markAllReadMutation = useMarkAllRead();
   const [activeFilter, setActiveFilter] = useState('Toutes');
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [localNotifications, setLocalNotifications] = useState(initialNotifications);
+  const [dismissedIds, setDismissedIds] = useState<number[]>([]);
+
+  // Merge API + local notifications
+  const notifications = useMemo(() => {
+    if (apiNotifs && Array.isArray(apiNotifs) && apiNotifs.length > 0) {
+      return apiNotifs
+        .filter((n: any) => !dismissedIds.includes(n.id))
+        .map((n: any) => ({
+          id: n.id,
+          category: n.category || 'Système',
+          icon: BellIcon,
+          color: n.is_read ? 'text-gray-600' : 'text-blue-600',
+          bg: n.is_read ? 'bg-gray-100' : 'bg-blue-100',
+          title: n.title || '',
+          desc: n.message || n.body || '',
+          time: n.created_at ? new Date(n.created_at).toLocaleString('fr-FR') : '',
+          isRead: n.is_read ?? true,
+          action: undefined,
+        }));
+    }
+    return localNotifications.filter(n => !dismissedIds.includes(n.id));
+  }, [apiNotifs, localNotifications, dismissedIds]);
+
   const filteredNotifications = notifications.filter(
     (n) =>
     activeFilter === 'Toutes' ||
@@ -181,19 +208,21 @@ export function ErpNotifications() {
   );
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const markAllAsRead = () => {
-    setNotifications(
-      notifications.map((n) => ({
+    markAllReadMutation.mutate(undefined as any);
+    setLocalNotifications(
+      localNotifications.map((n) => ({
         ...n,
         isRead: true
       }))
     );
   };
   const dismissNotification = (id: number) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
+    setDismissedIds(prev => [...prev, id]);
   };
   const markAsRead = (id: number) => {
-    setNotifications(
-      notifications.map((n) =>
+    markReadMutation.mutate(String(id));
+    setLocalNotifications(
+      localNotifications.map((n) =>
       n.id === id ?
       {
         ...n,

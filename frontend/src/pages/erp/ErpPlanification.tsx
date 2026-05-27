@@ -13,6 +13,7 @@ import {
   Loader2Icon,
   InfoIcon } from
 'lucide-react';
+import { usePlanningTasks, useCreatePlanningTask } from '../../hooks/useErp';
 interface GanttTask {
   id: number;
   name: string;
@@ -229,6 +230,10 @@ const getPriorityStyle = (p: string) => {
   }
 };
 export function ErpPlanification() {
+  // API hooks
+  const { data: apiTasks } = usePlanningTasks();
+  const createTaskMutation = useCreatePlanningTask();
+
   const [activeTab, setActiveTab] = useState('gantt');
   const [tasks, setTasks] = useState<DailyTask[]>(initialDailyTasks);
   // UI States

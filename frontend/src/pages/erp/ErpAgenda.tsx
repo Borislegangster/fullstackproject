@@ -19,6 +19,7 @@ import {
   ClockIcon,
   MapPinIcon } from
 'lucide-react';
+import { useEvents, useCreateEvent } from '../../hooks/useErp';
 const eventTypes = [
 {
   id: 'reunion',
@@ -214,6 +215,10 @@ const mockEvents: CalendarEvent[] = [
 
 const TODAY = 23;
 export function ErpAgenda() {
+  // API hooks
+  const { data: apiEvents } = useEvents();
+  const createEventMutation = useCreateEvent();
+
   const [activeFilters, setActiveFilters] = useState<string[]>([
   'reunion',
   'inspection',

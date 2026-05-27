@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginApi, refreshApi, getMeApi, type UserOut, type LoginPayload } from '../services/api/auth.api';
+import { loginApi, refreshApi, getMeApi, setPasswordApi, type UserOut, type LoginPayload } from '../services/api/auth.api';
 
 // ── Types ────────────────────────────────────────────────────
 interface AuthState {
   user: UserOut | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  forceReset: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (payload: LoginPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<{ forceReset: boolean }>;
   logout: () => void;
   refreshSession: () => Promise<boolean>;
+  setNewPassword: (password: string, token?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,12 +40,29 @@ function clearTokens() {
   localStorage.removeItem(REFRESH_KEY);
 }
 
+/**
+ * Returns the landing page for a given role after login.
+ */
+export function getLandingPage(role: string): string {
+  switch (role) {
+    case 'CLIENT':
+      return '/espace-client';
+    case 'ADMIN':
+    case 'CHEF_PROJET':
+    case 'COMPTABLE':
+    case 'RH':
+    default:
+      return '/erp';
+  }
+}
+
 // ── Provider ────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
     isLoading: true,
+    forceReset: false,
   });
 
   const didInit = useRef(false);
@@ -62,14 +80,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getMeApi()
       .then((user) => {
-        setState({ user, isAuthenticated: true, isLoading: false });
+        setState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+          forceReset: user.must_change_password ?? false,
+        });
       })
       .catch(async () => {
         // Access token may be expired — try refreshing
         const refreshed = await tryRefresh();
         if (!refreshed) {
           clearTokens();
-          setState({ user: null, isAuthenticated: false, isLoading: false });
+          setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false });
         }
       });
   }, []);
@@ -80,7 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await refreshApi(rt);
       storeTokens(data.access_token, data.refresh_token);
-      setState({ user: data.user, isAuthenticated: true, isLoading: false });
+      setState({
+        user: data.user,
+        isAuthenticated: true,
+        isLoading: false,
+        forceReset: data.force_reset ?? false,
+      });
       return true;
     } catch {
       return false;
@@ -91,13 +119,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (payload: LoginPayload) => {
     const data = await loginApi(payload);
     storeTokens(data.access_token, data.refresh_token);
-    setState({ user: data.user, isAuthenticated: true, isLoading: false });
+    const forceReset = data.force_reset ?? false;
+    setState({
+      user: data.user,
+      isAuthenticated: true,
+      isLoading: false,
+      forceReset,
+    });
+    return { forceReset };
   }, []);
 
   // ── Logout ────────────────────────────────────────────────
   const logout = useCallback(() => {
     clearTokens();
-    setState({ user: null, isAuthenticated: false, isLoading: false });
+    setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false });
+  }, []);
+
+  // ── Set new password (onboarding) ─────────────────────────
+  const setNewPassword = useCallback(async (password: string, token?: string) => {
+    await setPasswordApi({ new_password: password, invitation_token: token });
+    // Re-fetch user to get updated must_change_password=false
+    const user = await getMeApi();
+    setState(s => ({
+      ...s,
+      user,
+      forceReset: false,
+    }));
   }, []);
 
   // ── Refresh (exposed for interceptor) ─────────────────────
@@ -106,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshSession }}>
+    <AuthContext.Provider value={{ ...state, login, logout, refreshSession, setNewPassword }}>
       {children}
     </AuthContext.Provider>
   );

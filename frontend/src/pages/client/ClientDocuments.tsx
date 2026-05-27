@@ -16,6 +16,7 @@ import {
   EyeIcon,
   FileIcon } from
 'lucide-react';
+import { useClientDocuments, useUploadClientDocument, useSignDocumentOTP, useSubmitMaterialChoice } from '../../hooks/useClient';
 const categories = [
 {
   id: 'administratif',
@@ -160,6 +161,11 @@ const initialDocumentsData: Record<string, any[]> = {
 
 };
 export function ClientDocuments() {
+  const { data: apiDocumentsData } = useClientDocuments();
+  const uploadDocumentMutation = useUploadClientDocument();
+  const signDocumentMutation = useSignDocumentOTP();
+  const submitMaterialChoiceMutation = useSubmitMaterialChoice();
+
   const [activeCategory, setActiveCategory] = useState('administratif');
   const [searchQuery, setSearchQuery] = useState('');
   const [documentsData, setDocumentsData] = useState(initialDocumentsData);

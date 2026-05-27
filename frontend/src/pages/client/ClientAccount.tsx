@@ -17,8 +17,11 @@ import {
   MailIcon,
   CameraIcon } from
 'lucide-react';
-import { mockUser } from '../../layout/ClientLayout';
+import { useClientUser } from '../../hooks/useClientUser';
+import { useClientProfile } from '../../hooks/useClient';
 export function ClientAccount() {
+  const { data: apiProfileData } = useClientProfile();
+  const clientUser = useClientUser();
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [notifs, setNotifs] = useState({
     chantier: {
@@ -191,7 +194,7 @@ export function ClientAccount() {
                       className="w-full h-full object-cover" /> :
 
 
-                    mockUser.initials
+                    clientUser.initials
                     }
                   </div>
                   <input
@@ -229,7 +232,7 @@ export function ClientAccount() {
                     </label>
                     <input
                       type="text"
-                      defaultValue={mockUser.name}
+                      defaultValue={clientUser.name}
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans focus:outline-none focus:border-globus-orange" />
                     
                   </div>
@@ -239,7 +242,7 @@ export function ClientAccount() {
                     </label>
                     <input
                       type="tel"
-                      defaultValue={mockUser.phone}
+                      defaultValue={clientUser.phone}
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans focus:outline-none focus:border-globus-orange" />
                     
                   </div>
@@ -250,7 +253,7 @@ export function ClientAccount() {
                   </label>
                   <input
                     type="email"
-                    defaultValue={mockUser.email}
+                    defaultValue={clientUser.email}
                     className="w-full bg-gray-100 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-gray-500 cursor-not-allowed"
                     disabled />
                   

@@ -4,8 +4,14 @@ import { axiosClient } from './axiosClient';
 export interface UserOut {
   id: string;
   email: string;
+  first_name: string;
+  last_name: string;
   full_name: string;
-  role: string;
+  phone: string;
+  avatar_url: string | null;
+  role: 'ADMIN' | 'CHEF_PROJET' | 'COMPTABLE' | 'RH' | 'CLIENT';
+  must_change_password: boolean;
+  is_active: boolean;
 }
 
 export interface TokenResponse {
@@ -13,11 +19,17 @@ export interface TokenResponse {
   refresh_token: string;
   token_type: string;
   user: UserOut;
+  force_reset: boolean;
 }
 
 export interface LoginPayload {
   email: string;
   password: string;
+}
+
+export interface SetPasswordPayload {
+  new_password: string;
+  invitation_token?: string;
 }
 
 // ── API Calls ────────────────────────────────────────────────
@@ -39,5 +51,11 @@ export async function refreshApi(refreshToken: string): Promise<TokenResponse> {
 /** Get the currently authenticated user's profile. */
 export async function getMeApi(): Promise<UserOut> {
   const { data } = await axiosClient.get<UserOut>('/auth/me');
+  return data;
+}
+
+/** Set new password (for onboarding or forced reset). */
+export async function setPasswordApi(payload: SetPasswordPayload): Promise<{ detail: string }> {
+  const { data } = await axiosClient.post<{ detail: string }>('/auth/set-password', payload);
   return data;
 }

@@ -1,4 +1,4 @@
-"""JWT + password hashing service."""
+"""JWT + password hashing service — Extended with RBAC and invitation tokens."""
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -29,7 +29,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-# ── JWT ──────────────────────────────────────────────────────
+# ── JWT Tokens ───────────────────────────────────────────────
 def create_access_token(user_id: str, role: str) -> str:
     """Create a short-lived access token."""
     expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -54,6 +54,17 @@ def create_refresh_token(user_id: str, role: str) -> str:
     return jwt.encode(payload, settings.JWT_REFRESH_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
+def create_invitation_token(email: str, hours: int = 48) -> str:
+    """Create a short-lived invitation token for onboarding emails."""
+    expire = datetime.utcnow() + timedelta(hours=hours)
+    payload = {
+        "sub": email,
+        "exp": expire,
+        "type": "invitation",
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
 def decode_access_token(token: str) -> dict:
     """Decode and validate an access token."""
     try:
@@ -76,6 +87,17 @@ def decode_refresh_token(token: str) -> dict:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token invalide ou expiré")
 
 
+def decode_invitation_token(token: str) -> dict:
+    """Decode and validate an invitation token."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "invitation":
+            raise JWTError("Invalid token type")
+        return payload
+    except JWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Lien d'invitation invalide ou expiré")
+
+
 # ── Dependencies ─────────────────────────────────────────────
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
@@ -93,10 +115,13 @@ async def get_current_user(
     except Exception:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token invalide ou expiré")
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.deleted_at.is_(None))
+    )
     user = result.scalars().first()
-    if not user or not user.is_active:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Utilisateur introuvable ou désactivé")
+    if not user:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Utilisateur introuvable")
+    # Allow must_change_password users through — the frontend handles the redirect
     return user
 
 
@@ -106,12 +131,40 @@ async def require_admin(user: User = Depends(get_current_user)):
     return user
 
 
+def require_role(*allowed_roles: str):
+    """Factory that creates a dependency requiring specific role(s).
+
+    Usage:
+        @router.get("/rh", dependencies=[Depends(require_role("ADMIN", "RH"))])
+    """
+    async def _check(user: User = Depends(get_current_user)):
+        if user.role not in allowed_roles:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                f"Accès réservé aux rôles : {', '.join(allowed_roles)}",
+            )
+        return user
+    return _check
+
+
+# Convenience shortcuts for common role checks
+require_chef_projet = require_role("ADMIN", "CHEF_PROJET")
+require_comptable = require_role("ADMIN", "COMPTABLE")
+require_rh = require_role("ADMIN", "RH")
+require_staff = require_role("ADMIN", "CHEF_PROJET", "COMPTABLE", "RH")
+
+
 # ── Auth queries ─────────────────────────────────────────────
 async def authenticate_user(db: AsyncSession, email: str, password: str):
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(
+        select(User).where(User.email == email, User.deleted_at.is_(None))
+    )
     user = result.scalars().first()
     if not user or not verify_password(password, user.password_hash):
         return None
-    if not user.is_active:
+    # Users with must_change_password are allowed to authenticate
+    # (they need a token to reach the set-password endpoint)
+    # But fully deactivated users (is_active=False AND must_change_password=False) are blocked
+    if not user.is_active and not user.must_change_password:
         return None
     return user

@@ -16,6 +16,7 @@ import {
   EyeIcon,
   FileTextIcon } from
 'lucide-react';
+import { useFinancesProjects, useCharges, useCreateCharge, usePettyCashTransactions, useCreatePettyCashTransaction } from '../../hooks/useErp';
 import {
   AreaChart,
   Area,
@@ -287,6 +288,13 @@ new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 0
 }).format(v);
 export function ErpFinances() {
+  // API hooks
+  const { data: apiProjects } = useFinancesProjects();
+  const { data: apiCharges } = useCharges();
+  const { data: apiTransactions } = usePettyCashTransactions();
+  const createChargeMutation = useCreateCharge();
+  const createTransactionMutation = useCreatePettyCashTransaction();
+
   const [activeTab, setActiveTab] = useState('rentabilite');
   // Data States
   const [projects] = useState(initialProjects);

@@ -20,15 +20,8 @@ import {
   FileTextIcon,
   CalendarIcon } from
 'lucide-react';
-export const mockUser = {
-  name: 'Jean Talla',
-  initials: 'JT',
-  email: 'jean.talla@email.com',
-  phone: '+237 6 99 88 77 66',
-  role: 'Propriétaire',
-  projectName: 'Villa Moderne Bonapriso',
-  projectId: 'PRJ-2024-001'
-};
+import { useAuth } from '../context/AuthContext';
+
 const navItems = [
 {
   path: '/espace-client',
@@ -75,8 +68,13 @@ const navItems = [
 export function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const userInitials = user ? `${user.first_name?.charAt(0) || ''}${user.last_name?.charAt(0) || ''}`.toUpperCase() : 'CL';
+  const userName = user?.full_name || 'Client';
+
   // Close notifications when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -92,7 +90,7 @@ export function ClientLayout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const handleLogout = () => {
-    // Simulate logout
+    logout();
     navigate('/connexion');
   };
   const getPageTitle = () => {
@@ -151,14 +149,14 @@ export function ClientLayout() {
       <div className="p-4 border-t border-white/10 bg-black/20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-globus-orange flex items-center justify-center font-montserrat font-bold text-white shrink-0">
-            {mockUser.initials}
+            {userInitials}
           </div>
           <div className="overflow-hidden">
             <p className="font-montserrat font-bold text-sm truncate">
-              {mockUser.name}
+              {userName}
             </p>
             <p className="font-opensans text-xs text-seconda-blue truncate">
-              {mockUser.projectName}
+              Espace Client
             </p>
           </div>
         </div>
@@ -235,7 +233,7 @@ export function ClientLayout() {
                 {getPageTitle()}
               </h1>
               <span className="hidden md:inline-block bg-globus-light border border-gray-200 text-globus-gray px-2.5 py-1 rounded-md text-xs font-mono font-semibold">
-                {mockUser.projectId}
+                PRJ
               </span>
             </div>
           </div>
@@ -377,12 +375,12 @@ export function ClientLayout() {
 
             <div className="hidden sm:block text-right">
               <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                {mockUser.name}
+                {userName}
               </p>
-              <p className="text-xs text-globus-gray">{mockUser.role}</p>
+              <p className="text-xs text-globus-gray">Client</p>
             </div>
             <div className="w-8 h-8 rounded-full bg-globus-orange flex items-center justify-center font-montserrat font-bold text-white text-sm sm:hidden">
-              {mockUser.initials}
+              {userInitials}
             </div>
           </div>
         </header>

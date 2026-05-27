@@ -14,6 +14,7 @@ import {
   CheckCircle2Icon,
   DownloadIcon } from
 'lucide-react';
+import { useEquipment, useCreateEquipment, useEquipmentAssignments, useCreateEquipmentAssignment } from '../../hooks/useErp';
 const initialEquipment = [
 {
   id: 'MAT-001',
@@ -149,6 +150,12 @@ const maintenanceHistory = [
 }];
 
 export function ErpMateriel() {
+  // API hooks
+  const { data: apiEquipment } = useEquipment();
+  const { data: apiAssignments } = useEquipmentAssignments();
+  const createEqMutation = useCreateEquipment();
+  const assignEqMutation = useCreateEquipmentAssignment();
+
   const [activeTab, setActiveTab] = useState('inventaire');
   const [equipment, setEquipment] = useState(initialEquipment);
   const [assignments, setAssignments] = useState(initialAssignments);

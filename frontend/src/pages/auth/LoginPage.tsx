@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { EyeIcon, EyeOffIcon, LogInIcon, AlertCircleIcon } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, getLandingPage } from '../../context/AuthContext';
 
 export function LoginPage() {
   useEffect(() => {
@@ -11,7 +11,7 @@ export function LoginPage() {
   }, []);
 
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState('');
@@ -20,18 +20,22 @@ export function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/espace-client', { replace: true });
+    if (isAuthenticated && user) {
+      navigate(getLandingPage(user.role), { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
     try {
-      await login({ email, password });
-      navigate('/espace-client');
+      const result = await login({ email, password });
+      if (result.forceReset) {
+        navigate('/reset-mot-de-passe', { replace: true });
+      } else {
+        navigate('/espace-client', { replace: true });
+      }
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 429) {

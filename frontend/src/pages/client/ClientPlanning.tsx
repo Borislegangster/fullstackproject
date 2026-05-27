@@ -19,7 +19,8 @@ import {
   MessageSquareIcon,
   ChevronDownIcon } from
 'lucide-react';
-import { mockUser } from '../../layout/ClientLayout';
+import { useClientUser } from '../../hooks/useClientUser';
+import { useClientPlanning, useRequestAppointment } from '../../hooks/useClient';
 const projectPhases = [
 {
   id: 1,
@@ -196,6 +197,10 @@ const fadeUp = {
   }
 };
 export function ClientPlanning() {
+  const { data: apiPlanningData } = useClientPlanning();
+  const requestAppointmentMutation = useRequestAppointment();
+  
+  const clientUser = useClientUser();
   const [expandedPhase, setExpandedPhase] = useState<number | null>(4); // Default expand "En cours"
   // Modals state
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
@@ -288,7 +293,7 @@ export function ClientPlanning() {
             <p className="font-opensans text-globus-gray">
               Suivez l'avancement de votre projet{' '}
               <strong className="text-globus-blue-dark">
-                {mockUser.projectName}
+                {clientUser.projectName}
               </strong>
             </p>
             <button className="mt-4 flex items-center gap-2 text-sm font-montserrat font-bold text-globus-blue hover:text-globus-blue-dark transition-colors">

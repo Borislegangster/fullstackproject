@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -28,12 +28,9 @@ import {
   ReceiptIcon,
   ActivityIcon } from
 'lucide-react';
-export const mockErpUser = {
-  name: 'Admin Globus',
-  initials: 'AG',
-  email: 'admin@globus-btp.com',
-  role: 'Administrateur'
-};
+import { useAuth } from '../context/AuthContext';
+import { useUnreadCount } from '../hooks/useErp';
+
 interface NavSection {
   label: string;
   items: {
@@ -190,8 +187,17 @@ const allNavItems = navSections.flatMap((s) => s.items);
 export function ErpLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { data: unreadData } = useUnreadCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const userInitials = user ? `${user.first_name?.charAt(0) || ''}${user.last_name?.charAt(0) || ''}`.toUpperCase() : 'AG';
+  const userName = user?.full_name || 'Admin Globus';
+  const userRole = user?.role === 'ADMIN' ? 'Administrateur' : user?.role === 'CHEF_PROJET' ? 'Chef de Projet' : user?.role === 'COMPTABLE' ? 'Comptable' : user?.role === 'RH' ? 'Ressources Humaines' : 'Utilisateur';
+  const unreadCount = unreadData?.count ?? 0;
+
   const handleLogout = () => {
+    logout();
     navigate('/connexion');
   };
   const getPageTitle = () => {
@@ -260,14 +266,14 @@ export function ErpLayout() {
       <div className="p-3 border-t border-white/10 bg-black/30">
         <div className="flex items-center gap-3 mb-3 px-1">
           <div className="w-9 h-9 rounded-lg bg-globus-orange flex items-center justify-center font-montserrat font-bold text-white text-sm shrink-0">
-            {mockErpUser.initials}
+            {userInitials}
           </div>
           <div className="overflow-hidden">
             <p className="font-montserrat font-bold text-xs truncate">
-              {mockErpUser.name}
+              {userName}
             </p>
             <p className="font-opensans text-[10px] text-gray-500 truncate">
-              {mockErpUser.role}
+              {userRole}
             </p>
           </div>
         </div>
@@ -354,12 +360,12 @@ export function ErpLayout() {
               className="relative p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
               
               <BellIcon className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-white">
-                5
-              </span>
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>}
             </Link>
             <div className="w-8 h-8 rounded-lg bg-globus-blue-dark flex items-center justify-center font-montserrat font-bold text-white text-xs">
-              {mockErpUser.initials}
+              {userInitials}
             </div>
           </div>
         </header>

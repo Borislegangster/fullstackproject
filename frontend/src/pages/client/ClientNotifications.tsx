@@ -12,7 +12,8 @@ import {
   InfoIcon,
   XIcon } from
 'lucide-react';
-import { mockUser } from '../../layout/ClientLayout';
+import { useClientUser } from '../../hooks/useClientUser';
+import { useClientNotifications, useMarkClientNotificationRead } from '../../hooks/useClient';
 const categories = [
 {
   id: 'all',
@@ -206,6 +207,9 @@ const fadeUp = {
   }
 };
 export function ClientNotifications() {
+  const { data: apiNotifications } = useClientNotifications();
+  const markReadMutation = useMarkClientNotificationRead();
+  const clientUser = useClientUser();
   const [activeFilter, setActiveFilter] = useState('all');
   const [notifications, setNotifications] = useState(notificationsData);
   const filteredNotifications = notifications.filter((notif) => {

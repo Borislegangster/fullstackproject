@@ -36,10 +36,13 @@ export function ErpLoginPage() {
     setError('');
     setIsSubmitting(true);
     try {
-      await login({ email, password });
-      // After login we check the role — only ADMIN can access ERP
-      // The role check will happen via the ProtectedRoute wrapping /erp
-      navigate('/erp');
+      const result = await login({ email, password });
+      if (result.forceReset) {
+        // User must change password before accessing the app
+        navigate('/reset-mot-de-passe', { replace: true });
+      } else {
+        navigate('/erp', { replace: true });
+      }
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 429) {

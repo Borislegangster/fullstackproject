@@ -14,6 +14,7 @@ import {
   ImageIcon,
   FileIcon } from
 'lucide-react';
+import { useClientSAVTickets, useCreateClientSAVTicket, useRateClientSAVTicket } from '../../hooks/useClient';
 const initialTickets = [
 {
   id: 'SAV-001',
@@ -42,6 +43,10 @@ const initialTickets = [
 }];
 
 export function ClientSAV() {
+  const { data: apiTickets } = useClientSAVTickets();
+  const createTicketMutation = useCreateClientSAVTicket();
+  const rateTicketMutation = useRateClientSAVTicket();
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   const [priority, setPriority] = useState('normal');

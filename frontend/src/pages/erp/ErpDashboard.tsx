@@ -37,6 +37,8 @@ import {
   Legend } from
 'recharts';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { useProjects, useActivityLogs, useUnreadCount } from '../../hooks/useErp';
 const profitData = [
 {
   name: 'Villa Bonapriso',
@@ -223,6 +225,14 @@ const fadeUp = {
   }
 };
 export function ErpDashboard() {
+  const { user } = useAuth();
+  const { data: projectsData } = useProjects();
+  const { data: activityData } = useActivityLogs({ limit: 6 });
+  const { data: unreadData } = useUnreadCount();
+  
+  const activeProjectsCount = projectsData?.filter((p: any) => p.status === 'EN_COURS').length ?? 7;
+  const userName = user?.first_name || 'Admin';
+
   const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
     year: 'numeric',
@@ -295,7 +305,7 @@ export function ErpDashboard() {
         
         <div>
           <h2 className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
-            Bienvenue, Admin 👋
+            Bienvenue, {userName} 👋
           </h2>
           <p className="font-opensans text-sm text-globus-gray capitalize">
             {today} — Vue d'ensemble de l'activité Globus Engineering
@@ -365,7 +375,7 @@ export function ErpDashboard() {
           icon: HardHatIcon,
           iconBg: 'bg-green-100',
           iconColor: 'text-green-600',
-          value: '7',
+          value: String(activeProjectsCount),
           label: 'Chantiers Actifs',
           trend: '+2',
           trendColor: 'text-green-600',

@@ -18,6 +18,7 @@ import {
   FileIcon,
   LoaderIcon } from
 'lucide-react';
+import { useClientMessages, useSendClientMessage, useRequestAppointment } from '../../hooks/useClient';
 const initialConversations = [
 {
   id: 1,
@@ -125,6 +126,10 @@ const initialMessagesData: Record<number, any[]> = {
 
 };
 export function ClientMessages() {
+  const { data: apiMessagesData } = useClientMessages();
+  const sendMessageMutation = useSendClientMessage();
+  const requestAppointmentMutation = useRequestAppointment();
+
   const [activeConvId, setActiveConvId] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');

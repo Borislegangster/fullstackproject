@@ -18,6 +18,7 @@ import {
   MailIcon,
   MessageSquareIcon } from
 'lucide-react';
+import { useSubcontractors, useCreateSubcontractor, useSubcontractorInvoices, useUpdateSubcontractorInvoiceStatus } from '../../hooks/useErp';
 import { AnimatePresence } from 'framer-motion';
 const subcontractors = [
 {
@@ -140,6 +141,12 @@ const invoices = [
 }];
 
 export function ErpSousTraitants() {
+  // API hooks
+  const { data: apiSubs } = useSubcontractors();
+  const { data: apiInvoices } = useSubcontractorInvoices();
+  const createSubMutation = useCreateSubcontractor();
+  const updateInvoiceMutation = useUpdateSubcontractorInvoiceStatus();
+
   const [activeTab, setActiveTab] = useState('subs');
   // New states for interactive features
   const [toast, setToast] = useState<{
