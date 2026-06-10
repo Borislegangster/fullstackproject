@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { formatDate, formatDateTime, formatTime, formatDateParts } from '../../utils/datetime';
 import {
   DownloadIcon,
   TrendingUpIcon,
@@ -28,150 +29,154 @@ import {
 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useClientUser } from '../../hooks/useClientUser';
-import { useClientProject, useClientFinances } from '../../hooks/useClient';
-const budgetData = [
-{
-  name: 'Payé',
-  value: 38250000,
-  color: '#10B981'
-},
-{
-  name: 'Reste à payer',
-  value: 46750000,
-  color: '#E5E7EB'
-}];
+import {
+  useClientProject, useClientFinances, useClientProjectLive,
+  useClientProjectTimeline, useClientNotifications, useClientDocuments,
+} from '../../hooks/useClient';
+import { downloadCSV } from '../../utils/download';
 
-const recentActivity = [
-{
-  id: 1,
-  type: 'photo',
-  icon: CameraIcon,
-  title: 'Nouvelle photo ajoutée - Coulage dalle RDC',
-  time: 'Il y a 2 heures',
-  color: 'text-blue-500',
-  bg: 'bg-blue-100',
-  link: '/espace-client/chantier'
-},
-{
-  id: 2,
-  type: 'finance',
-  icon: WalletIcon,
-  title: 'Appel de fonds #3 émis - 12 750 000 FCFA',
-  time: 'Hier',
-  color: 'text-globus-orange',
-  bg: 'bg-globus-orange/10',
-  link: '/espace-client/finances'
-},
-{
-  id: 3,
-  type: 'document',
-  icon: FileTextIcon,
-  title: 'Document ajouté: Plan électrique v2.pdf',
-  time: 'Il y a 3 jours',
-  color: 'text-gray-500',
-  bg: 'bg-gray-100',
-  link: '/espace-client/documents'
-},
-{
-  id: 4,
-  type: 'milestone',
-  icon: CheckCircle2Icon,
-  title: 'Étape validée: Fondations terminées',
-  time: 'Il y a 1 semaine',
-  color: 'text-green-500',
-  bg: 'bg-green-100',
-  link: '/espace-client/planning'
-},
-{
-  id: 5,
-  type: 'message',
-  icon: MessageSquareIcon,
-  title: 'Message du chef de chantier',
-  time: 'Il y a 1 semaine',
-  color: 'text-purple-500',
-  bg: 'bg-purple-100',
-  link: '/espace-client/messagerie'
-}];
+interface DashboardContact {
+  id: string; initials: string; name: string; role: string; phone: string; email: string;
+}
 
-const contacts = [
-{
-  id: 'pm',
-  initials: 'PM',
-  name: 'Ing. Paul Mbarga',
-  role: 'Chef de Projet',
-  phone: '+237 600 00 00 00',
-  email: 'paul@globus-btp.com'
-},
-{
-  id: 'cf',
-  initials: 'CF',
-  name: 'Mme. Claire Fotso',
-  role: 'Architecte',
-  phone: '+237 600 00 00 01',
-  email: 'claire@globus-btp.com'
-}];
-
-const upcomingAppointments = [
-{
-  id: 1,
-  title: 'Réunion de chantier',
-  date: '12 Juil 2024',
-  time: '10:00',
-  with: 'Ing. Paul Mbarga',
-  type: 'reunion'
-},
-{
-  id: 2,
-  title: 'Choix des matériaux',
-  date: '15 Juil 2024',
-  time: '14:30',
-  with: 'Mme. Claire Fotso',
-  type: 'visite'
-}];
-
-const recentPhotos = [
-'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=500&q=80',
-'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&q=80',
-'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&q=80',
-'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&q=80'];
-
-const weatherConditions = [
-{
-  temp: 28,
-  condition: 'Partiellement nuageux',
+// Weather requires an external feed not wired to the client portal yet — show a
+// neutral placeholder instead of a simulated/mock forecast.
+const NEUTRAL_WEATHER = {
+  temp: null as number | null,
+  condition: 'Météo indisponible',
   favorable: true,
-  forecast: 'Pluie possible demain après-midi'
-},
-{
-  temp: 31,
-  condition: 'Ensoleillé',
-  favorable: true,
-  forecast: 'Beau temps prévu pour les 3 prochains jours'
-},
-{
-  temp: 27,
-  condition: 'Nuageux',
-  favorable: true,
-  forecast: "Risque d'averses en soirée"
-},
-{
-  temp: 30,
-  condition: 'Chaud et humide',
-  favorable: false,
-  forecast: 'Forte chaleur, prévoir des pauses régulières'
-},
-{
-  temp: 26,
-  condition: 'Pluie légère',
-  favorable: false,
-  forecast: 'Amélioration prévue demain matin'
-}];
+  forecast: 'Données météo non disponibles pour le moment.',
+};
+
+
 
 export function ClientDashboard() {
   const navigate = useNavigate();
   const clientUser = useClientUser();
   const { data: projectData, isLoading: isLoadingProject } = useClientProject();
+  const { data: documentsData } = useClientDocuments();
   const { data: financesData } = useClientFinances();
+  const { data: liveData } = useClientProjectLive();
+  const { data: timelineData } = useClientProjectTimeline();
+  const { data: notifData } = useClientNotifications();
+  void isLoadingProject;
+
+  // Live budget (paid vs remaining) from invoices
+  const liveBudgetData = React.useMemo(() => {
+    if (!Array.isArray(financesData) || financesData.length === 0) return [{ name: 'Aucune donnée', value: 1, color: '#E5E7EB' }];
+    const paid = financesData.reduce((s: number, i: any) => s + (i.amount_paid || 0), 0);
+    const total = financesData.reduce((s: number, i: any) => s + (i.total || 0), 0);
+    const remaining = Math.max(total - paid, 0);
+    if (total === 0) return [{ name: 'Aucune donnée', value: 1, color: '#E5E7EB' }];
+    return [
+      { name: 'Payé', value: paid, color: '#10B981' },
+      { name: 'Reste à payer', value: remaining, color: '#E5E7EB' },
+    ];
+  }, [financesData]);
+
+  // Live activity (from notifications + recent timeline updates)
+  const liveActivity = React.useMemo(() => {
+    const arr: any[] = [];
+    if (Array.isArray(notifData)) {
+      for (const n of notifData.slice(0, 5)) {
+        arr.push({
+          id: n.id,
+          type: n.type || 'info',
+          icon: n.type === 'invoice' ? WalletIcon
+            : n.type === 'message' ? MessageSquareIcon
+            : n.type === 'document' ? FileTextIcon
+            : n.type === 'project' ? CheckCircle2Icon
+            : CameraIcon,
+          title: n.title || n.message || '',
+          time: formatDateTime(n.created_at),
+          color: n.is_read ? 'text-gray-500' : 'text-globus-orange',
+          bg: n.is_read ? 'bg-gray-100' : 'bg-globus-orange/10',
+          link: n.type === 'invoice' ? '/espace-client/finances'
+            : n.type === 'message' ? '/espace-client/messagerie'
+            : n.type === 'document' ? '/espace-client/documents'
+            : '/espace-client',
+        });
+      }
+    }
+    return arr;
+  }, [notifData]);
+  void timelineData;
+
+  // Recent site photos from the live project snapshot (no mock).
+  const liveRecentPhotos = React.useMemo(() => {
+    const media = (liveData as any)?.last_media;
+    if (!Array.isArray(media)) return [] as string[];
+    return media.map((m: any) => m.url).filter(Boolean);
+  }, [liveData]);
+  // Real pending call-for-funds (unpaid invoice) — drives the alert banner.
+  const pendingAppel = React.useMemo(() => {
+    if (!Array.isArray(financesData)) return null;
+    return (
+      financesData.find(
+        (i: any) =>
+          (i.status === 'ENVOYEE' || i.status === 'EN_RETARD') &&
+          (i.amount_paid || 0) < (i.total || 0),
+      ) || null
+    );
+  }, [financesData]);
+  // ── Real KPIs (project + timeline + documents) — no hardcoded values ──
+  const progress = Math.round(Number((projectData as any)?.progress ?? 0));
+  const budget = Number((projectData as any)?.budget_initial ?? 0);
+  const documentsCount = Array.isArray(documentsData) ? documentsData.length : 0;
+  const phases: any[] = Array.isArray((timelineData as any)?.phases)
+    ? (timelineData as any).phases
+    : [];
+  const nextPhase = phases.find((p: any) => (p.progress ?? 0) < 100) || null;
+  const currentPhase =
+    phases.find((p: any) => (p.progress ?? 0) > 0 && (p.progress ?? 0) < 100) || nextPhase;
+  const estimatedEnd = (projectData as any)?.estimated_end_date || null;
+  const daysUntilDelivery = estimatedEnd
+    ? Math.max(0, Math.ceil((new Date(estimatedEnd).getTime() - Date.now()) / 86_400_000))
+    : null;
+  const deliveryLabel = formatDateParts(estimatedEnd, { month: 'long', year: 'numeric' });
+  const projectStatusLabel = (() => {
+    const s = String((projectData as any)?.status || '').toUpperCase();
+    const m: Record<string, string> = {
+      EN_COURS: 'En cours', PLANIFIE: 'Planifié', TERMINE: 'Terminé',
+      LIVRE: 'Livré', SUSPENDU: 'Suspendu',
+    };
+    return m[s] || (currentPhase ? 'En cours' : 'Projet');
+  })();
+  const formatCompact = (v: number) => {
+    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M FCFA`;
+    if (v >= 1_000) return `${Math.round(v / 1_000)}K FCFA`;
+    return `${v.toLocaleString('fr-FR')} FCFA`;
+  };
+  const projectLocation = (projectData as any)?.location || '';
+  const paidPercent = (() => {
+    if (!Array.isArray(financesData) || financesData.length === 0) return 0;
+    const paid = financesData.reduce((s: number, i: any) => s + (i.amount_paid || 0), 0);
+    const total = financesData.reduce((s: number, i: any) => s + (i.total || 0), 0);
+    return total > 0 ? Math.round((paid / total) * 100) : 0;
+  })();
+  // Real upcoming appointments from the project timeline.
+  const liveAppointments = React.useMemo(() => {
+    const appts = (timelineData as any)?.appointments;
+    if (!Array.isArray(appts)) return [] as any[];
+    const now = Date.now();
+    return appts
+      .filter((a: any) => a.start_time)
+      .map((a: any) => {
+        const d = new Date(a.start_time);
+        return {
+          id: a.id,
+          ts: d.getTime(),
+          date: formatDateParts(d, { day: '2-digit', month: 'short' }),
+          title: a.title || 'Rendez-vous',
+          time: formatTime(d),
+          with: a.location || '',
+          type: /visite/i.test(a.title || '') ? 'visite' : 'reunion',
+        };
+      })
+      .filter((a: any) => a.ts >= now)
+      .sort((a: any, b: any) => a.ts - b.ts)
+      .slice(0, 5);
+  }, [timelineData]);
   const [isAlertVisible, setIsAlertVisible] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Download
@@ -183,7 +188,7 @@ export function ClientDashboard() {
   // Call modal
   const [callModal, setCallModal] = useState<{
     isOpen: boolean;
-    contact: (typeof contacts)[0] | null;
+    contact: DashboardContact | null;
     status: 'ringing' | 'connected' | 'ended';
     timer: number;
     isMuted: boolean;
@@ -197,7 +202,7 @@ export function ClientDashboard() {
   // Email modal
   const [emailModal, setEmailModal] = useState<{
     isOpen: boolean;
-    contact: (typeof contacts)[0] | null;
+    contact: DashboardContact | null;
     status: 'idle' | 'sending' | 'success';
     subject: string;
     message: string;
@@ -208,9 +213,12 @@ export function ClientDashboard() {
     subject: '',
     message: ''
   });
-  // Weather
-  const [weather, setWeather] = useState(weatherConditions[0]);
+  // Weather — neutral placeholder (no mock; external feed not wired yet).
+  const [weather] = useState(NEUTRAL_WEATHER);
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
+  // No backend source yet for the client's team contacts (kept empty, not mocked).
+  const contacts: DashboardContact[] = [];
+  const upcomingAppointments = liveAppointments;
   // Lightbox
   const [lightbox, setLightbox] = useState<{
     isOpen: boolean;
@@ -231,38 +239,39 @@ export function ClientDashboard() {
   // Download handler
   const handleDownload = () => {
     if (downloadState.isDownloading) return;
-    setDownloadState({
-      isDownloading: true,
-      progress: 0,
-      isSuccess: false
-    });
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 5;
-      setDownloadState((prev) => ({
-        ...prev,
-        progress
-      }));
-      if (progress >= 100) {
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          isSuccess: true
-        }));
-        setTimeout(
-          () =>
-          setDownloadState({
-            isDownloading: false,
-            progress: 0,
-            isSuccess: false
-          }),
-          3000
-        );
-      }
-    }, 80);
+    // Real CSV récapitulatif built from the live project data (no fake progress).
+    const rows: Array<Record<string, unknown>> = [
+      { indicateur: 'Projet', valeur: clientUser.projectName || '' },
+      { indicateur: 'Avancement', valeur: `${progress}%` },
+      { indicateur: 'Budget total', valeur: formatCompact(budget) },
+      { indicateur: 'Prochaine étape', valeur: nextPhase?.name || 'À définir' },
+      { indicateur: 'Documents', valeur: documentsCount },
+      { indicateur: 'Livraison estimée', valeur: deliveryLabel || 'À définir' },
+      ...phases.map((ph: any) => ({
+        indicateur: `Phase · ${ph.name}`,
+        valeur: `${ph.progress ?? 0}%`,
+      })),
+    ];
+    setDownloadState({ isDownloading: true, progress: 100, isSuccess: true });
+    try {
+      downloadCSV(
+        `recapitulatif-projet-${new Date().toISOString().slice(0, 10)}.csv`,
+        rows,
+        [
+          { key: 'indicateur', label: 'Indicateur' },
+          { key: 'valeur', label: 'Valeur' },
+        ],
+      );
+    } catch {
+      /* ignore */
+    }
+    setTimeout(
+      () => setDownloadState({ isDownloading: false, progress: 0, isSuccess: false }),
+      2500,
+    );
   };
   // Call handlers
-  const startCall = (contact: (typeof contacts)[0]) => {
+  const startCall = (contact: DashboardContact) => {
     setCallModal({
       isOpen: true,
       contact,
@@ -314,7 +323,7 @@ export function ClientDashboard() {
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
   // Email handlers
-  const openEmail = (contact: (typeof contacts)[0]) => {
+  const openEmail = (contact: DashboardContact) => {
     setEmailModal({
       isOpen: true,
       contact,
@@ -347,15 +356,11 @@ export function ClientDashboard() {
       );
     }, 1500);
   };
-  // Weather refresh
+  // Weather refresh — no live feed wired; just acknowledge the action.
   const refreshWeather = () => {
     if (isRefreshingWeather) return;
     setIsRefreshingWeather(true);
-    setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * weatherConditions.length);
-      setWeather(weatherConditions[randomIndex]);
-      setIsRefreshingWeather(false);
-    }, 1500);
+    setTimeout(() => setIsRefreshingWeather(false), 800);
   };
   // Toast auto-dismiss
   useEffect(() => {
@@ -381,7 +386,7 @@ export function ClientDashboard() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Pending Payment Alert */}
       <AnimatePresence>
-        {isAlertVisible &&
+        {isAlertVisible && pendingAppel &&
         <motion.div
           initial={{
             opacity: 0,
@@ -396,7 +401,7 @@ export function ClientDashboard() {
             y: -10
           }}
           className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          
+
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                 <AlertCircleIcon className="w-5 h-5 text-amber-600" />
@@ -406,7 +411,10 @@ export function ClientDashboard() {
                   Appel de fonds en attente
                 </p>
                 <p className="font-opensans text-xs text-amber-600">
-                  12 750 000 FCFA — Échéance : 15 Juillet 2024
+                  {((pendingAppel.total || 0) - (pendingAppel.amount_paid || 0)).toLocaleString('fr-FR')} FCFA
+                  {pendingAppel.due_date || pendingAppel.issue_date
+                    ? ` — Échéance : ${formatDate(pendingAppel.due_date || pendingAppel.issue_date)}`
+                    : ''}
                 </p>
               </div>
             </div>
@@ -454,7 +462,7 @@ export function ClientDashboard() {
 
           <DownloadIcon className="w-4 h-4" />
           }
-          Rapport PDF
+          Exporter
         </button>
       </motion.div>
 
@@ -473,10 +481,12 @@ export function ClientDashboard() {
           </div>
           <div className="relative z-10">
             <p className="font-montserrat font-extrabold text-3xl mb-1">
-              247 jours
+              {daysUntilDelivery !== null ? `${daysUntilDelivery} jours` : '—'}
             </p>
             <p className="font-opensans text-sm text-seconda-blue">
-              avant livraison estimée (Mars 2025)
+              {deliveryLabel
+                ? `avant livraison estimée (${deliveryLabel})`
+                : 'Date de livraison à définir'}
             </p>
           </div>
         </motion.div>
@@ -539,27 +549,29 @@ export function ClientDashboard() {
         className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         
         <div className="h-48 sm:h-64 relative">
+          {liveRecentPhotos[0] ?
           <img
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80"
+            src={liveRecentPhotos[0]}
             alt="Projet"
-            className="w-full h-full object-cover" />
-          
+            className="w-full h-full object-cover" /> :
+          <div className="w-full h-full bg-gradient-to-br from-globus-blue-dark to-globus-blue" />
+          }
+
           <div className="absolute inset-0 bg-gradient-to-t from-globus-blue-dark/90 to-transparent flex flex-col justify-end p-6">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <span className="bg-globus-orange/20 backdrop-blur-md text-white border border-globus-orange/50 px-3 py-1 rounded-full font-montserrat font-bold text-xs flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-globus-orange animate-pulse" />
-                En cours - Gros Œuvre
+                {projectStatusLabel}{currentPhase ? ` · ${currentPhase.name}` : ''}
               </span>
+              {deliveryLabel &&
               <span className="bg-black/30 backdrop-blur-md text-white px-3 py-1 rounded-full font-montserrat text-xs">
-                Livraison estimée : Mars 2025
+                Livraison estimée : {deliveryLabel}
               </span>
+              }
             </div>
             <h3 className="font-montserrat font-extrabold text-2xl sm:text-3xl text-white mb-1">
               {clientUser.projectName}
             </h3>
-            <p className="font-opensans text-white/80 text-sm">
-              Douala, Quartier Bonapriso
-            </p>
           </div>
         </div>
         <div className="p-6 bg-white">
@@ -568,7 +580,7 @@ export function ClientDashboard() {
               Avancement global
             </span>
             <span className="font-montserrat font-extrabold text-2xl text-globus-orange">
-              45%
+              {progress}%
             </span>
           </div>
           <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -577,7 +589,7 @@ export function ClientDashboard() {
                 width: 0
               }}
               animate={{
-                width: '45%'
+                width: `${progress}%`
               }}
               transition={{
                 duration: 1,
@@ -595,21 +607,21 @@ export function ClientDashboard() {
         {
           icon: TrendingUpIcon,
           label: 'Avancement',
-          value: '45%',
+          value: `${progress}%`,
           iconColor: 'text-green-600',
           iconBg: 'bg-green-100'
         },
         {
           icon: WalletIcon,
           label: 'Budget Total',
-          value: '85M FCFA',
+          value: formatCompact(budget),
           iconColor: 'text-blue-600',
           iconBg: 'bg-blue-100'
         },
         {
           icon: CalendarIcon,
           label: 'Prochaine Étape',
-          value: "Mise hors d'eau",
+          value: nextPhase?.name || 'À définir',
           iconColor: 'text-globus-orange',
           iconBg: 'bg-globus-orange/10',
           small: true
@@ -617,7 +629,7 @@ export function ClientDashboard() {
         {
           icon: FileTextIcon,
           label: 'Documents',
-          value: '12 fichiers',
+          value: `${documentsCount} fichier${documentsCount > 1 ? 's' : ''}`,
           iconColor: 'text-gray-600',
           iconBg: 'bg-gray-100'
         }].
@@ -666,7 +678,7 @@ export function ClientDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={budgetData}
+                  data={liveBudgetData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -676,7 +688,7 @@ export function ClientDashboard() {
                   dataKey="value"
                   stroke="none">
                   
-                  {budgetData.map((entry, index) =>
+                  {liveBudgetData.map((entry, index) =>
                   <Cell key={`cell-${index}`} fill={entry.color} />
                   )}
                 </Pie>
@@ -692,7 +704,7 @@ export function ClientDashboard() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
-                45%
+                {paidPercent}%
               </span>
               <span className="text-xs text-globus-gray font-opensans">
                 Payé
@@ -732,7 +744,7 @@ export function ClientDashboard() {
             Activité Récente
           </h3>
           <div className="space-y-4">
-            {recentActivity.map((activity) => {
+            {liveActivity.map((activity) => {
               const Icon = activity.icon;
               return (
                 <Link
@@ -783,6 +795,11 @@ export function ClientDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
+            {upcomingAppointments.length === 0 &&
+              <p className="text-center text-globus-gray font-opensans text-sm py-6">
+                Aucun rendez-vous programmé
+              </p>
+            }
             {upcomingAppointments.map((apt) =>
             <div
               key={apt.id}
@@ -833,8 +850,13 @@ export function ClientDashboard() {
               Toutes les photos <ChevronRightIcon className="w-3 h-3" />
             </Link>
           </div>
+          {liveRecentPhotos.length === 0 &&
+            <p className="text-center text-globus-gray font-opensans text-sm py-6">
+              Aucune photo de chantier disponible
+            </p>
+          }
           <div className="grid grid-cols-2 gap-3">
-            {recentPhotos.map((photo, i) =>
+            {liveRecentPhotos.map((photo, i) =>
             <button
               key={i}
               onClick={() =>
@@ -871,6 +893,11 @@ export function ClientDashboard() {
           <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-4">
             Vos Contacts Dédiés
           </h3>
+          {contacts.length === 0 &&
+            <p className="text-globus-gray font-opensans text-sm py-4">
+              Vos contacts dédiés s'afficheront ici dès l'affectation de votre équipe projet.
+            </p>
+          }
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {contacts.map((contact) =>
             <div
@@ -926,7 +953,7 @@ export function ClientDashboard() {
                   Météo Chantier
                 </h3>
                 <p className="font-opensans text-xs text-globus-gray">
-                  Douala, Cameroun
+                  {projectLocation || 'Localisation indisponible'}
                 </p>
               </div>
             </div>
@@ -943,7 +970,7 @@ export function ClientDashboard() {
           <div className="relative z-10">
             <div className="flex items-end gap-2 mb-2">
               <span className="font-montserrat font-extrabold text-4xl text-globus-blue-dark">
-                {weather.temp}°C
+                {weather.temp != null ? `${weather.temp}°C` : '—'}
               </span>
               <span className="font-opensans text-sm text-globus-gray font-semibold mb-1">
                 {weather.condition}

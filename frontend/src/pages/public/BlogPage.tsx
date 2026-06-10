@@ -1,23 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  ArrowRightIcon,
-  CalendarIcon,
-  UserIcon,
-  ClockIcon,
-  SearchIcon,
-  ChevronRightIcon,
-  HomeIcon,
-  TagIcon } from
-'lucide-react';
+import { ArrowRightIcon, CalendarIcon, ClockIcon, SearchIcon, ChevronRightIcon, HomeIcon, TagIcon } from 'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getAllBlogPosts } from '../../services/api/cms.api';
 import { SkeletonGrid } from '../../components/ui/Skeleton';
-export { mockBlogPostsPageData as blogPostsData } from '../../services/api/mockData/pages.mock';
+import { EmptyState } from '../../components/ui/EmptyState';
 export function BlogPage() {
-  const { data: blogPostsData, isLoading } = useCmsQuery(
+  const { data: blogPostsData, isLoading, isError, refetch } = useCmsQuery(
     'blog-posts',
     getAllBlogPosts
   );
@@ -26,10 +17,31 @@ export function BlogPage() {
   }, []);
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [searchQuery, setSearchQuery] = useState('');
-  if (isLoading || !blogPostsData) {
+  if (isLoading) {
     return (
       <div className="pt-40 pb-20 container mx-auto px-4">
         <SkeletonGrid count={6} />
+      </div>);
+
+  }
+  if (isError) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<TagIcon className="w-8 h-8" />}
+          title="Impossible de charger le blog"
+          description="Une erreur est survenue lors du chargement. Veuillez réessayer."
+          action={{ label: 'Réessayer', onClick: () => refetch() }} />
+      </div>);
+
+  }
+  if (!blogPostsData || blogPostsData.length === 0) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<TagIcon className="w-8 h-8" />}
+          title="Aucun article publié"
+          description="Nos actualités seront publiées prochainement. Revenez bientôt." />
       </div>);
 
   }
@@ -42,7 +54,6 @@ export function BlogPage() {
   'Réglementation'];
 
   const heroPost = blogPostsData.find((p) => p.featured) || blogPostsData[0];
-  const regularPosts = blogPostsData.filter((p) => p.id !== heroPost.id);
   // Filter logic
   const filteredPosts = blogPostsData.filter((post) => {
     const matchesCategory =

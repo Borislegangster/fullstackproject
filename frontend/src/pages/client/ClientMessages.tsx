@@ -1,142 +1,93 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  SearchIcon,
-  SendIcon,
-  PaperclipIcon,
-  CalendarIcon,
-  VideoIcon,
-  ClockIcon,
-  XIcon,
-  CheckCircle2Icon,
-  PhoneIcon,
-  MicIcon,
-  MicOffIcon,
-  CameraIcon,
-  ImageIcon,
-  MapPinIcon,
-  FileIcon,
-  LoaderIcon } from
-'lucide-react';
-import { useClientMessages, useSendClientMessage, useRequestAppointment } from '../../hooks/useClient';
-const initialConversations = [
-{
-  id: 1,
-  name: 'Ing. Paul Mbarga',
-  role: 'Chef de projet',
-  initial: 'PM',
-  lastMsg: 'Les fondations sont terminées, nous attaquons...',
-  time: '10:30',
-  unread: 2,
-  active: true
-},
-{
-  id: 2,
-  name: 'Support Globus',
-  role: 'Assistance',
-  initial: 'SG',
-  lastMsg: 'Votre facture a bien été générée.',
-  time: 'Hier',
-  unread: 0,
-  active: false
-},
-{
-  id: 3,
-  name: 'Mme. Claire Fotso',
-  role: 'Architecte',
-  initial: 'CF',
-  lastMsg: 'Voici les options pour le carrelage.',
-  time: 'Lun.',
-  unread: 0,
-  active: false
-}];
+import { SearchIcon, SendIcon, PaperclipIcon, CalendarIcon, VideoIcon, ClockIcon, XIcon, CheckCircle2Icon, ImageIcon, MapPinIcon, FileIcon } from 'lucide-react';
+import { useClientMessages, useSendClientMessage, useRequestAppointment, useClientProject, useClientProjectTimeline } from '../../hooks/useClient';
+import { useMessagesLive } from '../../hooks/useMessagesLive';
+import { useQuery } from '@tanstack/react-query';
+import { formatTime, formatDateTimeParts } from '../../utils/datetime';
+import { getSiteSettings } from '../../services/api/cms.api';
+import { useAuth } from '../../context/AuthContext';
 
-const initialMessagesData: Record<number, any[]> = {
-  1: [
-  {
-    id: 1,
-    sender: 'them',
-    text: "Bonjour M. Talla, j'espère que vous allez bien.",
-    time: '10:15'
-  },
-  {
-    id: 2,
-    sender: 'them',
-    text: "Je vous informe que le coulage des fondations s'est terminé hier avec succès.",
-    time: '10:16'
-  },
-  {
-    id: 3,
-    sender: 'me',
-    text: 'Bonjour Paul. Excellente nouvelle ! Avez-vous pu prendre quelques photos ?',
-    time: '10:20'
-  },
-  {
-    id: 4,
-    sender: 'them',
-    text: 'Oui tout à fait, je viens de les uploader dans l\'onglet "Suivi de Chantier".',
-    time: '10:25'
-  },
-  {
-    id: 5,
-    sender: 'them',
-    text: "Les fondations sont terminées, nous attaquons l'élévation des murs la semaine prochaine.",
-    time: '10:30'
-  }],
-
-  2: [
-  {
-    id: 1,
-    sender: 'them',
-    text: "Bonjour, votre facture #3 a été générée et est disponible dans l'onglet Finances.",
-    time: 'Hier 14:00'
-  },
-  {
-    id: 2,
-    sender: 'me',
-    text: 'Merci, je la télécharge de suite.',
-    time: 'Hier 14:30'
-  },
-  {
-    id: 3,
-    sender: 'them',
-    text: "N'hésitez pas si vous avez des questions concernant le règlement.",
-    time: 'Hier 14:35'
-  }],
-
-  3: [
-  {
-    id: 1,
-    sender: 'them',
-    text: "Bonjour M. Talla, voici les 3 options pour le carrelage du salon disponibles dans l'onglet Documents > Validations.",
-    time: 'Lun. 09:00'
-  },
-  {
-    id: 2,
-    sender: 'me',
-    text: 'Merci Claire, je vais étudier ça ce week-end avec mon épouse.',
-    time: 'Lun. 10:15'
-  },
-  {
-    id: 3,
-    sender: 'them',
-    text: 'Parfait, prenez votre temps. La deadline pour la commande est le 30 août.',
-    time: 'Lun. 10:30'
-  }]
-
-};
 export function ClientMessages() {
   const { data: apiMessagesData } = useClientMessages();
+  const { data: projectData } = useClientProject();
+  const { data: timelineData } = useClientProjectTimeline();
+  const projectId: string | null = projectData?.id || null;
+  // Real next appointment (no hardcoded date).
+  const nextAppointment = useMemo(() => {
+    const appts = (timelineData as any)?.appointments;
+    if (!Array.isArray(appts) || appts.length === 0) return null;
+    const now = Date.now();
+    const upcoming = appts
+      .filter((a: any) => a.start_time && new Date(a.start_time).getTime() >= now)
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+      );
+    return upcoming[0] || null;
+  }, [timelineData]);
+  const { typingUsers, notifyTyping } = useMessagesLive({ projectId });
   const sendMessageMutation = useSendClientMessage();
   const requestAppointmentMutation = useRequestAppointment();
+  const { user } = useAuth();
+  const myId = user?.id || '';
+  // Real company identity (CMS) for the project-team thread label.
+  const { data: settings } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: getSiteSettings,
+    staleTime: 5 * 60 * 1000,
+  });
+  const teamName = (settings as any)?.companyName
+    ? `Équipe ${(settings as any).companyName}`
+    : 'Équipe projet';
+  const teamInitial = ((settings as any)?.companyName || 'EP')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w: string) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  // Real typing indicator driven by the live channel (no fake timer).
+  const isTyping = typingUsers.size > 0;
 
   const [activeConvId, setActiveConvId] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
-  const [messagesData, setMessagesData] = useState(initialMessagesData);
-  const [conversations, setConversations] = useState(initialConversations);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Single project thread served by the backend, exposed as conv #1.
+  // Built live from the real messages (no mock conversation list).
+  const conversations = React.useMemo(() => {
+    const msgs = Array.isArray(apiMessagesData) ? apiMessagesData : [];
+    const last = msgs[msgs.length - 1];
+    return [{
+      id: 1,
+      name: teamName,
+      role: 'Suivi de projet',
+      initial: teamInitial,
+      lastMsg: last?.content || 'Démarrez la conversation avec votre équipe projet.',
+      time: formatTime(last?.created_at),
+      unread: 0,
+      active: true,
+    }];
+  }, [apiMessagesData]);
+
+  // Live messages from API (conv 1 = the user's primary project thread).
+  const messagesData = React.useMemo(() => {
+    const out: Record<number, any[]> = { 1: [] };
+    if (Array.isArray(apiMessagesData)) {
+      out[1] = apiMessagesData.map((m: any) => ({
+        id: m.id,
+        sender: m.is_system ? 'system' : (myId && m.sender_id === myId ? 'me' : 'them'),
+        text: m.content || '',
+        time: formatTime(m.created_at),
+        attachment: m.attachment_url
+          ? { name: decodeURIComponent(m.attachment_url.split('/').pop() || 'pièce-jointe'), type: 'file' }
+          : undefined,
+      }));
+    }
+    return out;
+  }, [apiMessagesData, myId]);
   // Attachment State
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachment, setAttachment] = useState<{
@@ -146,11 +97,6 @@ export function ClientMessages() {
   // Modals State
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [appointmentSuccess, setAppointmentSuccess] = useState(false);
-  const [zoomState, setZoomState] = useState<
-    'idle' | 'connecting' | 'connected'>(
-    'idle');
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
   const activeConv =
   conversations.find((c) => c.id === activeConvId) || conversations[0];
   const activeMessages = messagesData[activeConvId] || [];
@@ -169,65 +115,12 @@ export function ClientMessages() {
   }, [activeMessages, isTyping]);
   const handleSendMessage = () => {
     if (!messageInput.trim() && !attachment) return;
-    const newMessage = {
-      id: Date.now(),
-      sender: 'me',
-      text: messageInput.trim(),
-      time: new Date().toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      attachment: attachment
-    };
-    setMessagesData((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] || []), newMessage]
-    }));
-    // Update conversation last message
-    setConversations((prev) =>
-    prev.map((c) =>
-    c.id === activeConvId ?
-    {
-      ...c,
-      lastMsg: attachment ?
-      `Fichier: ${attachment.name}` :
-      newMessage.text,
-      time: newMessage.time
-    } :
-    c
-    )
-    );
+    const content = messageInput.trim() || (attachment ? `Fichier: ${attachment.name}` : '');
+    sendMessageMutation
+      .mutate(content);
     setMessageInput('');
     setAttachment(null);
-    // Simulate reply
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const replyMessage = {
-        id: Date.now() + 1,
-        sender: 'them',
-        text: "C'est bien noté. Je m'en occupe rapidement.",
-        time: new Date().toLocaleTimeString('fr-FR', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      };
-      setMessagesData((prev) => ({
-        ...prev,
-        [activeConvId]: [...(prev[activeConvId] || []), replyMessage]
-      }));
-      setConversations((prev) =>
-      prev.map((c) =>
-      c.id === activeConvId ?
-      {
-        ...c,
-        lastMsg: replyMessage.text,
-        time: replyMessage.time
-      } :
-      c
-      )
-      );
-    }, 2000);
+    notifyTyping(false);
   };
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -244,19 +137,32 @@ export function ClientMessages() {
       });
     }
   };
-  const handleAppointmentSubmit = (e: React.FormEvent) => {
+  const handleAppointmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAppointmentSuccess(true);
-    setTimeout(() => {
-      setIsAppointmentModalOpen(false);
-      setAppointmentSuccess(false);
-    }, 3000);
-  };
-  const handleJoinZoom = () => {
-    setZoomState('connecting');
-    setTimeout(() => {
-      setZoomState('connected');
-    }, 2000);
+    const form = e.target as HTMLFormElement;
+    const type = (form.elements.namedItem('rdv_type') as RadioNodeList | null)?.value || 'visite';
+    const date = (form.elements.namedItem('date') as HTMLInputElement)?.value || '';
+    const time = (form.elements.namedItem('time') as HTMLSelectElement)?.value || '';
+    const subject = (form.elements.namedItem('subject') as HTMLInputElement)?.value || '';
+    if (!date || !time) return;
+    const start = new Date(`${date}T${time}:00`);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const label = type === 'visio' ? 'Visioconférence' : 'Visite de chantier';
+    try {
+      await requestAppointmentMutation.mutateAsync({
+        title: subject || label,
+        description: label,
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+      });
+      setAppointmentSuccess(true);
+      setTimeout(() => {
+        setIsAppointmentModalOpen(false);
+        setAppointmentSuccess(false);
+      }, 2500);
+    } catch {
+      /* keep the modal open on error */
+    }
   };
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6 relative">
@@ -287,17 +193,7 @@ export function ClientMessages() {
               key={conv.id}
               onClick={() => {
                 setActiveConvId(conv.id);
-                // Mark as read
-                setConversations((prev) =>
-                prev.map((c) =>
-                c.id === conv.id ?
-                {
-                  ...c,
-                  unread: 0
-                } :
-                c
-                )
-                );
+                // Server-side read-state will be reflected on next polling refetch.
               }}
               className={`p-4 border-b border-gray-50 cursor-pointer transition-colors flex items-start gap-3 ${activeConvId === conv.id ? 'bg-globus-blue/5 border-l-4 border-l-globus-blue' : 'hover:bg-gray-50 border-l-4 border-l-transparent'}`}>
               
@@ -343,20 +239,28 @@ export function ClientMessages() {
             <CalendarIcon className="w-5 h-5 text-globus-orange" /> Réunions
           </h3>
 
+          {nextAppointment ?
           <div className="bg-globus-light rounded-xl p-4 border border-gray-200 mb-4">
             <p className="font-montserrat font-bold text-sm text-globus-blue-dark mb-1">
-              Prochaine visite de chantier
+              {nextAppointment.title || 'Prochaine visite de chantier'}
             </p>
-            <div className="flex items-center gap-2 text-sm text-globus-gray font-opensans mb-3">
-              <ClockIcon className="w-4 h-4" /> 15 Août 2024 à 10h00
+            <div className="flex items-center gap-2 text-sm text-globus-gray font-opensans mb-1">
+              <ClockIcon className="w-4 h-4" />
+              {formatDateTimeParts(nextAppointment.start_time, {
+                day: 'numeric', month: 'long', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+              })}
             </div>
-            <button
-              onClick={handleJoinZoom}
-              className="w-full bg-blue-50 hover:bg-blue-100 text-globus-blue font-semibold py-2 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors">
-              
-              <VideoIcon className="w-4 h-4" /> Rejoindre sur Zoom
-            </button>
-          </div>
+            {nextAppointment.location &&
+            <div className="flex items-center gap-2 text-sm text-globus-gray font-opensans">
+              <MapPinIcon className="w-4 h-4" /> {nextAppointment.location}
+            </div>
+            }
+          </div> :
+          <p className="text-sm text-gray-400 italic mb-4">
+            Aucune visite planifiée pour le moment.
+          </p>
+          }
 
           <button
             onClick={() => setIsAppointmentModalOpen(true)}
@@ -515,7 +419,13 @@ export function ClientMessages() {
               rows={1}
               placeholder="Écrivez votre message..."
               value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
+              onChange={(e) => {
+                setMessageInput(e.target.value);
+                // Announce typing — emits TYPING_START. The server auto-expires after 4 s.
+                if (e.target.value) notifyTyping(true);
+                else notifyTyping(false);
+              }}
+              onBlur={() => notifyTyping(false)}
               onKeyDown={handleKeyDown}
               className="flex-1 bg-globus-light border border-gray-200 rounded-2xl px-4 py-3 font-opensans text-sm focus:outline-none focus:border-globus-orange focus:ring-1 focus:ring-globus-orange resize-none max-h-32">
             </textarea>
@@ -612,6 +522,7 @@ export function ClientMessages() {
                           <input
                         type="radio"
                         name="rdv_type"
+                        value="visite"
                         defaultChecked
                         className="w-4 h-4 text-globus-orange focus:ring-globus-orange" />
                       
@@ -624,6 +535,7 @@ export function ClientMessages() {
                           <input
                         type="radio"
                         name="rdv_type"
+                        value="visio"
                         className="w-4 h-4 text-globus-orange focus:ring-globus-orange" />
                       
                           <span className="ml-3 font-opensans text-sm text-gray-700 flex items-center gap-2">
@@ -641,6 +553,7 @@ export function ClientMessages() {
                         </label>
                         <input
                       required
+                      name="date"
                       type="date"
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
                     
@@ -651,8 +564,9 @@ export function ClientMessages() {
                         </label>
                         <select
                       required
+                      name="time"
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                      
+
                           <option value="">Sélectionner...</option>
                           <option value="09:00">09:00</option>
                           <option value="10:00">10:00</option>
@@ -668,6 +582,7 @@ export function ClientMessages() {
                       </label>
                       <input
                     required
+                    name="subject"
                     type="text"
                     placeholder="Ex: Point d'avancement"
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
@@ -697,103 +612,6 @@ export function ClientMessages() {
         }
       </AnimatePresence>
 
-      {/* Zoom Simulation Modal */}
-      <AnimatePresence>
-        {zoomState !== 'idle' &&
-        <motion.div
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          
-            {zoomState === 'connecting' ?
-          <div className="text-center text-white">
-                <LoaderIcon className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-6" />
-                <h3 className="font-montserrat font-bold text-2xl mb-2">
-                  Connexion à la visioconférence...
-                </h3>
-                <p className="font-opensans text-gray-400">
-                  Veuillez patienter
-                </p>
-              </div> :
-
-          <motion.div
-            initial={{
-              scale: 0.95,
-              opacity: 0
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1
-            }}
-            className="w-full max-w-5xl aspect-video bg-gray-900 rounded-2xl overflow-hidden relative shadow-2xl border border-gray-800 flex flex-col">
-            
-                <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg text-white flex items-center gap-2 z-10">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                  <span className="font-montserrat font-bold text-sm">
-                    Point d'avancement mensuel
-                  </span>
-                </div>
-
-                <div className="flex-1 grid grid-cols-2 gap-2 p-2">
-                  <div className="bg-gray-800 rounded-xl relative overflow-hidden flex items-center justify-center">
-                    <div className="w-32 h-32 rounded-full bg-globus-blue-dark text-white flex items-center justify-center font-montserrat font-bold text-4xl">
-                      PM
-                    </div>
-                    <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-white text-sm">
-                      Ing. Paul Mbarga
-                    </div>
-                  </div>
-                  <div className="bg-gray-800 rounded-xl relative overflow-hidden flex items-center justify-center">
-                    <div className="w-32 h-32 rounded-full bg-globus-orange text-white flex items-center justify-center font-montserrat font-bold text-4xl">
-                      VO
-                    </div>
-                    <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded text-white text-sm">
-                      Vous
-                    </div>
-                    {isVideoOff &&
-                <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center">
-                        <CameraIcon className="w-12 h-12 text-gray-500" />
-                      </div>
-                }
-                  </div>
-                </div>
-
-                <div className="h-20 bg-gray-950 flex items-center justify-center gap-6">
-                  <button
-                onClick={() => setIsMuted(!isMuted)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                
-                    {isMuted ?
-                <MicOffIcon className="w-5 h-5" /> :
-
-                <MicIcon className="w-5 h-5" />
-                }
-                  </button>
-                  <button
-                onClick={() => setIsVideoOff(!isVideoOff)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isVideoOff ? 'bg-red-500 text-white' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>
-                
-                    <VideoIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                onClick={() => setZoomState('idle')}
-                className="px-6 h-12 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition-colors shadow-lg">
-                
-                    Quitter
-                  </button>
-                </div>
-              </motion.div>
-          }
-          </motion.div>
-        }
-      </AnimatePresence>
     </div>);
 
 }

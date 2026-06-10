@@ -1,0 +1,71 @@
+# Globus BTP — full-stack dev & staging compose.
+#
+# Usage:
+#   docker compose up -d --build      # boot all services
+#   docker compose logs -f backend    # tail backend logs
+#   docker compose exec backend alembic upgrade head
+#
+# Three services:
+#   - postgres : PostgreSQL 16 with persistent volume
+#   - backend  : FastAPI on :8000, depends on postgres healthcheck
+#   - frontend : Vite build served by nginx on :8080 → reverse-proxied to backend
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: globus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: globus_btp
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U globus -d globus_btp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://globus:${POSTGRES_PASSWORD:-changeme}@postgres:5432/globus_btp
+      DEBUG: "False"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?must be set in .env}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:?must be set in .env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      APS_CLIENT_ID: ${APS_CLIENT_ID:-}
+      APS_CLIENT_SECRET: ${APS_CLIENT_SECRET:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    volumes:
+      - backend_uploads:/app/uploads
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:
+  backend_uploads:

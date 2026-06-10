@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageCircleIcon, XIcon, SendIcon, ArrowUpIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCmsQuery } from '../hooks/useCmsQuery';

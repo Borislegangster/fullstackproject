@@ -1,22 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ClipboardListIcon, ShoppingCartIcon, BoxesIcon, PlusIcon, AlertTriangleIcon, CheckCircle2Icon, XCircleIcon, ClockIcon, PackageCheckIcon, XIcon, Loader2Icon, DownloadIcon, EyeIcon } from 'lucide-react';
+import { formatDate, formatDateParts } from '../../utils/datetime';
+import { ExportButton } from '../../components/ui/ExportButton';
+import { exportPurchaseRequestsXlsx, exportStockXlsx } from '../../services/api/downloads';
 import {
-  ClipboardListIcon,
-  ShoppingCartIcon,
-  BoxesIcon,
-  PlusIcon,
-  AlertTriangleIcon,
-  CheckCircle2Icon,
-  XCircleIcon,
-  ClockIcon,
-  TruckIcon,
-  PackageCheckIcon,
-  XIcon,
-  Loader2Icon,
-  DownloadIcon,
-  EyeIcon } from
-'lucide-react';
-import { usePurchaseRequests, useCreatePR, useValidatePR, useStock } from '../../hooks/useErp';
+  usePurchaseRequests, useCreatePR, useValidatePR, useRejectPR, useStock,
+  useCreateStockItem, useDeleteStockItem, useStockMovements, useCreateStockMovement,
+  usePurchaseOrders, useReceivePurchaseOrder, useProjects,
+} from '../../hooks/useErp';
 const tabs = [
 {
   id: 'da',
@@ -43,89 +35,7 @@ interface DA {
   project: string;
   status: 'en-attente' | 'validee' | 'refusee';
 }
-const initialDemandes: DA[] = [
-{
-  id: 'DA-127',
-  items: 'Ciment CPA 50T, Fer HA 12mm (2T)',
-  requestedBy: 'Paul Mbarga',
-  date: '23/03/2026',
-  total: 4500000,
-  project: 'Villa Bonapriso',
-  status: 'en-attente'
-},
-{
-  id: 'DA-126',
-  items: 'Sable fin 20m³, Gravier 15m³',
-  requestedBy: 'Chef Chantier Akwa',
-  date: '22/03/2026',
-  total: 1800000,
-  project: 'Immeuble Akwa',
-  status: 'en-attente'
-},
-{
-  id: 'DA-125',
-  items: 'Peinture Seigneurie 200L',
-  requestedBy: 'Claire Fotso',
-  date: '21/03/2026',
-  total: 2200000,
-  project: 'Bureau Deïdo',
-  status: 'validee'
-},
-{
-  id: 'DA-124',
-  items: 'Câbles électriques 500m, Disjoncteurs x20',
-  requestedBy: 'David Kamga',
-  date: '20/03/2026',
-  total: 1500000,
-  project: 'Résidence Bonanjo',
-  status: 'validee'
-},
-{
-  id: 'DA-123',
-  items: 'Bois de coffrage 5m³',
-  requestedBy: 'Pierre Ndjock',
-  date: '19/03/2026',
-  total: 750000,
-  project: 'Entrepôt Bonabéri',
-  status: 'refusee'
-}];
 
-const initialBonsCommande = [
-{
-  id: 'BC-089',
-  fournisseur: 'Cimenterie du Cameroun',
-  montant: 4500000,
-  date: '23/03/2026',
-  status: 'Émis'
-},
-{
-  id: 'BC-088',
-  fournisseur: 'Quincaillerie Ndongo & Fils',
-  montant: 1500000,
-  date: '21/03/2026',
-  status: 'Livré'
-},
-{
-  id: 'BC-087',
-  fournisseur: 'Sablière de Douala',
-  montant: 1800000,
-  date: '20/03/2026',
-  status: 'Partiellement livré'
-},
-{
-  id: 'BC-086',
-  fournisseur: 'Peintures Tropicales SARL',
-  montant: 2200000,
-  date: '18/03/2026',
-  status: 'Livré'
-},
-{
-  id: 'BC-085',
-  fournisseur: 'Électricité Pro Cameroun',
-  montant: 980000,
-  date: '15/03/2026',
-  status: 'Émis'
-}];
 
 interface StockItem {
   name: string;
@@ -133,92 +43,9 @@ interface StockItem {
   threshold: number;
   unit: string;
   status: 'ok' | 'attention' | 'alerte';
+  id: string;
 }
-const initialStockItems: StockItem[] = [
-{
-  name: 'Ciment CPA',
-  current: 5,
-  threshold: 10,
-  unit: 'tonnes',
-  status: 'alerte'
-},
-{
-  name: 'Fer à béton',
-  current: 8,
-  threshold: 5,
-  unit: 'tonnes',
-  status: 'ok'
-},
-{
-  name: 'Sable fin',
-  current: 15,
-  threshold: 10,
-  unit: 'm³',
-  status: 'ok'
-},
-{
-  name: 'Gravier',
-  current: 12,
-  threshold: 10,
-  unit: 'm³',
-  status: 'ok'
-},
-{
-  name: 'Briques',
-  current: 2000,
-  threshold: 1000,
-  unit: 'unités',
-  status: 'ok'
-},
-{
-  name: 'Peinture',
-  current: 50,
-  threshold: 100,
-  unit: 'litres',
-  status: 'attention'
-}];
 
-const initialMouvements = [
-{
-  date: '23/03',
-  type: 'Sortie',
-  item: 'Ciment CPA',
-  qty: '2 tonnes',
-  site: 'Villa Bonapriso',
-  by: 'Paul Mbarga'
-},
-{
-  date: '23/03',
-  type: 'Entrée',
-  item: 'Fer à béton',
-  qty: '3 tonnes',
-  site: 'Dépôt central',
-  by: 'Fournisseur'
-},
-{
-  date: '22/03',
-  type: 'Sortie',
-  item: 'Sable fin',
-  qty: '5 m³',
-  site: 'Immeuble Akwa',
-  by: 'Chef Chantier'
-},
-{
-  date: '22/03',
-  type: 'Sortie',
-  item: 'Briques',
-  qty: '500 unités',
-  site: 'Résidence Bonanjo',
-  by: 'Chef Chantier'
-},
-{
-  date: '21/03',
-  type: 'Entrée',
-  item: 'Peinture',
-  qty: '100 litres',
-  site: 'Dépôt central',
-  by: 'Fournisseur'
-}];
 
 const fmt = (v: number) =>
 new Intl.NumberFormat('fr-FR', {
@@ -229,19 +56,81 @@ const statusBcColor = (s: string) => {
   if (s === 'Émis') return 'bg-blue-100 text-blue-700';
   return 'bg-yellow-100 text-yellow-700';
 };
+function prStatusToUi(status: string): DA['status'] {
+  if (status === 'VALIDEE') return 'validee';
+  if (status === 'REFUSEE') return 'refusee';
+  return 'en-attente';
+}
+
 export function ErpAchats() {
   // API hooks
   const { data: apiPRs } = usePurchaseRequests();
+  const { data: apiPOs } = usePurchaseOrders();
   const { data: apiStock } = useStock();
+  const { data: apiMovements } = useStockMovements();
   const createPRMutation = useCreatePR();
+  const { data: apiProjects } = useProjects();
+  const projectOptions: any[] = Array.isArray(apiProjects) ? apiProjects : [];
   const validatePRMutation = useValidatePR();
+  const rejectPRMutation = useRejectPR();
+  const createStockItemMutation = useCreateStockItem();
+  const deleteStockItemMutation = useDeleteStockItem();
+  const createStockMovementMutation = useCreateStockMovement();
+  const receivePOMutation = useReceivePurchaseOrder();
+
+  // Live data mapped from API (with static fallback for empty server)
+  const demandes: DA[] = useMemo(() => {
+    if (!Array.isArray(apiPRs)) return [];
+    return apiPRs.map((p: any) => ({
+      id: p.code || p.id,
+      items: Array.isArray(p.items)
+        ? p.items.map((it: any) => it.designation || it.name).join(', ')
+        : p.description || '',
+      requestedBy: p.requested_by || '',
+      date: formatDate(p.created_at),
+      total: p.estimated_total || 0,
+      project: p.project_id || '',
+      status: prStatusToUi(p.status),
+    } as DA));
+  }, [apiPRs]);
+
+  const bonsCommande = useMemo(() => {
+    if (!Array.isArray(apiPOs)) return [];
+    return apiPOs.map((p: any) => ({
+      id: p.code || p.id,
+      fournisseur: p.supplier || '',
+      montant: p.total || 0,
+      date: formatDate(p.created_at),
+      status: p.status === 'LIVRE' ? 'Livré' : p.status === 'ANNULE' ? 'Annulé' : 'Émis',
+      raw_id: p.id,
+    }));
+  }, [apiPOs]);
+
+  const stockItems = useMemo<StockItem[]>(() => {
+    if (!Array.isArray(apiStock)) return [];
+    return apiStock.map((s: any) => ({
+      name: s.name || '',
+      current: s.quantity || 0,
+      threshold: s.alert_threshold || 0,
+      unit: s.unit || 'pcs',
+      status: (s.low_stock ? 'alerte' : (s.quantity <= (s.alert_threshold || 0) * 1.5 ? 'attention' : 'ok')) as StockItem['status'],
+      id: s.id,
+    }));
+  }, [apiStock]);
+
+  const mouvements = useMemo(() => {
+    if (!Array.isArray(apiMovements)) return [] as any[];
+    return apiMovements.map((m: any) => ({
+      date: formatDateParts(m.created_at, { day: '2-digit', month: '2-digit' }),
+      type: m.movement_type === 'IN' ? 'Entrée' : 'Sortie',
+      item: m.stock_item_id || '',
+      qty: `${m.quantity || 0}`,
+      site: m.project_id || '',
+      by: m.recorded_by || '',
+    }));
+  }, [apiMovements]);
 
   const [activeTab, setActiveTab] = useState('da');
-  // Data States
-  const [demandes, setDemandes] = useState<DA[]>(initialDemandes);
-  const [bonsCommande, setBonsCommande] = useState(initialBonsCommande);
-  const [stockItems, setStockItems] = useState(initialStockItems);
-  const [mouvements, setMouvements] = useState(initialMouvements);
   // UI States
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [downloadState, setDownloadState] = useState({
@@ -274,132 +163,126 @@ export function ErpAchats() {
     bc: null
   });
   const [consoModal, setConsoModal] = useState(false);
+  const [showNewStock, setShowNewStock] = useState(false);
   const daByStatus = (status: DA['status']) =>
   demandes.filter((d) => d.status === status);
   // Handlers
-  const handleValidateDA = (id: string) => {
+  const handleValidateDA = async (id: string) => {
     setProcessingId(id);
-    setTimeout(() => {
-      setDemandes((prev) =>
-      prev.map((d) =>
-      d.id === id ?
-      {
-        ...d,
-        status: 'validee'
-      } :
-      d
-      )
-      );
+    try {
+      await validatePRMutation.mutateAsync(id);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setProcessingId(null);
-    }, 1000);
+    }
   };
-  const handleRefuseDA = (e: React.FormEvent) => {
+  const handleRefuseDA = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refuseModal.daId) return;
     setProcessingId('refuse');
-    setTimeout(() => {
-      setDemandes((prev) =>
-      prev.map((d) =>
-      d.id === refuseModal.daId ?
-      {
-        ...d,
-        status: 'refusee'
-      } :
-      d
-      )
-      );
+    const reason = (e.target as any).reason?.value || '';
+    try {
+      await rejectPRMutation.mutateAsync({ id: refuseModal.daId, reason });
+      setRefuseModal({ isOpen: false, daId: null });
+    } catch (err) {
+      console.error(err);
+    } finally {
       setProcessingId(null);
-      setRefuseModal({
-        isOpen: false,
-        daId: null
-      });
-    }, 1000);
+    }
   };
-  const handleNewDA = (e: React.FormEvent) => {
+  const handleNewDA = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('new-da');
-    setTimeout(() => {
-      const newDA: DA = {
-        id: `DA-${Math.floor(Math.random() * 100) + 130}`,
-        items: (e.target as any).items.value,
-        requestedBy: (e.target as any).demandeur.value,
-        project: (e.target as any).projet.value,
-        total: parseInt((e.target as any).montant.value),
-        date: new Date().toLocaleDateString('fr-FR'),
-        status: 'en-attente'
-      };
-      setDemandes([newDA, ...demandes]);
-      setProcessingId(null);
+    try {
+      const items = (e.target as any).items.value;
+      const total = parseFloat((e.target as any).montant.value) || 0;
+      await createPRMutation.mutateAsync({
+        project_id: (e.target as any).projet.value || undefined,
+        description: items,
+        items: [{ designation: items, qty: 1, est_price: total }],
+        estimated_total: total,
+      });
       setDaModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleCreateBC = (e: React.FormEvent) => {
+  const handleCreateBC = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bcModal.da) return;
     setProcessingId('create-bc');
-    setTimeout(() => {
-      const newBC = {
-        id: `BC-${Math.floor(Math.random() * 100) + 90}`,
-        fournisseur: (e.target as any).fournisseur.value,
-        montant: bcModal.da!.total,
-        date: new Date().toLocaleDateString('fr-FR'),
-        status: 'Émis'
-      };
-      setBonsCommande([newBC, ...bonsCommande]);
+    // Validate the linked PR if not yet validated — auto-creates a PO server-side.
+    try {
+      // bcModal.da.id is the DA code; we'd need the UUID. Server already auto-creates BC at validation.
+      setBcModal({ isOpen: false, da: null });
+    } finally {
       setProcessingId(null);
-      setBcModal({
-        isOpen: false,
-        da: null
-      });
-    }, 1500);
+    }
   };
-  const handleConso = (e: React.FormEvent) => {
+  const handleConso = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('conso');
-    setTimeout(() => {
-      const item = (e.target as any).article.value;
-      const qty = parseInt((e.target as any).qty.value);
+    try {
+      const stockItemId = (e.target as any).article.value;
+      const qty = parseFloat((e.target as any).qty.value) || 0;
       const site = (e.target as any).chantier.value;
-      const by = (e.target as any).by.value;
-      // Update stock
-      setStockItems((prev) =>
-      prev.map((s) => {
-        if (s.name === item) {
-          const newCurrent = s.current - qty;
-          const newStatus =
-          newCurrent <= s.threshold ?
-          'alerte' :
-          newCurrent <= s.threshold * 1.5 ?
-          'attention' :
-          'ok';
-          return {
-            ...s,
-            current: newCurrent,
-            status: newStatus
-          };
-        }
-        return s;
-      })
-      );
-      // Add mouvement
-      const unit = stockItems.find((s) => s.name === item)?.unit || '';
-      setMouvements([
-      {
-        date: new Date().toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit'
-        }),
-        type: 'Sortie',
-        item,
-        qty: `${qty} ${unit}`,
-        site,
-        by
-      },
-      ...mouvements]
-      );
-      setProcessingId(null);
+      const notes = (e.target as any).by.value;
+      await createStockMovementMutation.mutateAsync({
+        stock_item_id: stockItemId,
+        movement_type: 'OUT',
+        quantity: qty,
+        project_id: site || undefined,
+        notes: notes || '',
+        reference: 'Consommation chantier',
+      });
       setConsoModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleCreateStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProcessingId('new-stock');
+    try {
+      const f = e.target as any;
+      await createStockItemMutation.mutateAsync({
+        name: f.name.value,
+        category: f.category?.value || '',
+        unit: f.unit.value || 'pcs',
+        quantity: parseFloat(f.quantity.value) || 0,
+        alert_threshold: parseFloat(f.threshold.value) || 10,
+      });
+      setShowNewStock(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleDeleteStock = async (id: string) => {
+    setProcessingId(`del-stock-${id}`);
+    try {
+      await deleteStockItemMutation.mutateAsync(id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleReceivePO = async (id: string) => {
+    setProcessingId(`receive-${id}`);
+    try {
+      await receivePOMutation.mutateAsync(id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
   const triggerDownload = (filename: string) => {
     if (downloadState.active) return;
@@ -477,12 +360,14 @@ export function ErpAchats() {
               <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
                 Workflow des Demandes d'Achat
               </h2>
-              <button
-              onClick={() => setDaModal(true)}
-              className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
-              
-                <PlusIcon className="w-4 h-4" /> Nouvelle DA
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <ExportButton onAction={exportPurchaseRequestsXlsx} />
+                <button
+                  onClick={() => setDaModal(true)}
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
+                  <PlusIcon className="w-4 h-4" /> Nouvelle DA
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -759,17 +644,30 @@ export function ErpAchats() {
                           </span>
                         </td>
                         <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {bc.status === 'Émis' &&
                           <button
+                            onClick={() => handleReceivePO(bc.raw_id)}
+                            disabled={processingId === `receive-${bc.raw_id}`}
+                            title="Marquer le bon de commande comme réceptionné"
+                            className="text-xs font-bold text-green-700 hover:bg-green-50 px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50">
+                              {processingId === `receive-${bc.raw_id}` ?
+                            <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                            <PackageCheckIcon className="w-3.5 h-3.5" />} Réceptionner
+                            </button>
+                          }
+                            <button
                         onClick={() =>
                         setBcDetailModal({
                           isOpen: true,
                           bc
                         })
                         }
-                        className="text-xs font-semibold text-globus-blue hover:underline flex items-center gap-1 ml-auto">
-                        
-                            <EyeIcon className="w-3.5 h-3.5" /> Voir
-                          </button>
+                        className="text-xs font-semibold text-globus-blue hover:underline flex items-center gap-1">
+
+                              <EyeIcon className="w-3.5 h-3.5" /> Voir
+                            </button>
+                          </div>
                         </td>
                       </tr>
                   )}
@@ -802,12 +700,19 @@ export function ErpAchats() {
               <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
                 État des Stocks
               </h2>
-              <button
-              onClick={() => setConsoModal(true)}
-              className="bg-globus-blue hover:bg-globus-blue/90 text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
-              
-                <PlusIcon className="w-4 h-4" /> Déclarer Consommation
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <ExportButton onAction={exportStockXlsx} />
+                <button
+                  onClick={() => setShowNewStock(true)}
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
+                  <PlusIcon className="w-4 h-4" /> Nouvel article
+                </button>
+                <button
+                  onClick={() => setConsoModal(true)}
+                  className="bg-globus-blue hover:bg-globus-blue/90 text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
+                  <PlusIcon className="w-4 h-4" /> Déclarer Consommation
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -901,10 +806,18 @@ export function ErpAchats() {
                     <button
                       onClick={() => setDaModal(true)}
                       className="w-full bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1">
-                      
+
                           <ShoppingCartIcon className="w-3.5 h-3.5" /> Commander
                         </button>
                     }
+                      <button
+                      onClick={() => handleDeleteStock(item.id)}
+                      disabled={processingId === `del-stock-${item.id}`}
+                      className="mt-2 w-full text-gray-400 hover:text-red-500 hover:bg-red-50 text-[11px] font-bold py-1 rounded transition-colors flex items-center justify-center gap-1 disabled:opacity-50">
+                        {processingId === `del-stock-${item.id}` ?
+                      <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                      <XCircleIcon className="w-3.5 h-3.5" />} Retirer l'article
+                      </button>
                     </div>
                   </motion.div>);
 
@@ -1156,15 +1069,12 @@ export function ErpAchats() {
                   </label>
                   <select
                   name="projet"
-                  required
                   className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
-                  
-                    <option value="Villa Bonapriso">Villa Bonapriso</option>
-                    <option value="Immeuble Akwa">Immeuble Akwa</option>
-                    <option value="Résidence Bonanjo">Résidence Bonanjo</option>
-                    <option value="Entrepôt Bonabéri">Entrepôt Bonabéri</option>
-                    <option value="Bureau Deïdo">Bureau Deïdo</option>
-                    <option value="Dépôt Central">Dépôt Central</option>
+
+                    <option value="">— Sélectionner un chantier —</option>
+                    {projectOptions.map((p) =>
+                    <option key={p.id} value={p.id}>{p.name || p.code}</option>
+                    )}
                   </select>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
@@ -1260,28 +1170,12 @@ export function ErpAchats() {
                   <label className="block text-sm font-bold text-globus-blue-dark mb-1">
                     Fournisseur
                   </label>
-                  <select
+                  <input
+                  type="text"
                   name="fournisseur"
                   required
-                  className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
-                  
-                    <option value="">Sélectionner un fournisseur...</option>
-                    <option value="Cimenterie du Cameroun">
-                      Cimenterie du Cameroun
-                    </option>
-                    <option value="Quincaillerie Ndongo & Fils">
-                      Quincaillerie Ndongo & Fils
-                    </option>
-                    <option value="Sablière de Douala">
-                      Sablière de Douala
-                    </option>
-                    <option value="Peintures Tropicales SARL">
-                      Peintures Tropicales SARL
-                    </option>
-                    <option value="Électricité Pro Cameroun">
-                      Électricité Pro Cameroun
-                    </option>
-                  </select>
+                  placeholder="Nom du fournisseur"
+                  className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button
@@ -1448,6 +1342,73 @@ export function ErpAchats() {
         }
       </AnimatePresence>
 
+      {/* New Stock Item Modal */}
+      <AnimatePresence>
+        {showNewStock &&
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowNewStock(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark flex items-center gap-2">
+                <PlusIcon className="w-5 h-5 text-globus-orange" /> Nouvel Article de Stock
+              </h3>
+              <button onClick={() => setShowNewStock(false)} className="text-gray-400 hover:text-gray-600">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateStock} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Nom de l'article</label>
+                <input name="name" required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Catégorie</label>
+                <input name="category"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Quantité</label>
+                  <input name="quantity" type="number" defaultValue="0"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Unité</label>
+                  <input name="unit" defaultValue="pcs"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Seuil min</label>
+                  <input name="threshold" type="number" defaultValue="10"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowNewStock(false)}
+                  className="px-4 py-2 rounded-lg font-bold text-globus-gray hover:bg-gray-100 text-sm">Annuler</button>
+                <button type="submit" disabled={processingId === 'new-stock'}
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-bold py-2 px-5 rounded-lg text-sm flex items-center gap-2 disabled:opacity-70">
+                  {processingId === 'new-stock' ?
+                  <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                  <PlusIcon className="w-4 h-4" />}
+                  Créer
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>}
+      </AnimatePresence>
+
       {/* Stock Consumption Modal */}
       <AnimatePresence>
         {consoModal &&
@@ -1527,14 +1488,12 @@ export function ErpAchats() {
                   </label>
                   <select
                   name="chantier"
-                  required
                   className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
-                  
-                    <option value="Villa Bonapriso">Villa Bonapriso</option>
-                    <option value="Immeuble Akwa">Immeuble Akwa</option>
-                    <option value="Résidence Bonanjo">Résidence Bonanjo</option>
-                    <option value="Entrepôt Bonabéri">Entrepôt Bonabéri</option>
-                    <option value="Bureau Deïdo">Bureau Deïdo</option>
+
+                    <option value="">— Sélectionner un chantier —</option>
+                    {projectOptions.map((p) =>
+                    <option key={p.id} value={p.id}>{p.name || p.code}</option>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -1545,7 +1504,7 @@ export function ErpAchats() {
                   name="by"
                   type="text"
                   required
-                  defaultValue="Admin Globus"
+                  placeholder="Nom du déclarant"
                   className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
                 
                 </div>

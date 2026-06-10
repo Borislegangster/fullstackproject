@@ -1,27 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UsersIcon, HardHatIcon, ClockIcon, BanknoteIcon, SearchIcon, PlusIcon, QrCodeIcon, StarIcon, DownloadIcon, PhoneIcon, XIcon, CheckCircle2Icon, Loader2Icon, MailIcon, BriefcaseIcon, CalendarIcon, FileTextIcon, ScanIcon, Trash2Icon } from 'lucide-react';
+import { formatDate, formatTime } from '../../utils/datetime';
 import {
-  UsersIcon,
-  HardHatIcon,
-  ClockIcon,
-  BanknoteIcon,
-  SearchIcon,
-  PlusIcon,
-  QrCodeIcon,
-  StarIcon,
-  DownloadIcon,
-  PhoneIcon,
-  FilterIcon,
-  XIcon,
-  CheckCircle2Icon,
-  Loader2Icon,
-  MailIcon,
-  BriefcaseIcon,
-  CalendarIcon,
-  FileTextIcon,
-  ScanIcon } from
-'lucide-react';
-import { useEmployees, useTempWorkers, useCreateEmployee, useCreateTempWorker } from '../../hooks/useErp';
+  useEmployees, useTempWorkers, useCreateEmployee, useCreateTempWorker,
+  useDeleteEmployee, useRecordAttendance, useAttendance, usePayrollList,
+  useGeneratePayroll, useValidatePayroll, useMarkPayrollPaid,
+} from '../../hooks/useErp';
+import { downloadPayrollPdf, exportEmployeesXlsx, exportTempWorkersXlsx, exportPayrollXlsx } from '../../services/api/downloads';
+import { TempWorkerQrModal } from '../../components/erp/TempWorkerQrModal';
 const tabs = [
 {
   id: 'employes',
@@ -44,236 +31,9 @@ const tabs = [
   icon: BanknoteIcon
 }];
 
-const initialEmployees = [
-{
-  id: 1,
-  initials: 'PM',
-  name: 'Paul Mbarga',
-  poste: 'Ingénieur Chef de Projet',
-  dept: 'Technique',
-  phone: '+237 699 112 233',
-  email: 'p.mbarga@globus-btp.com',
-  status: 'Actif',
-  hireDate: '15/02/2020',
-  contract: 'CDI'
-},
-{
-  id: 2,
-  initials: 'CF',
-  name: 'Claire Fotso',
-  poste: 'Architecte Senior',
-  dept: "Bureau d'Études",
-  phone: '+237 677 445 566',
-  email: 'c.fotso@globus-btp.com',
-  status: 'Actif',
-  hireDate: '01/06/2021',
-  contract: 'CDI'
-},
-{
-  id: 3,
-  initials: 'JN',
-  name: 'Jacques Nkoulou',
-  poste: 'Comptable',
-  dept: 'Finance',
-  phone: '+237 655 778 899',
-  email: 'j.nkoulou@globus-btp.com',
-  status: 'Actif',
-  hireDate: '10/01/2022',
-  contract: 'CDI'
-},
-{
-  id: 4,
-  initials: 'AM',
-  name: 'Alain Messi',
-  poste: 'Logisticien',
-  dept: 'Logistique',
-  phone: '+237 690 334 455',
-  email: 'a.messi@globus-btp.com',
-  status: 'En congé',
-  hireDate: '05/09/2023',
-  contract: 'CDD'
-},
-{
-  id: 5,
-  initials: 'SE',
-  name: 'Sophie Ekambi',
-  poste: 'Assistante RH',
-  dept: 'Administration',
-  phone: '+237 677 223 344',
-  email: 's.ekambi@globus-btp.com',
-  status: 'Actif',
-  hireDate: '20/03/2024',
-  contract: 'CDI'
-}];
 
-const initialWorkers = [
-{
-  id: 'W-001',
-  initials: 'EN',
-  name: 'Emmanuel Nganou',
-  specialty: 'Maçon',
-  phone: '+237 670 111 222',
-  rating: 5,
-  status: 'En mission'
-},
-{
-  id: 'W-002',
-  initials: 'JT',
-  name: 'Joseph Tchinda',
-  specialty: 'Ferrailleur',
-  phone: '+237 655 333 444',
-  rating: 4,
-  status: 'Disponible'
-},
-{
-  id: 'W-003',
-  initials: 'PN',
-  name: 'Pierre Ndjock',
-  specialty: 'Coffreur',
-  phone: '+237 690 555 666',
-  rating: 4,
-  status: 'En mission'
-},
-{
-  id: 'W-004',
-  initials: 'SM',
-  name: 'Samuel Mbede',
-  specialty: 'Peintre',
-  phone: '+237 677 777 888',
-  rating: 3,
-  status: 'Disponible'
-},
-{
-  id: 'W-005',
-  initials: 'DK',
-  name: 'David Kamga',
-  specialty: 'Électricien',
-  phone: '+237 699 999 000',
-  rating: 5,
-  status: 'En mission'
-},
-{
-  id: 'W-006',
-  initials: 'RO',
-  name: 'Robert Onana',
-  specialty: 'Plombier',
-  phone: '+237 655 222 111',
-  rating: 4,
-  status: 'Disponible'
-}];
 
-const timesheetData = [
-{
-  name: 'Emmanuel Nganou',
-  arrival: '06:30',
-  departure: '17:00',
-  hours: '10h30',
-  site: 'Villa Bonapriso',
-  status: 'Présent'
-},
-{
-  name: 'Joseph Tchinda',
-  arrival: '06:45',
-  departure: '17:00',
-  hours: '10h15',
-  site: 'Villa Bonapriso',
-  status: 'Présent'
-},
-{
-  name: 'Pierre Ndjock',
-  arrival: '07:15',
-  departure: '16:30',
-  hours: '9h15',
-  site: 'Immeuble Akwa',
-  status: 'Retard'
-},
-{
-  name: 'David Kamga',
-  arrival: '06:30',
-  departure: '17:30',
-  hours: '11h00',
-  site: 'Immeuble Akwa',
-  status: 'Présent'
-},
-{
-  name: 'Samuel Mbede',
-  arrival: '—',
-  departure: '—',
-  hours: '—',
-  site: 'Villa Bonapriso',
-  status: 'Absent'
-},
-{
-  name: 'Robert Onana',
-  arrival: '07:00',
-  departure: '16:00',
-  hours: '9h00',
-  site: 'Résidence Bonanjo',
-  status: 'Présent'
-},
-{
-  name: 'Alain Toko',
-  arrival: '06:30',
-  departure: '17:00',
-  hours: '10h30',
-  site: 'Résidence Bonanjo',
-  status: 'Présent'
-},
-{
-  name: 'Martin Essomba',
-  arrival: '07:30',
-  departure: '16:30',
-  hours: '9h00',
-  site: 'Bureau Deïdo',
-  status: 'Retard'
-}];
 
-const payrollData = [
-{
-  name: 'Paul Mbarga',
-  type: 'Fixe',
-  days: 22,
-  base: 850000,
-  primes: 150000,
-  avances: 0,
-  net: 1000000
-},
-{
-  name: 'Claire Fotso',
-  type: 'Fixe',
-  days: 22,
-  base: 750000,
-  primes: 100000,
-  avances: 50000,
-  net: 800000
-},
-{
-  name: 'Emmanuel Nganou',
-  type: 'Temporaire',
-  days: 26,
-  base: 5000,
-  primes: 0,
-  avances: 20000,
-  net: 110000
-},
-{
-  name: 'Joseph Tchinda',
-  type: 'Temporaire',
-  days: 24,
-  base: 5000,
-  primes: 0,
-  avances: 0,
-  net: 120000
-},
-{
-  name: 'Jacques Nkoulou',
-  type: 'Fixe',
-  days: 22,
-  base: 500000,
-  primes: 50000,
-  avances: 100000,
-  net: 450000
-}];
 
 const formatCurrency = (v: number) =>
 new Intl.NumberFormat('fr-FR', {
@@ -295,122 +55,322 @@ const statusColor = (s: string) => {
   if (s === 'Disponible') return 'bg-green-100 text-green-700';
   return 'bg-gray-100 text-gray-700';
 };
+type AnyEmp = any;
+type AnyWorker = any;
+
 export function ErpRH() {
   // API hooks
   const { data: apiEmployees } = useEmployees();
   const { data: apiWorkers } = useTempWorkers();
+  const { data: apiAttendance } = useAttendance();
+  const { data: apiPayroll } = usePayrollList();
   const createEmployeeMutation = useCreateEmployee();
   const createTempWorkerMutation = useCreateTempWorker();
+  const deleteEmployeeMutation = useDeleteEmployee();
+  const recordAttendanceMutation = useRecordAttendance();
+  const generatePayrollMutation = useGeneratePayroll();
+  const validatePayrollMutation = useValidatePayroll();
+  const markPayrollPaidMutation = useMarkPayrollPaid();
+
+  // Map API → UI shape
+  const employees = useMemo(() => {
+    if (!Array.isArray(apiEmployees)) return [] as AnyEmp[];
+    return apiEmployees.map((e: any) => ({
+      id: e.id,
+      initials: `${(e.first_name || '').charAt(0)}${(e.last_name || '').charAt(0)}`.toUpperCase(),
+      name: `${e.first_name || ''} ${e.last_name || ''}`.trim(),
+      poste: e.position || '',
+      dept: e.department || '',
+      phone: e.phone || '',
+      email: e.email || '',
+      status: e.is_active ? 'Actif' : 'Inactif',
+      hireDate: formatDate(e.hire_date),
+      contract: e.contract_type || 'CDI',
+      base_salary: e.base_salary || 0,
+      raw: e,
+    }));
+  }, [apiEmployees]);
+
+  const workers = useMemo(() => {
+    if (!Array.isArray(apiWorkers)) return [] as AnyWorker[];
+    return apiWorkers.map((w: any) => ({
+      id: w.id,
+      name: `${w.first_name || ''} ${w.last_name || ''}`.trim(),
+      specialty: w.speciality || '',
+      phone: w.phone || '',
+      daily_rate: w.daily_rate || 0,
+      rating: w.rating || 0,
+      qr_code_data: w.qr_code_data,
+      status: w.is_active ? 'Actif' : 'Inactif',
+      raw: w,
+    }));
+  }, [apiWorkers]);
+
+  // Worker-id → display name lookup (employees + temp workers).
+  const workerNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    employees.forEach((e) => m.set(e.id, e.name));
+    workers.forEach((w) => m.set(w.id, w.name));
+    return m;
+  }, [employees, workers]);
+
+  // Pointage table — live from attendance records (no mock).
+  const liveTimesheet = useMemo(() => {
+    if (!Array.isArray(apiAttendance)) return [];
+    const fmtTime = (t: any) => formatTime(t, '—');
+    const statusMap: Record<string, string> = { PRESENT: 'Présent', RETARD: 'Retard', ABSENT: 'Absent' };
+    return apiAttendance.map((a: any) => {
+      let hours = '—';
+      if (a.check_in && a.check_out) {
+        const diff = (new Date(a.check_out).getTime() - new Date(a.check_in).getTime()) / 3_600_000;
+        if (diff > 0) hours = `${Math.floor(diff)}h${String(Math.round((diff % 1) * 60)).padStart(2, '0')}`;
+      }
+      return {
+        name: workerNameById.get(a.worker_id) || a.worker_id || '—',
+        arrival: fmtTime(a.check_in),
+        departure: fmtTime(a.check_out),
+        hours,
+        site: a.project_id || '—',
+        status: statusMap[a.status] || a.status || '',
+      };
+    });
+  }, [apiAttendance, workerNameById]);
+
+  // Paie table — live from payroll records (no mock).
+  const livePayroll = useMemo(() => {
+    if (!Array.isArray(apiPayroll)) return [];
+    return apiPayroll.map((p: any) => ({
+      id: p.id,
+      name: workerNameById.get(p.worker_id) || p.worker_id || '—',
+      type: p.worker_type === 'employee' ? 'Fixe' : 'Temporaire',
+      days: p.days_worked || 0,
+      base: p.base_amount || 0,
+      primes: p.bonuses || 0,
+      avances: p.advances || 0,
+      net: p.net_amount || 0,
+      status: p.status || 'BROUILLON',
+      worker_type: p.worker_type || 'employee',
+      worker_id: p.worker_id || '',
+    }));
+  }, [apiPayroll, workerNameById]);
 
   const [activeTab, setActiveTab] = useState('employes');
-  // Search & Filter States
   const [empSearch, setEmpSearch] = useState('');
   const [empDept, setEmpDept] = useState('Tous les départements');
   const [workerSearch, setWorkerSearch] = useState('');
-  // Modal States
   const [isAddEmpModalOpen, setIsAddEmpModalOpen] = useState(false);
   const [isAddWorkerModalOpen, setIsAddWorkerModalOpen] = useState(false);
-  const [selectedEmp, setSelectedEmp] = useState<
-    (typeof initialEmployees)[0] | null>(
-    null);
-  const [selectedQRWorker, setSelectedQRWorker] = useState<
-    (typeof initialWorkers)[0] | null>(
-    null);
+  const [selectedEmp, setSelectedEmp] = useState<AnyEmp | null>(null);
+  const [selectedQRWorker, setSelectedQRWorker] = useState<AnyWorker | null>(null);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  // Form States
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [scanInput, setScanInput] = useState('');
+  const [scanResult, setScanResult] = useState<{ id: string; name: string } | null>(null);
+  const [scanError, setScanError] = useState('');
   const [workerRating, setWorkerRating] = useState(0);
-  // Download State
   const [downloadState, setDownloadState] = useState({
     active: false,
     progress: 0,
-    text: ''
+    text: '',
   });
-  // Derived Data
-  const filteredEmployees = initialEmployees.filter((emp) => {
+  // Derived
+  const filteredEmployees = employees.filter((emp) => {
     const matchesSearch =
-    emp.name.toLowerCase().includes(empSearch.toLowerCase()) ||
-    emp.poste.toLowerCase().includes(empSearch.toLowerCase());
+      emp.name.toLowerCase().includes(empSearch.toLowerCase()) ||
+      emp.poste.toLowerCase().includes(empSearch.toLowerCase());
     const matchesDept =
-    empDept === 'Tous les départements' || emp.dept === empDept;
+      empDept === 'Tous les départements' || emp.dept === empDept;
     return matchesSearch && matchesDept;
   });
-  const filteredWorkers = initialWorkers.filter(
+  const filteredWorkers = workers.filter(
     (w) =>
-    w.name.toLowerCase().includes(workerSearch.toLowerCase()) ||
-    w.specialty.toLowerCase().includes(workerSearch.toLowerCase())
+      w.name.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      w.specialty.toLowerCase().includes(workerSearch.toLowerCase())
   );
   // Handlers
-  const handleAddSubmit = (e: React.FormEvent, type: 'emp' | 'worker') => {
+  const handleAddSubmit = async (e: React.FormEvent, type: 'emp' | 'worker') => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    const form = e.target as HTMLFormElement;
+    try {
+      if (type === 'emp') {
+        const fullName = (form.elements.namedItem('name') as HTMLInputElement)?.value || '';
+        const [first, ...rest] = fullName.split(' ');
+        await createEmployeeMutation.mutateAsync({
+          first_name: first || fullName,
+          last_name: rest.join(' '),
+          email: (form.elements.namedItem('email') as HTMLInputElement)?.value || '',
+          phone: (form.elements.namedItem('phone') as HTMLInputElement)?.value || '',
+          position: (form.elements.namedItem('poste') as HTMLInputElement)?.value || '',
+          department: (form.elements.namedItem('dept') as HTMLSelectElement)?.value || '',
+          contract_type: (form.elements.namedItem('contract') as HTMLSelectElement)?.value || 'CDI',
+          base_salary: parseFloat((form.elements.namedItem('salary') as HTMLInputElement)?.value || '0'),
+        });
+      } else {
+        const fullName = (form.elements.namedItem('name') as HTMLInputElement)?.value || '';
+        const [first, ...rest] = fullName.split(' ');
+        await createTempWorkerMutation.mutateAsync({
+          first_name: first || fullName,
+          last_name: rest.join(' '),
+          phone: (form.elements.namedItem('phone') as HTMLInputElement)?.value || '',
+          speciality: (form.elements.namedItem('specialty') as HTMLInputElement)?.value || '',
+          daily_rate: parseFloat((form.elements.namedItem('rate') as HTMLInputElement)?.value || '0'),
+        });
+      }
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
-        if (type === 'emp') setIsAddEmpModalOpen(false);else
-        setIsAddWorkerModalOpen(false);
-      }, 2000);
-    }, 1500);
+        if (type === 'emp') setIsAddEmpModalOpen(false);
+        else setIsAddWorkerModalOpen(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  const handleDownload = (type: 'single' | 'batch' | 'csv' | 'qr') => {
+  const handleDownload = async (
+    type: 'single' | 'batch' | 'csv' | 'qr',
+    payrollId?: string,
+  ) => {
     if (downloadState.active) return;
     setDownloadState({
       active: true,
-      progress: 0,
+      progress: 30,
       text:
-      type === 'batch' ?
-      'Fiche 1/5...' :
-      type === 'csv' ?
-      'Génération CSV...' :
-      type === 'qr' ?
-      'Génération QR...' :
-      'Préparation PDF...'
+        type === 'batch'
+          ? 'Préparation de l’export Excel paie…'
+          : type === 'csv'
+            ? 'Génération Excel employés…'
+            : type === 'qr'
+              ? 'Génération QR…'
+              : 'Génération PDF…',
     });
-    let p = 0;
-    const interval = setInterval(() => {
-      p += type === 'batch' ? 2 : 5;
-      let text = downloadState.text;
-      if (type === 'batch') {
-        const current = Math.min(5, Math.ceil(p / 100 * 5));
-        text = `Fiche ${current}/5...`;
+    try {
+      if (type === 'csv') {
+        await exportEmployeesXlsx();
+      } else if (type === 'batch') {
+        await exportPayrollXlsx();
+      } else if (type === 'single' && payrollId) {
+        const row = (apiPayroll as any[])?.find((p) => p.id === payrollId);
+        await downloadPayrollPdf(payrollId, row?.period || 'bulletin');
       }
-      setDownloadState((prev) => ({
-        ...prev,
-        progress: p,
-        text
-      }));
-      if (p >= 100) {
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          text: 'Téléchargement terminé'
-        }));
-        setTimeout(
-          () =>
-          setDownloadState({
-            active: false,
-            progress: 0,
-            text: ''
-          }),
-          3000
-        );
-      }
-    }, 50);
+      setDownloadState({ active: true, progress: 100, text: 'Téléchargement terminé ✓' });
+    } catch (e: any) {
+      setDownloadState({
+        active: true,
+        progress: 100,
+        text: e?.response?.data?.detail || 'Échec du téléchargement',
+      });
+    } finally {
+      setTimeout(() => setDownloadState({ active: false, progress: 0, text: '' }), 2000);
+    }
+  };
+  const currentPeriod = new Date().toISOString().slice(0, 7);
+  const handleDeleteEmployee = async (empId: string) => {
+    setRowBusy(`del-${empId}`);
+    try {
+      await deleteEmployeeMutation.mutateAsync(empId);
+      setSelectedEmp(null);
+    } catch (err) {
+      console.error('Delete employee failed', err);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+  const handleGeneratePayroll = async (emp: AnyEmp) => {
+    setRowBusy(`pay-${emp.id}`);
+    try {
+      await generatePayrollMutation.mutateAsync({
+        worker_type: 'employee',
+        worker_id: emp.id,
+        period: currentPeriod,
+        days_worked: 26,
+      });
+    } catch (err) {
+      console.error('Generate payroll failed', err);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+  const handleValidatePayroll = async (payrollId: string) => {
+    setRowBusy(`val-${payrollId}`);
+    try {
+      await validatePayrollMutation.mutateAsync(payrollId);
+    } catch (err) {
+      console.error('Validate payroll failed', err);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+  const handleMarkPayrollPaid = async (payrollId: string) => {
+    setRowBusy(`paid-${payrollId}`);
+    try {
+      await markPayrollPaidMutation.mutateAsync(payrollId);
+    } catch (err) {
+      console.error('Mark payroll paid failed', err);
+    } finally {
+      setRowBusy(null);
+    }
+  };
+  const handleRecordAttendance = async (worker: AnyWorker) => {
+    setRowBusy(`att-${worker.id}`);
+    try {
+      await recordAttendanceMutation.mutateAsync({
+        worker_type: 'temp',
+        worker_id: worker.id,
+        status: 'PRESENT',
+      });
+    } catch (err) {
+      console.error('Record attendance failed', err);
+    } finally {
+      setRowBusy(null);
+    }
   };
   const handleScan = () => {
+    setScanInput('');
+    setScanResult(null);
+    setScanError('');
+    setIsSuccess(false);
     setIsScannerOpen(true);
-    setIsSubmitting(true); // using as scanning state
-    setTimeout(() => {
-      setIsSubmitting(false);
+  };
+  // Real badge scan: industrial QR/barcode readers act as keyboards and type
+  // the badge token into the focused field; we match it to a worker and record
+  // a *real* attendance entry. No fabricated names, no fake success.
+  const handleScanSubmit = async (raw: string) => {
+    const token = raw.trim();
+    if (!token) return;
+    const worker = workers.find(
+      (w: AnyWorker) => w.qr_code_data === token || w.id === token,
+    );
+    if (!worker) {
+      setScanError('Badge non reconnu');
+      setScanInput('');
+      return;
+    }
+    setScanError('');
+    setIsSubmitting(true);
+    try {
+      await recordAttendanceMutation.mutateAsync({
+        worker_type: 'temp',
+        worker_id: worker.id,
+        status: 'PRESENT',
+      });
+      setScanResult({ id: worker.id, name: worker.name });
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         setIsScannerOpen(false);
+        setScanResult(null);
+        setScanInput('');
       }, 2500);
-    }, 2500);
+    } catch {
+      setScanError("Échec de l'enregistrement du pointage");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return (
     <div className="max-w-[1400px] mx-auto space-y-6 pb-10">
@@ -455,12 +415,22 @@ export function ErpRH() {
               <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
                 Gestion des Employés Fixes
               </h2>
-              <button
-              onClick={() => setIsAddEmpModalOpen(true)}
-              className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
-              
-                <PlusIcon className="w-4 h-4" /> Nouvel Employé
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleDownload('csv')}
+                  className="bg-white hover:bg-gray-50 border border-gray-200 text-globus-blue-dark font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2"
+                  title="Exporter la liste au format Excel">
+                  <DownloadIcon className="w-4 h-4" />
+                  Export Excel
+                </button>
+                <button
+                onClick={() => setIsAddEmpModalOpen(true)}
+                className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
+
+                  <PlusIcon className="w-4 h-4" /> Nouvel Employé
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -552,12 +522,32 @@ export function ErpRH() {
                             </span>
                           </td>
                           <td className="p-3 text-right">
-                            <button
+                            <div className="flex items-center justify-end gap-2">
+                              <button
                         onClick={() => setSelectedEmp(emp)}
                         className="text-xs font-semibold text-globus-blue hover:underline">
-                        
-                              Voir
-                            </button>
+
+                                Voir
+                              </button>
+                              <button
+                        onClick={() => handleGeneratePayroll(emp)}
+                        disabled={rowBusy === `pay-${emp.id}`}
+                        title="Générer le bulletin de paie du mois"
+                        className="p-1.5 text-gray-400 hover:text-globus-orange hover:bg-orange-50 rounded transition-colors disabled:opacity-50">
+                                {rowBusy === `pay-${emp.id}` ?
+                        <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                        <BanknoteIcon className="w-4 h-4" />}
+                              </button>
+                              <button
+                        onClick={() => handleDeleteEmployee(emp.id)}
+                        disabled={rowBusy === `del-${emp.id}`}
+                        title="Désactiver l'employé"
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50">
+                                {rowBusy === `del-${emp.id}` ?
+                        <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                        <Trash2Icon className="w-4 h-4" />}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                   ) :
@@ -612,9 +602,19 @@ export function ErpRH() {
                 
                 </div>
                 <button
+                  type="button"
+                  onClick={async () => {
+                    try { await exportTempWorkersXlsx(); } catch { /* ignore */ }
+                  }}
+                  className="bg-white hover:bg-gray-50 border border-gray-200 text-globus-blue-dark font-montserrat font-bold py-2 px-3 rounded-lg text-sm flex items-center gap-2"
+                  title="Exporter au format Excel">
+                  <DownloadIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export Excel</span>
+                </button>
+                <button
                 onClick={() => setIsAddWorkerModalOpen(true)}
                 className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm shrink-0">
-                
+
                   <PlusIcon className="w-4 h-4" />{' '}
                   <span className="hidden sm:inline">Enregistrer</span>
                 </button>
@@ -673,12 +673,23 @@ export function ErpRH() {
                       <span className="flex items-center gap-1 text-xs text-globus-gray">
                         <PhoneIcon className="w-3 h-3" /> {w.phone}
                       </span>
-                      <button
+                      <div className="flex items-center gap-1.5">
+                        <button
+                  onClick={() => handleRecordAttendance(w)}
+                  disabled={rowBusy === `att-${w.id}`}
+                  title="Pointer présent aujourd'hui"
+                  className="flex items-center gap-1 text-xs font-semibold text-green-700 hover:underline bg-green-50 px-2 py-1 rounded-md disabled:opacity-50">
+                          {rowBusy === `att-${w.id}` ?
+                  <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                  <CheckCircle2Icon className="w-3.5 h-3.5" />} Présent
+                        </button>
+                        <button
                   onClick={() => setSelectedQRWorker(w)}
                   className="flex items-center gap-1 text-xs font-semibold text-globus-blue hover:underline bg-blue-50 px-2 py-1 rounded-md">
-                  
-                        <QrCodeIcon className="w-3.5 h-3.5" /> QR Code
-                      </button>
+
+                          <QrCodeIcon className="w-3.5 h-3.5" /> QR Code
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
             ) :
@@ -787,7 +798,12 @@ export function ErpRH() {
                     </tr>
                   </thead>
                   <tbody className="font-opensans text-sm">
-                    {timesheetData.map((row, i) =>
+                    {liveTimesheet.length === 0 &&
+                      <tr><td colSpan={6} className="p-8 text-center text-globus-gray">
+                        Aucun pointage enregistré
+                      </td></tr>
+                    }
+                    {liveTimesheet.map((row, i) =>
                   <tr
                     key={i}
                     className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
@@ -885,7 +901,12 @@ export function ErpRH() {
                     </tr>
                   </thead>
                   <tbody className="font-opensans text-sm">
-                    {payrollData.map((row, i) =>
+                    {livePayroll.length === 0 &&
+                      <tr><td colSpan={8} className="p-8 text-center text-globus-gray">
+                        Aucun bulletin de paie pour la période
+                      </td></tr>
+                    }
+                    {livePayroll.map((row, i) =>
                   <tr
                     key={i}
                     className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
@@ -918,12 +939,39 @@ export function ErpRH() {
                           {formatCurrency(row.net)}
                         </td>
                         <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {row.status !== 'PAYE' && row.status !== 'VALIDE' &&
                           <button
-                        onClick={() => handleDownload('single')}
-                        className="text-xs font-semibold text-globus-blue hover:underline flex items-center gap-1 ml-auto">
-                        
-                            <DownloadIcon className="w-3.5 h-3.5" /> PDF
-                          </button>
+                            onClick={() => handleValidatePayroll(row.id)}
+                            disabled={rowBusy === `val-${row.id}`}
+                            className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50">
+                              {rowBusy === `val-${row.id}` ?
+                            <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                            <CheckCircle2Icon className="w-3.5 h-3.5" />} Valider
+                            </button>
+                          }
+                            {row.status === 'VALIDE' &&
+                          <button
+                            onClick={() => handleMarkPayrollPaid(row.id)}
+                            disabled={rowBusy === `paid-${row.id}`}
+                            className="text-xs font-bold text-green-700 hover:bg-green-50 px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50">
+                              {rowBusy === `paid-${row.id}` ?
+                            <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                            <BanknoteIcon className="w-3.5 h-3.5" />} Payer
+                            </button>
+                          }
+                            {row.status === 'PAYE' &&
+                          <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                              <CheckCircle2Icon className="w-3.5 h-3.5" /> Payé
+                            </span>
+                          }
+                            <button
+                          onClick={() => handleDownload('single', row.id)}
+                          className="text-xs font-semibold text-globus-blue hover:underline flex items-center gap-1">
+
+                              <DownloadIcon className="w-3.5 h-3.5" /> PDF
+                            </button>
+                          </div>
                         </td>
                       </tr>
                   )}
@@ -944,13 +992,13 @@ export function ErpRH() {
                       </td>
                       <td className="p-3 font-montserrat font-bold text-sm hidden lg:table-cell">
                         {formatCurrency(
-                        payrollData.reduce((s, r) => s + r.net, 0)
+                        livePayroll.reduce((s, r) => s + r.net, 0)
                       )}{' '}
                         FCFA
                       </td>
                       <td className="p-3 lg:hidden font-montserrat font-bold text-sm">
                         {formatCurrency(
-                        payrollData.reduce((s, r) => s + r.net, 0)
+                        livePayroll.reduce((s, r) => s + r.net, 0)
                       )}{' '}
                         FCFA
                       </td>
@@ -1401,84 +1449,15 @@ export function ErpRH() {
         }
       </AnimatePresence>
 
-      {/* QR Code Modal */}
+      {/* QR Code Modal — real PNG fetched from /hr/temp-workers/{id}/qr.png */}
       <AnimatePresence>
-        {selectedQRWorker &&
-        <motion.div
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedQRWorker(null)}>
-          
-            <motion.div
-            initial={{
-              scale: 0.9,
-              opacity: 0
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1
-            }}
-            exit={{
-              scale: 0.9,
-              opacity: 0
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center relative">
-            
-              <button
-              onClick={() => setSelectedQRWorker(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-              
-                <XIcon className="w-6 h-6" />
-              </button>
-
-              <h3 className="font-montserrat font-bold text-xl text-globus-blue-dark mb-1">
-                Badge Ouvrier
-              </h3>
-              <p className="font-opensans text-sm text-globus-gray mb-6">
-                {selectedQRWorker.name} — {selectedQRWorker.specialty}
-              </p>
-
-              <div className="w-48 h-48 mx-auto bg-white border-4 border-globus-blue-dark rounded-xl p-4 flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
-                {/* Simulated QR Pattern */}
-                <div className="absolute inset-2 grid grid-cols-5 grid-rows-5 gap-1 opacity-80">
-                  {Array.from({
-                  length: 25
-                }).map((_, i) =>
-                <div
-                  key={i}
-                  className={`bg-globus-blue-dark ${Math.random() > 0.5 ? 'rounded-sm' : 'rounded-full'} ${Math.random() > 0.7 ? 'opacity-0' : 'opacity-100'}`} />
-
-                )}
-                </div>
-                <div className="absolute top-2 left-2 w-8 h-8 border-4 border-globus-blue-dark rounded-sm" />
-                <div className="absolute top-2 right-2 w-8 h-8 border-4 border-globus-blue-dark rounded-sm" />
-                <div className="absolute bottom-2 left-2 w-8 h-8 border-4 border-globus-blue-dark rounded-sm" />
-                <div className="relative z-10 bg-white px-2 py-1 font-mono font-bold text-xs border border-gray-200 rounded shadow-sm">
-                  {selectedQRWorker.id}
-                </div>
-              </div>
-
-              <button
-              onClick={() => {
-                setSelectedQRWorker(null);
-                handleDownload('qr');
-              }}
-              className="w-full bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors">
-              
-                <DownloadIcon className="w-5 h-5" /> Télécharger QR Code
-              </button>
-            </motion.div>
-          </motion.div>
-        }
+        {selectedQRWorker && (
+          <TempWorkerQrModal
+            workerId={selectedQRWorker.id}
+            workerName={`${selectedQRWorker.name}${selectedQRWorker.specialty ? ` — ${selectedQRWorker.specialty}` : ''}`}
+            onClose={() => setSelectedQRWorker(null)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Scanner Modal */}
@@ -1516,14 +1495,11 @@ export function ErpRH() {
                     Ouvrier identifié
                   </h3>
                   <p className="font-montserrat font-bold text-lg text-globus-orange mb-1">
-                    Emmanuel Nganou
+                    {scanResult?.name}
                   </p>
                   <p className="font-opensans text-sm text-gray-500 mb-6">
                     Pointage enregistré à{' '}
-                    {new Date().toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
+                    {formatTime(new Date())}
                   </p>
                 </motion.div> :
 
@@ -1553,15 +1529,37 @@ export function ErpRH() {
                     <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-globus-orange rounded-bl-2xl" />
                     <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-globus-orange rounded-br-2xl" />
                   </div>
-                  <p className="font-opensans text-white/70 mb-8">
-                    Placez le QR code au centre du cadre
+                  <p className="font-opensans text-white/70 mb-4">
+                    Scannez le badge de l'ouvrier ou saisissez son code
                   </p>
-                  <button
-                onClick={() => setIsScannerOpen(false)}
-                className="bg-white/10 hover:bg-white/20 text-white font-montserrat font-bold py-3 px-8 rounded-full transition-colors backdrop-blur-sm">
-                
-                    Annuler
-                  </button>
+                  <input
+                autoFocus
+                value={scanInput}
+                onChange={(e) => setScanInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleScanSubmit(scanInput);
+                }}
+                placeholder="Code du badge"
+                className="w-full max-w-xs mx-auto block bg-white/10 border border-white/30 text-white placeholder-white/50 rounded-lg px-4 py-3 font-mono text-center focus:outline-none focus:border-globus-orange mb-2" />
+
+                  {scanError &&
+                <p className="text-red-300 text-sm mb-2">{scanError}</p>
+                }
+                  <div className="flex gap-3 justify-center mt-6">
+                    <button
+                  onClick={() => setIsScannerOpen(false)}
+                  className="bg-white/10 hover:bg-white/20 text-white font-montserrat font-bold py-3 px-8 rounded-full transition-colors backdrop-blur-sm">
+
+                      Annuler
+                    </button>
+                    <button
+                  onClick={() => handleScanSubmit(scanInput)}
+                  disabled={isSubmitting || !scanInput.trim()}
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-3 px-8 rounded-full transition-colors disabled:opacity-50">
+
+                      {isSubmitting ? 'Enregistrement...' : 'Valider'}
+                    </button>
+                  </div>
                 </>
             }
             </div>

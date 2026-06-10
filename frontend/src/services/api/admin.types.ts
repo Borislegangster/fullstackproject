@@ -27,6 +27,12 @@ export interface AdminBlogPost {
 }
 
 // ── Projects ─────────────────────────────────────────────────
+export interface ProgressionStep {
+  step: string;
+  status: string; // validé | en-cours | à-venir
+  date?: string;
+}
+
 export interface AdminProject {
   id: string;
   title: string;
@@ -43,14 +49,27 @@ export interface AdminProject {
   challenge: string;
   solution: string;
   video_url: string;
+  progression: ProgressionStep[];
   progress: number;
   featured: boolean;
   is_published: boolean;
   is_ongoing: boolean;
+  ongoing_description: string;
   sort_order: number;
 }
 
 // ── Services ─────────────────────────────────────────────────
+export interface ServiceProcessStep {
+  title: string;
+  desc: string;
+  iconKey: string;
+}
+
+export interface ServiceFaq {
+  q: string;
+  a: string;
+}
+
 export interface AdminService {
   id: string;
   title: string;
@@ -62,6 +81,9 @@ export interface AdminService {
   images: string[];
   details: string;
   benefits: string[];
+  related_category: string;
+  process_steps: ServiceProcessStep[];
+  faq: ServiceFaq[];
   is_published: boolean;
   sort_order: number;
 }
@@ -245,8 +267,10 @@ export interface AdminContact {
   phone: string;
   subject: string;
   message: string;
+  project_type?: string;
   created_at: string;
   is_read: boolean;
+  replied?: boolean;
 }
 
 // ── Media ────────────────────────────────────────────────────

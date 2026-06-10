@@ -1,0 +1,43 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ document.title|default('Document') }}</h1>
+{% if document.subtitle %}<p class="small">{{ document.subtitle }}</p>{% endif %}
+
+{% if document.metadata %}
+<h2>Informations</h2>
+<table style="width:100%">
+  {% for key, value in document.metadata.items() %}
+  <tr>
+    <td style="width:40%"><strong>{{ key }}</strong></td>
+    <td>{{ value }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if document.sections %}
+{% for section in document.sections %}
+<h2>{{ section.title }}</h2>
+{% if section.body %}<p>{{ section.body|safe }}</p>{% endif %}
+{% if section.items %}
+<ul>
+  {% for item in section.items %}<li>{{ item }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if document.body %}
+<h2>Contenu</h2>
+<div>{{ document.body|safe }}</div>
+{% endif %}
+
+{% if document.signature_required %}
+<div class="signature-block">
+  <div class="col" style="width:100%; text-align:right">
+    <p>Fait à {{ company_city|default('Douala') }}, le {{ generated_at|date_fr }}</p>
+    <div class="box" style="width:60%; margin-left:auto"></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

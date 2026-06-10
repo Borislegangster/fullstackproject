@@ -1,21 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { WalletIcon, CreditCardIcon, DownloadIcon, CheckCircle2Icon, XIcon, LockIcon, ReceiptIcon, FileTextIcon, AlertTriangleIcon, LoaderIcon, CheckIcon, EyeIcon, ShieldCheckIcon } from 'lucide-react';
+import { formatDate, formatDateParts } from '../../utils/datetime';
 import {
-  WalletIcon,
-  CreditCardIcon,
-  SmartphoneIcon,
-  DownloadIcon,
-  CheckCircle2Icon,
-  XIcon,
-  LockIcon,
-  ReceiptIcon,
-  FileTextIcon,
-  AlertTriangleIcon,
-  LoaderIcon,
-  CheckIcon,
-  EyeIcon } from
-'lucide-react';
-import { useClientFinances, useInitiatePayment } from '../../hooks/useClient';
+  useClientFinances, useInitiateFlutterwavePayment,
+  useClientFinancesEvolution, useClientFinancesReceipts, useClientProject,
+} from '../../hooks/useClient';
+import { useQuery } from '@tanstack/react-query';
+import { getSiteSettings } from '../../services/api/cms.api';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+import { downloadInvoicePdf } from '../../services/api/downloads';
+import { downloadCSV } from '../../utils/download';
 import {
   AreaChart,
   Area,
@@ -26,136 +21,99 @@ import {
   ResponsiveContainer } from
 'recharts';
 import { useClientUser } from '../../hooks/useClientUser';
-const appelsDeFonds = [
-{
-  id: 1,
-  libelle: 'Acompte signature',
-  montant: 8500000,
-  date: '15/01/2024',
-  status: 'payé'
-},
-{
-  id: 2,
-  libelle: 'Démarrage chantier',
-  montant: 12750000,
-  date: '01/03/2024',
-  status: 'payé'
-},
-{
-  id: 3,
-  libelle: 'Fondations terminées',
-  montant: 17000000,
-  date: '15/05/2024',
-  status: 'payé'
-},
-{
-  id: 4,
-  libelle: "Mise hors d'eau",
-  montant: 12750000,
-  date: '01/08/2024',
-  status: 'en-attente'
-},
-{
-  id: 5,
-  libelle: "Mise hors d'air",
-  montant: 12750000,
-  date: '15/10/2024',
-  status: 'à-venir'
-},
-{
-  id: 6,
-  libelle: 'Finitions',
-  montant: 12750000,
-  date: '01/01/2025',
-  status: 'à-venir'
-},
-{
-  id: 7,
-  libelle: 'Solde livraison',
-  montant: 8500000,
-  date: '15/03/2025',
-  status: 'à-venir'
-}];
 
-const budgetEvolutionData = [
-{
-  month: 'Jan',
-  prevu: 8500000,
-  reel: 8500000
-},
-{
-  month: 'Fév',
-  prevu: 8500000,
-  reel: 8500000
-},
-{
-  month: 'Mar',
-  prevu: 21250000,
-  reel: 21250000
-},
-{
-  month: 'Avr',
-  prevu: 21250000,
-  reel: 21250000
-},
-{
-  month: 'Mai',
-  prevu: 38250000,
-  reel: 38250000
-},
-{
-  month: 'Jun',
-  prevu: 38250000,
-  reel: 38250000
-},
-{
-  month: 'Jul',
-  prevu: 51000000,
-  reel: 38250000
-} // Retard de paiement simulé
-];
-const receiptsData = [
-{
-  id: 1,
-  title: 'Reçu #1 - Acompte',
-  date: '16/01/2024',
-  amount: 8500000,
-  txn: 'TXN-2024-001',
-  method: 'Carte Bancaire',
-  appelRef: 'Acompte signature',
-  tva: 19.25
-},
-{
-  id: 2,
-  title: 'Reçu #2 - Démarrage',
-  date: '02/03/2024',
-  amount: 12750000,
-  txn: 'TXN-2024-045',
-  method: 'Virement Bancaire',
-  appelRef: 'Démarrage chantier',
-  tva: 19.25
-},
-{
-  id: 3,
-  title: 'Reçu #3 - Fondations',
-  date: '16/05/2024',
-  amount: 17000000,
-  txn: 'TXN-2024-112',
-  method: 'Mobile Money',
-  appelRef: 'Fondations terminées',
-  tva: 19.25
-}];
+
+function invoiceStatusToUi(s: string): string {
+  if (s === 'PAYEE') return 'payé';
+  if (s === 'EN_RETARD') return 'en-retard';
+  if (s === 'ENVOYEE') return 'en-attente';
+  return 'à-venir';
+}
 
 export function ClientFinances() {
   const { data: financesData } = useClientFinances();
-  const initiatePaymentMutation = useInitiatePayment();
-  const [activeTab, setActiveTab] = useState('factures');
+  const flutterwavePaymentMutation = useInitiateFlutterwavePayment();
+  const [activeTxRef, setActiveTxRef] = useState<string | null>(null);
+  const [activeTab] = useState('factures');
   const clientUser = useClientUser();
+  void clientUser;
+  void activeTab;
+  void activeTxRef;
+
+  const { data: evolutionRaw } = useClientFinancesEvolution();
+  const { data: receiptsRaw } = useClientFinancesReceipts();
+  // Real company identity (CMS site settings) + project ref for the receipt.
+  const { data: settings } = useQuery({
+    queryKey: ['site-settings'],
+    queryFn: getSiteSettings,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: projectData } = useClientProject();
+  const company = React.useMemo(() => {
+    const s: any = settings || {};
+    const name: string = s.companyName || '';
+    return {
+      name,
+      address: s.address || '',
+      rcNumber: s.rcNumber || '',
+      taxId: s.taxId || '',
+      vatRate: typeof s.vatRate === 'number' ? s.vatRate : null,
+      initials: name
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w: string) => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase(),
+    };
+  }, [settings]);
+  const projectRef = (projectData as any)?.code || clientUser.projectId || '';
+
+  // Live invoices → call-for-funds shape used by the UI (no mock fallback).
+  const liveAppelsDeFonds = React.useMemo(() => {
+    if (!Array.isArray(financesData)) return [];
+    return financesData.map((inv: any, i: number) => ({
+      id: inv.id || i + 1,
+      libelle: `${inv.code} — ${inv.invoice_type === 'APPEL_FONDS' ? 'Appel de fonds' : 'Facture'}`,
+      montant: inv.total || 0,
+      date: formatDate(inv.issue_date),
+      status: invoiceStatusToUi(inv.status),
+      amount_paid: inv.amount_paid || 0,
+      raw_id: inv.id,
+    }));
+  }, [financesData]);
+
+  // Budget evolution (cumulative invoiced vs paid) → area chart.
+  const liveBudgetEvolution = React.useMemo(() => {
+    if (!Array.isArray(evolutionRaw)) return [];
+    return evolutionRaw.map((e: any) => ({
+      month: e.month?.split('-')[1]
+        ? formatDateParts(e.month + '-01', { month: 'short' })
+        : e.month,
+      prevu: e.invoiced || 0,
+      reel: e.paid || 0,
+    }));
+  }, [evolutionRaw]);
+
+  // Payment receipts → UI cards.
+  const liveReceipts = React.useMemo(() => {
+    if (!Array.isArray(receiptsRaw)) return [];
+    return receiptsRaw.map((r: any) => ({
+      id: r.id,
+      title: `Reçu — ${r.invoice_code || ''}`,
+      date: formatDate(r.paid_at),
+      amount: r.amount || 0,
+      txn: r.reference || String(r.id || '').slice(0, 8),
+      method: r.method || '',
+      appelRef: r.invoice_code || '',
+    }));
+  }, [receiptsRaw]);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [paymentState, setPaymentState] = useState<
     'idle' | 'processing' | 'success'>(
     'idle');
+  const [paymentRef, setPaymentRef] = useState('');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [downloadState, setDownloadState] = useState<{
@@ -189,57 +147,74 @@ export function ClientFinances() {
     setIsReceiptModalOpen(true);
   };
   const handleOpenReceiptFromAppel = (appelId: number) => {
-    const receipt = receiptsData.find((r) => r.id === appelId);
+    const receipt = liveReceipts.find((r) => r.id === appelId);
     if (receipt) {
       handleOpenReceipt(receipt);
     }
   };
-  const handleProcessPayment = () => {
+  const handleProcessPayment = async () => {
+    if (!selectedPayment) return;
+    const invoiceId = selectedPayment.raw_id || selectedPayment.id;
+    if (!invoiceId) {
+      setPaymentState('idle');
+      setIsPaymentModalOpen(false);
+      return;
+    }
     setPaymentState('processing');
-    setTimeout(() => {
-      setPaymentState('success');
-      setTimeout(() => {
-        setIsPaymentModalOpen(false);
-        setPaymentState('idle');
-      }, 4000);
-    }, 2000);
-  };
-  const handleDownload = (fileName: string) => {
-    if (downloadState.isDownloading) return;
-    setDownloadState({
-      isDownloading: true,
-      progress: 0,
-      fileName,
-      isComplete: false
-    });
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 15 + 5;
-      if (currentProgress >= 100) {
-        currentProgress = 100;
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          progress: 100,
-          isComplete: true
-        }));
-        setTimeout(() => {
-          setDownloadState({
-            isDownloading: false,
-            progress: 0,
-            fileName: '',
-            isComplete: false
-          });
-        }, 3000);
-      } else {
-        setDownloadState((prev) => ({
-          ...prev,
-          progress: currentProgress
-        }));
+    try {
+      const result = await flutterwavePaymentMutation.mutateAsync(invoiceId);
+      setPaymentRef(result.tx_ref);
+      setActiveTxRef(result.tx_ref);
+      // Redirect to Flutterwave checkout
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url;
       }
-    }, 200);
+    } catch (err: any) {
+      console.error('Flutterwave payment initiation failed', err);
+      setPaymentState('idle');
+      alert(err?.response?.data?.detail || 'Erreur lors de l\'initiation du paiement. Veuillez réessayer.');
+    }
   };
-  const pendingAppel = appelsDeFonds.find((a) => a.status === 'en-attente');
+  // Drives the progress toast around a *real* async download.
+  const runDownload = async (fn: () => Promise<void>, fileName: string) => {
+    if (downloadState.isDownloading) return;
+    setDownloadState({ isDownloading: true, progress: 40, fileName, isComplete: false });
+    try {
+      await fn();
+      setDownloadState({ isDownloading: true, progress: 100, fileName, isComplete: true });
+      setTimeout(
+        () =>
+          setDownloadState({ isDownloading: false, progress: 0, fileName: '', isComplete: false }),
+        2500,
+      );
+    } catch {
+      setDownloadState({ isDownloading: false, progress: 0, fileName: '', isComplete: false });
+    }
+  };
+  // Real CSV of the client's call-for-funds / invoices (no fabricated PDF).
+  const handleExportRecap = () => {
+    if (liveAppelsDeFonds.length === 0) return;
+    downloadCSV(
+      `recapitulatif-financier-${new Date().toISOString().slice(0, 10)}.csv`,
+      liveAppelsDeFonds.map((a) => ({
+        libelle: a.libelle,
+        date: a.date,
+        montant: a.montant,
+        amount_paid: a.amount_paid,
+        reste: (a.montant || 0) - (a.amount_paid || 0),
+        status: a.status,
+      })),
+      [
+        { key: 'libelle', label: 'Libellé' },
+        { key: 'date', label: 'Date' },
+        { key: 'montant', label: 'Montant (FCFA)' },
+        { key: 'amount_paid', label: 'Payé (FCFA)' },
+        { key: 'reste', label: 'Reste (FCFA)' },
+        { key: 'status', label: 'Statut' },
+      ],
+    );
+  };
+  const pendingAppel = liveAppelsDeFonds.find((a) => a.status === 'en-attente');
   return (
     <div className="max-w-7xl mx-auto space-y-6 relative pb-20">
       {/* Alert Banner */}
@@ -297,7 +272,7 @@ export function ClientFinances() {
       {/* Header Actions */}
       <div className="flex justify-end">
         <button
-          onClick={() => handleDownload('Recap_Financier_Globus_2024.pdf')}
+          onClick={handleExportRecap}
           className="flex items-center gap-2 bg-white border border-gray-200 hover:border-globus-blue hover:text-globus-blue text-globus-blue-dark font-montserrat font-bold text-sm px-4 py-2 rounded-lg transition-colors shadow-sm">
           
           <DownloadIcon className="w-4 h-4" /> Exporter le récapitulatif
@@ -441,9 +416,12 @@ export function ClientFinances() {
           Évolution des Dépenses (2024)
         </h3>
         <div className="h-64 w-full">
+          {liveBudgetEvolution.length === 0 ? (
+            <ChartEmpty message="Aucune donnée financière sur la période" />
+          ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              data={budgetEvolutionData}
+              data={liveBudgetEvolution}
               margin={{
                 top: 10,
                 right: 10,
@@ -511,9 +489,10 @@ export function ClientFinances() {
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorReel)" />
-              
+
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
         <div className="flex items-center justify-center gap-6 mt-4">
           <div className="flex items-center gap-2 text-sm font-opensans text-globus-gray">
@@ -573,7 +552,7 @@ export function ClientFinances() {
               </tr>
             </thead>
             <tbody className="font-opensans text-sm">
-              {appelsDeFonds.map((appel) =>
+              {liveAppelsDeFonds.map((appel) =>
               <tr
                 key={appel.id}
                 className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -654,8 +633,13 @@ export function ClientFinances() {
           </h3>
         </div>
 
+        {liveReceipts.length === 0 &&
+          <p className="text-center text-globus-gray font-opensans text-sm py-10">
+            Aucun reçu de paiement pour le moment.
+          </p>
+        }
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {receiptsData.map((recu) =>
+          {liveReceipts.map((recu) =>
           <div
             key={recu.id}
             onClick={() => handleOpenReceipt(recu)}
@@ -683,10 +667,13 @@ export function ClientFinances() {
               <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleDownload(`Recu_${recu.id}_Globus.pdf`);
+                runDownload(
+                  () => downloadInvoicePdf(String(recu.id), `recu-${recu.id}`),
+                  `recu-${recu.id}.pdf`,
+                );
               }}
               className="w-full py-2 bg-gray-50 hover:bg-globus-blue hover:text-white text-globus-blue-dark text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-              
+
                 <DownloadIcon className="w-4 h-4" /> Télécharger PDF
               </button>
             </div>
@@ -818,9 +805,9 @@ export function ClientFinances() {
                     </button>
 
                     <p className="text-center text-xs text-globus-gray font-opensans mt-4 flex items-center justify-center gap-1">
-                      <LockIcon className="w-3 h-3" /> Paiement sécurisé via
-                      Stripe / Flutterwave. Globus ne stocke jamais vos données
-                      bancaires.
+                      <ShieldCheckIcon className="w-3 h-3" /> Paiement sécurisé via
+                      Flutterwave. Vos données bancaires ne sont jamais stockées
+                      sur nos serveurs.
                     </p>
                   </div>
                 </>
@@ -851,10 +838,7 @@ export function ClientFinances() {
                     a été validé avec succès.
                   </p>
                   <div className="bg-gray-50 rounded-lg p-4 w-full mb-6 text-sm font-mono text-gray-600">
-                    Réf: TXN-2024-
-                    {Math.floor(Math.random() * 1000).
-                toString().
-                padStart(3, '0')}
+                    Réf: {paymentRef}
                   </div>
                   <p className="text-sm font-opensans text-globus-blue font-semibold">
                     Un reçu a été envoyé à votre adresse email.
@@ -916,18 +900,17 @@ export function ClientFinances() {
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-globus-blue-dark rounded flex items-center justify-center">
                       <span className="text-white font-montserrat font-bold text-xs">
-                        GE
+                        {company.initials || '—'}
                       </span>
                     </div>
                     <span className="font-montserrat font-extrabold text-xl text-globus-blue-dark tracking-tight">
-                      GLOBUS{' '}
-                      <span className="text-globus-orange">ENGINEERING</span>
+                      {company.name || 'Société'}
                     </span>
                   </div>
                   <div className="text-xs text-gray-500 font-opensans space-y-1">
-                    <p>Douala, Cameroun</p>
-                    <p>RCCM: RC/DLA/2020/B/1234</p>
-                    <p>NIU: M012012345678Z</p>
+                    {company.address && <p>{company.address}</p>}
+                    {company.rcNumber && <p>RCCM: {company.rcNumber}</p>}
+                    {company.taxId && <p>NIU: {company.taxId}</p>}
                   </div>
                 </div>
                 <div className="text-right">
@@ -970,7 +953,7 @@ export function ClientFinances() {
                     {clientUser.projectName}
                   </p>
                   <p className="text-sm text-gray-600 font-opensans">
-                    Réf: PRJ-2024-089
+                    Réf: {projectRef || '—'}
                   </p>
                 </div>
               </div>
@@ -1018,7 +1001,7 @@ export function ClientFinances() {
                       <span>{formatCurrency(selectedReceipt.amount)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-600 font-opensans">
-                      <span>TVA ({selectedReceipt.tva}%)</span>
+                      <span>TVA{company.vatRate !== null ? ` (${company.vatRate}%)` : ''}</span>
                       <span>Inclus</span>
                     </div>
                     <div className="flex justify-between text-lg font-montserrat font-bold text-globus-blue-dark pt-3 border-t border-gray-200">
@@ -1060,7 +1043,10 @@ export function ClientFinances() {
                 </button>
                 <button
                 onClick={() =>
-                handleDownload(`Recu_${selectedReceipt.id}_Globus.pdf`)
+                runDownload(
+                  () => downloadInvoicePdf(String(selectedReceipt.id), `recu-${selectedReceipt.id}`),
+                  `recu-${selectedReceipt.id}.pdf`,
+                )
                 }
                 className="bg-globus-blue hover:bg-globus-blue-dark text-white font-montserrat font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md text-sm flex items-center gap-2">
                 

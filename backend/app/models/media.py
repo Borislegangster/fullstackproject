@@ -16,6 +16,7 @@ class CMSMedia(Base):
     name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # image, video, youtube, document
     url = Column(String, nullable=False)
+    storage_key = Column(String, default="")  # S3/R2 object key (empty for local files)
     thumbnail = Column(String, default="")
     alt = Column(String, default="")
     folder = Column(String, default="general")

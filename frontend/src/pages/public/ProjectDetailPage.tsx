@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPinIcon,
@@ -27,7 +27,6 @@ export function ProjectDetailPage() {
   const { slug } = useParams<{
     slug: string;
   }>();
-  const navigate = useNavigate();
   const { data: project, isLoading: isLoadingProject } = useCmsQuery(
     ['project', slug || ''],
     () => getProjectBySlug(slug || '')

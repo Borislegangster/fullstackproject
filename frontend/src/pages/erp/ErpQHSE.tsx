@@ -1,194 +1,71 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ShieldAlertIcon, HardHatIcon, ClipboardCheckIcon, AlertTriangleIcon, PlusIcon, ChevronDownIcon, CheckCircle2Icon, ClockIcon, UploadCloudIcon, UsersIcon, XIcon, Loader2Icon, InfoIcon } from 'lucide-react';
+import { formatDate } from '../../utils/datetime';
 import {
-  ShieldAlertIcon,
-  HardHatIcon,
-  ClipboardCheckIcon,
-  AlertTriangleIcon,
-  PlusIcon,
-  ChevronDownIcon,
-  CheckCircle2Icon,
-  ClockIcon,
-  SearchIcon,
-  UploadCloudIcon,
-  UsersIcon,
-  XIcon,
-  Loader2Icon,
-  InfoIcon } from
-'lucide-react';
-import { useIncidents, useCreateIncident, useEPIData, useCreateEPIDistribution } from '../../hooks/useErp';
-const initialIncidents = [
-{
-  id: 'INC-001',
-  title: "Chute d'échafaudage",
-  gravity: 'Grave',
-  site: 'Chantier Akwa',
-  date: '15/03/2026',
-  worker: 'Moussa Amadou',
-  status: 'investigation',
-  desc: "L'ouvrier a chuté de 3m suite à un défaut de fixation de l'échafaudage. Fracture du bras droit. Évacuation immédiate."
-},
-{
-  id: 'INC-002',
-  title: 'Coupure main',
-  gravity: 'Modéré',
-  site: 'Villa Bonapriso',
-  date: '10/03/2026',
-  worker: 'Jean Kamga',
-  status: 'closed',
-  desc: "Coupure lors de la manipulation de tôles. Soins sur place, 2 jours d'arrêt."
-},
-{
-  id: 'INC-003',
-  title: 'Presque-accident: Charge suspendue',
-  gravity: 'Mineur',
-  site: 'Résidence Bonanjo',
-  date: '05/03/2026',
-  worker: '-',
-  status: 'measures',
-  desc: "Une charge de parpaings s'est décrochée de la grue à 1m du sol. Aucun blessé. Câble remplacé."
-},
-{
-  id: 'INC-004',
-  title: 'Glissade sur dalle humide',
-  gravity: 'Mineur',
-  site: 'Entrepôt Bonabéri',
-  date: '01/03/2026',
-  worker: 'Pierre Ndjock',
-  status: 'closed',
-  desc: 'Glissade sans blessure. Signalétique sol mouillé ajoutée.'
-},
-{
-  id: 'INC-005',
-  title: 'Exposition poussière sans masque',
-  gravity: 'Modéré',
-  site: 'Chantier Akwa',
-  date: '25/02/2026',
-  worker: 'Équipe coffrage',
-  status: 'progress',
-  desc: '3 ouvriers travaillaient sans masque lors du ponçage. Rappel des consignes effectué.'
-}];
+  useIncidents, useCreateIncident, useEPIData, useCreateEPIDistribution,
+  useBriefings, useCreateBriefing, useProjects, useEPIStats,
+} from '../../hooks/useErp';
 
-const initialEpiData = [
-{
-  date: '23/03/2026',
-  worker: 'Moussa Amadou',
-  type: 'Casque + Gilet',
-  qty: 1,
-  site: 'Chantier Akwa',
-  signed: true
-},
-{
-  date: '23/03/2026',
-  worker: 'Jean Kamga',
-  type: 'Gants renforcés',
-  qty: 2,
-  site: 'Villa Bonapriso',
-  signed: true
-},
-{
-  date: '22/03/2026',
-  worker: 'Pierre Ndjock',
-  type: 'Bottes sécurité',
-  qty: 1,
-  site: 'Entrepôt Bonabéri',
-  signed: true
-},
-{
-  date: '22/03/2026',
-  worker: 'Équipe RDC (8)',
-  type: 'Casques',
-  qty: 8,
-  site: 'Villa Bonapriso',
-  signed: true
-},
-{
-  date: '21/03/2026',
-  worker: 'Paul Essomba',
-  type: 'Harnais anti-chute',
-  qty: 1,
-  site: 'Immeuble Akwa',
-  signed: false
-},
-{
-  date: '20/03/2026',
-  worker: 'Alain Ngo',
-  type: 'Masques FFP2',
-  qty: 10,
-  site: 'Chantier Akwa',
-  signed: true
-},
-{
-  date: '19/03/2026',
-  worker: 'David Mbella',
-  type: 'Lunettes protection',
-  qty: 3,
-  site: 'Résidence Bonanjo',
-  signed: true
-},
-{
-  date: '18/03/2026',
-  worker: 'Équipe peinture (5)',
-  type: 'Combinaisons',
-  qty: 5,
-  site: 'Villa Bonapriso',
-  signed: true
-}];
 
-const initialBriefings = [
-{
-  id: 47,
-  title: 'Travail en hauteur',
-  date: '23/03/2026',
-  site: 'Villa Bonapriso',
-  animator: 'Paul Mbarga',
-  signed: 12,
-  total: 15,
-  current: true
-},
-{
-  id: 46,
-  title: 'Manipulation charges lourdes',
-  date: '16/03/2026',
-  site: 'Immeuble Akwa',
-  animator: 'Chef Tabi',
-  signed: 18,
-  total: 18,
-  current: false
-},
-{
-  id: 45,
-  title: 'Risques électriques',
-  date: '09/03/2026',
-  site: 'Résidence Bonanjo',
-  animator: 'Paul Mbarga',
-  signed: 10,
-  total: 12,
-  current: false
-},
-{
-  id: 44,
-  title: 'Premiers secours',
-  date: '02/03/2026',
-  site: 'Tous chantiers',
-  animator: 'Dr. Essono',
-  signed: 45,
-  total: 48,
-  current: false
-}];
 
 export function ErpQHSE() {
   // API hooks
   const { data: apiIncidents } = useIncidents();
+  const { data: apiProjects } = useProjects();
+  const projectOptions: any[] = Array.isArray(apiProjects) ? apiProjects : [];
   const { data: apiEPIData } = useEPIData();
+  const { data: apiEPIStats } = useEPIStats();
   const createIncidentMutation = useCreateIncident();
   const createEPIMutation = useCreateEPIDistribution();
 
   const [activeTab, setActiveTab] = useState('incidents');
-  // Data States
-  const [incidents, setIncidents] = useState(initialIncidents);
-  const [epiData, setEpiData] = useState(initialEpiData);
-  const [briefings, setBriefings] = useState(initialBriefings);
+
+  // Live data from API
+  const incidents = useMemo(() => {
+    if (!Array.isArray(apiIncidents)) return [];
+    return apiIncidents.map((i: any) => ({
+      id: i.id,
+      title: i.title || '',
+      gravity: i.severity === 'GRAVE' || i.severity === 'CRITIQUE' ? 'Grave'
+        : i.severity === 'MODERE' ? 'Modéré' : 'Mineur',
+      site: i.project_id || '',
+      date: formatDate(i.incident_date),
+      worker: i.reported_by || '—',
+      status: i.status === 'CLOTURE' ? 'closed'
+        : i.status === 'EN_COURS' ? 'progress' : 'investigation',
+      desc: i.description || '',
+    }));
+  }, [apiIncidents]);
+
+  const epiData = useMemo(() => {
+    if (!Array.isArray(apiEPIData)) return [];
+    return apiEPIData.map((e: any) => ({
+      date: formatDate(e.distributed_at),
+      worker: e.worker_name || '',
+      type: e.equipment_type || '',
+      qty: e.quantity || 0,
+      site: e.project_name || '',
+      signed: !!e.signed,
+    }));
+  }, [apiEPIData]);
+
+  // Briefings — live from /qhse/briefings (Phase 14).
+  const { data: apiBriefings } = useBriefings();
+  const createBriefingMutation = useCreateBriefing();
+  const briefings = useMemo(() => {
+    if (!Array.isArray(apiBriefings)) return [];
+    return apiBriefings.map((b: any) => ({
+      id: b.id,
+      title: b.title || '',
+      date: formatDate(b.briefing_date),
+      site: b.site_label || '',
+      animator: b.animator || '',
+      signed: b.signed_count || 0,
+      total: b.total_count || 0,
+      current: b.status === 'EN_COURS',
+    }));
+  }, [apiBriefings]);
   // UI States
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false); // Incident Form
@@ -271,82 +148,73 @@ export function ErpQHSE() {
       3000
     );
   };
-  const handleIncidentSubmit = (e: React.FormEvent) => {
+  const handleIncidentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('incident');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newIncident = {
-        id: `INC-00${incidents.length + 1}`,
-        title:
-        (form.elements.namedItem('title') as HTMLInputElement).value ||
-        'Incident non spécifié',
-        gravity:
-        (form.elements.namedItem('gravity') as RadioNodeList).value ||
-        'Mineur',
-        site: (form.elements.namedItem('site') as HTMLSelectElement).value,
-        date: new Date().toLocaleDateString('fr-FR'),
-        worker:
-        (form.elements.namedItem('worker') as HTMLInputElement).value || '-',
-        status: 'investigation',
-        desc: (form.elements.namedItem('desc') as HTMLTextAreaElement).value
-      };
-      setIncidents([newIncident, ...incidents]);
-      setProcessingId(null);
+    const form = e.target as HTMLFormElement;
+    try {
+      const projectId = (form.elements.namedItem('site') as HTMLSelectElement).value;
+      const gravityUi = (form.elements.namedItem('gravity') as RadioNodeList).value || 'Mineur';
+      const severity = gravityUi === 'Grave' ? 'GRAVE'
+        : gravityUi === 'Modéré' ? 'MODERE' : 'MINEUR';
+      await createIncidentMutation.mutateAsync({
+        project_id: projectId,
+        title: (form.elements.namedItem('title') as HTMLInputElement).value || 'Incident',
+        description: (form.elements.namedItem('desc') as HTMLTextAreaElement).value || '',
+        severity,
+        category: '',
+        location: '',
+        incident_date: new Date().toISOString(),
+      });
       setShowForm(false);
       showToast('Incident déclaré avec succès');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleEpiSubmit = (e: React.FormEvent) => {
+  const handleEpiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('epi');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newEpi = {
-        date: new Date().toLocaleDateString('fr-FR'),
-        worker: (form.elements.namedItem('worker') as HTMLInputElement).value,
-        type: (form.elements.namedItem('type') as HTMLInputElement).value,
-        qty: parseInt(
+    const form = e.target as HTMLFormElement;
+    try {
+      await createEPIMutation.mutateAsync({
+        worker_type: 'employee',  // UI doesn't yet distinguish temp_worker
+        worker_id: (form.elements.namedItem('worker') as HTMLInputElement).value,
+        equipment_type: (form.elements.namedItem('type') as HTMLInputElement).value,
+        quantity: parseInt(
           (form.elements.namedItem('qty') as HTMLInputElement).value
-        ),
-        site: (form.elements.namedItem('site') as HTMLSelectElement).value,
-        signed: false
-      };
-      setEpiData([newEpi, ...epiData]);
-      setProcessingId(null);
+        ) || 1,
+        project_id: (form.elements.namedItem('site') as HTMLSelectElement).value || undefined,
+      } as any);
       setEpiModal(false);
       showToast('Distribution EPI enregistrée');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleBriefingSubmit = (e: React.FormEvent) => {
+  const handleBriefingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('briefing');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newBriefing = {
-        id: briefings.length + 44,
+    const form = e.target as HTMLFormElement;
+    try {
+      await createBriefingMutation.mutateAsync({
         title: (form.elements.namedItem('title') as HTMLInputElement).value,
-        date: new Date().toLocaleDateString('fr-FR'),
-        site: (form.elements.namedItem('site') as HTMLSelectElement).value,
-        animator: (form.elements.namedItem('animator') as HTMLInputElement).
-        value,
-        signed: 0,
-        total: parseInt(
-          (form.elements.namedItem('total') as HTMLInputElement).value
-        ),
-        current: true
-      };
-      setBriefings((prev) =>
-      prev.map((b) => ({
-        ...b,
-        current: false
-      }))
-      ); // unset current
-      setBriefings((prev) => [newBriefing, ...prev]);
-      setProcessingId(null);
+        site_label: (form.elements.namedItem('site') as HTMLSelectElement).value,
+        animator: (form.elements.namedItem('animator') as HTMLInputElement).value,
+        total_count: parseInt((form.elements.namedItem('total') as HTMLInputElement).value) || 0,
+        status: 'EN_COURS',
+      });
       setBriefingModal(false);
       showToast('Nouveau briefing programmé');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
   return (
     <div className="max-w-7xl mx-auto">
@@ -397,7 +265,11 @@ export function ErpQHSE() {
               <div>
                 <p className="text-xs text-globus-gray">Ce mois</p>
                 <p className="font-montserrat font-bold text-xl text-globus-blue-dark">
-                  2
+                  {incidents.filter((i) => {
+                    const now = new Date();
+                    const d = new Date(i.date);
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                  }).length}
                 </p>
               </div>
             </div>
@@ -483,14 +355,16 @@ export function ErpQHSE() {
                     required
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-red-400">
                     
-                        <option value="Villa Bonapriso">Villa Bonapriso</option>
-                        <option value="Immeuble Akwa">Immeuble Akwa</option>
-                        <option value="Résidence Bonanjo">
-                          Résidence Bonanjo
-                        </option>
-                        <option value="Entrepôt Bonabéri">
-                          Entrepôt Bonabéri
-                        </option>
+                        <option value="">— Sélectionner un chantier —</option>
+
+                    
+                        {projectOptions.map((pr: any) =>
+
+                    
+                        <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+
+                    
+                        )}
                       </select>
                     </div>
                     <div>
@@ -680,60 +554,35 @@ export function ErpQHSE() {
         className="space-y-6">
         
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-          {
-            label: 'Casques',
-            count: 156,
-            icon: HardHatIcon,
-            color: 'bg-blue-100 text-blue-600'
-          },
-          {
-            label: 'Gants',
-            count: 312,
-            icon: HardHatIcon,
-            color: 'bg-green-100 text-green-600'
-          },
-          {
-            label: 'Bottes',
-            count: 145,
-            icon: HardHatIcon,
-            color: 'bg-orange-100 text-orange-600'
-          },
-          {
-            label: 'Gilets',
-            count: 98,
-            icon: HardHatIcon,
-            color: 'bg-purple-100 text-purple-600'
-          }].
-          map((item, i) =>
-          <motion.div
-            key={item.label}
-            initial={{
-              opacity: 0,
-              y: 10
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              delay: i * 0.05
-            }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
-            
-                <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${item.color}`}>
-              
-                  <item.icon className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-globus-gray">{item.label}</p>
-                  <p className="font-montserrat font-bold text-xl text-globus-blue-dark">
-                    {item.count}
-                  </p>
-                </div>
-              </motion.div>
-          )}
+            {(Array.isArray(apiEPIStats) ? apiEPIStats : []).map((item, i) => {
+              const colorPalette = [
+                'bg-blue-100 text-blue-600',
+                'bg-green-100 text-green-600',
+                'bg-orange-100 text-orange-600',
+                'bg-purple-100 text-purple-600',
+                'bg-red-100 text-red-600',
+                'bg-teal-100 text-teal-600',
+              ];
+              const color = colorPalette[i % colorPalette.length];
+              return (
+                <motion.div
+                  key={item.type}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color}`}>
+                    <HardHatIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-globus-gray">{item.type}</p>
+                    <p className="font-montserrat font-bold text-xl text-globus-blue-dark">
+                      {item.quantity}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -1010,14 +859,16 @@ export function ErpQHSE() {
                     required
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
                     
-                      <option value="Villa Bonapriso">Villa Bonapriso</option>
-                      <option value="Immeuble Akwa">Immeuble Akwa</option>
-                      <option value="Résidence Bonanjo">
-                        Résidence Bonanjo
-                      </option>
-                      <option value="Entrepôt Bonabéri">
-                        Entrepôt Bonabéri
-                      </option>
+                      <option value="">— Sélectionner un chantier —</option>
+
+                    
+                      {projectOptions.map((pr: any) =>
+
+                    
+                      <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+
+                    
+                      )}
                     </select>
                   </div>
                 </div>
@@ -1111,7 +962,7 @@ export function ErpQHSE() {
                   name="animator"
                   type="text"
                   required
-                  placeholder="Ex: Paul Mbarga"
+                  placeholder="Responsable"
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
                 
                 </div>
@@ -1125,12 +976,10 @@ export function ErpQHSE() {
                     required
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
                     
-                      <option value="Tous chantiers">Tous chantiers</option>
-                      <option value="Villa Bonapriso">Villa Bonapriso</option>
-                      <option value="Immeuble Akwa">Immeuble Akwa</option>
-                      <option value="Résidence Bonanjo">
-                        Résidence Bonanjo
-                      </option>
+                      <option value="">Tous chantiers</option>
+                      {projectOptions.map((pr: any) =>
+                      <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+                      )}
                     </select>
                   </div>
                   <div>

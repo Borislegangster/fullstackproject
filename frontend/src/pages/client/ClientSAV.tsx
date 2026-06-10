@@ -1,57 +1,69 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShieldCheckIcon,
-  AlertTriangleIcon,
-  UploadCloudIcon,
-  ChevronDownIcon,
-  CheckCircle2Icon,
-  ClockIcon,
-  StarIcon,
-  HashIcon,
-  XIcon,
-  LoaderIcon,
-  ImageIcon,
-  FileIcon } from
-'lucide-react';
-import { useClientSAVTickets, useCreateClientSAVTicket, useRateClientSAVTicket } from '../../hooks/useClient';
-const initialTickets = [
-{
-  id: 'SAV-001',
-  title: 'Fuite robinet cuisine',
-  category: 'Plomberie',
-  status: 'résolu',
-  date: '12/04/2025',
-  desc: "Léger goutte à goutte sous l'évier de la cuisine.",
-  rating: 5
-},
-{
-  id: 'SAV-002',
-  title: 'Fissure mur salon',
-  category: 'Maçonnerie',
-  status: 'en-cours',
-  date: '20/05/2025',
-  desc: 'Micro-fissure apparue près de la baie vitrée.'
-},
-{
-  id: 'SAV-003',
-  title: 'Prise électrique défectueuse',
-  category: 'Électricité',
-  status: 'ouvert',
-  date: '01/06/2025',
-  desc: 'La prise murale de la chambre 2 ne fonctionne plus.'
-}];
+import { ShieldCheckIcon, AlertTriangleIcon, UploadCloudIcon, ChevronDownIcon, CheckCircle2Icon, ClockIcon, StarIcon, HashIcon, XIcon, LoaderIcon, ImageIcon } from 'lucide-react';
+import { useClientSAVTickets, useCreateClientSAVTicket, useRateClientSAVTicket, useClientProject } from '../../hooks/useClient';
+import { formatDate, formatDateParts } from '../../utils/datetime';
+
+function savStatusToUi(s: string): string {
+  switch ((s || '').toUpperCase()) {
+    case 'RESOLU': return 'résolu';
+    case 'EN_COURS': return 'en-cours';
+    case 'FERME': return 'fermé';
+    case 'OUVERT': return 'ouvert';
+    default: return 'ouvert';
+  }
+}
 
 export function ClientSAV() {
   const { data: apiTickets } = useClientSAVTickets();
+  const { data: projectData } = useClientProject();
   const createTicketMutation = useCreateClientSAVTicket();
   const rateTicketMutation = useRateClientSAVTicket();
+  const deliveryDate = formatDateParts((projectData as any)?.estimated_end_date, {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   const [priority, setPriority] = useState('normal');
   const [rating, setRating] = useState(0);
-  const [tickets, setTickets] = useState(initialTickets);
+
+  // Live tickets from API
+  const tickets = React.useMemo(() => {
+    if (!Array.isArray(apiTickets)) return [];
+    return apiTickets.map((t: any) => ({
+      id: t.code || t.id,
+      raw_id: t.id,
+      title: t.subject || '',
+      category: t.category || 'general',
+      status: savStatusToUi(t.status),
+      date: formatDate(t.created_at),
+      desc: t.description || '',
+      rating: t.rating || undefined,
+      resolvedDate: formatDate(t.resolved_at),
+    }));
+  }, [apiTickets]);
+  // Legal construction warranties — computed from the real delivery date
+  // (Parfait Achèvement 1 an, Biennale 2 ans, Décennale 10 ans). No hardcoded dates.
+  const warranties = React.useMemo(() => {
+    const end = (projectData as any)?.estimated_end_date;
+    if (!end) return [] as { label: string; expires: string; active: boolean }[];
+    const base = new Date(end);
+    const mk = (label: string, years: number) => {
+      const exp = new Date(base);
+      exp.setFullYear(exp.getFullYear() + years);
+      return {
+        label,
+        expires: formatDate(exp),
+        active: exp.getTime() > Date.now(),
+      };
+    };
+    return [
+      mk('Parfait Achèvement', 1),
+      mk('Garantie Biennale', 2),
+      mk('Garantie Décennale', 10),
+    ];
+  }, [projectData]);
   // Form State
   const [formData, setFormData] = useState({
     title: '',
@@ -91,24 +103,29 @@ export function ClientSAV() {
   const removeFile = (index: number) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
-  const handleSubmitTicket = (e: React.FormEvent) => {
+  const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.desc) return;
     setSubmitState('processing');
-    setTimeout(() => {
-      const id = `SAV-00${tickets.length + 1}`;
-      setNewTicketId(id);
-      setSubmitState('success');
-      const newTicket = {
-        id,
-        title: formData.title,
-        category: formData.category,
-        status: 'ouvert',
-        date: new Date().toLocaleDateString('fr-FR'),
-        desc: formData.desc
+    try {
+      const priorityMap: Record<string, 'BASSE' | 'NORMALE' | 'HAUTE' | 'URGENTE'> = {
+        low: 'BASSE',
+        normal: 'NORMALE',
+        high: 'HAUTE',
+        urgent: 'URGENTE',
       };
-      setTickets((prev) => [newTicket, ...prev]);
-    }, 2000);
+      const created = await createTicketMutation.mutateAsync({
+        subject: formData.title,
+        description: formData.desc,
+        category: formData.category.toLowerCase(),
+        priority: priorityMap[priority] || 'NORMALE',
+      });
+      setNewTicketId(created?.code || 'SAV');
+      setSubmitState('success');
+    } catch (err) {
+      console.error('Create ticket failed', err);
+      setSubmitState('idle');
+    }
   };
   const handleCloseSuccess = () => {
     setSubmitState('idle');
@@ -121,23 +138,19 @@ export function ClientSAV() {
     setUploadedFiles([]);
     setPriority('normal');
   };
-  const handleRatingSubmit = (ticketId: string) => {
+  const handleRatingSubmit = async (ticketId: string) => {
     setRatingState('processing');
-    setTimeout(() => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    const realId = (ticket as any)?.raw_id || ticketId;
+    try {
+      await rateTicketMutation.mutateAsync({ id: realId, rating });
       setRatingState('success');
-      setTickets((prev) =>
-      prev.map((t) =>
-      t.id === ticketId ?
-      {
-        ...t,
-        rating
-      } :
-      t
-      )
-      );
       showToast('Merci pour votre évaluation !');
       setTimeout(() => setRatingState('idle'), 2000);
-    }, 1500);
+    } catch (err) {
+      console.error('Rate ticket failed', err);
+      setRatingState('idle');
+    }
   };
   return (
     <div className="max-w-5xl mx-auto space-y-8 relative pb-20">
@@ -162,43 +175,32 @@ export function ClientSAV() {
             </h1>
           </div>
           <p className="font-opensans text-seconda-blue text-lg mb-8">
-            Votre bâtiment a été livré le <strong>15 Mars 2025</strong>.
+            {deliveryDate
+              ? <>Votre bâtiment a été livré le <strong>{deliveryDate}</strong>.</>
+              : 'Suivi de la garantie et du service après-vente de votre bâtiment.'}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
+            {warranties.length === 0 ?
+            <p className="text-sm text-seconda-blue col-span-full">
+              Les garanties seront affichées dès la livraison du bâtiment.
+            </p> :
+            warranties.map((w) =>
+            <div
+              key={w.label}
+              className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
               <h3 className="font-montserrat font-bold text-sm mb-1">
-                Parfait Achèvement
+                {w.label}
               </h3>
               <p className="text-xs text-seconda-blue mb-2">
-                Valide jusqu'au 15/03/2026
+                Valide jusqu'au {w.expires}
               </p>
-              <span className="inline-block px-2 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded">
-                Active
+              <span
+                className={`inline-block px-2 py-1 text-xs font-bold rounded ${w.active ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'}`}>
+                {w.active ? 'Active' : 'Expirée'}
               </span>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
-              <h3 className="font-montserrat font-bold text-sm mb-1">
-                Garantie Biennale
-              </h3>
-              <p className="text-xs text-seconda-blue mb-2">
-                Valide jusqu'au 15/03/2027
-              </p>
-              <span className="inline-block px-2 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded">
-                Active
-              </span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4">
-              <h3 className="font-montserrat font-bold text-sm mb-1">
-                Garantie Décennale
-              </h3>
-              <p className="text-xs text-seconda-blue mb-2">
-                Valide jusqu'au 15/03/2035
-              </p>
-              <span className="inline-block px-2 py-1 bg-green-500/20 text-green-300 text-xs font-bold rounded">
-                Active
-              </span>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -496,6 +498,11 @@ export function ClientSAV() {
 
       {/* Tickets List */}
       <div className="space-y-4">
+        {tickets.length === 0 &&
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center text-globus-gray font-opensans text-sm">
+            Aucune demande SAV pour le moment. Créez un ticket si vous rencontrez un problème.
+          </div>
+        }
         {tickets.map((ticket) =>
         <div
           key={ticket.id}
@@ -572,27 +579,15 @@ export function ClientSAV() {
                         <p className="font-semibold text-globus-blue-dark text-xs">
                           {ticket.date}
                         </p>
-                        <p>Ticket ouvert par le client.</p>
+                        <p>Ticket ouvert.</p>
                       </div>
-                      {ticket.status !== 'ouvert' &&
-                  <div className="relative">
-                          <div className="absolute -left-[21px] top-1 w-2 h-2 rounded-full bg-globus-orange"></div>
-                          <p className="font-semibold text-globus-blue-dark text-xs">
-                            Le lendemain
-                          </p>
-                          <p>
-                            Prise en charge par l'équipe technique. Intervention
-                            planifiée.
-                          </p>
-                        </div>
-                  }
-                      {ticket.status === 'résolu' &&
+                      {ticket.status === 'résolu' && ticket.resolvedDate &&
                   <div className="relative">
                           <div className="absolute -left-[21px] top-1 w-2 h-2 rounded-full bg-green-500"></div>
                           <p className="font-semibold text-globus-blue-dark text-xs">
-                            3 jours plus tard
+                            {ticket.resolvedDate}
                           </p>
-                          <p>Intervention terminée. Problème résolu.</p>
+                          <p>Ticket résolu.</p>
                         </div>
                   }
                     </div>

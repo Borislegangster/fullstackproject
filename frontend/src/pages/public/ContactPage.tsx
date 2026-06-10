@@ -1,14 +1,6 @@
-import React, { useEffect, useState, lazy } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  MapPinIcon,
-  PhoneIcon,
-  MailIcon,
-  ClockIcon,
-  SendIcon,
-  MessageCircleIcon,
-  CheckCircleIcon } from
-'lucide-react';
+import { MapPinIcon, PhoneIcon, MailIcon, ClockIcon, SendIcon, CheckCircleIcon } from 'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getContactInfo, submitContactForm } from '../../services/api/cms.api';

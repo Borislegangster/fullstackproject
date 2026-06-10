@@ -1,24 +1,15 @@
-import React, { useState, Children } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
+import { formatDate, formatDateParts } from '../../utils/datetime';
 import {
-  ActivityIcon,
-  FileTextIcon,
-  DownloadIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
-  CalendarIcon,
-  PieChartIcon,
-  ClockIcon,
-  MailIcon,
-  PlusIcon,
-  CheckCircle2Icon,
-  PauseCircleIcon,
-  PlayCircleIcon,
-  Trash2Icon,
-  Loader2Icon,
-  XIcon,
-  SaveIcon } from
-'lucide-react';
+  useDashboardStats, useRevenueByMonth, useMarginByProject,
+  useScheduledReports, useCreateScheduledReport, useToggleScheduledReport,
+  useDeleteScheduledReport,
+  useProjectPerformance, useProjectsByType, useQHSEStats, useSAVStats,
+} from '../../hooks/useErp';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+import { downloadCSV, downloadAuthedFile } from '../../utils/download';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ActivityIcon, FileTextIcon, DownloadIcon, TrendingUpIcon, CalendarIcon, PieChartIcon, ClockIcon, MailIcon, PlusIcon, CheckCircle2Icon, PauseCircleIcon, PlayCircleIcon, Trash2Icon, Loader2Icon, XIcon } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -51,195 +42,21 @@ const tabs = [
   icon: DownloadIcon
 }];
 
-const revenueData = [
-{
-  month: 'Jan',
-  current: 45,
-  previous: 38
-},
-{
-  month: 'Fév',
-  current: 52,
-  previous: 42
-},
-{
-  month: 'Mar',
-  current: 68,
-  previous: 55
-},
-{
-  month: 'Avr',
-  current: 75,
-  previous: 60
-},
-{
-  month: 'Mai',
-  current: 82,
-  previous: 65
-},
-{
-  month: 'Juin',
-  current: 95,
-  previous: 70
-},
-{
-  month: 'Juil',
-  current: 88,
-  previous: 75
-},
-{
-  month: 'Aoû',
-  current: 70,
-  previous: 68
-},
-{
-  month: 'Sep',
-  current: 105,
-  previous: 85
-},
-{
-  month: 'Oct',
-  current: 112,
-  previous: 90
-},
-{
-  month: 'Nov',
-  current: 98,
-  previous: 95
-},
-{
-  month: 'Déc',
-  current: 125,
-  previous: 110
-}];
-
-const performanceData = [
-{
-  name: 'Paul Mbarga',
-  score: 92
-},
-{
-  name: 'Claire Fotso',
-  score: 88
-},
-{
-  name: 'Jacques Nkoulou',
-  score: 85
-},
-{
-  name: 'Alain Messi',
-  score: 76
-}];
-
-const projectTypeData = [
-{
-  name: 'Résidentiel',
-  value: 45,
-  color: '#3B82F6'
-},
-{
-  name: 'Commercial',
-  value: 25,
-  color: '#8B5CF6'
-},
-{
-  name: 'Industriel',
-  value: 15,
-  color: '#F59E0B'
-},
-{
-  name: 'Infrastructure',
-  value: 10,
-  color: '#10B981'
-},
-{
-  name: 'Rénovation',
-  value: 5,
-  color: '#6B7280'
-}];
-
-const qhseData = [
-{
-  month: 'Oct',
-  incidents: 2
-},
-{
-  month: 'Nov',
-  incidents: 1
-},
-{
-  month: 'Déc',
-  incidents: 3
-},
-{
-  month: 'Jan',
-  incidents: 2
-},
-{
-  month: 'Fév',
-  incidents: 4
-},
-{
-  month: 'Mar',
-  incidents: 3
-}];
-
-const topProjects = [
-{
-  name: 'Villa Bonapriso',
-  revenue: 95000000,
-  costs: 74100000,
-  margin: 20900000,
-  marginPct: 22,
-  status: 'En cours'
-},
-{
-  name: 'Bureau Deïdo',
-  revenue: 45000000,
-  costs: 36000000,
-  margin: 9000000,
-  marginPct: 20,
-  status: 'Terminé'
-},
-{
-  name: 'Immeuble Akwa',
-  revenue: 320000000,
-  costs: 272000000,
-  margin: 48000000,
-  marginPct: 15,
-  status: 'En cours'
-},
-{
-  name: 'Résidence Bonanjo',
-  revenue: 150000000,
-  costs: 138000000,
-  margin: 12000000,
-  marginPct: 8,
-  status: 'En cours'
-},
-{
-  name: 'Centre Commercial Bali',
-  revenue: 850000000,
-  costs: 807500000,
-  margin: 42500000,
-  marginPct: 5,
-  status: 'Démarrage'
-}];
+// Color palettes for the analytics charts (assigned by index).
+const PROJECT_TYPE_COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981', '#6B7280', '#EF4444'];
 
 const predefinedReports = [
 {
   id: 1,
   title: 'Bilan Financier Mensuel',
   desc: 'Synthèse des revenus, dépenses et marges par projet.',
-  lastRun: '01/03/2026',
-  format: 'PDF, Excel',
+  format: 'CSV',
   icon: '📊'
 },
 {
   id: 2,
   title: "Suivi Main d'Œuvre",
   desc: 'Heures travaillées, coûts salariaux et pointage.',
-  lastRun: '15/03/2026',
   format: 'Excel',
   icon: '👷'
 },
@@ -247,73 +64,43 @@ const predefinedReports = [
   id: 3,
   title: 'État des Stocks',
   desc: 'Inventaire actuel, valorisation et alertes de réapprovisionnement.',
-  lastRun: "Aujourd'hui",
-  format: 'PDF',
+  format: 'Excel',
   icon: '📦'
 },
 {
   id: 4,
   title: 'Bilan QHSE',
   desc: 'Registre des incidents, audits et conformité sécurité.',
-  lastRun: '28/02/2026',
-  format: 'PDF',
+  format: 'CSV',
   icon: '🛡️'
 },
 {
   id: 5,
   title: 'Avancement Chantiers',
   desc: 'Progression physique vs planning prévisionnel.',
-  lastRun: 'Hier',
-  format: 'PDF, PPT',
+  format: 'Excel',
   icon: '🏗️'
 },
 {
   id: 6,
   title: 'Performance Sous-traitants',
   desc: 'Évaluation, facturation et respect des délais.',
-  lastRun: '10/03/2026',
   format: 'Excel',
   icon: '📈'
 }];
 
-const scheduledReports = [
-{
-  id: 1,
-  name: 'Rapport Financier',
-  frequency: 'Mensuel',
-  recipients: 'admin@globus-btp.com, direction@globus-btp.com',
-  nextRun: '01/04/2026',
-  active: true
-},
-{
-  id: 2,
-  name: 'Avancement Chantiers',
-  frequency: 'Hebdomadaire',
-  recipients: 'equipe-technique@globus-btp.com',
-  nextRun: '27/03/2026',
-  active: true
-},
-{
-  id: 3,
-  name: 'État des Stocks',
-  frequency: 'Hebdomadaire',
-  recipients: 'logistique@globus-btp.com',
-  nextRun: '28/03/2026',
-  active: true
-},
-{
-  id: 4,
-  name: 'Bilan QHSE',
-  frequency: 'Mensuel',
-  recipients: 'qhse@globus-btp.com',
-  nextRun: '01/04/2026',
-  active: false
-}];
 
 const formatCurrency = (value: number) =>
 new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 0
 }).format(value) + ' FCFA';
+/** Compact money label, e.g. 890_000_000 → "890 M". */
+const compactAmount = (v: number): string => {
+  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(v % 1_000_000_000 === 0 ? 0 : 1)} Md`;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)} M`;
+  if (v >= 1_000) return `${Math.round(v / 1_000)} K`;
+  return String(Math.round(v));
+};
 const stagger = {
   hidden: {},
   visible: {
@@ -336,10 +123,111 @@ const fadeUp = {
   }
 };
 export function ErpRapports() {
+  // API hooks
+  const { data: stats } = useDashboardStats();
+  const { data: revenue } = useRevenueByMonth(12);
+  const { data: margin } = useMarginByProject();
+  const { data: liveScheduled } = useScheduledReports();
+  const { data: perfRaw } = useProjectPerformance();
+  const { data: typeRaw } = useProjectsByType();
+  const { data: qhseStats } = useQHSEStats();
+  const { data: savStats } = useSAVStats();
+  void stats;
+  const createScheduledMutation = useCreateScheduledReport();
+  const toggleScheduledMutation = useToggleScheduledReport();
+  const deleteScheduledMutation = useDeleteScheduledReport();
+
+  // Derived live data — empty arrays surface a <ChartEmpty>, never mock.
+  const liveRevenueData = useMemo(() => {
+    if (!Array.isArray(revenue)) return [];
+    return revenue.map((r: any) => ({
+      month: r.month.split('-')[1] ? formatDateParts(r.month + '-01', { month: 'short' }) : r.month,
+      current: (r.revenue || 0) / 1_000_000,    // encaissements (cash-basis), millions FCFA
+      invoiced: (r.invoiced || 0) / 1_000_000,  // facturé soldé (accrual), millions FCFA
+    }));
+  }, [revenue]);
+
+  const liveProfitData = useMemo(() => {
+    if (!Array.isArray(margin)) return [];
+    return margin.map((m: any) => ({
+      name: m.project_name,
+      revenue: m.revenue,
+      costs: m.spent,
+      margin: m.revenue - m.spent,
+      marginPct: m.margin_pct,
+      status: m.margin_pct < 0 ? 'Perte' : m.margin_pct < 10 ? 'À surveiller' : 'En cours',
+    }));
+  }, [margin]);
+
+  // Per-project progress (replaces the per-chef mock).
+  const livePerformance = useMemo(() => {
+    if (!Array.isArray(perfRaw)) return [];
+    return perfRaw.slice(0, 8).map((p) => ({ name: p.project_name, score: p.progress }));
+  }, [perfRaw]);
+
+  // Projects-by-type distribution (count) → pie.
+  const liveProjectType = useMemo(() => {
+    if (!Array.isArray(typeRaw)) return [];
+    return typeRaw.map((t, i) => ({
+      name: t.type, value: t.count,
+      color: PROJECT_TYPE_COLORS[i % PROJECT_TYPE_COLORS.length],
+    }));
+  }, [typeRaw]);
+
+  // QHSE aggregate counts → bar chart.
+  const liveQhse = useMemo(() => {
+    if (!qhseStats) return [];
+    const s: any = qhseStats;
+    const bars = [
+      { label: 'Ouverts', incidents: s.open_incidents || 0 },
+      { label: 'Graves', incidents: s.severe_incidents || 0 },
+      { label: 'Clôturés', incidents: s.closed_incidents || 0 },
+      { label: 'Audits', incidents: s.completed_audits || 0 },
+    ];
+    return bars.every((b) => b.incidents === 0) ? [] : bars;
+  }, [qhseStats]);
+
+  const scheduled = useMemo(() => {
+    if (!Array.isArray(liveScheduled)) return [];
+    return liveScheduled.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      type: s.report_type,
+      frequency: s.frequency,
+      recipients: Array.isArray(s.recipients) ? s.recipients.join(', ') : '',
+      nextRun: formatDate(s.next_run_at, '—'),
+      active: !!s.is_active,
+    }));
+  }, [liveScheduled]);
+
+  // Real KPI row — computed entirely from live API data (no mock, no fake trends).
+  const kpis = useMemo(() => {
+    const totalRevenue = Array.isArray(revenue)
+      ? revenue.reduce((s: number, r: any) => s + (r.revenue || 0), 0) : 0;
+    const sumRev = liveProfitData.reduce((s, p: any) => s + (p.revenue || 0), 0);
+    const sumMargin = liveProfitData.reduce((s, p: any) => s + (p.margin || 0), 0);
+    const marginPct = sumRev > 0 ? (sumMargin / sumRev) * 100 : 0;
+    const avgProgress = livePerformance.length
+      ? livePerformance.reduce((s, p: any) => s + (p.score || 0), 0) / livePerformance.length : 0;
+    const satisfaction = Number((savStats as any)?.avg_rating || 0);
+    return [
+      { label: 'CA Encaissé (12 mois)', value: compactAmount(totalRevenue), suffix: 'FCFA',
+        Icon: TrendingUpIcon, bg: 'bg-green-100', fg: 'text-green-600' },
+      { label: 'Marge Nette Moyenne', value: marginPct.toFixed(1), suffix: '%',
+        Icon: PieChartIcon, bg: 'bg-blue-100', fg: 'text-blue-600' },
+      { label: 'Avancement Moyen', value: String(Math.round(avgProgress)), suffix: '%',
+        Icon: ClockIcon, bg: 'bg-orange-100', fg: 'text-orange-600' },
+      { label: 'Satisfaction Client', value: satisfaction ? satisfaction.toFixed(1) : '—',
+        suffix: satisfaction ? '/5' : '', Icon: CheckCircle2Icon, bg: 'bg-purple-100', fg: 'text-purple-600' },
+    ];
+  }, [revenue, liveProfitData, livePerformance, savStats]);
+
   const [activeTab, setActiveTab] = useState('analytics');
   const [isGenerating, setIsGenerating] = useState<number | string | null>(null);
   const [exportModule, setExportModule] = useState('all');
   const [exportFormat, setExportFormat] = useState('pdf');
+  const [exportFrom, setExportFrom] = useState(`${new Date().getFullYear()}-01-01`);
+  const [exportTo, setExportTo] = useState(new Date().toISOString().slice(0, 10));
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
@@ -355,28 +243,127 @@ export function ErpRapports() {
     });
     setTimeout(() => setToast(null), 3000);
   };
-  const handleGenerate = (id: number) => {
+  const handleGenerate = async (id: number) => {
     setIsGenerating(id);
-    setTimeout(() => {
-      setIsGenerating(null);
+    const stamp = new Date().toISOString().slice(0, 10);
+    try {
+      if (id === 1) {
+        if (liveProfitData.length === 0)
+          throw new Error('Aucune donnée financière à exporter');
+        downloadCSV(
+          `bilan-financier-${stamp}.csv`,
+          liveProfitData.map((p: any) => ({
+            name: p.name, revenue: p.revenue, costs: p.costs,
+            margin: p.margin, marginPct: p.marginPct, status: p.status,
+          })),
+          [
+            { key: 'name', label: 'Projet' },
+            { key: 'revenue', label: 'Revenus (FCFA)' },
+            { key: 'costs', label: 'Dépenses (FCFA)' },
+            { key: 'margin', label: 'Marge (FCFA)' },
+            { key: 'marginPct', label: 'Marge %' },
+            { key: 'status', label: 'Statut' },
+          ],
+        );
+      } else if (id === 4) {
+        if (liveQhse.length === 0)
+          throw new Error('Aucune donnée QHSE à exporter');
+        downloadCSV(`bilan-qhse-${stamp}.csv`, liveQhse, [
+          { key: 'label', label: 'Indicateur' },
+          { key: 'incidents', label: 'Nombre' },
+        ]);
+      } else {
+        const map: Record<number, { path: string; name: string }> = {
+          2: { path: '/exports/payroll.xlsx', name: 'suivi-main-oeuvre' },
+          3: { path: '/exports/stock.xlsx', name: 'etat-stocks' },
+          5: { path: '/exports/projects.xlsx', name: 'avancement-chantiers' },
+          6: { path: '/exports/subcontractor-invoices.xlsx', name: 'performance-sous-traitants' },
+        };
+        const t = map[id];
+        if (!t) throw new Error('Rapport inconnu');
+        await downloadAuthedFile(t.path, `${t.name}-${stamp}.xlsx`);
+      }
       showToast('Rapport généré et téléchargé avec succès');
-    }, 2000);
-  };
-  const handleManualExport = () => {
-    setIsGenerating('manual-export');
-    setTimeout(() => {
+    } catch (e: any) {
+      showToast(
+        e?.response?.data?.detail || e?.message || 'Échec de la génération',
+        'error',
+      );
+    } finally {
       setIsGenerating(null);
-      showToast('Export terminé avec succès');
-    }, 2000);
+    }
   };
-  const handleCreateCustomReport = (e: React.FormEvent) => {
+  const handleManualExport = async () => {
+    const map: Record<string, { path: string; name: string }> = {
+      finances: { path: '/exports/invoices.xlsx', name: 'factures' },
+      rh: { path: '/exports/employees.xlsx', name: 'employes' },
+      achats: { path: '/exports/purchase-requests.xlsx', name: 'achats' },
+      materiel: { path: '/exports/stock.xlsx', name: 'stock' },
+      chantiers: { path: '/exports/projects.xlsx', name: 'chantiers' },
+      crm: { path: '/exports/leads.xlsx', name: 'leads' },
+    };
+    const t = map[exportModule];
+    if (!t) {
+      showToast('Sélectionnez un module spécifique à exporter', 'info');
+      return;
+    }
+    setIsGenerating('manual-export');
+    // Format choisi (excel → xlsx) + plage de dates → query string réelle.
+    const fmt = exportFormat === 'excel' ? 'xlsx' : exportFormat; // 'pdf' | 'xlsx' | 'csv'
+    const params = new URLSearchParams({ fmt });
+    if (exportFrom) params.set('date_from', exportFrom);
+    if (exportTo) params.set('date_to', exportTo);
+    try {
+      await downloadAuthedFile(
+        `${t.path}?${params.toString()}`,
+        `${t.name}-${new Date().toISOString().slice(0, 10)}.${fmt}`,
+      );
+      showToast('Export terminé avec succès');
+    } catch (e: any) {
+      showToast(
+        e?.response?.data?.detail || "Échec de l'export",
+        'error',
+      );
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+  const handleCreateCustomReport = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating('custom-report');
-    setTimeout(() => {
-      setIsGenerating(null);
+    const form = e.target as HTMLFormElement;
+    try {
+      await createScheduledMutation.mutateAsync({
+        name: (form.elements.namedItem('name') as HTMLInputElement)?.value || 'Rapport',
+        report_type: (form.elements.namedItem('type') as HTMLSelectElement)?.value || 'dashboard_summary',
+        frequency: (form.elements.namedItem('frequency') as HTMLSelectElement)?.value || 'WEEKLY',
+        recipients: ((form.elements.namedItem('recipients') as HTMLInputElement)?.value || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      });
       setShowCustomReportModal(false);
       showToast('Rapport personnalisé créé et planifié');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
+      setIsGenerating(null);
+    }
+  };
+  const handleToggleScheduled = async (id: string) => {
+    try {
+      await toggleScheduledMutation.mutateAsync(id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleDeleteScheduled = async (id: string) => {
+    try {
+      await deleteScheduledMutation.mutateAsync(id);
+      showToast('Rapport planifié supprimé', 'info');
+    } catch (err) {
+      console.error(err);
+    }
   };
   return (
     <motion.div
@@ -456,94 +443,34 @@ export function ErpRapports() {
       {/* Tab: Analytics */}
       {activeTab === 'analytics' &&
       <>
-          {/* KPI Row */}
+          {/* KPI Row — valeurs réelles dérivées de l'API */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-          {
-            label: 'CA Cumulé Annuel',
-            value: '890M',
-            suffix: 'FCFA',
-            trend: '+22%',
-            up: true,
-            color: 'bg-green-100 text-green-600'
-          },
-          {
-            label: 'Marge Nette Moyenne',
-            value: '14.2%',
-            suffix: '',
-            trend: '-1.8 pts',
-            up: false,
-            color: 'bg-blue-100 text-blue-600'
-          },
-          {
-            label: 'Livraison à Temps',
-            value: '72%',
-            suffix: '',
-            trend: 'Obj: 85%',
-            up: false,
-            color: 'bg-orange-100 text-orange-600'
-          },
-          {
-            label: 'Satisfaction Client',
-            value: '4.6',
-            suffix: '/5',
-            trend: '+0.3',
-            up: true,
-            color: 'bg-purple-100 text-purple-600'
-          }].
-          map((kpi, i) =>
-          <motion.div
-            key={i}
-            variants={fadeUp}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            
-                <div className="flex items-center justify-between mb-3">
-                  <div
-                className={`w-10 h-10 rounded-lg ${kpi.color.split(' ')[0]} flex items-center justify-center`}>
-                
-                    {i === 0 &&
-                <TrendingUpIcon
-                  className={`w-5 h-5 ${kpi.color.split(' ')[1]}`} />
+            {kpis.map((kpi, i) => {
+              const Icon = kpi.Icon;
+              return (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
 
-                }
-                    {i === 1 &&
-                <PieChartIcon
-                  className={`w-5 h-5 ${kpi.color.split(' ')[1]}`} />
-
-                }
-                    {i === 2 &&
-                <ClockIcon
-                  className={`w-5 h-5 ${kpi.color.split(' ')[1]}`} />
-
-                }
-                    {i === 3 &&
-                <CheckCircle2Icon
-                  className={`w-5 h-5 ${kpi.color.split(' ')[1]}`} />
-
-                }
+                  <div className="flex items-center mb-3">
+                    <div className={`w-10 h-10 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+                      <Icon className={`w-5 h-5 ${kpi.fg}`} />
+                    </div>
                   </div>
-                  <span
-                className={`flex items-center gap-1 text-xs font-semibold ${kpi.up ? 'text-green-600' : 'text-orange-600'}`}>
-                
-                    {kpi.up ?
-                <TrendingUpIcon className="w-3 h-3" /> :
-
-                <TrendingDownIcon className="w-3 h-3" />
-                }
-                    {kpi.trend}
-                  </span>
-                </div>
-                <p className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
-                  {kpi.value}
-                  <span className="text-sm font-bold text-gray-400 ml-1">
-                    {kpi.suffix}
-                  </span>
-                </p>
-                <p className="text-xs text-globus-gray font-opensans">
-                  {kpi.label}
-                </p>
-              </motion.div>
-          )}
+                  <p className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
+                    {kpi.value}
+                    {kpi.suffix &&
+                    <span className="text-sm font-bold text-gray-400 ml-1">
+                      {kpi.suffix}
+                    </span>
+                    }
+                  </p>
+                  <p className="text-xs text-globus-gray font-opensans">
+                    {kpi.label}
+                  </p>
+                </motion.div>);
+            })}
           </div>
 
           {/* Charts Row 1 */}
@@ -556,12 +483,15 @@ export function ErpRapports() {
                 Évolution CA Mensuel
               </h3>
               <p className="font-opensans text-xs text-gray-400 mb-4">
-                2026 vs 2025 (en millions FCFA)
+                Encaissé (cash) vs facturé soldé — 12 mois (millions FCFA)
               </p>
               <div className="h-64">
+                {liveRevenueData.length === 0 ? (
+                  <ChartEmpty message="Aucune donnée de revenus sur la période" />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                  data={revenueData}
+                  data={liveRevenueData}
                   margin={{
                     top: 5,
                     right: 10,
@@ -586,25 +516,11 @@ export function ErpRapports() {
                         offset="95%"
                         stopColor="#F97316"
                         stopOpacity={0} />
-                      
+
                       </linearGradient>
-                      <linearGradient
-                      id="colorPrevious"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1">
-                      
-                        <stop
-                        offset="5%"
-                        stopColor="#94A3B8"
-                        stopOpacity={0.2} />
-                      
-                        <stop
-                        offset="95%"
-                        stopColor="#94A3B8"
-                        stopOpacity={0} />
-                      
+                      <linearGradient id="colorInvoiced" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#94A3B8" stopOpacity={0.18} />
+                        <stop offset="95%" stopColor="#94A3B8" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -628,33 +544,39 @@ export function ErpRapports() {
                   
                     <Tooltip
                     formatter={(value: number, name: string) => [
-                    `${value}M FCFA`,
-                    name === 'current' ? '2026' : '2025']
-                    }
+                      `${value} M FCFA`,
+                      name === 'current' ? 'Encaissé' : 'Facturé soldé',
+                    ]}
                     contentStyle={{
                       borderRadius: '8px',
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                       fontSize: '12px'
                     }} />
-                  
+
+                    <Legend
+                    iconType="plainline"
+                    formatter={(v) => (v === 'current' ? 'Encaissé' : 'Facturé soldé')}
+                    wrapperStyle={{ fontSize: '11px' }} />
+
                     <Area
                     type="monotone"
-                    dataKey="previous"
+                    dataKey="invoiced"
                     stroke="#94A3B8"
                     strokeWidth={2}
-                    fill="url(#colorPrevious)"
+                    fill="url(#colorInvoiced)"
                     strokeDasharray="5 5" />
-                  
+
                     <Area
                     type="monotone"
                     dataKey="current"
                     stroke="#F97316"
                     strokeWidth={2.5}
                     fill="url(#colorCurrent)" />
-                  
+
                   </AreaChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </motion.div>
 
@@ -663,15 +585,18 @@ export function ErpRapports() {
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             
               <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-1">
-                Performance Chefs de Projet
+                Avancement par Projet (%)
               </h3>
               <p className="font-opensans text-xs text-gray-400 mb-4">
                 Score global (%)
               </p>
               <div className="h-64">
+                {livePerformance.length === 0 ? (
+                  <ChartEmpty message="Aucun projet à afficher" />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                  data={performanceData}
+                  data={livePerformance}
                   layout="vertical"
                   margin={{
                     top: 0,
@@ -718,7 +643,7 @@ export function ErpRapports() {
                     }} />
                   
                     <Bar dataKey="score" radius={[0, 6, 6, 0]} maxBarSize={22}>
-                      {performanceData.map((entry, index) =>
+                      {livePerformance.map((entry, index) =>
                     <Cell
                       key={index}
                       fill={
@@ -733,6 +658,7 @@ export function ErpRapports() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </motion.div>
           </div>
@@ -744,13 +670,16 @@ export function ErpRapports() {
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             
               <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-4">
-                Répartition CA par Type de Projet
+                Répartition des Projets par Type
               </h3>
               <div className="h-64">
+                {liveProjectType.length === 0 ? (
+                  <ChartEmpty message="Aucun projet à répartir" />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                    data={projectTypeData}
+                    data={liveProjectType}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -759,7 +688,7 @@ export function ErpRapports() {
                     stroke="none"
                     paddingAngle={3}>
                     
-                      {projectTypeData.map((entry, index) =>
+                      {liveProjectType.map((entry, index) =>
                     <Cell key={index} fill={entry.color} />
                     )}
                     </Pie>
@@ -781,6 +710,7 @@ export function ErpRapports() {
                   
                   </PieChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </motion.div>
 
@@ -789,22 +719,25 @@ export function ErpRapports() {
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             
               <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-4">
-                Incidents QHSE (6 derniers mois)
+                Synthèse QHSE (incidents & audits)
               </h3>
               <div className="h-64">
+                {liveQhse.length === 0 ? (
+                  <ChartEmpty message="Aucune donnée QHSE" />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                  data={qhseData}
+                  data={liveQhse}
                   margin={{
                     top: 5,
                     right: 10,
                     left: 0,
                     bottom: 0
                   }}>
-                  
+
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                     <XAxis
-                    dataKey="month"
+                    dataKey="label"
                     tick={{
                       fontSize: 11,
                       fill: '#6b7280'
@@ -838,6 +771,7 @@ export function ErpRapports() {
                   
                   </BarChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </motion.div>
           </div>
@@ -875,7 +809,12 @@ export function ErpRapports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {topProjects.map((project, i) =>
+                  {liveProfitData.length === 0 &&
+                    <tr><td colSpan={6} className="py-8 text-center text-globus-gray font-opensans text-sm">
+                      Aucun projet à afficher
+                    </td></tr>
+                  }
+                  {liveProfitData.map((project, i) =>
                 <tr
                   key={i}
                   className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -937,12 +876,8 @@ export function ErpRapports() {
               </div>
               <div className="flex items-center gap-4 text-xs font-opensans text-gray-400 mb-4">
                 <span className="flex items-center gap-1">
-                  <CalendarIcon className="w-3 h-3" />
-                  Dernier: {report.lastRun}
-                </span>
-                <span className="flex items-center gap-1">
                   <FileTextIcon className="w-3 h-3" />
-                  {report.format}
+                  Format: {report.format}
                 </span>
               </div>
               <div className="mt-auto flex gap-2">
@@ -959,7 +894,7 @@ export function ErpRapports() {
 
               <>
                       <DownloadIcon className="w-3.5 h-3.5" />
-                      Générer PDF
+                      Générer
                     </>
               }
                 </button>
@@ -1012,9 +947,10 @@ export function ErpRapports() {
                   </label>
                   <input
                   type="date"
-                  defaultValue="2026-01-01"
+                  value={exportFrom}
+                  onChange={(e) => setExportFrom(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange focus:ring-1 focus:ring-globus-orange/30" />
-                
+
                 </div>
                 <div>
                   <label className="block font-montserrat font-semibold text-sm text-globus-blue-dark mb-2">
@@ -1022,7 +958,8 @@ export function ErpRapports() {
                   </label>
                   <input
                   type="date"
-                  defaultValue="2026-03-23"
+                  value={exportTo}
+                  onChange={(e) => setExportTo(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange focus:ring-1 focus:ring-globus-orange/30" />
                 
                 </div>
@@ -1099,7 +1036,7 @@ export function ErpRapports() {
             </div>
 
             <div className="space-y-3">
-              {scheduledReports.map((report) =>
+              {scheduled.map((report) =>
             <div
               key={report.id}
               className={`p-4 rounded-lg border ${report.active ? 'border-blue-100 bg-blue-50/30' : 'border-gray-100 bg-gray-50/50'}`}>
@@ -1116,14 +1053,20 @@ export function ErpRapports() {
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      <button className="p-1 text-gray-400 hover:text-globus-blue">
+                      <button
+                    onClick={() => handleToggleScheduled(report.id)}
+                    title={report.active ? 'Mettre en pause' : 'Activer'}
+                    className="p-1 text-gray-400 hover:text-globus-blue">
                         {report.active ?
                     <PauseCircleIcon className="w-4 h-4" /> :
 
                     <PlayCircleIcon className="w-4 h-4" />
                     }
                       </button>
-                      <button className="p-1 text-gray-400 hover:text-red-500">
+                      <button
+                    onClick={() => handleDeleteScheduled(report.id)}
+                    title="Supprimer"
+                    className="p-1 text-gray-400 hover:text-red-500">
                         <Trash2Icon className="w-4 h-4" />
                       </button>
                     </div>
@@ -1148,6 +1091,75 @@ export function ErpRapports() {
           </motion.div>
         </div>
       }
+
+      {/* ── Plan a scheduled report modal ─────────────────────── */}
+      <AnimatePresence>
+        {showCustomReportModal &&
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowCustomReportModal(false)}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark">
+                Planifier un rapport
+              </h3>
+              <button onClick={() => setShowCustomReportModal(false)} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateCustomReport} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Nom du rapport</label>
+                <input name="name" required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Type</label>
+                <select name="type"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange">
+                  <option value="dashboard_summary">Synthèse Dashboard</option>
+                  <option value="financial">Financier</option>
+                  <option value="hr">Ressources Humaines</option>
+                  <option value="projects">Chantiers</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Fréquence</label>
+                <select name="frequency"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange">
+                  <option value="DAILY">Quotidien</option>
+                  <option value="WEEKLY">Hebdomadaire</option>
+                  <option value="MONTHLY">Mensuel</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-globus-blue-dark mb-1.5">Destinataires</label>
+                <input name="recipients" placeholder="email1@x.com, email2@y.com"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowCustomReportModal(false)}
+                  className="px-4 py-2 rounded-lg font-bold text-globus-gray hover:bg-gray-100 text-sm">Annuler</button>
+                <button type="submit" disabled={isGenerating === 'custom-report'}
+                  className="bg-globus-orange hover:bg-globus-orange-hover text-white font-bold py-2 px-5 rounded-lg text-sm flex items-center gap-2 disabled:opacity-70">
+                  {isGenerating === 'custom-report' ?
+                  <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                  <PlusIcon className="w-4 h-4" />}
+                  Planifier
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>}
+      </AnimatePresence>
     </motion.div>);
 
 }

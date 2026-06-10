@@ -147,15 +147,20 @@ async def seed():
         ))
 
         # -- Admin User --
+        # NB: `full_name` is a read-only computed property on User — set the
+        # underlying first_name/last_name columns instead. is_active +
+        # must_change_password are set so the seeded accounts can log in directly.
         db.add(User(
             id="admin-1", email="admin@globus-btp.com",
             password_hash=hash_password("Globus2024!"),
-            full_name="Jean-Paul Kamga", role="ADMIN",
+            first_name="Jean-Paul", last_name="Kamga", role="ADMIN",
+            is_active=True, must_change_password=False,
         ))
         db.add(User(
             id="client-1", email="jean.talla@email.com",
             password_hash=hash_password("Globus2024!"),
-            full_name="Jean Talla", role="CLIENT",
+            first_name="Jean", last_name="Talla", role="CLIENT",
+            is_active=True, must_change_password=False,
         ))
 
         # -- Media Library seed --

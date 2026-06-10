@@ -1,28 +1,7 @@
-import React, { useEffect, useState, Children } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  HardHatIcon,
-  TrendingUpIcon,
-  UsersIcon,
-  AlertTriangleIcon,
-  ClockIcon,
-  PackageIcon,
-  ShieldAlertIcon,
-  FileTextIcon,
-  GitBranchIcon,
-  FileOutputIcon,
-  ArrowUpRightIcon,
-  ArrowDownRightIcon,
-  DownloadIcon,
-  Loader2Icon,
-  CheckCircle2Icon,
-  XIcon,
-  RefreshCwIcon,
-  CalendarIcon,
-  ChevronRightIcon,
-  EyeIcon,
-  BellIcon } from
-'lucide-react';
+import { formatDateParts } from '../../utils/datetime';
+import { HardHatIcon, TrendingUpIcon, UsersIcon, AlertTriangleIcon, ClockIcon, PackageIcon, ShieldAlertIcon, FileTextIcon, ArrowUpRightIcon, ArrowDownRightIcon, DownloadIcon, Loader2Icon, CheckCircle2Icon, XIcon, RefreshCwIcon, ChevronRightIcon, EyeIcon, BellIcon } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -38,140 +17,14 @@ import {
 'recharts';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useProjects, useActivityLogs, useUnreadCount } from '../../hooks/useErp';
-const profitData = [
-{
-  name: 'Villa Bonapriso',
-  margin: 22
-},
-{
-  name: 'Immeuble Akwa',
-  margin: 15
-},
-{
-  name: 'Résidence Bonanjo',
-  margin: 8
-},
-{
-  name: 'Entrepôt Bonabéri',
-  margin: -3
-},
-{
-  name: 'Bureau Deïdo',
-  margin: 12
-}];
-
-const expenseData = [
-{
-  name: 'Matériaux',
-  value: 45,
-  color: '#F97316'
-},
-{
-  name: "Main d'œuvre",
-  value: 30,
-  color: '#1D4ED8'
-},
-{
-  name: 'Logistique',
-  value: 12,
-  color: '#10B981'
-},
-{
-  name: 'Sous-traitance',
-  value: 8,
-  color: '#8B5CF6'
-},
-{
-  name: 'Divers',
-  value: 5,
-  color: '#9CA3AF'
-}];
-
-const recentActivity = [
-{
-  id: 1,
-  icon: ClockIcon,
-  color: 'text-green-600',
-  bg: 'bg-green-100',
-  title: 'Pointage: 45 ouvriers présents ce matin',
-  time: 'Il y a 1h',
-  link: '/erp/rh'
-},
-{
-  id: 2,
-  icon: PackageIcon,
-  color: 'text-blue-600',
-  bg: 'bg-blue-100',
-  title: 'DA #127 validée — Ciment 50 tonnes',
-  time: 'Il y a 2h',
-  link: '/erp/achats'
-},
-{
-  id: 3,
-  icon: ShieldAlertIcon,
-  color: 'text-red-600',
-  bg: 'bg-red-100',
-  title: 'Incident QHSE déclaré — Chantier Akwa',
-  time: 'Il y a 3h',
-  link: '/erp/qhse'
-},
-{
-  id: 4,
-  icon: FileTextIcon,
-  color: 'text-purple-600',
-  bg: 'bg-purple-100',
-  title: 'Facture sous-traitant reçue — Menuiserie Bois',
-  time: 'Hier',
-  link: '/erp/facturation'
-},
-{
-  id: 5,
-  icon: GitBranchIcon,
-  color: 'text-orange-600',
-  bg: 'bg-orange-100',
-  title: 'Plan V3 Architecture uploadé — Villa Bonapriso',
-  time: 'Hier',
-  link: '/erp/ged'
-},
-{
-  id: 6,
-  icon: FileOutputIcon,
-  color: 'text-gray-600',
-  bg: 'bg-gray-100',
-  title: 'Contrat généré — Ouvrier temporaire #89',
-  time: '2 jours',
-  link: '/erp/documents'
-}];
-
-const alerts = [
-{
-  id: 1,
-  title: 'Retard chantier Akwa',
-  desc: '15 jours de retard sur le planning initial',
-  color: 'border-red-500',
-  bg: 'bg-red-50',
-  textColor: 'text-red-700',
-  link: '/erp/chantiers'
-},
-{
-  id: 2,
-  title: 'Dépassement budget Bonabéri',
-  desc: '+3% au-dessus du budget prévu',
-  color: 'border-orange-500',
-  bg: 'bg-orange-50',
-  textColor: 'text-orange-700',
-  link: '/erp/finances'
-},
-{
-  id: 3,
-  title: 'Stock ciment bas',
-  desc: 'Seulement 5 tonnes restantes (seuil: 10T)',
-  color: 'border-yellow-500',
-  bg: 'bg-yellow-50',
-  textColor: 'text-yellow-700',
-  link: '/erp/achats'
-}];
+import {
+  useProjects, useActivityLogs,
+  useDashboardStats, useDashboardAlerts, useMarginByProject,
+  useExpenseBreakdown,
+} from '../../hooks/useErp';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+// Color palette for the expense-breakdown pie (assigned by category order).
+const EXPENSE_COLORS = ['#F97316', '#1D4ED8', '#10B981', '#8B5CF6', '#EAB308', '#9CA3AF'];
 
 const quickActions = [
 {
@@ -199,10 +52,6 @@ const quickActions = [
   color: 'bg-red-100 text-red-600'
 }];
 
-const formatCurrency = (value: number) =>
-new Intl.NumberFormat('fr-FR', {
-  maximumFractionDigits: 0
-}).format(value) + ' FCFA';
 const stagger = {
   hidden: {},
   visible: {
@@ -228,12 +77,60 @@ export function ErpDashboard() {
   const { user } = useAuth();
   const { data: projectsData } = useProjects();
   const { data: activityData } = useActivityLogs({ limit: 6 });
-  const { data: unreadData } = useUnreadCount();
-  
-  const activeProjectsCount = projectsData?.filter((p: any) => p.status === 'EN_COURS').length ?? 7;
+  const { data: stats } = useDashboardStats();
+  const { data: apiAlerts } = useDashboardAlerts();
+  const { data: marginData } = useMarginByProject();
+  const { data: expenseRaw, isLoading: expenseLoading, isError: expenseError } = useExpenseBreakdown();
+
+  // Expense breakdown → pie data (value = percentage, colour by order).
+  const expenseChart = useMemo(() => {
+    if (!Array.isArray(expenseRaw)) return [];
+    return expenseRaw.map((e, i) => ({
+      name: e.label,
+      value: e.percentage,
+      amount: e.amount,
+      color: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
+    }));
+  }, [expenseRaw]);
+
+  const activeProjectsCount = stats?.active_projects
+    ?? projectsData?.filter((p: any) => p.status === 'EN_COURS').length
+    ?? 0;
+  const monthlyRevenue = stats?.monthly_revenue ?? 0;
+  const activeEmployees = stats?.active_employees ?? 0;
+  const openAlertsCount = (apiAlerts || []).length;
   const userName = user?.first_name || 'Admin';
 
-  const today = new Date().toLocaleDateString('fr-FR', {
+  // Convert backend alerts to UI alerts (color + style)
+  const liveAlerts = useMemo(() => {
+    if (!apiAlerts || !Array.isArray(apiAlerts)) return [];
+    return apiAlerts.map((a, idx) => ({
+      id: idx + 1,
+      title: a.title,
+      desc: a.description,
+      color:
+        a.severity === 'high' ? 'border-red-500' :
+        a.severity === 'medium' ? 'border-orange-500' : 'border-yellow-500',
+      bg:
+        a.severity === 'high' ? 'bg-red-50' :
+        a.severity === 'medium' ? 'bg-orange-50' : 'bg-yellow-50',
+      textColor:
+        a.severity === 'high' ? 'text-red-700' :
+        a.severity === 'medium' ? 'text-orange-700' : 'text-yellow-700',
+      link: a.link || '#alerts',
+    }));
+  }, [apiAlerts]);
+
+  // Convert backend margin data to chart-friendly format (empty → [] → ChartEmpty)
+  const liveMargin = useMemo(() => {
+    if (!marginData || !Array.isArray(marginData)) return [];
+    return marginData.slice(0, 5).map((m) => ({
+      name: m.project_name,
+      margin: m.margin_pct,
+    }));
+  }, [marginData]);
+
+  const today = formatDateParts(new Date(), {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -248,9 +145,9 @@ export function ErpDashboard() {
   // Dismissed alerts
   const [dismissedAlerts, setDismissedAlerts] = useState<number[]>([]);
   // Alert detail modal
-  const [alertDetail, setAlertDetail] = useState<(typeof alerts)[0] | null>(
-    null
-  );
+  const [alertDetail, setAlertDetail] = useState<{
+    id: number; title: string; desc: string; color: string; bg: string; textColor: string; link: string;
+  } | null>(null);
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const handleDownload = () => {
@@ -290,7 +187,46 @@ export function ErpDashboard() {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1500);
   };
-  const visibleAlerts = alerts.filter((a) => !dismissedAlerts.includes(a.id));
+  // Use API alerts if available, otherwise fallback to static
+  const visibleAlerts = liveAlerts.filter((a) => !dismissedAlerts.includes(a.id));
+
+  // Activity log mapped from API (empty → [] → empty state in the list)
+  const liveActivity = useMemo(() => {
+    if (!activityData || !Array.isArray(activityData) || activityData.length === 0) {
+      return [];
+    }
+    const moduleToVisual: Record<string, { icon: any; color: string; bg: string; link: string }> = {
+      lead: { icon: FileTextIcon, color: 'text-purple-600', bg: 'bg-purple-100', link: '/erp/crm' },
+      project: { icon: HardHatIcon, color: 'text-orange-600', bg: 'bg-orange-100', link: '/erp/chantiers' },
+      invoice: { icon: FileTextIcon, color: 'text-blue-600', bg: 'bg-blue-100', link: '/erp/facturation' },
+      document: { icon: FileTextIcon, color: 'text-gray-600', bg: 'bg-gray-100', link: '/erp/ged' },
+      sav_ticket: { icon: ShieldAlertIcon, color: 'text-red-600', bg: 'bg-red-100', link: '/erp/sav' },
+      employee: { icon: ClockIcon, color: 'text-green-600', bg: 'bg-green-100', link: '/erp/rh' },
+      purchase_request: { icon: PackageIcon, color: 'text-blue-600', bg: 'bg-blue-100', link: '/erp/achats' },
+      qhse_incident: { icon: ShieldAlertIcon, color: 'text-red-600', bg: 'bg-red-100', link: '/erp/qhse' },
+      user: { icon: BellIcon, color: 'text-gray-600', bg: 'bg-gray-100', link: '/erp/parametres' },
+    };
+    return activityData.slice(0, 6).map((log: any, i: number) => {
+      const visual = moduleToVisual[log.entity_type] || moduleToVisual.user;
+      const created = log.created_at ? new Date(log.created_at) : null;
+      const diff = created ? Math.floor((Date.now() - created.getTime()) / 1000) : 0;
+      const time =
+        diff < 60 ? "À l'instant" :
+        diff < 3600 ? `Il y a ${Math.floor(diff/60)}min` :
+        diff < 86400 ? `Il y a ${Math.floor(diff/3600)}h` :
+        diff < 86400*2 ? 'Hier' :
+        `${Math.floor(diff/86400)} jours`;
+      return {
+        id: log.id || i,
+        icon: visual.icon,
+        color: visual.color,
+        bg: visual.bg,
+        title: log.description || `${log.action} sur ${log.entity_type}`,
+        time,
+        link: visual.link,
+      };
+    });
+  }, [activityData]);
   return (
     <motion.div
       initial="hidden"
@@ -377,7 +313,7 @@ export function ErpDashboard() {
           iconColor: 'text-green-600',
           value: String(activeProjectsCount),
           label: 'Chantiers Actifs',
-          trend: '+2',
+          trend: stats ? 'Live' : '—',
           trendColor: 'text-green-600',
           link: '/erp/chantiers'
         },
@@ -385,9 +321,13 @@ export function ErpDashboard() {
           icon: TrendingUpIcon,
           iconBg: 'bg-blue-100',
           iconColor: 'text-blue-600',
-          value: '125M',
+          value: monthlyRevenue >= 1_000_000
+            ? `${(monthlyRevenue / 1_000_000).toFixed(0)}M`
+            : monthlyRevenue >= 1_000
+            ? `${(monthlyRevenue / 1_000).toFixed(0)}K`
+            : `${monthlyRevenue.toFixed(0)}`,
           label: 'CA Mensuel (FCFA)',
-          trend: '+18%',
+          trend: 'Live',
           trendColor: 'text-green-600',
           link: '/erp/finances'
         },
@@ -395,9 +335,9 @@ export function ErpDashboard() {
           icon: UsersIcon,
           iconBg: 'bg-purple-100',
           iconColor: 'text-purple-600',
-          value: '156',
+          value: String(activeEmployees),
           label: 'Employés Actifs',
-          trend: '12 temp.',
+          trend: 'Live',
           trendColor: 'text-globus-gray',
           link: '/erp/rh'
         },
@@ -405,13 +345,13 @@ export function ErpDashboard() {
           icon: AlertTriangleIcon,
           iconBg: 'bg-red-100',
           iconColor: 'text-red-600',
-          value: String(visibleAlerts.length),
+          value: String(visibleAlerts.length || openAlertsCount),
           label: 'Alertes Actives',
-          trend: 'Urgent',
-          trendColor: 'text-red-600',
+          trend: visibleAlerts.length > 0 ? 'Urgent' : 'OK',
+          trendColor: visibleAlerts.length > 0 ? 'text-red-600' : 'text-green-600',
           link: '#alerts'
         }].
-        map((kpi, i) => {
+        map((kpi) => {
           const Icon = kpi.icon;
           return (
             <motion.div key={kpi.label} variants={fadeUp}>
@@ -459,9 +399,12 @@ export function ErpDashboard() {
             Rentabilité par Projet (%)
           </h3>
           <div className="h-64">
+            {liveMargin.length === 0 ? (
+              <ChartEmpty message="Aucune marge à afficher pour le moment" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={profitData}
+                data={liveMargin}
                 layout="vertical"
                 margin={{
                   top: 0,
@@ -508,7 +451,7 @@ export function ErpDashboard() {
                   }} />
                 
                 <Bar dataKey="margin" radius={[0, 4, 4, 0]} maxBarSize={24}>
-                  {profitData.map((entry, index) =>
+                  {liveMargin.map((entry, index) =>
                   <Cell
                     key={index}
                     fill={entry.margin >= 0 ? '#10B981' : '#EF4444'} />
@@ -517,21 +460,29 @@ export function ErpDashboard() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </motion.div>
 
         <motion.div
           variants={fadeUp}
           className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          
+
           <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-4">
             Répartition des Dépenses
           </h3>
           <div className="h-64">
+            {expenseLoading ? (
+              <ChartEmpty state="loading" />
+            ) : expenseError ? (
+              <ChartEmpty state="error" />
+            ) : expenseChart.length === 0 ? (
+              <ChartEmpty message="Aucune dépense enregistrée" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={expenseData}
+                  data={expenseChart}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
@@ -539,8 +490,8 @@ export function ErpDashboard() {
                   dataKey="value"
                   stroke="none"
                   paddingAngle={3}>
-                  
-                  {expenseData.map((entry, index) =>
+
+                  {expenseChart.map((entry, index) =>
                   <Cell key={index} fill={entry.color} />
                   )}
                 </Pie>
@@ -562,6 +513,7 @@ export function ErpDashboard() {
                 
               </PieChart>
             </ResponsiveContainer>
+            )}
           </div>
         </motion.div>
       </div>
@@ -585,7 +537,12 @@ export function ErpDashboard() {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentActivity.map((item) => {
+            {liveActivity.length === 0 && (
+              <p className="font-opensans text-sm text-globus-gray text-center py-8">
+                Aucune activité récente
+              </p>
+            )}
+            {liveActivity.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -765,22 +722,6 @@ export function ErpDashboard() {
                   alertDetail.color.includes('orange') ?
                   'Haute' :
                   'Moyenne'}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-globus-gray font-opensans">
-                    Détectée
-                  </span>
-                  <span className="font-montserrat font-bold text-globus-blue-dark">
-                    Aujourd'hui, 08:30
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-globus-gray font-opensans">
-                    Responsable
-                  </span>
-                  <span className="font-montserrat font-bold text-globus-blue-dark">
-                    Ing. Paul Mbarga
                   </span>
                 </div>
               </div>

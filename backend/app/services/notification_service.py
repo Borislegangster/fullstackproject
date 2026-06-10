@@ -21,6 +21,9 @@ async def create_notification(
     Create a notification for a specific user.
 
     Types: info, success, warning, error, invoice, message, sav, project, appointment
+
+    Also broadcasts the row over `/ws/notifications` so the recipient's UI
+    updates instantly instead of waiting for the next poll.
     """
     notif = Notification(
         user_id=user_id,
@@ -33,6 +36,26 @@ async def create_notification(
     db.add(notif)
     await db.flush()
     logger.info(f"Notification created for {user_id}: {title}")
+
+    # Live push — non-fatal if the channel can't be reached.
+    try:
+        from app.api.realtime import notification_hub
+        await notification_hub.push(user_id, {
+            "type": "NOTIFICATION_CREATED",
+            "payload": {
+                "id": notif.id,
+                "type": notif.type,
+                "title": notif.title,
+                "message": notif.message,
+                "entity_type": notif.entity_type,
+                "entity_id": notif.entity_id,
+                "is_read": False,
+                "created_at": notif.created_at.isoformat() if notif.created_at else None,
+            },
+        })
+    except Exception as e:
+        logger.warning(f"Notification WS push failed: {e}")
+
     return notif
 
 

@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -22,7 +21,6 @@ export function BlogDetailPage() {
   const { slug } = useParams<{
     slug: string;
   }>();
-  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const { data: postData, isLoading: isLoadingPost } = useCmsQuery(
     ['blog-post', slug || ''],
@@ -49,8 +47,8 @@ export function BlogDetailPage() {
       </div>);
 
   }
-  // Find article or fallback
-  const post = postData || blogPostsData[0];
+  // The requested article — no silent fallback to another post.
+  const post = postData;
   if (!post) {
     return (
       <div className="pt-32 pb-20 text-center min-h-[60vh] flex flex-col items-center justify-center">

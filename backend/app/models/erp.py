@@ -147,6 +147,7 @@ class ProjectMedia(Base):
     project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
     phase_id = Column(String, ForeignKey("project_phases.id"), nullable=True)
     url = Column(String, nullable=False)
+    storage_key = Column(String, nullable=True)  # AWS S3 / Cloudflare R2 object key
     thumbnail = Column(String, default="")
     caption = Column(String, default="")
     media_type = Column(String, default="photo")  # photo, video
@@ -247,10 +248,12 @@ class Document(Base):
     folder_id = Column(String, ForeignKey("ged_folders.id"), nullable=True)
     name = Column(String, nullable=False)
     file_url = Column(String, nullable=False)
+    storage_key = Column(String, nullable=True)  # AWS S3 / Cloudflare R2 object key
     file_size = Column(String, default="")
     mime_type = Column(String, default="")
     category = Column(String, default="general")
     # architecture, structure, electricite, plomberie, contrat, general
+    version_note = Column(Text, default="")  # Note attached to this version upload
     version = Column(Integer, default=1)
     parent_document_id = Column(String, ForeignKey("documents.id"), nullable=True)
     # For versioning: V2 points to V1
@@ -344,6 +347,7 @@ class SAVTicket(Base):
     # OUVERT → EN_COURS → RESOLU → FERME
     assigned_to = Column(String, ForeignKey("users.id"), nullable=True)
     rating = Column(Integer, nullable=True)  # Client satisfaction 1-5
+    rating_comment = Column(Text, default="")  # Optional review left with the rating
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -758,3 +762,509 @@ class SessionSnapshot(Base):
     notes = Column(Text, default="")
     shared_with_client = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Charge(Base):
+    """Recurring or one-off operating expense (rent, utilities, insurances...)."""
+    __tablename__ = "charges"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    category = Column(String, nullable=False)
+    # loyer, utilities, assurance, salaires, fournitures, autre
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    recurring = Column(Boolean, default=False)
+    period = Column(String, default="MONTHLY")  # MONTHLY, QUARTERLY, ANNUAL, ONE_OFF
+    due_date = Column(DateTime, nullable=True)
+    paid = Column(Boolean, default=False)
+    paid_at = Column(DateTime, nullable=True)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    receipt_url = Column(String, nullable=True)
+    notes = Column(Text, default="")
+    recorded_by = Column(String, ForeignKey("users.id"), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+# ── Equipment — Assignments & movements ──────────────────────
+
+class EquipmentAssignment(Base):
+    """Active or historical assignment of a piece of equipment to a project."""
+    __tablename__ = "equipment_assignments"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    equipment_id = Column(String, ForeignKey("equipment.id"), nullable=False, index=True)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
+    responsible_id = Column(String, ForeignKey("users.id"), nullable=True)
+    assigned_from = Column(DateTime, nullable=False, default=datetime.utcnow)
+    assigned_to = Column(DateTime, nullable=True)
+    status = Column(String, default="ACTIVE")  # ACTIVE, RETURNED
+    notes = Column(Text, default="")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class EquipmentMovement(Base):
+    """Movement log: site A → site B / warehouse → maintenance bay."""
+    __tablename__ = "equipment_movements"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    equipment_id = Column(String, ForeignKey("equipment.id"), nullable=False, index=True)
+    from_location = Column(String, default="")
+    to_location = Column(String, nullable=False)
+    from_project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    to_project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    reason = Column(String, default="")  # transfer, maintenance, return, repair
+    recorded_by = Column(String, ForeignKey("users.id"), nullable=True)
+    moved_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MaintenanceTicket(Base):
+    """Maintenance ticket for equipment (curative or preventive)."""
+    __tablename__ = "maintenance_tickets"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    equipment_id = Column(String, ForeignKey("equipment.id"), nullable=False, index=True)
+    code = Column(String, unique=True, nullable=False)  # MAINT-2026-001
+    maintenance_type = Column(String, default="CURATIVE")  # CURATIVE, PREVENTIVE
+    description = Column(Text, nullable=False)
+    cost = Column(Float, default=0.0)
+    status = Column(String, default="PLANNED", index=True)
+    # PLANNED, IN_PROGRESS, DONE, CANCELLED
+    scheduled_for = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    technician = Column(String, default="")
+    reported_by = Column(String, ForeignKey("users.id"), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+# ── Subcontractors — Received invoices ───────────────────────
+
+class SubContractorInvoice(Base):
+    """Invoices RECEIVED FROM a subcontractor (≠ Invoice which is to clients)."""
+    __tablename__ = "subcontractor_invoices"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    code = Column(String, unique=True, nullable=False)  # F-ST-2026-001
+    subcontractor_id = Column(String, ForeignKey("subcontractors.id"), nullable=False, index=True)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    contract_id = Column(String, ForeignKey("subcontracts.id"), nullable=True)
+    amount = Column(Float, nullable=False)
+    status = Column(String, default="A_VALIDER", index=True)
+    # A_VALIDER, VALIDEE, PAYEE, REFUSEE
+    issue_date = Column(DateTime, default=datetime.utcnow)
+    due_date = Column(DateTime, nullable=True)
+    paid_at = Column(DateTime, nullable=True)
+    file_url = Column(String, default="")
+    notes = Column(Text, default="")
+    validated_by = Column(String, ForeignKey("users.id"), nullable=True)
+    validated_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+# ── Planning — Gantt-style tasks ─────────────────────────────
+
+class PlanningTask(Base):
+    """Granular task (Gantt cell) for a project. Independent from ProjectPhase
+    which groups them at a coarser level."""
+    __tablename__ = "planning_tasks"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
+    phase_id = Column(String, ForeignKey("project_phases.id"), nullable=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, default="")
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    duration_days = Column(Integer, default=1)
+    progress = Column(Integer, default=0)  # 0-100
+    status = Column(String, default="PLANNED", index=True)
+    # PLANNED, IN_PROGRESS, DONE, LATE, BLOCKED
+    priority = Column(String, default="NORMAL")  # LOW, NORMAL, HIGH
+    assignee_id = Column(String, ForeignKey("users.id"), nullable=True)
+    sort_order = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class PlanningDependency(Base):
+    """Dependency between two planning tasks (finish-to-start by default)."""
+    __tablename__ = "planning_dependencies"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    predecessor_id = Column(String, ForeignKey("planning_tasks.id"), nullable=False, index=True)
+    successor_id = Column(String, ForeignKey("planning_tasks.id"), nullable=False, index=True)
+    dep_type = Column(String, default="FS")  # FS (finish-to-start), SS, FF, SF
+    lag_days = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── QHSE — EPI distribution ──────────────────────────────────
+
+class EPIDistribution(Base):
+    """Record of personal protective equipment given to a worker."""
+    __tablename__ = "epi_distributions"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    worker_type = Column(String, nullable=False)  # employee or temp_worker
+    worker_id = Column(String, nullable=False, index=True)
+    equipment_type = Column(String, nullable=False)
+    # Casque, Gilet, Chaussures, Gants, Lunettes, Masque, Harnais, Combinaison
+    quantity = Column(Integer, default=1)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    signed = Column(Boolean, default=False)
+    signature_url = Column(String, nullable=True)  # Photo or signed PDF
+    notes = Column(Text, default="")
+    distributed_by = Column(String, ForeignKey("users.id"), nullable=True)
+    distributed_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Documents — Templates & generated ────────────────────────
+
+class DocumentTemplate(Base):
+    """Template for generating recurring documents (payslip, contract, etc.)."""
+    __tablename__ = "document_templates"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False, unique=True)
+    description = Column(Text, default="")
+    category = Column(String, default="general")
+    # paie, contrat, note_frais, attestation, bon_sortie, ordre_mission
+    icon_key = Column(String, default="FileTextIcon")
+    template_body = Column(Text, default="")  # Jinja2 HTML
+    placeholders = Column(JSON, default=list)  # List of {key, label, type}
+    is_active = Column(Boolean, default=True)
+    generated_count = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class GeneratedDocument(Base):
+    """A document instance produced from a template."""
+    __tablename__ = "generated_documents"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    template_id = Column(String, ForeignKey("document_templates.id"), nullable=True)
+    name = Column(String, nullable=False)
+    category = Column(String, default="general")
+    target_type = Column(String, default="")  # employee, project, client, supplier
+    target_id = Column(String, nullable=True)
+    file_url = Column(String, nullable=False)
+    generated_by = Column(String, ForeignKey("users.id"), nullable=True)
+    payload = Column(JSON, default=dict)  # values used to render
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── 2FA secrets ──────────────────────────────────────────────
+
+class TwoFactorSecret(Base):
+    """TOTP secret per user (one row per user). Created on enrollment."""
+    __tablename__ = "two_factor_secrets"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    secret = Column(String, nullable=False)  # base32 TOTP secret
+    enabled = Column(Boolean, default=False)
+    backup_codes = Column(JSON, default=list)  # Hashed backup codes
+    confirmed_at = Column(DateTime, nullable=True)
+    last_used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Weather snapshots (per project) ──────────────────────────
+
+class WeatherSnapshot(Base):
+    """Cached weather data per project location (1-hour TTL)."""
+    __tablename__ = "weather_snapshots"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
+    temperature = Column(Float, default=0.0)
+    feels_like = Column(Float, default=0.0)
+    humidity = Column(Integer, default=0)
+    wind_speed = Column(Float, default=0.0)
+    condition = Column(String, default="")  # clear, clouds, rain, storm
+    description = Column(String, default="")
+    icon = Column(String, default="")
+    fetched_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Tags (cross-entity) ──────────────────────────────────────
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False, unique=True)
+    color = Column(String, default="#3b82f6")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class EntityTag(Base):
+    """Many-to-many between Tag and any entity (polymorphic via entity_type)."""
+    __tablename__ = "entity_tags"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    tag_id = Column(String, ForeignKey("tags.id"), nullable=False, index=True)
+    entity_type = Column(String, nullable=False, index=True)  # lead, project, document, etc.
+    entity_id = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ── Comments (cross-entity discussion threads) ───────────────
+
+class Comment(Base):
+    """Generic comment attachable to any entity."""
+    __tablename__ = "comments"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    entity_type = Column(String, nullable=False, index=True)
+    entity_id = Column(String, nullable=False, index=True)
+    author_id = Column(String, ForeignKey("users.id"), nullable=False)
+    content = Column(Text, nullable=False)
+    attachment_url = Column(String, nullable=True)
+    is_internal = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+# ── User preferences (notification settings, theme, etc.) ────
+
+class UserPreferences(Base):
+    __tablename__ = "user_preferences"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    notif_email = Column(JSON, default=dict)  # {chantier: true, finances: true, ...}
+    notif_sms = Column(JSON, default=dict)
+    notif_push = Column(JSON, default=dict)
+    theme = Column(String, default="light")  # light, dark, system
+    locale = Column(String, default="fr")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ── Scheduled reports ────────────────────────────────────────
+
+class ScheduledReport(Base):
+    """Periodic auto-generation of a report (weekly summary, monthly P&L...)."""
+    __tablename__ = "scheduled_reports"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    name = Column(String, nullable=False)
+    report_type = Column(String, nullable=False)
+    # dashboard_summary, project_progress, revenue, profitability, sav_stats
+    frequency = Column(String, default="WEEKLY")  # DAILY, WEEKLY, MONTHLY
+    recipients = Column(JSON, default=list)  # [email]
+    is_active = Column(Boolean, default=True)
+    last_run_at = Column(DateTime, nullable=True)
+    next_run_at = Column(DateTime, nullable=True)
+    created_by = Column(String, ForeignKey("users.id"), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+# ── Project expenses (granular, distinct from PettyCash) ─────
+
+class ProjectExpense(Base):
+    """Detailed expense line attached to a project — for cost tracking."""
+    __tablename__ = "project_expenses"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
+    phase_id = Column(String, ForeignKey("project_phases.id"), nullable=True)
+    category = Column(String, default="materials")
+    # materials, labor, subcontractor, logistics, equipment, misc
+    description = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    receipt_url = Column(String, nullable=True)
+    supplier_invoice_id = Column(String, ForeignKey("subcontractor_invoices.id"), nullable=True)
+    recorded_by = Column(String, ForeignKey("users.id"), nullable=True)
+    expense_date = Column(DateTime, default=datetime.utcnow)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class Warranty(Base):
+    """Project warranty (garantie parfait achèvement / biennale / décennale)."""
+    __tablename__ = "warranties"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True, index=True)
+    name = Column(String, nullable=False)
+    duration = Column(String, default="")
+    description = Column(Text, default="")
+    starts_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    status = Column(String, default="ACTIVE")  # ACTIVE / EXPIREE
+    created_at = Column(DateTime, default=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class ProjectGuest(Base):
+    """Family/guest access a client grants to let someone follow their project."""
+    __tablename__ = "project_guests"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True, index=True)
+    owner_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    email = Column(String, nullable=False)
+    name = Column(String, default="")
+    role = Column(String, default="READ_ONLY")  # READ_ONLY / EDIT
+    status = Column(String, default="PENDING")  # PENDING / ACTIVE
+    created_at = Column(DateTime, default=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class Quote(Base):
+    """A commercial quote (devis), optionally linked to a CRM lead."""
+    __tablename__ = "quotes"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    code = Column(String, unique=True, nullable=False)  # DEV-2026-001
+    lead_id = Column(String, ForeignKey("leads.id"), nullable=True)
+    parent_quote_id = Column(String, ForeignKey("quotes.id"), nullable=True)  # revision chain
+    version = Column(Integer, default=1)
+    version_note = Column(Text, default="")
+    client_name = Column(String, default="")
+    project_label = Column(String, default="")  # free-text project description
+    amount = Column(Float, default=0.0)
+    lines = Column(JSON, default=list)
+    # [{"designation": "...", "qty": 1, "unit_price": 1000, "total": 1000}]
+    status = Column(String, default="EN_REDACTION", index=True)
+    # EN_REDACTION → ENVOYE → ACCEPTE → REFUSE
+    valid_until = Column(DateTime, nullable=True)
+    notes = Column(Text, default="")
+    converted_invoice_id = Column(String, ForeignKey("invoices.id"), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class DocumentSignature(Base):
+    """Finalised signature record — what proves a user signed a document."""
+    __tablename__ = "document_signatures"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    document_id = Column(String, ForeignKey("documents.id"), nullable=False, index=True)
+    signer_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    document_hash = Column(String, nullable=False)  # SHA-256 of the file content
+    signed_at = Column(DateTime, default=datetime.utcnow)
+    ip_address = Column(String, default="")
+    user_agent = Column(String, default="")
+    method = Column(String, default="OTP_EMAIL")  # OTP_EMAIL, OTP_SMS, manual
+    audit_meta = Column(JSON, default=dict)
+
+
+class DocumentSignatureOTP(Base):
+    """Short-lived OTP issued to a user for signing a specific document."""
+    __tablename__ = "document_signature_otps"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    document_id = Column(String, ForeignKey("documents.id"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    code_hash = Column(String, nullable=False)  # SHA-256 of the 6-digit code
+    expires_at = Column(DateTime, nullable=False)
+    consumed_at = Column(DateTime, nullable=True)
+    attempts = Column(Integer, default=0)
+    requested_ip = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ProjectAssignment(Base):
+    """A person assigned to a project's team (chef, maçon, électricien…).
+
+    `member_name` is a free-text label so the UI can assign quickly; the
+    optional worker_type/worker_id link it to an Employee/TempWorker record.
+    """
+    __tablename__ = "project_assignments"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=False, index=True)
+    member_name = Column(String, nullable=False)
+    role = Column(String, default="")
+    worker_type = Column(String, default="")  # employee | temp_worker (optional)
+    worker_id = Column(String, nullable=True)
+    hours = Column(Integer, default=0)         # hours/week
+    status = Column(String, default="Sur site")  # Sur site | Bureau | Congé
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+    removed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+
+
+class SafetyBriefing(Base):
+    """A safety toolbox talk (briefing sécurité) with signature tracking."""
+    __tablename__ = "safety_briefings"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    title = Column(String, nullable=False)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True)
+    site_label = Column(String, default="")  # free-text site if no project link
+    animator = Column(String, default="")
+    signed_count = Column(Integer, default=0)
+    total_count = Column(Integer, default=0)
+    status = Column(String, default="EN_COURS")  # EN_COURS | TERMINE
+    briefing_date = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, default="")
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)
+
+
+class PaymentTransaction(Base):
+    """A payment attempt via the Flutterwave gateway (one row per checkout)."""
+    __tablename__ = "payment_transactions"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    invoice_id = Column(String, ForeignKey("invoices.id"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    tx_ref = Column(String, unique=True, nullable=False, index=True)
+    amount = Column(Float, default=0.0)
+    currency = Column(String, default="XAF")
+    status = Column(String, default="PENDING", index=True)  # PENDING/SUCCESS/FAILED
+    payment_type = Column(String, default="")
+    checkout_url = Column(String, default="")
+    flw_ref = Column(String, default="")
+    flw_transaction_id = Column(String, default="")
+    flw_metadata = Column(JSON, default=dict)
+    ip_address = Column(String, default="")
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SubcontractorSituation(Base):
+    """A subcontractor's progress statement (situation de travaux) for a project."""
+    __tablename__ = "subcontractor_situations"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    subcontractor_id = Column(String, ForeignKey("subcontractors.id"), nullable=True, index=True)
+    project_id = Column(String, ForeignKey("projects.id"), nullable=True, index=True)
+    description = Column(Text, default="")
+    progress_pct = Column(Integer, default=0)
+    amount = Column(Float, default=0.0)
+    status = Column(String, default="SOUMISE", index=True)  # SOUMISE/VALIDEE/REFUSEE
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    deleted_at = Column(DateTime, nullable=True)

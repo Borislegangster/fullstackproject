@@ -5,10 +5,11 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Request
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+from app.rate_limit import limiter
 
 from app.database import get_db
 from app.auth.service import require_admin
@@ -19,6 +20,112 @@ router = APIRouter(prefix="/admin/media", tags=["Admin - Media Library"])
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# ── Upload security constants ────────────────────────────────
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp"}
+VIDEO_EXTENSIONS = {".mp4", ".webm", ".mov", ".avi", ".mkv"}
+DOC_EXTENSIONS = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"}
+BIM_EXTENSIONS = {".rvt", ".dwg", ".ifc", ".nwd"}
+ARCHIVE_EXTENSIONS = {".zip"}
+
+# Whitelist enforced at upload time — built once at module load
+ALLOWED_EXTENSIONS = (
+    IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | DOC_EXTENSIONS | BIM_EXTENSIONS | ARCHIVE_EXTENSIONS
+)
+ALLOWED_MIME_PREFIXES = (
+    "image/", "video/", "application/pdf",
+    "application/msword", "application/vnd.",
+    "application/octet-stream",
+)
+MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
+def _detect_real_mime(content: bytes) -> str:
+    """Detect the real MIME type from the magic bytes (libmagic)."""
+    try:
+        import magic  # python-magic / python-magic-bin
+        return magic.from_buffer(content, mime=True) or ""
+    except Exception:
+        return ""
+
+
+def _sanitize_svg_or_reject(content: bytes) -> bytes:
+    """Either sanitize SVG (best-effort) or raise if dangerous."""
+    try:
+        import bleach
+        text = content.decode("utf-8", errors="ignore")
+        # If the SVG embeds scripts, event handlers or external refs, reject it.
+        lowered = text.lower()
+        if "<script" in lowered or "javascript:" in lowered or "onload=" in lowered:
+            raise HTTPException(
+                status_code=400,
+                detail="SVG contenant du JavaScript ou des handlers d'événements refusé.",
+            )
+        cleaned = bleach.clean(
+            text,
+            tags={"svg", "path", "circle", "rect", "g", "line", "polyline", "polygon",
+                  "ellipse", "text", "tspan", "defs", "linearGradient", "stop", "filter",
+                  "title", "desc", "use", "mask", "clipPath"},
+            attributes=lambda tag, name, value: not (
+                name.startswith("on") or name in {"href", "xlink:href"}
+            ),
+            strip=True,
+        )
+        return cleaned.encode("utf-8")
+    except HTTPException:
+        raise
+    except Exception:
+        # If bleach is unavailable, reject SVG outright in production-safety mode
+        raise HTTPException(
+            status_code=400, detail="Validation SVG impossible — fichier refusé."
+        )
+
+
+def _validate_upload(file: UploadFile, content: bytes) -> bytes:
+    """Validate the uploaded file. Returns the (possibly sanitized) content."""
+    # 1. Extension check
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext and ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type de fichier non autorisé : {ext}. Extensions acceptées : {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+        )
+
+    # 2. MIME type check (declared)
+    mime = file.content_type or ""
+    if mime and not any(mime.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type MIME non autorisé : {mime}",
+        )
+
+    # 3. Size check
+    if len(content) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Fichier trop volumineux. Taille maximale : {MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB",
+        )
+
+    # 4. Magic bytes check — refuse files that LIE about their extension
+    real_mime = _detect_real_mime(content)
+    if real_mime:
+        # If both declared & real exist and they're in different families, reject.
+        # Common families: image/*, video/*, application/*
+        if mime and "/" in mime and "/" in real_mime:
+            declared_family = mime.split("/")[0]
+            real_family = real_mime.split("/")[0]
+            # Documents are reported as application/* — accept divergence within app/*
+            if declared_family != real_family and declared_family != "application":
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Contenu réel ({real_mime}) ne correspond pas au type déclaré ({mime}).",
+                )
+
+    # 5. SVG-specific sanitization (XSS prevention)
+    if ext == ".svg":
+        return _sanitize_svg_or_reject(content)
+
+    return content
 
 
 # ── Schemas ──────────────────────────────────────────────────
@@ -95,7 +202,9 @@ async def list_media(
 
 # ── Upload file (image/video/document) ──────────────────────
 @router.post("/upload", response_model=MediaOut)
+@limiter.limit("30/minute")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     name: str = Form(""),
     folder: str = Form("general"),
@@ -103,39 +212,38 @@ async def upload_file(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_admin),
 ):
+    from app.services.storage_service import store_upload
+
     ext = os.path.splitext(file.filename or "file")[1].lower()
-    file_id = str(uuid.uuid4())
-    filename = f"{file_id}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
 
-    # Save file
+    # Read content first (needed for validation + saving)
     content = await file.read()
-    with open(filepath, "wb") as f:
-        f.write(content)
 
-    # Determine type
-    image_exts = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp"}
-    video_exts = {".mp4", ".webm", ".mov", ".avi", ".mkv"}
-    if ext in image_exts:
+    # Security validation before saving — may return sanitized bytes (e.g. SVG)
+    content = _validate_upload(file, content)
+
+    # Store on S3/R2 (public assets) when configured, else local /uploads.
+    url, size_str, storage_key = await store_upload(
+        content, file.filename or "file",
+        file.content_type or "application/octet-stream",
+        prefix=folder or "media", public=True,
+    )
+
+    # Determine type from the (single-source-of-truth) extension sets
+    if ext in IMAGE_EXTENSIONS:
         media_type = "image"
-    elif ext in video_exts:
+    elif ext in VIDEO_EXTENSIONS:
         media_type = "video"
     else:
         media_type = "document"
 
-    # Human-readable size
-    size_bytes = len(content)
-    if size_bytes > 1_048_576:
-        size_str = f"{size_bytes / 1_048_576:.1f} MB"
-    else:
-        size_str = f"{size_bytes / 1024:.0f} KB"
-
     media = CMSMedia(
-        id=file_id,
+        id=str(uuid.uuid4()),
         name=name or file.filename or "Fichier",
         type=media_type,
-        url=f"/uploads/{filename}",
-        thumbnail=f"/uploads/{filename}" if media_type == "image" else "",
+        url=url,
+        storage_key=storage_key,
+        thumbnail=url if media_type == "image" else "",
         alt=alt,
         folder=folder,
         size=size_str,
@@ -214,11 +322,14 @@ async def delete_media(
     if not media:
         raise HTTPException(404, "Media non trouve")
 
-    # Delete physical file if local
+    # Remove the underlying object: local file or S3/R2 key.
     if media.url.startswith("/uploads/"):
         filepath = os.path.join(UPLOAD_DIR, os.path.basename(media.url))
         if os.path.exists(filepath):
             os.remove(filepath)
+    elif getattr(media, "storage_key", ""):
+        from app.services.storage_service import get_storage_service
+        await get_storage_service().delete_file(media.storage_key)
 
     await db.execute(delete(CMSMedia).where(CMSMedia.id == media_id))
     await db.commit()

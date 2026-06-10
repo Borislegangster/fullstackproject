@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { EyeIcon, EyeOffIcon, CheckCircleIcon, SaveIcon, AlertCircleIcon, ShieldCheckIcon } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { useAuth, getLandingPage } from '../../context/AuthContext';
+import { resetPasswordApi } from '../../services/api/auth.api';
 
 export function ResetPasswordPage() {
   useEffect(() => {
@@ -12,7 +13,7 @@ export function ResetPasswordPage() {
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setNewPassword, user, forceReset } = useAuth();
+  const { setNewPassword, user, forceReset, refreshSession } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -21,9 +22,30 @@ export function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
+  // Role to use for redirect after a successful reset (forgot-password flow
+  // does not update AuthContext synchronously, so we capture the role here).
+  const [postResetRole, setPostResetRole] = useState<string | null>(null);
 
-  // Get invitation token from URL if present (onboarding flow)
-  const invitationToken = searchParams.get('token') || undefined;
+  // Three distinct flows reach this page:
+  //
+  // 1. INVITATION ONBOARDING — link from welcome email
+  //    URL: /reset-mot-de-passe?token=<invitation_jwt>&forced=true
+  //    Backend: POST /auth/set-password { token, new_password }
+  //
+  // 2. FORGOT PASSWORD — link from "mot de passe oublié" email
+  //    URL: /reset-mot-de-passe?token=<raw_reset_token>
+  //    Backend: POST /auth/reset-password { token, new_password }
+  //
+  // 3. FORCED RESET (no token, already logged in) — admin reset the account
+  //    URL: /reset-mot-de-passe?forced=true
+  //    Backend: same as INVITATION (using stored invitation_token), via setNewPassword()
+  const urlToken = searchParams.get('token') || undefined;
+  const isForcedFromUrl = searchParams.get('forced') === 'true';
+  const flow: 'invitation' | 'reset' | 'forced' = isForcedFromUrl
+    ? 'invitation'
+    : urlToken
+    ? 'reset'
+    : 'forced';
 
   const getPasswordStrength = (pass: string) => {
     if (pass.length === 0)
@@ -71,14 +93,29 @@ export function ResetPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      await setNewPassword(password, invitationToken);
-      setIsSuccess(true);
+      if (flow === 'reset' && urlToken) {
+        // Forgot-password flow → consume the raw reset token.
+        // The backend returns a fresh token pair → log the user in.
+        const resp = await resetPasswordApi({ token: urlToken, new_password: password });
+        localStorage.setItem('globus_token', resp.access_token);
+        localStorage.setItem('globus_refresh_token', resp.refresh_token);
+        setPostResetRole(resp.user.role);
+        // Re-fetch context so the rest of the app sees the new session
+        try { await refreshSession(); } catch { /* non-blocking */ }
+        setIsSuccess(true);
+      } else {
+        // Invitation onboarding OR forced reset → set-password
+        await setNewPassword(password, urlToken);
+        setIsSuccess(true);
+      }
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 400) {
-        setError(err?.response?.data?.detail || 'Le mot de passe ne respecte pas les exigences de sécurité.');
+        setError(err?.response?.data?.detail || 'Lien invalide ou expiré. Demandez un nouveau lien.');
       } else if (status === 401) {
         setError("Votre session a expiré. Veuillez vous reconnecter.");
+      } else if (status === 404) {
+        setError("Lien invalide. Demandez un nouveau lien.");
       } else {
         setError('Une erreur est survenue. Veuillez réessayer.');
       }
@@ -88,19 +125,22 @@ export function ResetPasswordPage() {
   };
 
   const handleContinue = () => {
-    const role = user?.role || 'CLIENT';
+    const role = postResetRole || user?.role || 'CLIENT';
     navigate(getLandingPage(role), { replace: true });
   };
+
+  // `forceReset` shown if either the URL says so or the auth context says so
+  const showForcedBanner = isForcedFromUrl || forceReset;
 
   return (
     <AuthLayout
       panelTitle="Sécurisez votre compte"
       panelDescription="Définissez un nouveau mot de passe robuste pour protéger l'accès à votre espace Globus Engineering."
-      backTo={forceReset ? undefined : "/connexion"}
-      backLabel={forceReset ? undefined : "Retour à la connexion"}
+      backTo={showForcedBanner ? undefined : "/connexion"}
+      backLabel={showForcedBanner ? undefined : "Retour à la connexion"}
     >
       {/* Force Reset Banner */}
-      {forceReset && !isSuccess && (
+      {showForcedBanner && !isSuccess && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -120,7 +160,7 @@ export function ResetPasswordPage() {
 
       {/* Heading */}
       <h1 className="font-montserrat font-extrabold text-2xl md:text-3xl text-globus-blue-dark mb-2">
-        {forceReset ? 'Créez votre mot de passe' : 'Nouveau mot de passe'}
+        {showForcedBanner ? 'Créez votre mot de passe' : 'Nouveau mot de passe'}
       </h1>
 
       {isSuccess ? (
@@ -134,28 +174,19 @@ export function ResetPasswordPage() {
             <CheckCircleIcon className="w-8 h-8 text-green-500" />
           </div>
           <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-2 text-center">
-            Mot de passe {forceReset ? 'créé' : 'modifié'} avec succès !
+            Mot de passe {showForcedBanner ? 'créé' : 'modifié'} avec succès !
           </h3>
           <p className="font-opensans text-sm text-globus-gray mb-8 text-center leading-relaxed">
-            {forceReset 
+            {showForcedBanner
               ? 'Votre compte est maintenant prêt. Vous pouvez accéder à votre espace.'
-              : 'Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.'}
+              : 'Vous êtes connecté. Bienvenue !'}
           </p>
-          {forceReset ? (
-            <button
-              onClick={handleContinue}
-              className="w-full inline-flex items-center justify-center gap-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-globus-orange/20 active:scale-[0.98]"
-            >
-              Accéder à mon espace
-            </button>
-          ) : (
-            <Link
-              to="/connexion"
-              className="w-full inline-flex items-center justify-center gap-2 bg-globus-blue-dark hover:bg-[#162d4a] text-white font-montserrat font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-globus-blue-dark/20 active:scale-[0.98]"
-            >
-              Aller à la connexion
-            </Link>
-          )}
+          <button
+            onClick={handleContinue}
+            className="w-full inline-flex items-center justify-center gap-2 bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-globus-orange/20 active:scale-[0.98]"
+          >
+            Accéder à mon espace
+          </button>
         </motion.div>
       ) : (
         <>
@@ -343,7 +374,7 @@ export function ResetPasswordPage() {
               ) : (
                 <>
                   <SaveIcon className="w-4 h-4" />
-                  {forceReset ? 'Créer mon mot de passe' : 'Enregistrer le nouveau mot de passe'}
+                  {showForcedBanner ? 'Créer mon mot de passe' : 'Enregistrer le nouveau mot de passe'}
                 </>
               )}
             </button>

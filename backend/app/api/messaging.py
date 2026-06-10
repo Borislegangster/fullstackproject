@@ -1,5 +1,4 @@
 """Messaging API — Conversations & Messages."""
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +11,9 @@ from app.auth.service import get_current_user
 from app.models.erp import Conversation, ConversationParticipant, Message
 
 router = APIRouter(prefix="/messaging", tags=["Messaging"])
+
+
+from app.utils.time import utcnow_naive as _now
 
 
 class MessageCreate(BaseModel):
@@ -53,7 +55,7 @@ async def list_messages(
     )
     part = part_r.scalars().first()
     if part:
-        part.last_read_at = datetime.utcnow()
+        part.last_read_at = _now()
         await db.commit()
 
     return [
@@ -83,6 +85,24 @@ async def send_message(
         content=data.content, attachment_url=data.attachment_url,
     )
     db.add(msg)
-    conv.updated_at = datetime.utcnow()
+    conv.updated_at = _now()
     await db.commit()
+
+    # Real-time broadcast (Phase 6) — non-fatal if hub is unavailable
+    try:
+        from app.api.realtime import messaging_hub
+        await messaging_hub.broadcast(conv.id, {
+            "type": "MESSAGE_CREATED",
+            "payload": {
+                "id": msg.id,
+                "sender_id": msg.sender_id,
+                "content": msg.content,
+                "is_system": msg.is_system,
+                "attachment_url": msg.attachment_url,
+                "created_at": msg.created_at.isoformat() if msg.created_at else None,
+            },
+        })
+    except Exception:
+        pass
+
     return {"id": msg.id, "created_at": msg.created_at}

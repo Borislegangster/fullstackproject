@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '../../utils/datetime';
 import {
   HardHatIcon,
   TrendingUpIcon,
@@ -33,7 +34,14 @@ import {
   ResponsiveContainer,
   Legend } from
 'recharts';
-import { useProjects, useCreateProject } from '../../hooks/useErp';
+import {
+  useProjects, useCreateProject, useCreateIncident,
+  useResourceAllocation, useTeamAssignments, useCreateTeamAssignment, useDeleteTeamAssignment,
+  useProjectGallery, useQHSEStats, useEquipment, useStock,
+} from '../../hooks/useErp';
+import { ExportButton } from '../../components/ui/ExportButton';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+import { exportProjectsXlsx } from '../../services/api/downloads';
 const tabs = [
 {
   id: 'overview',
@@ -51,205 +59,9 @@ const tabs = [
   icon: UsersIcon
 }];
 
-const initialProjects = [
-{
-  id: 'PRJ-001',
-  name: 'Villa Moderne Bonapriso',
-  client: 'M. Essomba',
-  location: 'Bonapriso, Douala',
-  progress: 75,
-  budget: 120000000,
-  spent: 90000000,
-  status: 'En cours',
-  statusColor: 'bg-blue-100 text-blue-700',
-  startDate: '10/01/2026',
-  endDate: '15/06/2026',
-  team: ['PM', 'CF', 'JN']
-},
-{
-  id: 'PRJ-002',
-  name: 'Immeuble R+4 Akwa',
-  client: 'SCI Akwa Center',
-  location: 'Akwa, Douala',
-  progress: 45,
-  budget: 450000000,
-  spent: 220000000,
-  status: 'En retard',
-  statusColor: 'bg-red-100 text-red-700',
-  startDate: '01/11/2025',
-  endDate: '30/08/2026',
-  team: ['PM', 'AM', 'SE']
-},
-{
-  id: 'PRJ-003',
-  name: 'Résidence Bonanjo',
-  client: 'Mme Ndiaye',
-  location: 'Bonanjo, Douala',
-  progress: 60,
-  budget: 280000000,
-  spent: 150000000,
-  status: 'En cours',
-  statusColor: 'bg-blue-100 text-blue-700',
-  startDate: '15/12/2025',
-  endDate: '10/07/2026',
-  team: ['CF', 'JN']
-},
-{
-  id: 'PRJ-004',
-  name: 'Entrepôt Bonabéri',
-  client: 'Logistics SA',
-  location: 'Bonabéri, Douala',
-  progress: 30,
-  budget: 180000000,
-  spent: 70000000,
-  status: 'En cours',
-  statusColor: 'bg-blue-100 text-blue-700',
-  startDate: '01/02/2026',
-  endDate: '30/09/2026',
-  team: ['AM', 'PM']
-},
-{
-  id: 'PRJ-005',
-  name: 'Bureau Deïdo',
-  client: 'Tech Solutions',
-  location: 'Deïdo, Douala',
-  progress: 90,
-  budget: 95000000,
-  spent: 85000000,
-  status: 'En cours',
-  statusColor: 'bg-blue-100 text-blue-700',
-  startDate: '05/10/2025',
-  endDate: '15/04/2026',
-  team: ['CF', 'SE']
-},
-{
-  id: 'PRJ-006',
-  name: 'Centre Commercial Bali',
-  client: 'Bali Invest',
-  location: 'Bali, Douala',
-  progress: 15,
-  budget: 850000000,
-  spent: 120000000,
-  status: 'En cours',
-  statusColor: 'bg-blue-100 text-blue-700',
-  startDate: '01/03/2026',
-  endDate: '30/12/2027',
-  team: ['PM', 'CF', 'AM', 'JN']
-},
-{
-  id: 'PRJ-007',
-  name: 'Pont Wouri Phase 2',
-  client: 'Ministère TP',
-  location: 'Wouri, Douala',
-  progress: 0,
-  budget: 1500000000,
-  spent: 0,
-  status: 'En pause',
-  statusColor: 'bg-yellow-100 text-yellow-700',
-  startDate: 'A définir',
-  endDate: 'A définir',
-  team: ['PM']
-}];
 
-const timelineSteps = [
-{
-  name: 'Études & Conception',
-  status: 'done',
-  date: '15/01/2026'
-},
-{
-  name: 'Terrassement',
-  status: 'done',
-  date: '05/02/2026'
-},
-{
-  name: 'Fondations',
-  status: 'done',
-  date: '28/02/2026'
-},
-{
-  name: 'Élévation Murs',
-  status: 'current',
-  date: 'En cours'
-},
-{
-  name: 'Toiture & Charpente',
-  status: 'upcoming',
-  date: 'Prévu: 15/04/2026'
-},
-{
-  name: 'Finitions',
-  status: 'upcoming',
-  date: 'Prévu: 10/05/2026'
-},
-{
-  name: 'Réception',
-  status: 'upcoming',
-  date: 'Prévu: 15/06/2026'
-}];
 
-const initialTeamAssignments = [
-{
-  name: 'Paul Mbarga',
-  role: 'Chef de Projet',
-  project: 'Villa Bonapriso',
-  hours: 45,
-  status: 'Sur site'
-},
-{
-  name: 'Claire Fotso',
-  role: 'Architecte',
-  project: 'Multiples',
-  hours: 38,
-  status: 'Bureau'
-},
-{
-  name: 'Jean Kamga',
-  role: 'Chef Chantier',
-  project: 'Immeuble Akwa',
-  hours: 50,
-  status: 'Sur site'
-},
-{
-  name: 'Moussa Amadou',
-  role: 'Maçon',
-  project: 'Villa Bonapriso',
-  hours: 40,
-  status: 'Sur site'
-},
-{
-  name: 'Pierre Ndjock',
-  role: 'Électricien',
-  project: 'Bureau Deïdo',
-  hours: 35,
-  status: 'Sur site'
-}];
 
-const resourceData = [
-{
-  name: 'Villa Bonapriso',
-  Ouvriers: 25,
-  Techniciens: 5,
-  Cadres: 2
-},
-{
-  name: 'Immeuble Akwa',
-  Ouvriers: 45,
-  Techniciens: 8,
-  Cadres: 3
-},
-{
-  name: 'Résidence Bonanjo',
-  Ouvriers: 15,
-  Techniciens: 3,
-  Cadres: 1
-},
-{
-  name: 'Entrepôt Bonabéri',
-  Ouvriers: 30,
-  Techniciens: 4,
-  Cadres: 2
-}];
 
 const formatCurrency = (value: number) =>
 new Intl.NumberFormat('fr-FR', {
@@ -276,39 +88,119 @@ const fadeUp = {
     }
   }
 };
+function statusColorFor(status: string): string {
+  switch ((status || '').toUpperCase()) {
+    case 'EN_RETARD': return 'bg-red-100 text-red-700';
+    case 'SUSPENDU': return 'bg-yellow-100 text-yellow-700';
+    case 'TERMINE': return 'bg-green-100 text-green-700';
+    case 'ARCHIVE': return 'bg-gray-100 text-gray-600';
+    default: return 'bg-blue-100 text-blue-700';
+  }
+}
+
+function statusLabelFor(status: string): string {
+  switch ((status || '').toUpperCase()) {
+    case 'EN_RETARD': return 'En retard';
+    case 'SUSPENDU': return 'En pause';
+    case 'TERMINE': return 'Terminé';
+    case 'ARCHIVE': return 'Archivé';
+    case 'EN_COURS': return 'En cours';
+    default: return status || '';
+  }
+}
+
 export function ErpChantiers() {
   // API hooks
   const { data: apiProjects } = useProjects();
+  const { data: apiAssignments } = useTeamAssignments();
+  const { data: apiResource } = useResourceAllocation();
   const createProjectMutation = useCreateProject();
+  const createIncidentMutation = useCreateIncident();
+  const createAssignmentMutation = useCreateTeamAssignment();
+  const deleteAssignmentMutation = useDeleteTeamAssignment();
 
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tous');
-  // Data States
-  const [projects, setProjects] = useState(initialProjects);
-  const [teamAssignments, setTeamAssignments] = useState(initialTeamAssignments);
-  const [selectedProject, setSelectedProject] = useState(projects[0]);
 
-  // Sync API projects when available
-  useMemo(() => {
-    if (apiProjects && Array.isArray(apiProjects) && apiProjects.length > 0) {
-      const mapped = apiProjects.map((p: any) => ({
-        id: p.id || p.reference,
-        name: p.name || p.title || '',
-        client: p.client_name || '',
-        location: p.location || p.city || '',
-        progress: p.progress || 0,
-        budget: p.budget || 0,
-        spent: p.spent || 0,
-        status: p.status || 'En cours',
-        statusColor: p.status === 'En retard' ? 'bg-red-100 text-red-700' : p.status === 'En pause' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700',
-        startDate: p.start_date ? new Date(p.start_date).toLocaleDateString('fr-FR') : '',
-        endDate: p.end_date ? new Date(p.end_date).toLocaleDateString('fr-FR') : '',
-        team: p.team_initials || [],
-      }));
-      setProjects(mapped);
-    }
+  // Team assignments from API (no local state / mock).
+  const teamAssignments = useMemo(() => {
+    if (!Array.isArray(apiAssignments)) return [];
+    return apiAssignments.map((a: any) => ({
+      id: a.id,
+      name: a.member_name,
+      role: a.role,
+      project: a.project_name || '—',
+      hours: a.hours || 0,
+      status: a.status || 'Sur site',
+    }));
+  }, [apiAssignments]);
+
+  // Resource allocation → stacked bar (workers + equipment per project).
+  const resourceData = useMemo(() => {
+    if (!Array.isArray(apiResource)) return [];
+    return apiResource.map((r: any) => ({
+      name: r.project_name,
+      Ouvriers: r.workers || 0,
+      Équipements: r.equipment || 0,
+    }));
+  }, [apiResource]);
+  const resourceHasData = resourceData.some((r) => r.Ouvriers > 0 || r['Équipements'] > 0);
+
+  // Map API projects → UI shape (live, no local state)
+  const projects = useMemo(() => {
+    if (!Array.isArray(apiProjects) || apiProjects.length === 0) return [];
+    return apiProjects.map((p: any) => ({
+      id: p.id,
+      code: p.code || '',
+      name: p.name || '',
+      client: p.client_name || '',
+      client_id: p.client_id,
+      location: p.location || '',
+      progress: p.progress || 0,
+      budget: p.budget_initial || 0,
+      spent: p.budget_spent || 0,
+      status: statusLabelFor(p.status),
+      raw_status: p.status,
+      statusColor: statusColorFor(p.status),
+      startDate: formatDate(p.start_date, 'À définir'),
+      endDate: formatDate(p.estimated_end_date || p.end_date, 'À définir'),
+      team: [],
+    }));
   }, [apiProjects]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const selectedProject = useMemo(
+    () => projects.find((p) => p.id === selectedProjectId) || projects[0] || null,
+    [projects, selectedProjectId]
+  );
+  const { data: galleryRaw } = useProjectGallery((selectedProject as any)?.id || '');
+  const liveGallery = useMemo(() => {
+    if (!Array.isArray(galleryRaw)) return [] as { url: string; caption: string }[];
+    return galleryRaw
+      .map((m: any) => ({ url: m.url || '', caption: m.caption || '' }))
+      .filter((m) => m.url);
+  }, [galleryRaw]);
+  // Real cross-module counts (no hardcoded figures).
+  const { data: qhseStats } = useQHSEStats();
+  const openIncidents = Number((qhseStats as any)?.open_incidents ?? 0);
+  const { data: equipmentData } = useEquipment();
+  const equipmentList: any[] = Array.isArray(equipmentData) ? equipmentData : [];
+  const equipmentInMaintenance = equipmentList.filter(
+    (e: any) => /maintenance/i.test(e.status || ''),
+  ).length;
+  const { data: stockData } = useStock();
+  const stockList: any[] = Array.isArray(stockData) ? stockData : [];
+  const lowStockCount = stockList.filter(
+    (s: any) => (s.quantity ?? 0) <= (s.threshold ?? s.min_quantity ?? 0),
+  ).length;
+  const timeline: any[] = Array.isArray((selectedProject as any)?.phases)
+    ? (selectedProject as any).phases.map((ph: any) => ({
+        name: ph.name || '',
+        status: (ph.status === 'TERMINEE' || ph.status === 'TERMINE') ? 'done'
+          : ph.status === 'EN_COURS' ? 'current' : 'upcoming',
+        date: formatDate(ph.end_date || ph.start_date),
+      }))
+    : [];
   // UI States
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
@@ -353,67 +245,73 @@ export function ErpChantiers() {
       3000
     );
   };
-  const handleNewProject = (e: React.FormEvent) => {
+  const handleNewProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('new-project');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newProject = {
-        id: `PRJ-00${projects.length + 1}`,
+    const form = e.target as HTMLFormElement;
+    try {
+      await createProjectMutation.mutateAsync({
         name: (form.elements.namedItem('name') as HTMLInputElement).value,
-        client: (form.elements.namedItem('client') as HTMLInputElement).value,
-        location: (form.elements.namedItem('location') as HTMLInputElement).
-        value,
-        progress: 0,
-        budget: parseInt(
+        location: (form.elements.namedItem('location') as HTMLInputElement).value,
+        budget_initial: parseFloat(
           (form.elements.namedItem('budget') as HTMLInputElement).value
-        ),
-        spent: 0,
-        status: 'En cours',
-        statusColor: 'bg-blue-100 text-blue-700',
-        startDate: (form.elements.namedItem('startDate') as HTMLInputElement).
-        value,
-        endDate: (form.elements.namedItem('endDate') as HTMLInputElement).value,
-        team: []
-      };
-      setProjects([newProject, ...projects]);
-      setProcessingId(null);
+        ) || 0,
+        description: '',
+      });
       setNewProjectModal(false);
       showToast('Nouveau chantier créé avec succès');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || "Erreur lors de la création", 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleReportIncident = (e: React.FormEvent) => {
+  const handleReportIncident = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('incident');
-    setTimeout(() => {
+    const form = e.target as HTMLFormElement;
+    const project = incidentModal.project;
+    if (!project) {
       setProcessingId(null);
-      setIncidentModal({
-        isOpen: false,
-        project: null
+      return;
+    }
+    try {
+      await createIncidentMutation.mutateAsync({
+        project_id: project.id,
+        title: (form.elements.namedItem('title') as HTMLInputElement)?.value || 'Incident',
+        description: (form.elements.namedItem('description') as HTMLTextAreaElement)?.value || '',
+        severity: (form.elements.namedItem('severity') as HTMLSelectElement)?.value || 'MINEUR',
+        category: '',
+        location: project.location || '',
+        incident_date: new Date().toISOString(),
       });
-      showToast('Incident signalé et notifié au responsable QHSE', 'success');
-    }, 1500);
+      setIncidentModal({ isOpen: false, project: null });
+      showToast('Incident signalé et notifié au responsable QHSE');
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur lors du signalement', 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleAssignTeam = (e: React.FormEvent) => {
+  const handleAssignTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('assign');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newAssignment = {
-        name: (form.elements.namedItem('name') as HTMLInputElement).value,
+    const form = e.target as HTMLFormElement;
+    try {
+      await createAssignmentMutation.mutateAsync({
+        project_id: (form.elements.namedItem('project') as HTMLSelectElement).value,
+        member_name: (form.elements.namedItem('name') as HTMLInputElement).value,
         role: (form.elements.namedItem('role') as HTMLInputElement).value,
-        project: (form.elements.namedItem('project') as HTMLSelectElement).
-        value,
-        hours: parseInt(
-          (form.elements.namedItem('hours') as HTMLInputElement).value
-        ),
-        status: 'Sur site'
-      };
-      setTeamAssignments([newAssignment, ...teamAssignments]);
-      setProcessingId(null);
+        hours: parseInt((form.elements.namedItem('hours') as HTMLInputElement).value) || 0,
+        status: 'Sur site',
+      });
       setAssignTeamModal(false);
       showToast('Membre assigné avec succès');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || "Échec de l'affectation", 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
   const CircularProgress = ({ percentage }: {percentage: number;}) => {
     const radius = 20;
@@ -463,12 +361,14 @@ export function ErpChantiers() {
               Suivi, planification et allocation des ressources
             </p>
           </div>
-          <button
-            onClick={() => setNewProjectModal(true)}
-            className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
-            
-            <PlusIcon className="w-4 h-4" /> Nouveau Chantier
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <ExportButton onAction={exportProjectsXlsx} />
+            <button
+              onClick={() => setNewProjectModal(true)}
+              className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
+              <PlusIcon className="w-4 h-4" /> Nouveau Chantier
+            </button>
+          </div>
         </div>
         <div className="flex overflow-x-auto">
           {tabs.map((tab) => {
@@ -532,10 +432,12 @@ export function ErpChantiers() {
                   </div>
                 </div>
                 <p className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
-                  {Math.round(
-                  projects.reduce((acc, p) => acc + p.progress, 0) /
-                  projects.length
-                )}
+                  {projects.length ?
+                  Math.round(
+                    projects.reduce((acc, p) => acc + p.progress, 0) /
+                    projects.length
+                  ) :
+                  0}
                   %
                 </p>
                 <p className="text-xs text-globus-gray font-opensans">
@@ -571,7 +473,7 @@ export function ErpChantiers() {
                   </div>
                 </div>
                 <p className="font-montserrat font-extrabold text-2xl text-globus-blue-dark">
-                  3
+                  {openIncidents}
                 </p>
                 <p className="text-xs text-globus-gray font-opensans">
                   Incidents Ouverts
@@ -730,11 +632,11 @@ export function ErpChantiers() {
                           </button>
                           <button
                           onClick={() => {
-                            setSelectedProject(project);
+                            setSelectedProjectId(project.id);
                             setActiveTab('detail');
                           }}
                           className="flex items-center gap-1 text-sm font-semibold text-globus-blue hover:text-globus-orange transition-colors">
-                          
+
                             Détails <ChevronRightIcon className="w-4 h-4" />
                           </button>
                         </div>
@@ -813,7 +715,10 @@ export function ErpChantiers() {
                   Jalons
                 </h3>
                 <div className="relative border-l-2 border-gray-100 ml-3 space-y-6">
-                  {timelineSteps.map((step, idx) =>
+                  {timeline.length === 0 &&
+                <p className="text-sm text-gray-400 italic pl-6">Aucun jalon défini pour ce chantier.</p>
+                }
+                  {timeline.map((step: any, idx: number) =>
                 <div key={idx} className="relative pl-6">
                       <div
                     className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 bg-white ${step.status === 'done' ? 'border-green-500' : step.status === 'current' ? 'border-blue-500' : 'border-gray-300'}`}>
@@ -850,10 +755,6 @@ export function ErpChantiers() {
                       <SearchIcon className="w-5 h-5 text-globus-orange" />{' '}
                       Visibilité Portail Client
                     </h3>
-                    <span className="text-xs text-blue-200 flex items-center gap-1">
-                      <ClockIcon className="w-3.5 h-3.5" /> Dernière visite:
-                      Aujourd'hui, 08:12
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -865,7 +766,7 @@ export function ErpChantiers() {
                         </p>
                       </div>
                       <p className="font-montserrat font-bold text-xl">
-                        45{' '}
+                        {liveGallery.length}{' '}
                         <span className="text-sm font-normal text-blue-200">
                           partagées
                         </span>
@@ -874,16 +775,13 @@ export function ErpChantiers() {
 
                     <div className="bg-white/10 rounded-lg p-3 border border-white/20">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
                         <p className="text-xs text-blue-100 uppercase font-bold">
                           Caméra Live
                         </p>
                       </div>
-                      <p className="font-montserrat font-bold text-xl text-green-400">
-                        Active{' '}
-                        <span className="text-sm font-normal text-blue-200">
-                          (Cam 1 & 2)
-                        </span>
+                      <p className="font-montserrat font-bold text-xl text-blue-200">
+                        Non configurée
                       </p>
                     </div>
 
@@ -894,11 +792,8 @@ export function ErpChantiers() {
                           Modèle 3D BIM
                         </p>
                       </div>
-                      <p className="font-montserrat font-bold text-xl">
-                        Disponible{' '}
-                        <span className="text-sm font-normal text-blue-200">
-                          (V3)
-                        </span>
+                      <p className="font-montserrat font-bold text-xl text-blue-200">
+                        Non disponible
                       </p>
                     </div>
                   </div>
@@ -930,83 +825,40 @@ export function ErpChantiers() {
                         </tr>
                       </thead>
                       <tbody className="text-sm">
-                        <tr className="border-b border-gray-100">
-                          <td className="py-3 font-medium text-gray-800">
-                            Matériaux
-                          </td>
-                          <td className="py-3 text-right text-gray-600">
-                            45 000 000
-                          </td>
-                          <td className="py-3 text-right text-gray-800">
-                            35 000 000
-                          </td>
-                          <td className="py-3 text-right text-green-600">
-                            10 000 000
-                          </td>
-                          <td className="py-3 text-right font-semibold">77%</td>
-                        </tr>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-3 font-medium text-gray-800">
-                            Main d'œuvre
-                          </td>
-                          <td className="py-3 text-right text-gray-600">
-                            30 000 000
-                          </td>
-                          <td className="py-3 text-right text-gray-800">
-                            22 000 000
-                          </td>
-                          <td className="py-3 text-right text-green-600">
-                            8 000 000
-                          </td>
-                          <td className="py-3 text-right font-semibold">73%</td>
-                        </tr>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-3 font-medium text-gray-800">
-                            Sous-traitance
-                          </td>
-                          <td className="py-3 text-right text-gray-600">
-                            25 000 000
-                          </td>
-                          <td className="py-3 text-right text-gray-800">
-                            26 000 000
-                          </td>
-                          <td className="py-3 text-right text-red-500">
-                            -1 000 000
-                          </td>
-                          <td className="py-3 text-right font-semibold text-red-500">
-                            104%
-                          </td>
-                        </tr>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-3 font-medium text-gray-800">
-                            Logistique
-                          </td>
-                          <td className="py-3 text-right text-gray-600">
-                            15 000 000
-                          </td>
-                          <td className="py-3 text-right text-gray-800">
-                            7 000 000
-                          </td>
-                          <td className="py-3 text-right text-green-600">
-                            8 000 000
-                          </td>
-                          <td className="py-3 text-right font-semibold">46%</td>
-                        </tr>
-                        <tr className="bg-gray-50">
-                          <td className="py-3 px-2 font-bold text-gray-800">
-                            TOTAL
-                          </td>
-                          <td className="py-3 text-right font-bold text-gray-800">
-                            115 000 000
-                          </td>
-                          <td className="py-3 text-right font-bold text-globus-blue">
-                            90 000 000
-                          </td>
-                          <td className="py-3 text-right font-bold text-green-600">
-                            25 000 000
-                          </td>
-                          <td className="py-3 text-right font-bold">78%</td>
-                        </tr>
+                        {(() => {
+                        const prevu = selectedProject?.budget || 0;
+                        const engage = selectedProject?.spent || 0;
+                        const reste = prevu - engage;
+                        const pct = prevu > 0 ? Math.round((engage / prevu) * 100) : 0;
+                        if (prevu === 0 && engage === 0) {
+                          return (
+                            <tr>
+                                <td colSpan={5} className="py-6 text-center text-gray-400 italic">
+                                  Aucune donnée budgétaire disponible pour ce chantier
+                                </td>
+                              </tr>);
+
+                        }
+                        return (
+                          <tr className="bg-gray-50">
+                              <td className="py-3 px-2 font-bold text-gray-800">
+                                Budget global
+                              </td>
+                              <td className="py-3 text-right font-bold text-gray-800">
+                                {formatCurrency(prevu)}
+                              </td>
+                              <td className="py-3 text-right font-bold text-globus-blue">
+                                {formatCurrency(engage)}
+                              </td>
+                              <td className={`py-3 text-right font-bold ${reste < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                {formatCurrency(reste)}
+                              </td>
+                              <td className={`py-3 text-right font-bold ${pct > 100 ? 'text-red-500' : ''}`}>
+                                {pct}%
+                              </td>
+                            </tr>);
+
+                      })()}
                       </tbody>
                     </table>
                   </div>
@@ -1021,24 +873,16 @@ export function ErpChantiers() {
                       <CloudSunIcon className="w-5 h-5 text-gray-400" /> Météo
                       Chantier
                     </h3>
-                    <div className="flex items-center justify-between bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
                       <div>
-                        <p className="text-sm font-semibold text-blue-900">
-                          Aujourd'hui, Douala
+                        <p className="text-sm font-semibold text-gray-700">
+                          {selectedProject.location || 'Localisation non définie'}
                         </p>
-                        <p className="text-xs text-blue-700 mt-1">
-                          Pluies éparses l'après-midi
-                        </p>
-                        <p className="text-xs font-bold text-orange-600 mt-2">
-                          Impact: Coulage béton déconseillé
+                        <p className="text-xs text-gray-500 mt-1">
+                          Données météo non disponibles pour le moment.
                         </p>
                       </div>
-                      <div className="text-right">
-                        <CloudSunIcon className="w-10 h-10 text-blue-500 ml-auto" />
-                        <p className="text-2xl font-bold text-blue-900 mt-1">
-                          28°C
-                        </p>
-                      </div>
+                      <CloudSunIcon className="w-10 h-10 text-gray-300 ml-auto" />
                     </div>
                   </motion.div>
 
@@ -1050,28 +894,29 @@ export function ErpChantiers() {
                       <CameraIcon className="w-5 h-5 text-gray-400" /> Galerie
                       Récente
                     </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
-                        <img
-                        src="https://images.unsplash.com/photo-1541888086925-0c13d4f47852?auto=format&fit=crop&q=80&w=300"
-                        alt="Chantier"
+                    {liveGallery.length === 0 ?
+                  <p className="text-sm text-gray-400 italic py-4">
+                        Aucune photo partagée pour ce chantier.
+                      </p> :
+
+                  <div className="grid grid-cols-2 gap-2">
+                        {liveGallery.slice(0, 6).map((photo, i) =>
+                    <div
+                      key={i}
+                      className="aspect-video bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
+
+                            <img
+                        src={photo.url}
+                        alt={photo.caption || 'Chantier'}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                      
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <SearchIcon className="text-white w-5 h-5" />
-                        </div>
+
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <SearchIcon className="text-white w-5 h-5" />
+                            </div>
+                          </div>
+                    )}
                       </div>
-                      <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
-                        <img
-                        src="https://images.unsplash.com/photo-1504307651254-35680f356f90?auto=format&fit=crop&q=80&w=300"
-                        alt="Chantier"
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                      
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <SearchIcon className="text-white w-5 h-5" />
-                        </div>
-                      </div>
-                    </div>
+                  }
                   </motion.div>
                 </div>
               </div>
@@ -1120,11 +965,16 @@ export function ErpChantiers() {
                       </tr>
                     </thead>
                     <tbody className="text-sm">
+                      {teamAssignments.length === 0 &&
+                        <tr><td colSpan={5} className="py-8 text-center text-globus-gray">
+                          Aucun membre assigné
+                        </td></tr>
+                      }
                       {teamAssignments.map((member, idx) =>
                     <tr
                       key={idx}
                       className="border-b border-gray-100 hover:bg-gray-50">
-                      
+
                           <td className="py-3 font-medium text-gray-800">
                             {member.name}
                           </td>
@@ -1136,11 +986,24 @@ export function ErpChantiers() {
                             {member.hours}h
                           </td>
                           <td className="py-3">
-                            <span
-                          className={`px-2 py-1 rounded-full text-[10px] font-bold ${member.status === 'Sur site' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                          
-                              {member.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                            className={`px-2 py-1 rounded-full text-[10px] font-bold ${member.status === 'Sur site' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+
+                                {member.status}
+                              </span>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await deleteAssignmentMutation.mutateAsync(member.id);
+                                    showToast('Membre retiré');
+                                  } catch { showToast('Échec du retrait', 'info'); }
+                                }}
+                                title="Retirer"
+                                className="text-gray-300 hover:text-red-500 transition-colors">
+                                <XIcon className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                     )}
@@ -1159,6 +1022,9 @@ export function ErpChantiers() {
                   Répartition Main d'Œuvre
                 </h3>
                 <div className="h-64">
+                  {!resourceHasData ? (
+                    <ChartEmpty message="Aucune ressource allouée sur les chantiers actifs" />
+                  ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                     data={resourceData}
@@ -1169,22 +1035,23 @@ export function ErpChantiers() {
                       left: 0,
                       bottom: 0
                     }}>
-                    
+
                       <CartesianGrid
                       strokeDasharray="3 3"
                       horizontal={true}
                       vertical={false}
                       stroke="#f3f4f6" />
-                    
+
                       <XAxis
                       type="number"
+                      allowDecimals={false}
                       tick={{
                         fontSize: 11,
                         fill: '#6b7280'
                       }}
                       axisLine={false}
                       tickLine={false} />
-                    
+
                       <YAxis
                       type="category"
                       dataKey="name"
@@ -1195,7 +1062,7 @@ export function ErpChantiers() {
                       axisLine={false}
                       tickLine={false}
                       width={100} />
-                    
+
                       <Tooltip
                       contentStyle={{
                         borderRadius: '8px',
@@ -1203,28 +1070,28 @@ export function ErpChantiers() {
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                         fontSize: '12px'
                       }} />
-                    
+
                       <Legend
                       wrapperStyle={{
                         fontSize: '11px',
                         paddingTop: '10px'
                       }} />
-                    
+
                       <Bar
                       dataKey="Ouvriers"
                       stackId="a"
                       fill="#3B82F6"
                       barSize={20} />
-                    
-                      <Bar dataKey="Techniciens" stackId="a" fill="#F97316" />
+
                       <Bar
-                      dataKey="Cadres"
+                      dataKey="Équipements"
                       stackId="a"
-                      fill="#8B5CF6"
+                      fill="#F97316"
                       radius={[0, 4, 4, 0]} />
-                    
+
                     </BarChart>
                   </ResponsiveContainer>
+                  )}
                 </div>
               </motion.div>
 
@@ -1242,8 +1109,7 @@ export function ErpChantiers() {
                       Matériel Roulant & Lourd
                     </h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      12 engins déployés sur 4 chantiers actifs. 2 en
-                      maintenance.
+                      {equipmentList.length} engin{equipmentList.length > 1 ? 's' : ''} au parc · {equipmentInMaintenance} en maintenance.
                     </p>
                     <button
                     onClick={() =>
@@ -1267,8 +1133,7 @@ export function ErpChantiers() {
                       Stocks Matériaux
                     </h4>
                     <p className="text-sm text-gray-500 mt-1">
-                      3 alertes de stock bas (Ciment, Fer à béton). 5 livraisons
-                      prévues.
+                      {lowStockCount} alerte{lowStockCount > 1 ? 's' : ''} de stock bas sur {stockList.length} article{stockList.length > 1 ? 's' : ''}.
                     </p>
                     <button
                     onClick={() =>
@@ -1648,7 +1513,7 @@ export function ErpChantiers() {
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
                   
                     {projects.map((p) =>
-                  <option key={p.id} value={p.name}>
+                  <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
                   )}

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   MapPinIcon,
@@ -216,21 +215,24 @@ export function Footer() {
               Contact
             </h4>
             <ul className="space-y-4 font-opensans text-seconda-blue mb-8">
+              {siteSettings?.address &&
               <li className="flex items-start gap-3">
                 <MapPinIcon className="w-5 h-5 text-globus-orange flex-shrink-0 mt-1" />
-                <span>
-                  {siteSettings?.address ||
-                  '123 Avenue de la Construction, Quartier des Affaires, Ville'}
-                </span>
+                <span>{siteSettings.address}</span>
               </li>
+              }
+              {siteSettings?.phone &&
               <li className="flex items-center gap-3">
                 <PhoneIcon className="w-5 h-5 text-globus-orange flex-shrink-0" />
-                <span>{siteSettings?.phone || '+33 1 23 45 67 89'}</span>
+                <span>{siteSettings.phone}</span>
               </li>
+              }
+              {siteSettings?.email &&
               <li className="flex items-center gap-3">
                 <MailIcon className="w-5 h-5 text-globus-orange flex-shrink-0" />
-                <span>{siteSettings?.email || 'contact@globus-btp.com'}</span>
+                <span>{siteSettings.email}</span>
               </li>
+              }
             </ul>
 
             <h5 className="font-montserrat font-bold mb-3">Newsletter</h5>

@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { loginApi, refreshApi, getMeApi, setPasswordApi, type UserOut, type LoginPayload } from '../services/api/auth.api';
+import {
+  loginApi,
+  refreshApi,
+  getMeApi,
+  setPasswordApi,
+  complete2FALoginApi,
+  type UserOut,
+  type LoginPayload,
+  type TokenResponse,
+} from '../services/api/auth.api';
 
 // ── Types ────────────────────────────────────────────────────
 interface AuthState {
@@ -7,10 +16,24 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   forceReset: boolean;
+  /** True when the enforce_2fa policy requires this staff user to enroll. */
+  mustSetup2fa: boolean;
+}
+
+interface LoginResult {
+  forceReset: boolean;
+  /** Empty string when twoFactorRequired === true (challenge step). */
+  role: string;
+  /** Null when twoFactorRequired === true. */
+  user: UserOut | null;
+  twoFactorRequired?: boolean;
+  challengeToken?: string;
+  mustSetup2fa?: boolean;
 }
 
 interface AuthContextValue extends AuthState {
-  login: (payload: LoginPayload) => Promise<{ forceReset: boolean }>;
+  login: (payload: LoginPayload) => Promise<LoginResult>;
+  complete2FA: (challengeToken: string, code: string) => Promise<LoginResult>;
   logout: () => void;
   refreshSession: () => Promise<boolean>;
   setNewPassword: (password: string, token?: string) => Promise<void>;
@@ -63,9 +86,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     isLoading: true,
     forceReset: false,
+    mustSetup2fa: false,
   });
 
   const didInit = useRef(false);
+
+  /**
+   * Persist a successful TokenResponse: stash tokens + commit state.
+   * Used by login, 2FA verify, set-password and the refresh path.
+   */
+  const applyTokenResponse = useCallback((data: TokenResponse): LoginResult => {
+    storeTokens(data.access_token, data.refresh_token);
+    const forceReset = data.force_reset ?? false;
+    const mustSetup2fa = data.must_setup_2fa ?? data.user.must_setup_2fa ?? false;
+    setState({
+      user: data.user,
+      isAuthenticated: true,
+      isLoading: false,
+      forceReset,
+      mustSetup2fa,
+    });
+    return { forceReset, role: data.user.role, user: data.user, mustSetup2fa };
+  }, []);
+
+  async function tryRefresh(): Promise<boolean> {
+    const rt = getStoredRefreshToken();
+    if (!rt) return false;
+    try {
+      applyTokenResponse(await refreshApi(rt));
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   // Try to restore the session on mount
   useEffect(() => {
@@ -85,67 +138,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true,
           isLoading: false,
           forceReset: user.must_change_password ?? false,
+          mustSetup2fa: user.must_setup_2fa ?? false,
         });
       })
       .catch(async () => {
-        // Access token may be expired — try refreshing
         const refreshed = await tryRefresh();
         if (!refreshed) {
           clearTokens();
-          setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false });
+          setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false, mustSetup2fa: false });
         }
       });
   }, []);
 
-  async function tryRefresh(): Promise<boolean> {
-    const rt = getStoredRefreshToken();
-    if (!rt) return false;
-    try {
-      const data = await refreshApi(rt);
-      storeTokens(data.access_token, data.refresh_token);
-      setState({
-        user: data.user,
-        isAuthenticated: true,
-        isLoading: false,
-        forceReset: data.force_reset ?? false,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
   // ── Login ─────────────────────────────────────────────────
-  const login = useCallback(async (payload: LoginPayload) => {
-    const data = await loginApi(payload);
-    storeTokens(data.access_token, data.refresh_token);
-    const forceReset = data.force_reset ?? false;
-    setState({
-      user: data.user,
-      isAuthenticated: true,
-      isLoading: false,
-      forceReset,
-    });
-    return { forceReset };
-  }, []);
+  const login = useCallback(async (payload: LoginPayload): Promise<LoginResult> => {
+    const data: any = await loginApi(payload);
+    if (data?.two_factor_required) {
+      return {
+        forceReset: false,
+        role: '',
+        user: null,
+        twoFactorRequired: true,
+        challengeToken: data.challenge_token,
+      };
+    }
+    return applyTokenResponse(data as TokenResponse);
+  }, [applyTokenResponse]);
+
+  // ── Complete 2FA challenge after login ─────────────────────
+  const complete2FA = useCallback(
+    async (challengeToken: string, code: string): Promise<LoginResult> => {
+      const data = await complete2FALoginApi(challengeToken, code);
+      return applyTokenResponse(data);
+    },
+    [applyTokenResponse]
+  );
 
   // ── Logout ────────────────────────────────────────────────
   const logout = useCallback(() => {
     clearTokens();
-    setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false });
+    setState({ user: null, isAuthenticated: false, isLoading: false, forceReset: false, mustSetup2fa: false });
   }, []);
 
   // ── Set new password (onboarding) ─────────────────────────
   const setNewPassword = useCallback(async (password: string, token?: string) => {
-    await setPasswordApi({ new_password: password, invitation_token: token });
-    // Re-fetch user to get updated must_change_password=false
-    const user = await getMeApi();
-    setState(s => ({
-      ...s,
-      user,
-      forceReset: false,
-    }));
-  }, []);
+    const resp = await setPasswordApi({ new_password: password, token });
+    applyTokenResponse(resp);
+  }, [applyTokenResponse]);
 
   // ── Refresh (exposed for interceptor) ─────────────────────
   const refreshSession = useCallback(async (): Promise<boolean> => {
@@ -153,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, refreshSession, setNewPassword }}>
+    <AuthContext.Provider value={{ ...state, login, complete2FA, logout, refreshSession, setNewPassword }}>
       {children}
     </AuthContext.Provider>
   );

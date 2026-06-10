@@ -1,33 +1,46 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  ArrowRightIcon,
-  Building2Icon,
-  RulerIcon,
-  HardHatIcon,
-  PaintRollerIcon,
-  HomeIcon,
-  ChevronRightIcon } from
-'lucide-react';
+import { ArrowRightIcon, HardHatIcon, HomeIcon, ChevronRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getServicesPage } from '../../services/api/cms.api';
 import { SkeletonGrid } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { getIcon } from '../../utils/iconRegistry';
-export { mockServicesPageData as servicesData } from '../../services/api/mockData/pages.mock';
 export function ServicesPage() {
-  const { data: services, isLoading } = useCmsQuery(
+  const { data: services, isLoading, isError, refetch } = useCmsQuery(
     'services-page',
     getServicesPage
   );
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  if (isLoading || !services) {
+  if (isLoading) {
     return (
       <div className="pt-40 pb-20 container mx-auto px-4">
         <SkeletonGrid count={4} />
+      </div>);
+
+  }
+  if (isError) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<HardHatIcon className="w-8 h-8" />}
+          title="Impossible de charger les services"
+          description="Une erreur est survenue lors du chargement. Veuillez réessayer."
+          action={{ label: 'Réessayer', onClick: () => refetch() }} />
+      </div>);
+
+  }
+  if (!services || services.length === 0) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<HardHatIcon className="w-8 h-8" />}
+          title="Aucun service disponible"
+          description="Nos services seront publiés prochainement. Revenez bientôt." />
       </div>);
 
   }
@@ -58,11 +71,8 @@ export function ServicesPage() {
         {/* Hero Banner */}
         <section className="relative h-[40vh] min-h-[300px] flex items-center justify-center overflow-hidden mb-16 rounded-3xl mx-4 shadow-2xl">
           <div className="absolute inset-0 bg-globus-blue-dark/80 z-10"></div>
-          <img
-            src="https://images.unsplash.com/photo-1582063289852-62e3ba2747f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
-            alt="Nos Services"
-            className="absolute inset-0 w-full h-full object-cover" />
-          
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-globus-blue-dark via-globus-blue to-globus-blue-dark" />
+
           <div className="relative z-20 text-center px-4">
             <motion.h1
               initial={{

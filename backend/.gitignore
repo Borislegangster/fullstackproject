@@ -1,12 +1,50 @@
-venv/
-__pycache__/
-__pycache__/*
-__pycache__
+# Environment & Secrets
 .env
+.env.local
+.env.*.local
+
+# Database files — NEVER commit the DB
 *.db
-*.pyc
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+ENV/
+
+# PyTest
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Alembic
+alembic/versions/*.pyc
+
+# Uploaded files (use cloud storage in prod)
 uploads/*
-uploads/
-uploads
-.env.example
-.env.production
+!uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/

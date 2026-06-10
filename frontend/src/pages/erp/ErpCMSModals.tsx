@@ -3,10 +3,9 @@
    Extracted from ErpCMS.tsx for maintainability
    ────────────────────────────────────────────────────────────── */
 import React, { useState } from 'react';
+import { formatDateTime } from '../../utils/datetime';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  XIcon, SaveIcon, Loader2Icon, Trash2Icon, PlusIcon, FolderOpenIcon,
-} from 'lucide-react';
+import { XIcon, SaveIcon, Loader2Icon, Trash2Icon, FolderOpenIcon } from 'lucide-react';
 
 // ── Shared Modal Shell ───────────────────────────────────────
 interface ModalShellProps {
@@ -205,6 +204,14 @@ export function ProjectModal({ show, onClose, formData, setFormData, onSave, isE
   const imgs: string[] = formData.images || [];
   const addImage = (url: string) => upd('images', [...imgs, url]);
   const removeImage = (idx: number) => upd('images', imgs.filter((_: string, i: number) => i !== idx));
+
+  // Progression timeline — [{ step, status, date }] (public project detail page)
+  const progression: any[] = formData.progression || [];
+  const addStep = () => upd('progression', [...progression, { step: '', status: 'à-venir', date: '' }]);
+  const updateStep = (idx: number, key: string, val: string) =>
+    upd('progression', progression.map((s: any, i: number) => i === idx ? { ...s, [key]: val } : s));
+  const removeStep = (idx: number) => upd('progression', progression.filter((_: any, i: number) => i !== idx));
+
   return (
     <ModalShell show={show} title={isEdit ? 'Modifier le Projet' : 'Nouveau Projet'} onClose={onClose} maxWidth="max-w-4xl">
       <form onSubmit={onSave} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
@@ -264,6 +271,22 @@ export function ProjectModal({ show, onClose, formData, setFormData, onSave, isE
             className={inputCls}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const v = (e.target as HTMLInputElement).value.trim(); if (v) { addImage(v); (e.target as HTMLInputElement).value = ''; } } }} />
         </Field>
+
+        {/* ── Avancement (timeline) ── */}
+        <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Avancement du projet (page détail)</h4>
+        {progression.map((s: any, idx: number) => (
+          <div key={idx} className="flex gap-2 items-start border border-gray-200 rounded-lg p-2">
+            <input type="text" value={s.step || ''} onChange={e => updateStep(idx, 'step', e.target.value)} className={inputCls + ' flex-1'} placeholder={`Étape ${idx + 1} (ex: Fondations)`} />
+            <select value={s.status || 'à-venir'} onChange={e => updateStep(idx, 'status', e.target.value)} className={selectCls + ' w-32 shrink-0'}>
+              <option value="validé">Validé</option>
+              <option value="en-cours">En cours</option>
+              <option value="à-venir">À venir</option>
+            </select>
+            <input type="text" value={s.date || ''} onChange={e => updateStep(idx, 'date', e.target.value)} className={inputCls + ' w-28 shrink-0'} placeholder="Mai 2024" />
+            <button type="button" onClick={() => removeStep(idx)} className="p-1.5 text-red-400 hover:text-red-600 shrink-0" title="Supprimer">×</button>
+          </div>
+        ))}
+        <button type="button" onClick={addStep} className="text-xs font-semibold text-globus-orange hover:underline">+ Ajouter une étape d'avancement</button>
 
         {/* ── Paramètres avancés ── */}
         <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Paramètres</h4>
@@ -328,6 +351,20 @@ export function ServiceModal({ show, onClose, formData, setFormData, onSave, isE
   const updateBenefit = (idx: number, val: string) => upd('benefits', benefits.map((b: string, i: number) => i === idx ? val : b));
   const removeBenefit = (idx: number) => upd('benefits', benefits.filter((_: string, i: number) => i !== idx));
 
+  // Process steps — [{ title, desc, iconKey }] (rendered on the public service page)
+  const steps: any[] = formData.process_steps || [];
+  const addStep = () => upd('process_steps', [...steps, { title: '', desc: '', iconKey: 'ClipboardListIcon' }]);
+  const updateStep = (idx: number, key: string, val: string) =>
+    upd('process_steps', steps.map((s: any, i: number) => i === idx ? { ...s, [key]: val } : s));
+  const removeStep = (idx: number) => upd('process_steps', steps.filter((_: any, i: number) => i !== idx));
+
+  // FAQ — [{ q, a }]
+  const faq: any[] = formData.faq || [];
+  const addFaq = () => upd('faq', [...faq, { q: '', a: '' }]);
+  const updateFaq = (idx: number, key: string, val: string) =>
+    upd('faq', faq.map((f: any, i: number) => i === idx ? { ...f, [key]: val } : f));
+  const removeFaq = (idx: number) => upd('faq', faq.filter((_: any, i: number) => i !== idx));
+
   return (
     <ModalShell show={show} title={isEdit ? 'Modifier le Service' : 'Nouveau Service'} onClose={onClose} maxWidth="max-w-4xl">
       <form onSubmit={onSave} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
@@ -359,6 +396,31 @@ export function ServiceModal({ show, onClose, formData, setFormData, onSave, isE
           </div>
         ))}
         <button type="button" onClick={addBenefit} className="text-xs font-semibold text-globus-orange hover:underline">+ Ajouter un avantage</button>
+
+        {/* ── Processus (étapes) ── */}
+        <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Notre processus (page détail)</h4>
+        {steps.map((s: any, idx: number) => (
+          <div key={idx} className="border border-gray-200 rounded-lg p-3 space-y-2 relative">
+            <button type="button" onClick={() => removeStep(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs font-bold" title="Supprimer l'étape">× Étape</button>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={`Titre étape ${idx + 1}`}><input type="text" value={s.title || ''} onChange={e => updateStep(idx, 'title', e.target.value)} className={inputCls} placeholder="Étude & Planification" /></Field>
+              <Field label="Icône (clé)"><input type="text" value={s.iconKey || ''} onChange={e => updateStep(idx, 'iconKey', e.target.value)} className={inputCls} placeholder="ClipboardListIcon" /></Field>
+            </div>
+            <Field label="Description"><textarea rows={2} value={s.desc || ''} onChange={e => updateStep(idx, 'desc', e.target.value)} className={textareaCls} placeholder="Analyse du terrain, plans..." /></Field>
+          </div>
+        ))}
+        <button type="button" onClick={addStep} className="text-xs font-semibold text-globus-orange hover:underline">+ Ajouter une étape</button>
+
+        {/* ── FAQ ── */}
+        <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Questions fréquentes (page détail)</h4>
+        {faq.map((f: any, idx: number) => (
+          <div key={idx} className="border border-gray-200 rounded-lg p-3 space-y-2 relative">
+            <button type="button" onClick={() => removeFaq(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs font-bold" title="Supprimer la question">× Question</button>
+            <Field label={`Question ${idx + 1}`}><input type="text" value={f.q || ''} onChange={e => updateFaq(idx, 'q', e.target.value)} className={inputCls} placeholder="Combien de temps dure...?" /></Field>
+            <Field label="Réponse"><textarea rows={2} value={f.a || ''} onChange={e => updateFaq(idx, 'a', e.target.value)} className={textareaCls} placeholder="La durée varie selon..." /></Field>
+          </div>
+        ))}
+        <button type="button" onClick={addFaq} className="text-xs font-semibold text-globus-orange hover:underline">+ Ajouter une question</button>
 
         {/* ── Média ── */}
         <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Média</h4>
@@ -751,7 +813,7 @@ export function ContactMessageModal({ show, onClose, message, replyText, setRepl
 }
 
 // ── Engagement Modal ─────────────────────────────────────────
-export function EngagementModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
+export function EngagementModal({ show, onClose, formData, setFormData, onSave, isEdit, loading }: EntityModalProps) {
   const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
   return (
     <ModalShell show={show} title={isEdit ? "Modifier l'Engagement" : 'Nouvel Engagement'} onClose={onClose}>
@@ -808,7 +870,7 @@ export function MethodologyStepModal({ show, onClose, formData, setFormData, onS
 }
 
 // ── Guarantee Modal ──────────────────────────────────────────
-export function GuaranteeModal({ show, onClose, formData, setFormData, onSave, isEdit, loading, onPickMedia }: EntityModalProps) {
+export function GuaranteeModal({ show, onClose, formData, setFormData, onSave, isEdit, loading }: EntityModalProps) {
   const upd = (k: string, v: any) => setFormData({ ...formData, [k]: v });
   return (
     <ModalShell show={show} title={isEdit ? "Modifier la Garantie" : 'Nouvelle Garantie'} onClose={onClose}>
@@ -948,7 +1010,7 @@ export function AnalyticsModal({ show, onClose, stats }: { show: boolean; onClos
               <tbody className="divide-y divide-gray-100">
                 {stats.logs?.slice(0, 50).map((log: any) => (
                   <tr key={log.id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-500">{formatDateTime(log.timestamp)}</td>
                     <td className="px-4 py-3 font-mono text-xs">{log.ip_address}</td>
                     <td className="px-4 py-3">{log.browser}</td>
                     <td className="px-4 py-3">{log.os}</td>

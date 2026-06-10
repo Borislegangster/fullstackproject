@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Header } from './layout/Header';
 import { Footer } from './layout/Footer';
@@ -10,8 +10,11 @@ import { SchemaOrg } from './components/seo/SchemaOrg';
 import { QueryProvider } from './providers/QueryProvider';
 import { GlobusToaster } from './components/ui/Toast';
 import { useAnalyticsTracker } from './hooks/useAnalyticsTracker';
+import { useNotificationsLive } from './hooks/useNotificationsLive';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { RoleGuard } from './components/auth/RoleGuard';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 // Lazy-loaded pages — Public
 const HomePage = lazy(() =>
 import('./pages/public/HomePage').then((m) => ({
@@ -165,6 +168,11 @@ import('./pages/client/ClientNotifications').then((m) => ({
   default: m.ClientNotifications
 }))
 );
+const PaymentCallback = lazy(() =>
+import('./pages/client/PaymentCallback').then((m) => ({
+  default: m.PaymentCallback
+}))
+);
 // Lazy-loaded pages — ERP
 const ErpDashboard = lazy(() =>
 import('./pages/erp/ErpDashboard').then((m) => ({
@@ -261,9 +269,20 @@ import('./pages/erp/ErpParametres').then((m) => ({
   default: m.ErpParametres
 }))
 );
+const ErpSecurite = lazy(() =>
+import('./pages/erp/ErpSecurite').then((m) => ({
+  default: m.ErpSecurite
+}))
+);
 const ErpJournalActivite = lazy(() =>
 import('./pages/erp/ErpJournalActivite').then((m) => ({
   default: m.ErpJournalActivite
+}))
+);
+// Bureau d'Études Collaboratif (lazy-loaded — Phase 4)
+const ErpBureauEtudes = lazy(() =>
+import('./pages/erp/ErpBureauEtudes').then((m) => ({
+  default: m.ErpBureauEtudes
 }))
 );
 function AppContent() {
@@ -275,6 +294,8 @@ function AppContent() {
   
   // Track page views
   useAnalyticsTracker();
+  // Live notifications (no-op when not authenticated)
+  useNotificationsLive();
   return (
     <div
       className={`font-opensans text-globus-gray bg-white w-full min-h-screen flex flex-col ${isPortal ? 'h-screen overflow-hidden' : ''}`}>
@@ -319,6 +340,11 @@ function AppContent() {
             
             <Route path="/reset-mot-de-passe" element={<ResetPasswordPage />} />
             <Route path="/erp-login" element={<ErpLoginPage />} />
+            <Route path="/paiement/callback" element={
+              <ProtectedRoute>
+                <PaymentCallback />
+              </ProtectedRoute>
+            } />
 
             <Route path="/espace-client" element={
               <ProtectedRoute>
@@ -337,30 +363,74 @@ function AppContent() {
             </Route>
 
             <Route path="/erp" element={
-              <ProtectedRoute requiredRole="ADMIN" redirectTo="/erp-login">
+              // STAFF role: ADMIN, CHEF_PROJET, COMPTABLE, RH (not CLIENT)
+              <ProtectedRoute requiredRole="STAFF" redirectTo="/erp-login">
                 <ErpLayout />
               </ProtectedRoute>
             }>
               <Route index element={<ErpDashboard />} />
-              <Route path="chantiers" element={<ErpChantiers />} />
-              <Route path="rh" element={<ErpRH />} />
-              <Route path="finances" element={<ErpFinances />} />
-              <Route path="facturation" element={<ErpFacturation />} />
-              <Route path="achats" element={<ErpAchats />} />
-              <Route path="planification" element={<ErpPlanification />} />
-              <Route path="qhse" element={<ErpQHSE />} />
-              <Route path="materiel" element={<ErpMateriel />} />
-              <Route path="crm" element={<ErpCRM />} />
-              <Route path="documents" element={<ErpDocuments />} />
-              <Route path="ged" element={<ErpGED />} />
-              <Route path="sous-traitants" element={<ErpSousTraitants />} />
-              <Route path="rapports" element={<ErpRapports />} />
-              <Route path="agenda" element={<ErpAgenda />} />
-              <Route path="cms" element={<ErpCMS />} />
+              {/* ADMIN + CHEF_PROJET */}
+              <Route path="chantiers" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpChantiers /></RoleGuard>
+              } />
+              <Route path="crm" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpCRM /></RoleGuard>
+              } />
+              <Route path="qhse" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpQHSE /></RoleGuard>
+              } />
+              <Route path="materiel" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpMateriel /></RoleGuard>
+              } />
+              <Route path="ged" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpGED /></RoleGuard>
+              } />
+              <Route path="sous-traitants" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpSousTraitants /></RoleGuard>
+              } />
+              <Route path="bureau-etudes/:sessionId?" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpBureauEtudes /></RoleGuard>
+              } />
+              {/* ADMIN + COMPTABLE */}
+              <Route path="finances" element={
+                <RoleGuard roles={['ADMIN', 'COMPTABLE']}><ErpFinances /></RoleGuard>
+              } />
+              <Route path="facturation" element={
+                <RoleGuard roles={['ADMIN', 'COMPTABLE']}><ErpFacturation /></RoleGuard>
+              } />
+              {/* ADMIN + COMPTABLE + CHEF_PROJET */}
+              <Route path="achats" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpAchats /></RoleGuard>
+              } />
+              <Route path="rapports" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpRapports /></RoleGuard>
+              } />
+              <Route path="documents" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpDocuments /></RoleGuard>
+              } />
+              {/* ADMIN + RH */}
+              <Route path="rh" element={
+                <RoleGuard roles={['ADMIN', 'RH']}><ErpRH /></RoleGuard>
+              } />
+              {/* ADMIN + CHEF_PROJET + RH */}
+              <Route path="planification" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'RH']}><ErpPlanification /></RoleGuard>
+              } />
+              {/* ADMIN only */}
+              <Route path="cms" element={
+                <RoleGuard roles={['ADMIN']}><ErpCMS /></RoleGuard>
+              } />
+              <Route path="parametres" element={
+                <RoleGuard roles={['ADMIN']}><ErpParametres /></RoleGuard>
+              } />
+              {/* All staff */}
+              <Route path="securite" element={<ErpSecurite />} />
               <Route path="sav" element={<ErpSAV />} />
+              <Route path="agenda" element={<ErpAgenda />} />
               <Route path="notifications" element={<ErpNotifications />} />
-              <Route path="parametres" element={<ErpParametres />} />
-              <Route path="journal-activite" element={<ErpJournalActivite />} />
+              <Route path="journal-activite" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpJournalActivite /></RoleGuard>
+              } />
             </Route>
           </Routes>
         </Suspense>
@@ -377,13 +447,15 @@ function AppContent() {
 }
 export function App() {
   return (
-    <QueryProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <GlobusToaster />
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryProvider>);
+    <ErrorBoundary>
+      <QueryProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <GlobusToaster />
+            <AppContent />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryProvider>
+    </ErrorBoundary>);
 
 }

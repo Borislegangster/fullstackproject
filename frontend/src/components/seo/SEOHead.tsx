@@ -1,4 +1,4 @@
-import React, { useEffect, createElement } from 'react';
+import { useEffect } from 'react';
 interface SEOHeadProps {
   title: string;
   description: string;

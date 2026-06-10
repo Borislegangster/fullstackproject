@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDateParts, formatTime } from '../../utils/datetime';
 import {
   ListIcon,
   ImageIcon,
@@ -12,107 +13,45 @@ import {
   CalendarIcon } from
 'lucide-react';
 import { useClientProjectTimeline, useClientProjectGallery } from '../../hooks/useClient';
-const timelineData = [
-{
-  step: 'Études et conception',
-  status: 'validé',
-  date: 'Janvier 2024',
-  desc: 'Plans architecturaux validés par le client',
-  img: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=200&q=80'
-},
-{
-  step: 'Terrassement',
-  status: 'validé',
-  date: 'Mars 2024',
-  desc: 'Préparation du terrain et nivellement',
-  img: 'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=200&q=80'
-},
-{
-  step: 'Fondations',
-  status: 'validé',
-  date: 'Mai 2024',
-  desc: 'Fondations sur semelles filantes coulées',
-  img: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=200&q=80'
-},
-{
-  step: 'Élévation murs RDC',
-  status: 'en-cours',
-  date: 'Juillet 2024',
-  desc: 'Montage des murs en parpaings, chaînages',
-  img: null
-},
-{
-  step: 'Plancher haut RDC',
-  status: 'à-venir',
-  date: null,
-  desc: 'Coffrage et coulage de la dalle',
-  img: null
-},
-{
-  step: 'Élévation R+1',
-  status: 'à-venir',
-  date: null,
-  desc: "Montage des murs de l'étage",
-  img: null
-},
-{
-  step: "Mise hors d'eau",
-  status: 'à-venir',
-  date: null,
-  desc: 'Pose de la charpente et couverture',
-  img: null
-},
-{
-  step: 'Second œuvre',
-  status: 'à-venir',
-  date: null,
-  desc: 'Plomberie, électricité, cloisons',
-  img: null
-},
-{
-  step: 'Finitions',
-  status: 'à-venir',
-  date: null,
-  desc: 'Peinture, revêtements, menuiseries',
-  img: null
-},
-{
-  step: 'Livraison',
-  status: 'à-venir',
-  date: null,
-  desc: 'Remise des clés',
-  img: null
-}];
 
-const photosData = [
-{
-  id: 1,
-  url: 'https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=800&q=80',
-  date: '15 Mars 2024',
-  caption: 'Début du terrassement'
-},
-{
-  id: 2,
-  url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
-  date: '10 Mai 2024',
-  caption: 'Coulage des fondations'
-},
-{
-  id: 3,
-  url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&q=80',
-  date: '05 Juillet 2024',
-  caption: 'Élévation des murs RDC'
-},
-{
-  id: 4,
-  url: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=80',
-  date: '15 Janvier 2024',
-  caption: 'Validation des plans'
-}];
+
+function phaseStatusToUi(s: string): string {
+  switch ((s || '').toUpperCase()) {
+    case 'TERMINE': return 'validé';
+    case 'EN_COURS': return 'en-cours';
+    case 'BLOQUE': return 'bloque';
+    case 'EN_ATTENTE': return 'à-venir';
+    default: return 'à-venir';
+  }
+}
 
 export function ClientChantier() {
   const { data: timelineItems } = useClientProjectTimeline();
   const { data: galleryItems } = useClientProjectGallery();
+
+  // Live timeline from API (fallback to mock if empty)
+  const liveTimeline = React.useMemo(() => {
+    if (!Array.isArray(timelineItems)) return [];
+    return timelineItems.map((p: any) => ({
+      step: p.name || '',
+      status: phaseStatusToUi(p.status),
+      date: p.start_date ? formatDateParts(p.start_date, { month: 'long', year: 'numeric' }) : null,
+      desc: p.description || `Avancement: ${p.progress || 0}%`,
+      img: null,
+    }));
+  }, [timelineItems]);
+
+  // Live gallery from API
+  const livePhotos = React.useMemo(() => {
+    if (!Array.isArray(galleryItems)) return [];
+    return galleryItems.map((m: any, i: number) => ({
+      id: m.id || i + 1,
+      url: m.url || '',
+      date: formatDateParts(m.created_at, { day: '2-digit', month: 'long', year: 'numeric' }),
+      caption: m.caption || '',
+    }));
+  }, [galleryItems]);
+
   const [activeTab, setActiveTab] = useState('timeline');
   const tabs = [
   {
@@ -187,7 +126,12 @@ export function ClientChantier() {
                 <div className="absolute left-[27px] md:left-[43px] top-4 bottom-4 w-0.5 bg-gray-200 -z-10"></div>
 
                 <div className="space-y-8">
-                  {timelineData.map((item, index) =>
+                  {liveTimeline.length === 0 &&
+                    <p className="text-globus-gray font-opensans text-sm py-6">
+                      Le planning détaillé de votre chantier sera bientôt disponible.
+                    </p>
+                  }
+                  {liveTimeline.map((item, index) =>
                 <div
                   key={index}
                   className="relative flex items-start gap-6 group">
@@ -208,7 +152,7 @@ export function ClientChantier() {
                       </div>
 
                       <div
-                    className={`flex-1 pt-1 pb-6 ${index !== timelineData.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    className={`flex-1 pt-1 pb-6 ${index !== liveTimeline.length - 1 ? 'border-b border-gray-100' : ''}`}>
                     
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                           <h4
@@ -275,15 +219,15 @@ export function ClientChantier() {
                 <h2 className="font-montserrat font-bold text-2xl text-globus-blue-dark">
                   Galerie du Chantier
                 </h2>
-                <select className="bg-globus-light border border-gray-200 rounded-lg px-4 py-2 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                  <option>Toutes les étapes</option>
-                  <option>Fondations</option>
-                  <option>Élévation RDC</option>
-                </select>
               </div>
 
+              {livePhotos.length === 0 &&
+                <p className="text-globus-gray font-opensans text-sm py-6">
+                  Les photos de votre chantier seront publiées au fil de l'avancement.
+                </p>
+              }
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {photosData.map((photo) =>
+                {livePhotos.map((photo) =>
               <div
                 key={photo.id}
                 className="group rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer">
@@ -344,11 +288,13 @@ export function ClientChantier() {
               </div>
 
               <div className="relative w-full aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-lg group cursor-pointer mb-4">
+                {livePhotos[0]?.url &&
                 <img
-                src="https://images.unsplash.com/photo-1541888086425-d81bb19240f5?w=1600&q=80"
-                alt="Live Cam Placeholder"
+                src={livePhotos[0].url}
+                alt="Chantier"
                 className="w-full h-full object-cover opacity-70 group-hover:opacity-50 transition-opacity" />
-              
+                }
+
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-20 h-20 bg-globus-orange/90 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                     <PlayCircleIcon className="w-10 h-10 ml-1" />
@@ -359,7 +305,7 @@ export function ClientChantier() {
                   Globale)
                 </div>
                 <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg font-mono text-sm">
-                  {new Date().toLocaleTimeString()}
+                  {formatTime(new Date())}
                 </div>
               </div>
 

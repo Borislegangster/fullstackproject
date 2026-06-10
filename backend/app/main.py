@@ -11,26 +11,46 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from app.config import get_settings
+from app.logging_config import setup_logging, init_sentry
 
 settings = get_settings()
 
-# -- Rate Limiter --
-limiter = Limiter(key_func=get_remote_address)
+# Initialise structured logging + Sentry as early as possible
+setup_logging()
+init_sentry()
+
+# -- Rate Limiter (shared instance) --
+from app.rate_limit import limiter as _shared_limiter
+limiter = _shared_limiter
 
 
 # -- Lifespan: create tables on startup --
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create all database tables on startup (dev mode)."""
+    """Startup: create DB tables (dev) or verify connection (prod)."""
     from app.database import engine, Base
+    from sqlalchemy import text
     # Import ALL models so they register with Base.metadata
     import app.auth.models  # noqa: F401 — User
     import app.models.cms  # noqa: F401 — CMS models
     import app.models.media  # noqa: F401 — Media model
     import app.models.erp  # noqa: F401 — ERP models (30+ tables)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if settings.DEBUG:
+        # Development: auto-create all tables (convenient, no migration needed)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        # Seed the default project templates (idempotent).
+        from app.database import AsyncSessionLocal
+        from app.services.project_templates import ensure_default_templates
+        async with AsyncSessionLocal() as db:
+            await ensure_default_templates(db)
+        print(f"[DEV] 🛠️ Tables vérifiées/créées — {settings.APP_NAME}")
+    else:
+        # Production: only verify DB connection — use Alembic for migrations
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        print(f"[PROD] ✅ Connexion DB OK — {settings.APP_NAME}")
     yield
 
 
@@ -88,6 +108,28 @@ from app.api.erp_modules import (  # noqa: E402
 )
 from app.api.client_portal import router as client_router  # noqa: E402
 
+# Phase 1 — New routers (registered FIRST so that their literal sub-paths
+# like /equipment/assignments or /subcontractors/invoices match before
+# the parameterised /{id} routes declared in the legacy routers below).
+from app.api.charges import router as charges_router  # noqa: E402
+from app.api.planning import router as planning_router  # noqa: E402
+from app.api.epi import router as epi_router  # noqa: E402
+from app.api.equipment_extra import router as equipment_extra_router  # noqa: E402
+from app.api.sub_invoices import router as sub_invoices_router  # noqa: E402
+from app.api.templates import router as templates_router  # noqa: E402
+from app.api.reports import router as reports_router  # noqa: E402
+from app.api.user_prefs import router as user_prefs_router  # noqa: E402
+
+app.include_router(charges_router, prefix="/api/v1")
+app.include_router(planning_router, prefix="/api/v1")
+app.include_router(epi_router, prefix="/api/v1")
+app.include_router(equipment_extra_router, prefix="/api/v1")
+app.include_router(sub_invoices_router, prefix="/api/v1")
+app.include_router(templates_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
+app.include_router(user_prefs_router, prefix="/api/v1")
+
+# Legacy ERP routers
 app.include_router(crm_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(invoicing_router, prefix="/api/v1")
@@ -106,8 +148,31 @@ app.include_router(activity_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(client_router, prefix="/api/v1")
 
+# Bureau d'Études — Collaboration temps réel (WebSocket + REST)
+from app.api.collaboration import router as collaboration_router  # noqa: E402
+app.include_router(collaboration_router, prefix="/api/v1")
 
-# -- Health check --
-@app.get("/health", tags=["System"])
-async def health_check():
-    return {"status": "ok", "app": settings.APP_NAME}
+# Phase 4 — Security routers
+from app.api.two_factor import router as two_factor_router  # noqa: E402
+from app.api.health import router as health_router  # noqa: E402
+app.include_router(two_factor_router, prefix="/api/v1")
+app.include_router(health_router)  # /health/* at root level
+
+# Phase 6 — Real-time WebSocket channels (notifications + messaging)
+from app.api.realtime import router as realtime_router  # noqa: E402
+app.include_router(realtime_router, prefix="/api/v1")
+
+# Phase 7 — Documents & exports
+from app.api.exports import router as exports_router  # noqa: E402
+app.include_router(exports_router, prefix="/api/v1")
+from app.api.signing import router as signing_router  # noqa: E402
+app.include_router(signing_router, prefix="/api/v1")
+
+# Phase 14 — Quotes (devis)
+from app.api.quotes import router as quotes_router  # noqa: E402
+app.include_router(quotes_router, prefix="/api/v1")
+
+# Payments — Flutterwave gateway
+from app.api.payments import router as payments_router  # noqa: E402
+app.include_router(payments_router, prefix="/api/v1")
+

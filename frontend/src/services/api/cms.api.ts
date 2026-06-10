@@ -1,4 +1,11 @@
-import { axiosClient, isApiConfigured } from './axiosClient';
+/**
+ * CMS public API — Site vitrine.
+ *
+ * Phase 9: tout passe désormais par le backend réel via `axiosClient`.
+ * Plus aucun fallback mockData : si l'API échoue, l'erreur remonte au
+ * `useCmsQuery` (toast + état d'erreur) au lieu d'être masquée par un mock.
+ */
+import { axiosClient } from './axiosClient';
 import type {
   HeroSlide,
   HeroVideo,
@@ -20,6 +27,8 @@ import type {
   FaqItem,
   FaqCategory,
   BlogPost,
+  BlogPostPageItem,
+  ProjectPageItem,
   ContactInfo,
   ContactFormData,
   SiteSettings,
@@ -30,62 +39,15 @@ import type {
   ProjectDetailFull } from
 '../../types/cms.types';
 
-// Mock data imports
-import {
-  mockHeroSlides,
-  mockHeroVideo,
-  mockEngagements,
-  mockAboutContent,
-  mockMethodologySteps,
-  mockStats,
-  mockServices,
-  mockCtaBanner,
-  mockProjects,
-  mockOngoingProject,
-  mockGuarantees,
-  mockVideoSection,
-  mockTeamMembers,
-  mockPartners,
-  mockTestimonials,
-  mockFaqItems,
-  mockLatestBlogPosts } from
-'./mockData/home.mock';
-
-import {
-  mockServicesPageData,
-  mockServiceDetailsFullData,
-  mockProjectsPageData,
-  mockProjectDetailsFullData,
-  mockBlogPostsPageData,
-  mockFaqPageData,
-  mockContactInfo,
-  mockSiteSettings,
-  mockLegalPages,
-  mockAboutPageData } from
-'./mockData/pages.mock';
-
-// ── Helper: returns mock data or fetches from API ────────────
-async function fetchOrMock<T>(endpoint: string, mockData: T): Promise<T> {
-  if (!isApiConfigured()) {
-    // Simulate network delay for realistic UX
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return mockData;
-  }
-  const response = await axiosClient.get<T>(endpoint);
-  return response.data;
+// ── Helpers ──────────────────────────────────────────────────
+async function get<T>(endpoint: string): Promise<T> {
+  const { data } = await axiosClient.get<T>(endpoint);
+  return data;
 }
 
-async function postOrMock<T, R>(
-endpoint: string,
-data: T,
-mockResponse: R)
-: Promise<R> {
-  if (!isApiConfigured()) {
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    return mockResponse;
-  }
-  const response = await axiosClient.post<R>(endpoint, data);
-  return response.data;
+async function post<R>(endpoint: string, body: unknown): Promise<R> {
+  const { data } = await axiosClient.post<R>(endpoint, body);
+  return data;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -93,71 +55,71 @@ mockResponse: R)
 // ══════════════════════════════════════════════════════════════
 
 export function getHeroSlides(): Promise<HeroSlide[]> {
-  return fetchOrMock('/cms/hero-slides', mockHeroSlides);
+  return get('/cms/hero-slides');
 }
 
 export function getHeroVideo(): Promise<HeroVideo> {
-  return fetchOrMock('/cms/hero-video', mockHeroVideo);
+  return get('/cms/hero-video');
 }
 
 export function getEngagements(): Promise<Engagement[]> {
-  return fetchOrMock('/cms/engagements', mockEngagements);
+  return get('/cms/engagements');
 }
 
 export function getAboutContent(): Promise<AboutContent> {
-  return fetchOrMock('/cms/about', mockAboutContent);
+  return get('/cms/about');
 }
 
 export function getMethodologySteps(): Promise<MethodologyStep[]> {
-  return fetchOrMock('/cms/methodology', mockMethodologySteps);
+  return get('/cms/methodology');
 }
 
 export function getStats(): Promise<Stat[]> {
-  return fetchOrMock('/cms/stats', mockStats);
+  return get('/cms/stats');
 }
 
 export function getServices(): Promise<ServiceItem[]> {
-  return fetchOrMock('/cms/services', mockServices);
+  return get('/cms/services');
 }
 
 export function getCtaBanner(): Promise<CtaBanner> {
-  return fetchOrMock('/cms/cta-banner', mockCtaBanner);
+  return get('/cms/cta-banner');
 }
 
 export function getProjects(): Promise<Project[]> {
-  return fetchOrMock('/cms/projects', mockProjects);
+  return get('/cms/projects');
 }
 
 export function getOngoingProject(): Promise<OngoingProject> {
-  return fetchOrMock('/cms/ongoing-project', mockOngoingProject);
+  return get('/cms/ongoing-project');
 }
 
 export function getGuarantees(): Promise<Guarantee[]> {
-  return fetchOrMock('/cms/guarantees', mockGuarantees);
+  return get('/cms/guarantees');
 }
 
 export function getVideoSection(): Promise<VideoSectionContent> {
-  return fetchOrMock('/cms/video-section', mockVideoSection);
+  return get('/cms/video-section');
 }
 
 export function getTeamMembers(): Promise<TeamMember[]> {
-  return fetchOrMock('/cms/team', mockTeamMembers);
+  return get('/cms/team');
 }
 
 export function getPartners(): Promise<Partner[]> {
-  return fetchOrMock('/cms/partners', mockPartners);
+  return get('/cms/partners');
 }
 
 export function getTestimonials(): Promise<Testimonial[]> {
-  return fetchOrMock('/cms/testimonials', mockTestimonials);
+  return get('/cms/testimonials');
 }
 
 export function getFaqItems(): Promise<FaqItem[]> {
-  return fetchOrMock('/cms/faq-home', mockFaqItems);
+  return get('/cms/faq-home');
 }
 
 export function getLatestBlogPosts(): Promise<BlogPost[]> {
-  return fetchOrMock('/cms/blog/latest', mockLatestBlogPosts);
+  return get('/cms/blog/latest');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -165,63 +127,47 @@ export function getLatestBlogPosts(): Promise<BlogPost[]> {
 // ══════════════════════════════════════════════════════════════
 
 export function getServicesPage(): Promise<ServiceDetail[]> {
-  return fetchOrMock('/cms/services-page', mockServicesPageData);
+  return get('/cms/services-page');
 }
 
-export function getServiceBySlug(
-slug: string)
-: Promise<ServiceDetailFull | undefined> {
-  return fetchOrMock(
-    `/cms/services/${slug}`,
-    mockServiceDetailsFullData[slug] ||
-    mockServiceDetailsFullData['construction-batiments']
-  );
+export function getServiceBySlug(slug: string): Promise<ServiceDetailFull> {
+  return get(`/cms/services/${slug}`);
 }
 
-export function getProjectsPage() {
-  return fetchOrMock('/cms/projects-page', mockProjectsPageData);
+export function getProjectsPage(): Promise<ProjectPageItem[]> {
+  return get('/cms/projects-page');
 }
 
-export function getProjectBySlug(
-slug: string)
-: Promise<ProjectDetailFull | undefined> {
-  return fetchOrMock(
-    `/cms/projects/${slug}`,
-    mockProjectDetailsFullData[slug] || mockProjectDetailsFullData['default']
-  );
+export function getProjectBySlug(slug: string): Promise<ProjectDetailFull> {
+  return get(`/cms/projects/${slug}`);
 }
 
-export function getAllBlogPosts() {
-  return fetchOrMock('/cms/blog', mockBlogPostsPageData);
+export function getAllBlogPosts(): Promise<BlogPostPageItem[]> {
+  return get('/cms/blog');
 }
 
-export function getBlogPostBySlug(slug: string) {
-  return fetchOrMock(
-    `/cms/blog/${slug}`,
-    mockBlogPostsPageData.find((p) => p.id === slug)
-  );
+export function getBlogPostBySlug(slug: string): Promise<BlogPostPageItem> {
+  return get(`/cms/blog/${slug}`);
 }
 
 export function getFaqPage(): Promise<FaqCategory[]> {
-  return fetchOrMock('/cms/faq', mockFaqPageData);
+  return get('/cms/faq');
 }
 
 export function getContactInfo(): Promise<ContactInfo> {
-  return fetchOrMock('/cms/contact', mockContactInfo);
+  return get('/cms/contact');
 }
 
 export function getSiteSettings(): Promise<SiteSettings> {
-  return fetchOrMock('/cms/settings', mockSiteSettings);
+  return get('/cms/settings');
 }
 
-export function getLegalPage(
-slug: string)
-: Promise<LegalPageContent | undefined> {
-  return fetchOrMock(`/cms/legal/${slug}`, mockLegalPages[slug]);
+export function getLegalPage(slug: string): Promise<LegalPageContent> {
+  return get(`/cms/legal/${slug}`);
 }
 
 export function getAboutPage(): Promise<AboutPageContent> {
-  return fetchOrMock('/cms/about-page', mockAboutPageData);
+  return get('/cms/about-page');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -231,26 +177,17 @@ export function getAboutPage(): Promise<AboutPageContent> {
 export function submitContactForm(
 data: ContactFormData)
 : Promise<{success: boolean;message: string;}> {
-  return postOrMock('/cms/contact/submit', data, {
-    success: true,
-    message: 'Message envoyé avec succès !'
-  });
+  return post('/cms/contact/submit', data);
 }
 
 export function subscribeNewsletter(
 data: NewsletterSubscription)
 : Promise<{success: boolean;message: string;}> {
-  return postOrMock('/cms/newsletter/subscribe', data, {
-    success: true,
-    message: 'Inscription à la newsletter réussie !'
-  });
+  return post('/cms/newsletter/subscribe', data);
 }
 
 export function submitSupportTicket(
 data: SupportTicket)
 : Promise<{success: boolean;message: string;}> {
-  return postOrMock('/cms/support/ticket', data, {
-    success: true,
-    message: 'Ticket envoyé avec succès !'
-  });
+  return post('/cms/support/ticket', data);
 }

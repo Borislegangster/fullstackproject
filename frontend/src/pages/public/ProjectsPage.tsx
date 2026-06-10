@@ -1,23 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ArrowRightIcon,
-  MapPinIcon,
-  FilterIcon,
-  SearchIcon,
-  CheckCircleIcon,
-  HomeIcon,
-  ChevronRightIcon,
-  ClockIcon } from
-'lucide-react';
+import { ArrowRightIcon, MapPinIcon, SearchIcon, CheckCircleIcon, HomeIcon, ChevronRightIcon, ClockIcon } from 'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getProjectsPage } from '../../services/api/cms.api';
 import { SkeletonGrid } from '../../components/ui/Skeleton';
-export { mockProjectsPageData as projectsData } from '../../services/api/mockData/pages.mock';
+import { EmptyState } from '../../components/ui/EmptyState';
 export function ProjectsPage() {
-  const { data: projectsData, isLoading } = useCmsQuery(
+  const { data: projectsData, isLoading, isError, refetch } = useCmsQuery(
     'projects-page',
     getProjectsPage
   );
@@ -27,10 +18,31 @@ export function ProjectsPage() {
   const [activeCategory, setActiveCategory] = useState('Toutes catégories');
   const [activeStatus, setActiveStatus] = useState('Tous les projets');
   const [visibleCount, setVisibleCount] = useState(6);
-  if (isLoading || !projectsData) {
+  if (isLoading) {
     return (
       <div className="pt-40 pb-20 container mx-auto px-4">
         <SkeletonGrid count={6} />
+      </div>);
+
+  }
+  if (isError) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<MapPinIcon className="w-8 h-8" />}
+          title="Impossible de charger les réalisations"
+          description="Une erreur est survenue lors du chargement. Veuillez réessayer."
+          action={{ label: 'Réessayer', onClick: () => refetch() }} />
+      </div>);
+
+  }
+  if (!projectsData || projectsData.length === 0) {
+    return (
+      <div className="pt-40 pb-20 container mx-auto px-4">
+        <EmptyState
+          icon={<MapPinIcon className="w-8 h-8" />}
+          title="Aucune réalisation publiée"
+          description="Nos projets seront mis en ligne prochainement. Revenez bientôt." />
       </div>);
 
   }

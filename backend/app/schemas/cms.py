@@ -283,6 +283,12 @@ class SiteSettingsOut(BaseModel):
     phone: str
     email: str
     address: str
+    rcNumber: Optional[str] = None
+    taxId: Optional[str] = None
+    vatRate: Optional[float] = None
+    timezone: Optional[str] = None
+    dateFormat: Optional[str] = None
+    systemLanguage: Optional[str] = None
     whatsappUrl: str
     socialLinks: SocialLinksOut
     footerDescription: str

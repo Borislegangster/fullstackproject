@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate, formatDateParts } from '../../utils/datetime';
 import {
   CalendarDaysIcon,
   ListChecksIcon,
@@ -13,14 +14,13 @@ import {
   Loader2Icon,
   InfoIcon } from
 'lucide-react';
-import { usePlanningTasks, useCreatePlanningTask } from '../../hooks/useErp';
+import { usePlanningTasks, useCreatePlanningTask, useUpdatePlanningTask, useProjects, useEmployees } from '../../hooks/useErp';
 interface GanttTask {
   id: number;
   name: string;
-  start: number;
-  duration: number;
+  leftPct: number;
+  widthPct: number;
   status: 'done' | 'progress' | 'upcoming' | 'late';
-  dep: number | null;
   pct?: number;
 }
 interface DailyTask {
@@ -32,180 +32,17 @@ interface DailyTask {
   time: string;
   done: boolean;
 }
-const ganttTasks: GanttTask[] = [
-{
-  id: 1,
-  name: 'Études & Conception',
-  start: 0,
-  duration: 2,
-  status: 'done',
-  dep: null
-},
-{
-  id: 2,
-  name: 'Terrassement',
-  start: 2,
-  duration: 1,
-  status: 'done',
-  dep: 1
-},
-{
-  id: 3,
-  name: 'Fondations',
-  start: 3,
-  duration: 2,
-  status: 'done',
-  dep: 2
-},
-{
-  id: 4,
-  name: 'Élévation Murs RDC',
-  start: 5,
-  duration: 2,
-  status: 'progress',
-  dep: 3,
-  pct: 60
-},
-{
-  id: 5,
-  name: 'Plancher Haut RDC',
-  start: 7,
-  duration: 1,
-  status: 'upcoming',
-  dep: 4
-},
-{
-  id: 6,
-  name: 'Élévation R+1',
-  start: 8,
-  duration: 1.5,
-  status: 'upcoming',
-  dep: 5
-},
-{
-  id: 7,
-  name: "Mise Hors d'Eau",
-  start: 9.5,
-  duration: 1.5,
-  status: 'upcoming',
-  dep: 6
-},
-{
-  id: 8,
-  name: 'Plomberie & Électricité',
-  start: 11,
-  duration: 2,
-  status: 'upcoming',
-  dep: 7
-},
-{
-  id: 9,
-  name: 'Finitions',
-  start: 13,
-  duration: 1,
-  status: 'upcoming',
-  dep: 8
-},
-{
-  id: 10,
-  name: 'Livraison',
-  start: 14,
-  duration: 0.5,
-  status: 'upcoming',
-  dep: 9
-}];
 
-const months = [
-'Jan',
-'Fév',
-'Mar',
-'Avr',
-'Mai',
-'Jun',
-'Jul',
-'Aoû',
-'Sep',
-'Oct',
-'Nov',
-'Déc',
-'Jan 25',
-'Fév 25',
-'Mar 25'];
-
-const todayPosition = 6.7;
-const initialDailyTasks: DailyTask[] = [
-{
-  id: 1,
-  title: 'Couler la dalle R+1',
-  assignee: 'Paul Mbarga',
-  project: 'Villa Bonapriso',
-  priority: 'Haute',
-  time: '4h',
-  done: true
-},
-{
-  id: 2,
-  title: 'Réceptionner ferraille',
-  assignee: 'Alain Messi',
-  project: 'Villa Bonapriso',
-  priority: 'Haute',
-  time: '1h',
-  done: true
-},
-{
-  id: 3,
-  title: 'Vérifier coffrage escalier',
-  assignee: 'Paul Mbarga',
-  project: 'Immeuble Akwa',
-  priority: 'Moyenne',
-  time: '2h',
-  done: false
-},
-{
-  id: 4,
-  title: 'Commander ciment 20T',
-  assignee: 'Jacques Nkoulou',
-  project: 'Tous projets',
-  priority: 'Haute',
-  time: '30min',
-  done: false
-},
-{
-  id: 5,
-  title: 'Briefing sécurité hebdo',
-  assignee: 'Chef chantier',
-  project: 'Résidence Bonanjo',
-  priority: 'Moyenne',
-  time: '15min',
-  done: false
-},
-{
-  id: 6,
-  title: 'Valider situation sous-traitant',
-  assignee: 'Claire Fotso',
-  project: 'Villa Bonapriso',
-  priority: 'Basse',
-  time: '1h',
-  done: false
-},
-{
-  id: 7,
-  title: 'Mettre à jour plans V3',
-  assignee: "Bureau d'études",
-  project: 'Entrepôt Bonabéri',
-  priority: 'Moyenne',
-  time: '2h',
-  done: false
-},
-{
-  id: 8,
-  title: 'Préparer paie mensuelle',
-  assignee: 'Sophie Ekambi',
-  project: 'Administration',
-  priority: 'Haute',
-  time: '3h',
-  done: false
-}];
+/** Fractional month offset of a timestamp relative to the timeline start month
+ *  (so Gantt bars align exactly with the equal-width month columns). */
+function monthOffset(ms: number, firstMs: number): number {
+  const d = new Date(ms);
+  const f = new Date(firstMs);
+  const months = (d.getFullYear() - f.getFullYear()) * 12 + (d.getMonth() - f.getMonth());
+  const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const frac = (d.getDate() - 1 + d.getHours() / 24) / daysInMonth;
+  return months + frac;
+}
 
 const getBarColor = (status: string) => {
   switch (status) {
@@ -232,10 +69,128 @@ const getPriorityStyle = (p: string) => {
 export function ErpPlanification() {
   // API hooks
   const { data: apiTasks } = usePlanningTasks();
+  const { data: apiProjects } = useProjects();
+  const { data: apiEmployees } = useEmployees();
   const createTaskMutation = useCreatePlanningTask();
+  const updateTaskMutation = useUpdatePlanningTask();
+
+  // Resolvers id → human name (no raw UUIDs in the UI)
+  const projectNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    (Array.isArray(apiProjects) ? apiProjects : []).forEach((p: any) =>
+      m.set(p.id, p.name || p.code || ''));
+    return m;
+  }, [apiProjects]);
+  const employeeNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    (Array.isArray(apiEmployees) ? apiEmployees : []).forEach((e: any) =>
+      m.set(e.id, (e.full_name || `${e.first_name || ''} ${e.last_name || ''}`).trim()));
+    return m;
+  }, [apiEmployees]);
+
+  // Map API planning tasks to daily-task UI shape (names resolved, not IDs)
+  const liveTasks: DailyTask[] = useMemo(() => {
+    if (!Array.isArray(apiTasks)) return [];
+    return apiTasks.map((t: any) => ({
+      id: t.id,
+      title: t.name || '',
+      assignee: employeeNameById.get(t.assignee_id) || t.assignee_id || '—',
+      project: projectNameById.get(t.project_id) || t.project_id || '—',
+      priority: t.priority === 'HIGH' ? 'Haute' : t.priority === 'LOW' ? 'Basse' : 'Moyenne',
+      time: formatDate(t.start_date),
+      done: t.status === 'DONE',
+      raw_id: t.id,
+      raw_status: t.status,
+      _start: t.start_date ? new Date(t.start_date).getTime() : null,
+      _end: t.end_date ? new Date(t.end_date).getTime() : null,
+    } as any));
+  }, [apiTasks, projectNameById, employeeNameById]);
+
+  // « Tâches du Jour » = tâches actives aujourd'hui (chevauchant la journée).
+  // Une tâche sans dates reste affichée (rien à filtrer dessus).
+  const dailyTasks = useMemo(() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const endOfDay = startOfDay + 24 * 3600 * 1000 - 1;
+    return liveTasks.filter((t: any) => {
+      if (t._start == null && t._end == null) return true;
+      const s = t._start ?? t._end;
+      const e = t._end ?? t._start;
+      return s <= endOfDay && e >= startOfDay;
+    });
+  }, [liveTasks]);
+
+  const projectOptions: any[] = Array.isArray(apiProjects) ? apiProjects : [];
+  const employeeOptions: any[] = Array.isArray(apiEmployees) ? apiEmployees : [];
+
+  // Real month timeline computed from the actual task date range (start of the
+  // earliest task's month → end of the latest task's/today's month). No mock.
+  const timeline = useMemo(() => {
+    const arr = Array.isArray(apiTasks) ? apiTasks : [];
+    if (arr.length === 0) return null;
+    const now = Date.now();
+    const starts = arr.map((t: any) => (t.start_date ? new Date(t.start_date).getTime() : now));
+    const ends = arr.map((t: any) =>
+      t.end_date ? new Date(t.end_date).getTime()
+      : (t.start_date ? new Date(t.start_date).getTime() : now));
+    const min = Math.min(...starts);
+    const max = Math.max(...ends, now); // include today so the marker is in range
+    const sd = new Date(min);
+    const first = new Date(sd.getFullYear(), sd.getMonth(), 1);
+    const ed = new Date(max);
+    const last = new Date(ed.getFullYear(), ed.getMonth() + 1, 0); // end of that month
+    const labels: string[] = [];
+    const cur = new Date(first);
+    while (cur <= last) {
+      labels.push(formatDateParts(new Date(cur), { month: 'short', year: '2-digit' }));
+      cur.setMonth(cur.getMonth() + 1);
+    }
+    return { firstMs: first.getTime(), labels };
+  }, [apiTasks]);
+
+  const monthLabels = timeline?.labels ?? [];
+  const monthsCount = Math.max(monthLabels.length, 1);
+  const todayPct = timeline
+    ? Math.min(100, Math.max(0, monthOffset(Date.now(), timeline.firstMs) / monthsCount * 100))
+    : 0;
+
+  // Real Gantt rows — positions expressed in % of the real month timeline.
+  const liveGantt: GanttTask[] = useMemo(() => {
+    const arr = Array.isArray(apiTasks) ? apiTasks : [];
+    if (arr.length === 0 || !timeline) return [];
+    const now = Date.now();
+    const count = Math.max(timeline.labels.length, 1);
+    return arr.map((t: any, i: number) => {
+      const s = t.start_date ? new Date(t.start_date).getTime() : timeline.firstMs;
+      const e = t.end_date ? new Date(t.end_date).getTime()
+        : s + (t.duration_days || 1) * 24 * 3600 * 1000;
+      const status: GanttTask['status'] =
+        t.status === 'DONE' ? 'done'
+        : (t.status === 'IN_PROGRESS' || t.status === 'EN_COURS') ? 'progress'
+        : (e < now ? 'late' : 'upcoming');
+      const left = monthOffset(s, timeline.firstMs) / count * 100;
+      const width = (monthOffset(e, timeline.firstMs) - monthOffset(s, timeline.firstMs)) / count * 100;
+      return {
+        id: i + 1,
+        name: t.name || '',
+        leftPct: Math.max(0, left),
+        widthPct: Math.max(1.5, width),
+        status,
+        pct: t.progress || undefined,
+      } as GanttTask;
+    });
+  }, [apiTasks, timeline]);
+
+  // Today's real date for the "Tâches du Jour" header
+  const todayLabel = useMemo(() => {
+    const s = formatDateParts(new Date(), {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, []);
 
   const [activeTab, setActiveTab] = useState('gantt');
-  const [tasks, setTasks] = useState<DailyTask[]>(initialDailyTasks);
+  const tasks = dailyTasks;
   // UI States
   const [assignTaskModal, setAssignTaskModal] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -265,37 +220,48 @@ export function ErpPlanification() {
       3000
     );
   };
-  const toggleTask = (id: number) => {
-    setTasks((prev) =>
-    prev.map((t) =>
-    t.id === id ?
-    {
-      ...t,
-      done: !t.done
-    } :
-    t
-    )
-    );
+  const toggleTask = async (id: number) => {
+    const task = tasks.find((t) => t.id === id);
+    const rawId = (task as any)?.raw_id || String(id);
+    const newStatus = task?.done ? 'IN_PROGRESS' : 'DONE';
+    try {
+      await updateTaskMutation.mutateAsync({ id: rawId, data: { status: newStatus } });
+    } catch (err) {
+      console.error(err);
+    }
   };
-  const handleAssignTask = (e: React.FormEvent) => {
+  const handleAssignTask = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('assign-task');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newTask: DailyTask = {
-        id: Math.floor(Math.random() * 10000),
-        title: (form.elements.namedItem('title') as HTMLInputElement).value,
-        assignee: (form.elements.namedItem('assignee') as HTMLInputElement).value,
-        project: (form.elements.namedItem('project') as HTMLSelectElement).value,
-        priority: (form.elements.namedItem('priority') as HTMLSelectElement).value as 'Haute' | 'Moyenne' | 'Basse',
-        time: (form.elements.namedItem('time') as HTMLInputElement).value,
-        done: false
-      };
-      setTasks([newTask, ...tasks]);
-      setProcessingId(null);
+    const form = e.target as HTMLFormElement;
+    try {
+      const priorityUi = (form.elements.namedItem('priority') as HTMLSelectElement).value;
+      const priority = priorityUi === 'Haute' ? 'HIGH' : priorityUi === 'Basse' ? 'LOW' : 'NORMAL';
+      const projectId = (form.elements.namedItem('project') as HTMLSelectElement).value
+        || (Array.isArray(apiProjects) && apiProjects[0]?.id) || '';
+      const startStr = (form.elements.namedItem('start_date') as HTMLInputElement).value;
+      const durationDays = Math.max(
+        1, parseInt((form.elements.namedItem('duration') as HTMLInputElement).value, 10) || 1);
+      const start = startStr ? new Date(startStr) : new Date();
+      const end = new Date(start);
+      end.setDate(end.getDate() + durationDays);
+      await createTaskMutation.mutateAsync({
+        project_id: projectId,
+        name: (form.elements.namedItem('title') as HTMLInputElement).value,
+        description: '',
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+        duration_days: durationDays,
+        priority,
+        assignee_id: (form.elements.namedItem('assignee') as HTMLSelectElement).value || undefined,
+      } as any);
       setAssignTaskModal(false);
       showToast('Tâche assignée avec succès');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'info');
+    } finally {
+      setProcessingId(null);
+    }
   };
   const tabs = [
   {
@@ -343,12 +309,13 @@ export function ErpPlanification() {
         
           <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
-              Planification — Villa Moderne Bonapriso
+              Planification des chantiers
             </h2>
             <select className="bg-globus-light border border-gray-200 rounded-lg px-4 py-2 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-              <option>Villa Moderne Bonapriso</option>
-              <option>Immeuble Akwa</option>
-              <option>Résidence Bonanjo</option>
+              <option value="">Tous les projets</option>
+              {projectOptions.map((pr) =>
+              <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+              )}
             </select>
           </div>
 
@@ -360,11 +327,11 @@ export function ErpPlanification() {
                   Tâche
                 </div>
                 <div className="flex-1 flex">
-                  {months.map((m, i) =>
+                  {monthLabels.map((m, i) =>
                 <div
                   key={i}
                   className="flex-1 p-2 text-center text-xs font-montserrat font-semibold text-globus-gray border-l border-gray-100">
-                  
+
                       {m}
                     </div>
                 )}
@@ -373,23 +340,17 @@ export function ErpPlanification() {
 
               {/* Gantt Rows */}
               <div className="relative">
-                {/* Today marker */}
+                {/* Today marker — real position on the computed timeline */}
+                {liveGantt.length > 0 &&
                 <div
-                className="absolute top-0 bottom-0 z-10 pointer-events-none"
-                style={{
-                  left: `calc(13rem + ${todayPosition / 15 * 100}% * (1 - 13rem / 100%))`
-                }}>
-                
-                  <div
-                  className="absolute border-l-2 border-dashed border-red-400 h-full"
-                  style={{
-                    left: `${todayPosition / months.length * 100}%`,
-                    marginLeft: '13rem'
-                  }}>
-                </div>
-                </div>
+                  className="absolute top-0 bottom-0 border-l-2 border-dashed border-red-400 z-10 pointer-events-none"
+                  style={{ left: `calc(13rem + (100% - 13rem) * ${todayPct / 100})` }} />
+                }
 
-                {ganttTasks.map((task, idx) =>
+                {liveGantt.length === 0 &&
+              <p className="text-sm text-gray-400 italic p-4">Aucune tâche planifiée. Créez une tâche pour alimenter le diagramme.</p>
+              }
+                {liveGantt.map((task, idx) =>
               <div
                 key={task.id}
                 className="flex items-center border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
@@ -413,7 +374,7 @@ export function ErpPlanification() {
                     <div className="flex-1 relative h-10 flex items-center">
                       {/* Background grid */}
                       <div className="absolute inset-0 flex">
-                        {months.map((_, i) =>
+                        {monthLabels.map((_, i) =>
                     <div
                       key={i}
                       className="flex-1 border-l border-gray-50">
@@ -426,7 +387,7 @@ export function ErpPlanification() {
                       width: 0
                     }}
                     animate={{
-                      width: `${task.duration / 15 * 100}%`
+                      width: `${task.widthPct}%`
                     }}
                     transition={{
                       duration: 0.6,
@@ -434,7 +395,7 @@ export function ErpPlanification() {
                     }}
                     className={`absolute h-6 rounded-full ${getBarColor(task.status)} shadow-sm`}
                     style={{
-                      left: `${task.start / 15 * 100}%`
+                      left: `${task.leftPct}%`
                     }}>
                     
                         {task.status === 'progress' && task.pct &&
@@ -492,7 +453,7 @@ export function ErpPlanification() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
-                Tâches du Jour — Lundi 23 Mars 2026
+                Tâches du Jour — {todayLabel}
               </h2>
               <button
               onClick={() => setAssignTaskModal(true)}
@@ -509,13 +470,13 @@ export function ErpPlanification() {
                   {completedCount}/{tasks.length} tâches complétées
                 </span>
                 <span className="font-montserrat font-bold text-globus-blue-dark">
-                  {Math.round(completedCount / tasks.length * 100)}%
+                  {tasks.length ? Math.round(completedCount / tasks.length * 100) : 0}%
                 </span>
               </div>
               <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
                 animate={{
-                  width: `${completedCount / tasks.length * 100}%`
+                  width: `${tasks.length ? completedCount / tasks.length * 100 : 0}%`
                 }}
                 className="h-full bg-emerald-500 rounded-full"
                 transition={{
@@ -527,6 +488,11 @@ export function ErpPlanification() {
 
             {/* Task List */}
             <div className="space-y-3">
+              {tasks.length === 0 &&
+              <p className="text-sm text-gray-400 italic py-6 text-center">
+                Aucune tâche planifiée pour aujourd'hui.
+              </p>
+              }
               {tasks.map((task, idx) =>
             <motion.div
               key={task.id}
@@ -644,13 +610,17 @@ export function ErpPlanification() {
                   <label className="block text-sm font-bold text-globus-blue-dark mb-1">
                     Assigné à
                   </label>
-                  <input
+                  <select
                   name="assignee"
-                  type="text"
-                  required
-                  placeholder="Ex: Paul Mbarga"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
-                
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
+
+                    <option value="">— Non assigné —</option>
+                    {employeeOptions.map((emp) =>
+                    <option key={emp.id} value={emp.id}>
+                      {(emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`).trim() || emp.employee_code}
+                    </option>
+                    )}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-globus-blue-dark mb-1">
@@ -661,13 +631,23 @@ export function ErpPlanification() {
                   required
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
                   
-                    <option value="Villa Bonapriso">Villa Bonapriso</option>
-                    <option value="Immeuble Akwa">Immeuble Akwa</option>
-                    <option value="Résidence Bonanjo">Résidence Bonanjo</option>
-                    <option value="Entrepôt Bonabéri">Entrepôt Bonabéri</option>
-                    <option value="Tous projets">Tous projets</option>
-                    <option value="Administration">Administration</option>
+                    <option value="">— Sélectionner un projet —</option>
+                    {projectOptions.map((pr) =>
+                    <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+                    )}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-globus-blue-dark mb-1">
+                    Date de début
+                  </label>
+                  <input
+                  name="start_date"
+                  type="date"
+                  required
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
+
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -678,7 +658,7 @@ export function ErpPlanification() {
                     name="priority"
                     required
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none">
-                    
+
                       <option value="Haute">Haute</option>
                       <option value="Moyenne">Moyenne</option>
                       <option value="Basse">Basse</option>
@@ -686,15 +666,16 @@ export function ErpPlanification() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-globus-blue-dark mb-1">
-                      Temps estimé
+                      Durée (jours)
                     </label>
                     <input
-                    name="time"
-                    type="text"
+                    name="duration"
+                    type="number"
+                    min="1"
+                    defaultValue={1}
                     required
-                    placeholder="Ex: 2h"
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 outline-none" />
-                  
+
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">

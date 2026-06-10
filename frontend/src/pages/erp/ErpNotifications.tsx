@@ -1,22 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  BellIcon,
-  CheckCheckIcon,
-  SettingsIcon,
-  XIcon,
-  AlertTriangleIcon,
-  BoxIcon,
-  HardHatIcon,
-  UsersIcon,
-  WalletIcon,
-  FileTextIcon,
-  ShoppingCartIcon,
-  WrenchIcon,
-  TargetIcon,
-  ShieldAlertIcon } from
-'lucide-react';
+import { BellIcon, CheckCheckIcon, SettingsIcon, XIcon, AlertTriangleIcon, BoxIcon, HardHatIcon, WalletIcon, FileTextIcon, TargetIcon, ShieldAlertIcon } from 'lucide-react';
 import { useNotifications, useMarkRead, useMarkAllRead } from '../../hooks/useErp';
+import { formatDate } from '../../utils/datetime';
 const filters = [
 'Toutes',
 'Urgences',
@@ -27,121 +13,6 @@ const filters = [
 'QHSE',
 'Documents'];
 
-const initialNotifications = [
-{
-  id: 1,
-  category: 'Urgences',
-  icon: AlertTriangleIcon,
-  color: 'text-red-600',
-  bg: 'bg-red-100',
-  title: 'URGENT: Incident QHSE déclaré',
-  desc: 'Chute échafaudage Chantier Akwa. Intervention requise immédiatement.',
-  time: 'Il y a 5 min',
-  isRead: false,
-  action: 'Voir incident'
-},
-{
-  id: 2,
-  category: 'Stock',
-  icon: BoxIcon,
-  color: 'text-orange-600',
-  bg: 'bg-orange-100',
-  title: 'Seuil critique atteint — Ciment',
-  desc: "5T restantes au dépôt central (seuil d'alerte: 10T).",
-  time: 'Il y a 30 min',
-  isRead: false,
-  action: 'Créer DA'
-},
-{
-  id: 3,
-  category: 'Chantiers',
-  icon: HardHatIcon,
-  color: 'text-blue-600',
-  bg: 'bg-blue-100',
-  title: 'Retard signalé — Immeuble Akwa',
-  desc: 'Le jalon "Élévation Murs" accuse un retard de 15 jours.',
-  time: 'Il y a 1h',
-  isRead: false,
-  action: 'Voir planning'
-},
-{
-  id: 4,
-  category: 'RH',
-  icon: UsersIcon,
-  color: 'text-green-600',
-  bg: 'bg-green-100',
-  title: 'Pointage complété',
-  desc: '45/48 ouvriers présents ce matin sur le chantier Villa Bonapriso.',
-  time: 'Il y a 2h',
-  isRead: false
-},
-{
-  id: 5,
-  category: 'Finance',
-  icon: WalletIcon,
-  color: 'text-purple-600',
-  bg: 'bg-purple-100',
-  title: "Facture reçue — Menuiserie Bois d'Ébène",
-  desc: 'Montant: 2 500 000 FCFA. En attente de validation.',
-  time: 'Il y a 3h',
-  isRead: false,
-  action: 'Valider'
-},
-{
-  id: 6,
-  category: 'Documents',
-  icon: FileTextIcon,
-  color: 'text-gray-600',
-  bg: 'bg-gray-100',
-  title: 'Plan V3 Architecture uploadé',
-  desc: 'Nouveau plan disponible pour Villa Bonapriso par Claire Fotso.',
-  time: 'Hier',
-  isRead: true
-},
-{
-  id: 7,
-  category: 'Achats',
-  icon: ShoppingCartIcon,
-  color: 'text-teal-600',
-  bg: 'bg-teal-100',
-  title: 'DA-126 validée par Direction',
-  desc: "La demande d'achat pour le sable et gravier a été approuvée.",
-  time: 'Hier',
-  isRead: true
-},
-{
-  id: 8,
-  category: 'Matériel',
-  icon: WrenchIcon,
-  color: 'text-indigo-600',
-  bg: 'bg-indigo-100',
-  title: 'Maintenance terminée',
-  desc: 'Compacteur vibrant (MAT-003) de nouveau opérationnel.',
-  time: 'Hier',
-  isRead: true
-},
-{
-  id: 9,
-  category: 'CRM',
-  icon: TargetIcon,
-  color: 'text-pink-600',
-  bg: 'bg-pink-100',
-  title: 'Nouveau prospect — Société SABC',
-  desc: "Projet d'extension d'usine estimé à 500M FCFA.",
-  time: 'Il y a 2 jours',
-  isRead: true
-},
-{
-  id: 10,
-  category: 'QHSE',
-  icon: ShieldAlertIcon,
-  color: 'text-yellow-600',
-  bg: 'bg-yellow-100',
-  title: 'Audit mensuel planifié',
-  desc: "L'audit de sécurité est prévu pour le 25/03/2026.",
-  time: 'Il y a 2 jours',
-  isRead: true
-}];
 
 const stagger = {
   hidden: {},
@@ -171,66 +42,87 @@ const fadeUp = {
     }
   }
 };
+// Map server notification type → UI icon + color
+function notifVisuals(type: string, isRead: boolean) {
+  const map: Record<string, { icon: any; color: string; bg: string; category: string }> = {
+    invoice: { icon: WalletIcon, color: 'text-purple-600', bg: 'bg-purple-100', category: 'Finance' },
+    message: { icon: BellIcon, color: 'text-blue-600', bg: 'bg-blue-100', category: 'Messages' },
+    sav: { icon: ShieldAlertIcon, color: 'text-yellow-600', bg: 'bg-yellow-100', category: 'QHSE' },
+    project: { icon: HardHatIcon, color: 'text-orange-600', bg: 'bg-orange-100', category: 'Chantiers' },
+    appointment: { icon: TargetIcon, color: 'text-pink-600', bg: 'bg-pink-100', category: 'CRM' },
+    success: { icon: BellIcon, color: 'text-green-600', bg: 'bg-green-100', category: 'Système' },
+    warning: { icon: AlertTriangleIcon, color: 'text-yellow-600', bg: 'bg-yellow-100', category: 'Urgences' },
+    error: { icon: AlertTriangleIcon, color: 'text-red-600', bg: 'bg-red-100', category: 'Urgences' },
+    info: { icon: BellIcon, color: 'text-blue-600', bg: 'bg-blue-100', category: 'Système' },
+    document: { icon: FileTextIcon, color: 'text-gray-600', bg: 'bg-gray-100', category: 'Documents' },
+    stock: { icon: BoxIcon, color: 'text-orange-600', bg: 'bg-orange-100', category: 'Stock' },
+  };
+  const v = map[type] || map.info;
+  return {
+    ...v,
+    color: isRead ? 'text-gray-500' : v.color,
+    bg: isRead ? 'bg-gray-100' : v.bg,
+  };
+}
+
+function formatRelative(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diff < 60) return "À l'instant";
+  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
+  if (diff < 86400 * 2) return 'Hier';
+  if (diff < 86400 * 7) return `Il y a ${Math.floor(diff / 86400)} jours`;
+  return formatDate(d);
+}
+
 export function ErpNotifications() {
   const { data: apiNotifs } = useNotifications();
   const markReadMutation = useMarkRead();
   const markAllReadMutation = useMarkAllRead();
   const [activeFilter, setActiveFilter] = useState('Toutes');
-  const [localNotifications, setLocalNotifications] = useState(initialNotifications);
-  const [dismissedIds, setDismissedIds] = useState<number[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  // Merge API + local notifications
   const notifications = useMemo(() => {
-    if (apiNotifs && Array.isArray(apiNotifs) && apiNotifs.length > 0) {
-      return apiNotifs
-        .filter((n: any) => !dismissedIds.includes(n.id))
-        .map((n: any) => ({
-          id: n.id,
-          category: n.category || 'Système',
-          icon: BellIcon,
-          color: n.is_read ? 'text-gray-600' : 'text-blue-600',
-          bg: n.is_read ? 'bg-gray-100' : 'bg-blue-100',
+    const arr = Array.isArray(apiNotifs) ? apiNotifs : [];
+    return arr
+      .filter((n: any) => !dismissedIds.includes(String(n.id)))
+      .map((n: any) => {
+        const v = notifVisuals(n.type || 'info', n.is_read);
+        return {
+          id: String(n.id),
+          category: v.category,
+          icon: v.icon,
+          color: v.color,
+          bg: v.bg,
           title: n.title || '',
-          desc: n.message || n.body || '',
-          time: n.created_at ? new Date(n.created_at).toLocaleString('fr-FR') : '',
-          isRead: n.is_read ?? true,
-          action: undefined,
-        }));
-    }
-    return localNotifications.filter(n => !dismissedIds.includes(n.id));
-  }, [apiNotifs, localNotifications, dismissedIds]);
+          desc: n.message || '',
+          time: formatRelative(n.created_at),
+          isRead: n.is_read ?? false,
+          action: undefined as string | undefined,
+        };
+      });
+  }, [apiNotifs, dismissedIds]);
 
   const filteredNotifications = notifications.filter(
     (n) =>
-    activeFilter === 'Toutes' ||
-    n.category === activeFilter ||
-    activeFilter === 'Urgences' && n.color === 'text-red-600'
+      activeFilter === 'Toutes' ||
+      n.category === activeFilter ||
+      (activeFilter === 'Urgences' && n.color === 'text-red-600')
   );
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   const markAllAsRead = () => {
+    if (unreadCount === 0) return;
     markAllReadMutation.mutate(undefined as any);
-    setLocalNotifications(
-      localNotifications.map((n) => ({
-        ...n,
-        isRead: true
-      }))
-    );
   };
-  const dismissNotification = (id: number) => {
-    setDismissedIds(prev => [...prev, id]);
+  const dismissNotification = (id: string) => {
+    setDismissedIds((prev) => [...prev, id]);
   };
-  const markAsRead = (id: number) => {
-    markReadMutation.mutate(String(id));
-    setLocalNotifications(
-      localNotifications.map((n) =>
-      n.id === id ?
-      {
-        ...n,
-        isRead: true
-      } :
-      n
-      )
-    );
+  const markAsRead = (id: string) => {
+    markReadMutation.mutate(id);
   };
   return (
     <div className="max-w-[1000px] mx-auto space-y-6">

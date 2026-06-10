@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeftIcon,
@@ -64,7 +64,6 @@ export function ServiceDetailPage() {
   const { slug } = useParams<{
     slug: string;
   }>();
-  const navigate = useNavigate();
   const { data: service, isLoading: isLoadingService } = useCmsQuery(
     ['service', slug || ''],
     () => getServiceBySlug(slug || '')
@@ -253,24 +252,24 @@ export function ServiceDetailPage() {
                 
                 Demander un devis
               </Link>
+              {contactInfo?.phone &&
               <a
-                href={`tel:${contactInfo?.phone?.replace(/[^0-9+]/g, '') || '+33123456789'}`}
+                href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, '')}`}
                 className="block w-full text-center bg-white/10 hover:bg-white/20 text-white font-montserrat font-bold py-4 px-6 rounded-xl transition-colors mb-4">
-                
-                Appeler le {contactInfo?.phone || '+33 1 23 45 67 89'}
+
+                Appeler le {contactInfo.phone}
               </a>
+              }
+              {contactInfo?.whatsapp &&
               <a
-                href={
-                contactInfo?.whatsapp ?
-                `https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, '')}` :
-                'https://wa.me/33612345678'
-                }
+                href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full text-center bg-[#25D366] hover:bg-[#20bd5a] text-white font-montserrat font-bold py-4 px-6 rounded-xl transition-colors">
-                
+
                 WhatsApp
               </a>
+              }
             </motion.div>
           </div>
         </div>

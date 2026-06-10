@@ -1,11 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  BuildingIcon,
-  PencilRulerIcon,
-  HardHatIcon,
-  ArrowRightIcon } from
-'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getServices } from '../../services/api/cms.api';
@@ -17,6 +12,7 @@ function ServiceImageCarousel({
 }: {images: string[];title: string;}) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
+    if (!images?.length) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, 3500);
@@ -63,7 +59,7 @@ function ServiceImageCarousel({
 }
 export function ServicesSection() {
   const { data: services, isLoading } = useCmsQuery('services', getServices);
-  if (isLoading || !services) {
+  if (isLoading) {
     return (
       <section id="services" className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
@@ -72,6 +68,8 @@ export function ServicesSection() {
       </section>);
 
   }
+  // No services configured → hide the section.
+  if (!services || services.length === 0) return null;
   return (
     <section id="services" className="py-16 md:py-24 bg-white">
       <div className="container mx-auto px-4">

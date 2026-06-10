@@ -1,106 +1,48 @@
-import React, { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useDocumentTemplates, useGeneratedDocuments, useGenerateDocument, useEmployees } from '../../hooks/useErp';
+import { openOrDownloadUrl } from '../../utils/download';
+import { formatDate } from '../../utils/datetime';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  BanknoteIcon,
-  FileTextIcon,
-  ReceiptIcon,
-  BadgeCheckIcon,
-  PackageOpenIcon,
-  MapPinIcon,
-  DownloadIcon,
-  EyeIcon,
-  FileOutputIcon,
-  SearchIcon,
-  PlusIcon,
-  XIcon,
-  Loader2Icon,
-  CheckCircle2Icon,
-  UsersIcon,
-  AlertTriangleIcon } from
-'lucide-react';
-const templates = [
-{
-  icon: BanknoteIcon,
-  name: 'Fiche de Paie',
-  desc: 'Bulletin de salaire mensuel',
-  count: 156,
-  color: 'bg-green-100 text-green-600'
-},
-{
-  icon: FileTextIcon,
-  name: 'Contrat de Travail',
-  desc: 'CDI, CDD, Temporaire',
-  count: 89,
-  color: 'bg-blue-100 text-blue-600'
-},
-{
-  icon: ReceiptIcon,
-  name: 'Note de Frais',
-  desc: 'Remboursement de dépenses',
-  count: 234,
-  color: 'bg-orange-100 text-orange-600'
-},
-{
-  icon: BadgeCheckIcon,
-  name: 'Attestation de Travail',
-  desc: "Certificat d'emploi",
-  count: 45,
-  color: 'bg-purple-100 text-purple-600'
-},
-{
-  icon: PackageOpenIcon,
-  name: 'Bon de Sortie Matériel',
-  desc: 'Autorisation de sortie',
-  count: 178,
-  color: 'bg-yellow-100 text-yellow-700'
-},
-{
-  icon: MapPinIcon,
-  name: 'Ordre de Mission',
-  desc: 'Déplacement professionnel',
-  count: 67,
-  color: 'bg-cyan-100 text-cyan-600'
-}];
+import { BanknoteIcon, FileTextIcon, ReceiptIcon, BadgeCheckIcon, PackageOpenIcon, MapPinIcon, DownloadIcon, EyeIcon, FileOutputIcon, SearchIcon, XIcon, Loader2Icon, CheckCircle2Icon, UsersIcon, AlertTriangleIcon } from 'lucide-react';
 
-const recentDocs = [
-{
-  name: 'Fiche de paie — Paul Mbarga',
-  type: 'Fiche de Paie',
-  target: 'Paul Mbarga',
-  date: '23/03/2026'
-},
-{
-  name: 'Contrat CDD — Ouvrier #89',
-  type: 'Contrat',
-  target: 'Moussa Amadou',
-  date: '22/03/2026'
-},
-{
-  name: 'Note de frais — Carburant Mars',
-  type: 'Note de Frais',
-  target: 'Alain Messi',
-  date: '21/03/2026'
-},
-{
-  name: 'Bon de sortie — Bétonnière',
-  type: 'Bon de Sortie',
-  target: 'Villa Bonapriso',
-  date: '20/03/2026'
-},
-{
-  name: 'Attestation — Sophie Ekambi',
-  type: 'Attestation',
-  target: 'Sophie Ekambi',
-  date: '19/03/2026'
-},
-{
-  name: 'Ordre de mission — Douala-Yaoundé',
-  type: 'Ordre de Mission',
-  target: 'Jacques Nkoulou',
-  date: '18/03/2026'
-}];
+
+// Map server iconKey → bundled lucide icon (default fallback)
+const iconMap: Record<string, any> = {
+  BanknoteIcon, FileTextIcon, ReceiptIcon, BadgeCheckIcon,
+  PackageOpenIcon, MapPinIcon, FileOutputIcon,
+};
 
 export function ErpDocuments() {
+  const { data: apiTemplates } = useDocumentTemplates();
+  const { data: apiGenerated } = useGeneratedDocuments();
+  const { data: apiEmployees } = useEmployees();
+  const employeeNames: string[] = Array.isArray(apiEmployees) ? apiEmployees.map((e: any) => `${e.first_name || ''} ${e.last_name || ''}`.trim()).filter(Boolean) : [];
+  const generateDocMutation = useGenerateDocument();
+
+  const liveTemplates = useMemo(() => {
+    if (!Array.isArray(apiTemplates)) return [];
+    return apiTemplates.map((t: any) => ({
+      icon: iconMap[t.icon_key] || FileTextIcon,
+      name: t.name,
+      desc: t.description,
+      count: t.generated_count || 0,
+      color: 'bg-blue-100 text-blue-600',
+      raw_id: t.id,
+      placeholders: t.placeholders || [],
+    }));
+  }, [apiTemplates]);
+
+  const liveDocs = useMemo(() => {
+    if (!Array.isArray(apiGenerated)) return [];
+    return apiGenerated.map((d: any) => ({
+      name: d.name,
+      type: d.category || 'général',
+      target: d.target_id || '—',
+      date: formatDate(d.created_at),
+      file_url: d.file_url,
+    }));
+  }, [apiGenerated]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
@@ -112,11 +54,11 @@ export function ErpDocuments() {
   } | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [isBatchMode, setIsBatchMode] = useState(false);
-  const filteredDocs = recentDocs.filter(
+  const filteredDocs = liveDocs.filter(
     (d) =>
     d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.target.toLowerCase().includes(searchQuery.toLowerCase())
+    (d.target || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
   const showToast = (
   message: string,
@@ -133,30 +75,49 @@ export function ErpDocuments() {
     setShowGenerateModal(true);
     setIsBatchMode(false);
   };
-  const handleGenerateSubmit = () => {
+  const handleGenerateSubmit = async () => {
     setIsProcessing('generate');
-    setTimeout(() => {
-      setIsProcessing(null);
-      setShowGenerateModal(false);
+    try {
+      const templateId = (selectedTemplate as any)?.raw_id;
+      if (!templateId) {
+        showToast('Modèle non disponible côté serveur (créer-le dans /admin)', 'info');
+        return;
+      }
+      await generateDocMutation.mutateAsync({
+        templateId,
+        data: { payload: {} },
+      });
       showToast(
-        isBatchMode ?
-        'Documents générés en lot avec succès' :
-        'Document généré avec succès',
+        isBatchMode ? 'Documents générés en lot avec succès' : 'Document généré avec succès',
         'success'
       );
-    }, 1500);
+      setShowGenerateModal(false);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
   const handlePreviewClick = (doc: any) => {
     setSelectedDoc(doc);
     setShowPreviewModal(true);
   };
-  const handleDownload = (docName: string) => {
-    setIsProcessing(`download-${docName}`);
+  const handleDownload = async (doc: any) => {
+    const fileUrl = doc?.file_url;
+    if (!fileUrl) {
+      showToast('Aucun fichier disponible pour ce document', 'info');
+      return;
+    }
+    setIsProcessing(`download-${doc.name}`);
     showToast('Téléchargement en cours...', 'info');
-    setTimeout(() => {
-      setIsProcessing(null);
+    try {
+      await openOrDownloadUrl(fileUrl, doc.name);
       showToast('Document téléchargé ✓', 'success');
-    }, 1500);
+    } catch {
+      showToast('Échec du téléchargement', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -178,7 +139,7 @@ export function ErpDocuments() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {templates.map((t, idx) => {
+          {liveTemplates.map((t, idx) => {
             const Icon = t.icon;
             return (
               <motion.div
@@ -314,7 +275,7 @@ export function ErpDocuments() {
                       <EyeIcon className="w-4 h-4" />
                     </button>
                     <button
-                    onClick={() => handleDownload(d.name)}
+                    onClick={() => handleDownload(d)}
                     disabled={isProcessing === `download-${d.name}`}
                     className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
                     title="Télécharger">
@@ -409,14 +370,10 @@ export function ErpDocuments() {
                       Sélectionner les employés
                     </label>
                     <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-gray-50">
-                      {[
-                  'Paul Mbarga',
-                  'Claire Fotso',
-                  'Alain Messi',
-                  'Sophie Ekambi',
-                  'Moussa Amadou',
-                  'Jacques Nkoulou'].
-                  map((emp, i) =>
+                      {employeeNames.length === 0 &&
+                  <p className="p-3 text-sm text-gray-400 italic">Aucun employé disponible.</p>
+                  }
+                      {employeeNames.map((emp, i) =>
                   <label
                     key={i}
                     className="flex items-center gap-3 p-3 hover:bg-gray-100 border-b border-gray-200 last:border-0 cursor-pointer">
@@ -424,7 +381,7 @@ export function ErpDocuments() {
                           <input
                       type="checkbox"
                       className="w-4 h-4 text-globus-orange rounded border-gray-300 focus:ring-globus-orange"
-                      defaultChecked={i < 3} />
+                      />
                     
                           <span className="font-opensans text-sm text-gray-700">
                             {emp}
@@ -433,7 +390,7 @@ export function ErpDocuments() {
                   )}
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      3 employés sélectionnés
+                      Cochez les employés concernés
                     </p>
                   </div> :
 
@@ -445,9 +402,9 @@ export function ErpDocuments() {
                     </label>
                     <select className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
                       <option>Sélectionner...</option>
-                      <option>Paul Mbarga</option>
-                      <option>Claire Fotso</option>
-                      <option>Alain Messi</option>
+                      {employeeNames.map((emp) =>
+                      <option key={emp}>{emp}</option>
+                      )}
                     </select>
                   </div>
               }
@@ -470,7 +427,7 @@ export function ErpDocuments() {
                       </label>
                       <input
                     type="month"
-                    defaultValue="2026-03"
+                    defaultValue={new Date().toISOString().slice(0, 7)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
                   
                     </div>
@@ -615,7 +572,7 @@ export function ErpDocuments() {
                   Fermer
                 </button>
                 <button
-                onClick={() => handleDownload(selectedDoc.name)}
+                onClick={() => handleDownload(selectedDoc)}
                 disabled={isProcessing === `download-${selectedDoc.name}`}
                 className="bg-globus-blue hover:bg-globus-blue-dark text-white font-montserrat font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm flex items-center gap-2 disabled:opacity-70">
                 

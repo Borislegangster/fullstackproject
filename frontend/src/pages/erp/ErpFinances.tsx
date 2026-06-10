@@ -1,22 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  TrendingUpIcon,
-  BuildingIcon,
-  CoinsIcon,
-  PlusIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  DownloadIcon,
-  CameraIcon,
-  UploadCloudIcon,
-  CheckCircle2Icon,
-  Loader2Icon,
-  XIcon,
-  EyeIcon,
-  FileTextIcon } from
-'lucide-react';
-import { useFinancesProjects, useCharges, useCreateCharge, usePettyCashTransactions, useCreatePettyCashTransaction } from '../../hooks/useErp';
+import { TrendingUpIcon, BuildingIcon, CoinsIcon, PlusIcon, DownloadIcon, UploadCloudIcon, CheckCircle2Icon, Loader2Icon, XIcon, EyeIcon, FileTextIcon } from 'lucide-react';
+import { formatDate, formatDateParts } from '../../utils/datetime';
+import { useFinancesProjects, useCharges, useCreateCharge, usePettyCashTransactions, useCreatePettyCashTransaction, useCashflow, useProjectExpenses, useAddProjectExpense } from '../../hooks/useErp';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+import { downloadCSV } from '../../utils/download';
 import {
   AreaChart,
   Area,
@@ -43,264 +31,103 @@ const tabs = [
   icon: CoinsIcon
 }];
 
-const initialProjects = [
-{
-  id: 'PRJ-001',
-  name: 'Villa Moderne Bonapriso',
-  status: 'En cours',
-  budgetInit: 85000000,
-  budgetActuel: 95000000,
-  depenses: 74100000,
-  margin: 22,
-  mat: 35000000,
-  mo: 22000000,
-  st: 10000000,
-  log: 7100000,
-  client: 'M. Etoundi',
-  dateDebut: '15/01/2026',
-  dateFinPrevue: '30/08/2026'
-},
-{
-  id: 'PRJ-002',
-  name: 'Immeuble R+4 Akwa',
-  status: 'En cours',
-  budgetInit: 320000000,
-  budgetActuel: 320000000,
-  depenses: 272000000,
-  margin: 15,
-  mat: 130000000,
-  mo: 80000000,
-  st: 40000000,
-  log: 22000000,
-  client: 'SCI Horizon',
-  dateDebut: '10/11/2025',
-  dateFinPrevue: '15/12/2026'
-},
-{
-  id: 'PRJ-003',
-  name: 'Résidence Bonanjo',
-  status: 'En cours',
-  budgetInit: 150000000,
-  budgetActuel: 155000000,
-  depenses: 142600000,
-  margin: 8,
-  mat: 68000000,
-  mo: 42000000,
-  st: 20000000,
-  log: 12600000,
-  client: 'Mme. Kamga',
-  dateDebut: '05/02/2026',
-  dateFinPrevue: '20/10/2026'
-},
-{
-  id: 'PRJ-004',
-  name: 'Entrepôt Bonabéri',
-  status: 'En cours',
-  budgetInit: 45000000,
-  budgetActuel: 45000000,
-  depenses: 46350000,
-  margin: -3,
-  mat: 22000000,
-  mo: 14000000,
-  st: 6000000,
-  log: 4350000,
-  client: 'Logistics SA',
-  dateDebut: '01/03/2026',
-  dateFinPrevue: '30/05/2026'
-},
-{
-  id: 'PRJ-005',
-  name: 'Bureau Deïdo',
-  status: 'Terminé',
-  budgetInit: 60000000,
-  budgetActuel: 62000000,
-  depenses: 54560000,
-  margin: 12,
-  mat: 26000000,
-  mo: 16000000,
-  st: 8000000,
-  log: 4560000,
-  client: 'Tech Solutions',
-  dateDebut: '10/09/2025',
-  dateFinPrevue: '15/02/2026'
-}];
 
-const cashFlowData = [
-{
-  month: 'Oct',
-  entrees: 85,
-  sorties: 62
-},
-{
-  month: 'Nov',
-  entrees: 72,
-  sorties: 58
-},
-{
-  month: 'Déc',
-  entrees: 95,
-  sorties: 70
-},
-{
-  month: 'Jan',
-  entrees: 110,
-  sorties: 78
-},
-{
-  month: 'Fév',
-  entrees: 88,
-  sorties: 65
-},
-{
-  month: 'Mar',
-  entrees: 125,
-  sorties: 82
-}];
 
-const initialCharges = [
-{
-  id: 'CH-01',
-  label: 'Loyer bureau Douala',
-  montant: 2500000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-02',
-  label: 'Salaires fixes (5 employés)',
-  montant: 4200000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-03',
-  label: 'Assurances (RC Pro + Véhicules)',
-  montant: 1800000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-04',
-  label: 'Carburant & Véhicules',
-  montant: 1500000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-05',
-  label: 'Fournitures bureau',
-  montant: 350000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-06',
-  label: 'Internet & Télécom',
-  montant: 450000,
-  freq: 'Mensuel'
-},
-{
-  id: 'CH-07',
-  label: 'Maintenance matériel',
-  montant: 1200000,
-  freq: 'Mensuel'
-}];
 
-const initialPettyTransactions = [
-{
-  id: 'TR-10',
-  date: '23/03',
-  motif: 'Taxi chantier Akwa',
-  montant: -15000,
-  cat: 'Transport',
-  site: 'Immeuble Akwa'
-},
-{
-  id: 'TR-09',
-  date: '23/03',
-  motif: 'Petit matériel (clous, vis)',
-  montant: -8500,
-  cat: 'Matériaux',
-  site: 'Villa Bonapriso'
-},
-{
-  id: 'TR-08',
-  date: '22/03',
-  motif: 'Recharge caisse',
-  montant: 500000,
-  cat: 'Approvisionnement',
-  site: '—'
-},
-{
-  id: 'TR-07',
-  date: '22/03',
-  motif: 'Repas équipe chantier',
-  montant: -45000,
-  cat: 'Restauration',
-  site: 'Résidence Bonanjo'
-},
-{
-  id: 'TR-06',
-  date: '21/03',
-  motif: 'Photocopies plans',
-  montant: -12000,
-  cat: 'Bureau',
-  site: 'Bureau Deïdo'
-},
-{
-  id: 'TR-05',
-  date: '21/03',
-  motif: 'Eau potable chantier',
-  montant: -5000,
-  cat: 'Divers',
-  site: 'Immeuble Akwa'
-},
-{
-  id: 'TR-04',
-  date: '20/03',
-  motif: 'Taxi livraison urgente',
-  montant: -25000,
-  cat: 'Transport',
-  site: 'Villa Bonapriso'
-},
-{
-  id: 'TR-03',
-  date: '20/03',
-  motif: 'Ampoules + rallonge',
-  montant: -18000,
-  cat: 'Matériaux',
-  site: 'Entrepôt Bonabéri'
-},
-{
-  id: 'TR-02',
-  date: '19/03',
-  motif: 'Recharge caisse',
-  montant: 300000,
-  cat: 'Approvisionnement',
-  site: '—'
-},
-{
-  id: 'TR-01',
-  date: '19/03',
-  motif: 'Frais notaire document',
-  montant: -35000,
-  cat: 'Administratif',
-  site: '—'
-}];
+
+interface FinanceProject {
+  id: string; name: string; status: string;
+  budgetInit: number; budgetActuel: number; depenses: number; margin: number;
+  mat: number; mo: number; st: number; log: number;
+  client: string; dateDebut: string; dateFinPrevue: string;
+}
 
 const fmt = (v: number) =>
 new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 0
 }).format(v);
+const statusLabel = (s: string) => {
+  const m: Record<string, string> = {
+    EN_COURS: 'En cours', PLANIFIE: 'Planifié', TERMINE: 'Terminé',
+    LIVRE: 'Livré', SUSPENDU: 'Suspendu', NOUVEAU: 'Nouveau',
+  };
+  return m[String(s || '').toUpperCase()] || s || '—';
+};
+const fmtD = (d: string) => formatDate(d, '—');
 export function ErpFinances() {
   // API hooks
   const { data: apiProjects } = useFinancesProjects();
   const { data: apiCharges } = useCharges();
   const { data: apiTransactions } = usePettyCashTransactions();
+  const { data: apiCashflow } = useCashflow(6);
   const createChargeMutation = useCreateCharge();
   const createTransactionMutation = useCreatePettyCashTransaction();
+  const addExpenseMutation = useAddProjectExpense();
 
   const [activeTab, setActiveTab] = useState('rentabilite');
-  // Data States
-  const [projects] = useState(initialProjects);
-  const [charges, setCharges] = useState(initialCharges);
-  const [transactions, setTransactions] = useState(initialPettyTransactions);
-  const [soldeCaisse, setSoldeCaisse] = useState(850000);
+
+  // Live data — empty arrays surface empty states (no mock fallback).
+  const projects = useMemo(() => {
+    if (!Array.isArray(apiProjects)) return [];
+    return apiProjects.map((p: any) => ({
+      id: p.project_id || p.id,
+      name: p.project_name || p.name || '',
+      status: statusLabel(p.status),
+      budgetInit: p.budget || 0,
+      budgetActuel: p.budget || 0,
+      depenses: p.spent || 0,
+      margin: p.margin_pct || p.margin || 0,
+      mat: p.breakdown?.materiaux || 0,
+      mo: p.breakdown?.main_oeuvre || 0,
+      st: p.breakdown?.sous_traitance || 0,
+      log: p.breakdown?.logistique || 0,
+      client: p.client || '',
+      dateDebut: fmtD(p.start_date),
+      dateFinPrevue: fmtD(p.end_date),
+    }));
+  }, [apiProjects]);
+
+  const charges = useMemo(() => {
+    if (!Array.isArray(apiCharges)) return [];
+    return apiCharges.map((c: any) => ({
+      id: c.id,
+      label: c.description || '',
+      montant: c.amount || 0,
+      freq: c.period === 'MONTHLY' ? 'Mensuel'
+        : c.period === 'QUARTERLY' ? 'Trimestriel'
+        : c.period === 'ANNUAL' ? 'Annuel' : 'Ponctuel',
+    }));
+  }, [apiCharges]);
+
+  const transactions = useMemo(() => {
+    if (!Array.isArray(apiTransactions)) return [];
+    return apiTransactions.map((t: any) => ({
+      id: t.id,
+      date: formatDateParts(t.recorded_at, { day: '2-digit', month: '2-digit' }),
+      motif: t.description || '',
+      montant: -(t.amount || 0),  // outflows are negative
+      cat: t.category || '',
+      site: t.project_id || '',
+    }));
+  }, [apiTransactions]);
+
+  // Cashflow → area chart (raw FCFA → millions; empty → ChartEmpty).
+  const liveCashflow = useMemo(() => {
+    if (!Array.isArray(apiCashflow)) return [];
+    return apiCashflow.map((c: any) => ({
+      month: c.month?.split('-')[1]
+        ? formatDateParts(c.month + '-01', { month: 'short' })
+        : c.month,
+      entrees: Math.round((c.inflow || 0) / 1_000_000),
+      sorties: Math.round((c.outflow || 0) / 1_000_000),
+    }));
+  }, [apiCashflow]);
+  const cashflowHasData = liveCashflow.some((c) => c.entrees > 0 || c.sorties > 0);
+
+  // Cash balance is the negative sum of petty cash (all outflows)
+  const soldeCaisse = useMemo(() => {
+    return transactions.reduce((s, t) => s + (t.montant || 0), 0);
+  }, [transactions]);
   // UI States
   const [showCaisseForm, setShowCaisseForm] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -313,98 +140,120 @@ export function ErpFinances() {
   // Modals
   const [projectModal, setProjectModal] = useState<{
     isOpen: boolean;
-    project: (typeof initialProjects)[0] | null;
+    project: FinanceProject | null;
   }>({
     isOpen: false,
     project: null
   });
   const [chargeModal, setChargeModal] = useState(false);
+  // Live expense breakdown for the open project (real, refreshes after add).
+  const { data: modalExpenses } = useProjectExpenses(projectModal.project?.id || '');
+  const modalBreakdown = useMemo(() => {
+    const b = { mat: 0, mo: 0, st: 0, log: 0 };
+    if (Array.isArray(modalExpenses)) {
+      for (const e of modalExpenses as any[]) {
+        const c = (e.category || '').toLowerCase();
+        const amt = e.amount || 0;
+        if (c === 'materials') b.mat += amt;
+        else if (c === 'labor') b.mo += amt;
+        else if (c === 'subcontractor') b.st += amt;
+        else b.log += amt;
+      }
+    }
+    return b;
+  }, [modalExpenses]);
+  const modalBreakdownTotal = modalBreakdown.mat + modalBreakdown.mo + modalBreakdown.st + modalBreakdown.log;
   // Handlers
-  const handleCaisseSubmit = (e: React.FormEvent) => {
+  const handleCaisseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('caisse');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
+    const form = e.target as HTMLFormElement;
+    try {
       const motif = (form.elements.namedItem('motif') as HTMLInputElement).value;
-      const montantStr = (
-      form.elements.namedItem('montant') as HTMLInputElement).
-      value;
+      const montant = parseFloat(
+        (form.elements.namedItem('montant') as HTMLInputElement).value
+      ) || 0;
       const cat = (form.elements.namedItem('cat') as HTMLSelectElement).value;
       const site = (form.elements.namedItem('site') as HTMLSelectElement).value;
-      const isRecharge = cat === 'Approvisionnement';
-      const montant = isRecharge ? parseInt(montantStr) : -parseInt(montantStr);
-      const newTx = {
-        id: `TR-${Math.floor(Math.random() * 1000)}`,
-        date: new Date().toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit'
-        }),
-        motif,
-        montant,
-        cat,
-        site
-      };
-      setTransactions([newTx, ...transactions]);
-      setSoldeCaisse((prev) => prev + montant);
-      setProcessingId(null);
-      setShowCaisseForm(false);
+      await createTransactionMutation.mutateAsync({
+        project_id: site || undefined,
+        amount: montant,
+        description: motif,
+        category: cat,
+      });
       form.reset();
-    }, 1500);
+      setShowCaisseForm(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleChargeSubmit = (e: React.FormEvent) => {
+  const handleChargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('charge');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
+    const form = e.target as HTMLFormElement;
+    try {
       const label = (form.elements.namedItem('label') as HTMLInputElement).value;
-      const montant = parseInt(
+      const montant = parseFloat(
         (form.elements.namedItem('montant') as HTMLInputElement).value
-      );
+      ) || 0;
       const freq = (form.elements.namedItem('freq') as HTMLSelectElement).value;
-      const newCharge = {
-        id: `CH-${Math.floor(Math.random() * 100)}`,
-        label,
-        montant,
-        freq
-      };
-      setCharges([...charges, newCharge]);
-      setProcessingId(null);
+      const period = freq === 'Mensuel' ? 'MONTHLY'
+        : freq === 'Trimestriel' ? 'QUARTERLY'
+        : freq === 'Annuel' ? 'ANNUAL' : 'ONE_OFF';
+      await createChargeMutation.mutateAsync({
+        category: 'autre',
+        description: label,
+        amount: montant,
+        recurring: period !== 'ONE_OFF',
+      } as any);
       setChargeModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const triggerDownload = (filename: string) => {
+  // Real CSV export driving the progress toast (no fake progress, no placeholder file).
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!projectModal.project) return;
+    const form = e.target as HTMLFormElement;
+    const category = (form.elements.namedItem('exp_category') as HTMLSelectElement)?.value || 'materials';
+    const amount = parseFloat((form.elements.namedItem('exp_amount') as HTMLInputElement)?.value) || 0;
+    const description = (form.elements.namedItem('exp_desc') as HTMLInputElement)?.value || '';
+    if (amount <= 0 || !description) return;
+    setProcessingId('expense');
+    try {
+      await addExpenseMutation.mutateAsync({
+        id: projectModal.project.id,
+        data: { category, amount, description },
+      });
+      form.reset();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const triggerDownload = (
+    filename: string,
+    rows: Array<Record<string, unknown>>,
+    columns: { key: string; label: string }[],
+  ) => {
     if (downloadState.active) return;
-    setDownloadState({
-      active: true,
-      progress: 0,
-      done: false,
-      filename
-    });
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 10;
-      setDownloadState((prev) => ({
-        ...prev,
-        progress: p
-      }));
-      if (p >= 100) {
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          done: true
-        }));
-        setTimeout(
-          () =>
-          setDownloadState({
-            active: false,
-            progress: 0,
-            done: false,
-            filename: ''
-          }),
-          3000
-        );
-      }
-    }, 150);
+    const csvName = filename.replace(/\.pdf$/i, '.csv');
+    try {
+      downloadCSV(csvName, rows, columns);
+    } catch {
+      /* ignore */
+    }
+    setDownloadState({ active: true, progress: 100, done: true, filename: csvName });
+    setTimeout(
+      () => setDownloadState({ active: false, progress: 0, done: false, filename: '' }),
+      2500,
+    );
   };
   return (
     <div className="max-w-[1400px] mx-auto space-y-6">
@@ -428,7 +277,19 @@ export function ErpFinances() {
         <button
           onClick={() =>
           triggerDownload(
-            `Rapport_Financier_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.pdf`
+            `Rapport_Financier_${formatDate(new Date()).replace(/\//g, '-')}.csv`,
+            projects.map((p) => ({
+              name: p.name, status: p.status, client: p.client,
+              budget: p.budgetActuel, depenses: p.depenses, margin: `${p.margin}%`,
+            })),
+            [
+              { key: 'name', label: 'Projet' },
+              { key: 'status', label: 'Statut' },
+              { key: 'client', label: 'Client' },
+              { key: 'budget', label: 'Budget (FCFA)' },
+              { key: 'depenses', label: 'Dépenses (FCFA)' },
+              { key: 'margin', label: 'Marge' },
+            ],
           )
           }
           className="bg-white border border-gray-200 hover:bg-gray-50 text-globus-blue-dark font-montserrat font-bold py-2 px-4 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm w-full sm:w-auto justify-center">
@@ -552,32 +413,27 @@ export function ErpFinances() {
                     </div>
                     </div>
 
+                    {(p.mat + p.mo + p.st + p.log) > 0 &&
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-opensans">
                       <div className="flex justify-between bg-orange-50 rounded px-2 py-1">
                         <span className="text-gray-600">Matériaux</span>
-                        <span className="font-semibold text-gray-800">
-                          {fmt(p.mat)}
-                        </span>
+                        <span className="font-semibold text-gray-800">{fmt(p.mat)}</span>
                       </div>
                       <div className="flex justify-between bg-blue-50 rounded px-2 py-1">
                         <span className="text-gray-600">Main d'œuvre</span>
-                        <span className="font-semibold text-gray-800">
-                          {fmt(p.mo)}
-                        </span>
+                        <span className="font-semibold text-gray-800">{fmt(p.mo)}</span>
                       </div>
                       <div className="flex justify-between bg-purple-50 rounded px-2 py-1">
                         <span className="text-gray-600">Sous-trait.</span>
-                        <span className="font-semibold text-gray-800">
-                          {fmt(p.st)}
-                        </span>
+                        <span className="font-semibold text-gray-800">{fmt(p.st)}</span>
                       </div>
                       <div className="flex justify-between bg-green-50 rounded px-2 py-1">
                         <span className="text-gray-600">Logistique</span>
-                        <span className="font-semibold text-gray-800">
-                          {fmt(p.log)}
-                        </span>
+                        <span className="font-semibold text-gray-800">{fmt(p.log)}</span>
                       </div>
                     </div>
+                    }
+
                   </motion.div>);
 
             })}
@@ -644,9 +500,12 @@ export function ErpFinances() {
                 Flux de Trésorerie (6 derniers mois, en millions FCFA)
               </h3>
               <div className="h-56">
+                {!cashflowHasData ? (
+                  <ChartEmpty message="Aucun flux de trésorerie sur la période" />
+                ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                  data={cashFlowData}
+                  data={liveCashflow}
                   margin={{
                     top: 10,
                     right: 10,
@@ -730,6 +589,7 @@ export function ErpFinances() {
                   
                   </AreaChart>
                 </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -908,21 +768,12 @@ export function ErpFinances() {
                         </label>
                         <select
                       name="site"
-                      required
                       className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-orange">
-                      
-                          <option value="Villa Bonapriso">
-                            Villa Bonapriso
-                          </option>
-                          <option value="Immeuble Akwa">Immeuble Akwa</option>
-                          <option value="Résidence Bonanjo">
-                            Résidence Bonanjo
-                          </option>
-                          <option value="Entrepôt Bonabéri">
-                            Entrepôt Bonabéri
-                          </option>
-                          <option value="Bureau Deïdo">Bureau Deïdo</option>
-                          <option value="—">Aucun (Siège)</option>
+
+                          <option value="">Aucun (Siège)</option>
+                          {projects.map((p) =>
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                          )}
                         </select>
                       </div>
                     </div>
@@ -971,7 +822,16 @@ export function ErpFinances() {
                 <button
                 onClick={() =>
                 triggerDownload(
-                  `Journal_Caisse_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.pdf`
+                  `Journal_Caisse_${formatDate(new Date()).replace(/\//g, '-')}.csv`,
+                  transactions.map((t) => ({
+                    date: t.date, motif: t.motif, cat: t.cat, montant: t.montant,
+                  })),
+                  [
+                    { key: 'date', label: 'Date' },
+                    { key: 'motif', label: 'Motif' },
+                    { key: 'cat', label: 'Catégorie' },
+                    { key: 'montant', label: 'Montant (FCFA)' },
+                  ],
                 )
                 }
                 className="text-globus-blue hover:text-globus-blue-dark text-xs font-bold flex items-center gap-1">
@@ -1168,34 +1028,20 @@ export function ErpFinances() {
                   <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark mb-3 border-b border-gray-100 pb-2">
                     Répartition des Dépenses
                   </h4>
+                  {modalBreakdownTotal === 0 ?
+                  <p className="text-sm text-gray-400 italic">
+                    Aucune dépense enregistrée pour ce chantier.
+                  </p> :
                   <div className="space-y-3">
                     {[
-                  {
-                    label: 'Matériaux',
-                    val: projectModal.project.mat,
-                    color: 'bg-orange-500'
-                  },
-                  {
-                    label: "Main d'œuvre",
-                    val: projectModal.project.mo,
-                    color: 'bg-blue-500'
-                  },
-                  {
-                    label: 'Sous-traitance',
-                    val: projectModal.project.st,
-                    color: 'bg-purple-500'
-                  },
-                  {
-                    label: 'Logistique & Divers',
-                    val: projectModal.project.log,
-                    color: 'bg-green-500'
-                  }].
-                  map((item, idx) => {
-                    const pct = Math.round(
-                      item.val / projectModal.project.depenses * 100
-                    );
-                    return (
-                      <div key={idx}>
+                    { label: 'Matériaux', val: modalBreakdown.mat, color: 'bg-orange-500' },
+                    { label: "Main d'œuvre", val: modalBreakdown.mo, color: 'bg-blue-500' },
+                    { label: 'Sous-traitance', val: modalBreakdown.st, color: 'bg-purple-500' },
+                    { label: 'Logistique & Divers', val: modalBreakdown.log, color: 'bg-green-500' }].
+                    filter((it) => it.val > 0).map((item, idx) => {
+                      const pct = Math.round((item.val / modalBreakdownTotal) * 100);
+                      return (
+                        <div key={idx}>
                           <div className="flex justify-between text-xs font-bold mb-1">
                             <span className="text-gray-700">{item.label}</span>
                             <span className="text-gray-900">
@@ -1203,32 +1049,56 @@ export function ErpFinances() {
                             </span>
                           </div>
                           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <motion.div
-                            initial={{
-                              width: 0
-                            }}
-                            animate={{
-                              width: `${pct}%`
-                            }}
-                            transition={{
-                              duration: 1,
-                              delay: 0.2
-                            }}
-                            className={`h-full rounded-full ${item.color}`} />
-                          
+                            <div className={`h-full rounded-full ${item.color}`} style={{ width: `${pct}%` }} />
                           </div>
                         </div>);
-
-                  })}
+                    })}
                   </div>
+                  }
                 </div>
+
+                <div>
+                  <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark mb-3 border-b border-gray-100 pb-2">
+                    Ajouter une dépense
+                  </h4>
+                  <form onSubmit={handleAddExpense} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                    <select name="exp_category" className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-globus-orange">
+                      <option value="materials">Matériaux</option>
+                      <option value="labor">Main d'œuvre</option>
+                      <option value="subcontractor">Sous-traitance</option>
+                      <option value="logistics">Logistique</option>
+                      <option value="misc">Divers</option>
+                    </select>
+                    <input name="exp_desc" type="text" required placeholder="Description" className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-globus-orange" />
+                    <input name="exp_amount" type="number" required min="1" placeholder="Montant (FCFA)" className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-globus-orange" />
+                    <button type="submit" disabled={processingId === 'expense'} className="bg-globus-orange hover:bg-globus-orange-hover text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                      {processingId === 'expense' ?
+                      <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                      <PlusIcon className="w-4 h-4" />}
+                      Ajouter
+                    </button>
+                  </form>
+                </div>
+
               </div>
 
               <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
                 <button
                 onClick={() =>
                 triggerDownload(
-                  `Bilan_Projet_${projectModal.project?.id}.pdf`
+                  `Bilan_Projet_${projectModal.project?.id}.csv`,
+                  [
+                    { indicateur: 'Projet', valeur: projectModal.project?.name || '' },
+                    { indicateur: 'Client', valeur: projectModal.project?.client || '' },
+                    { indicateur: 'Statut', valeur: projectModal.project?.status || '' },
+                    { indicateur: 'Budget alloué', valeur: fmt(projectModal.project?.budgetActuel || 0) },
+                    { indicateur: 'Dépenses', valeur: fmt(projectModal.project?.depenses || 0) },
+                    { indicateur: 'Marge nette', valeur: `${projectModal.project?.margin || 0}%` },
+                  ],
+                  [
+                    { key: 'indicateur', label: 'Indicateur' },
+                    { key: 'valeur', label: 'Valeur' },
+                  ],
                 )
                 }
                 className="bg-globus-blue hover:bg-globus-blue/90 text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-sm">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   StarIcon,
@@ -31,7 +31,7 @@ export function TestimonialsSection() {
     const timer = setInterval(next, 5000);
     return () => clearInterval(timer);
   }, [testimonials]);
-  if (isLoading || !testimonials) {
+  if (isLoading) {
     return (
       <section className="py-16 md:py-24 bg-globus-blue-dark relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
@@ -40,6 +40,8 @@ export function TestimonialsSection() {
       </section>);
 
   }
+  // No testimonials configured → hide the section entirely (no broken carousel).
+  if (!testimonials || testimonials.length === 0) return null;
   return (
     <section className="py-16 md:py-24 bg-globus-blue-dark relative overflow-hidden">
       {/* Background pattern */}

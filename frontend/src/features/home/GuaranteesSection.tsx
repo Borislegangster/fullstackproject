@@ -1,11 +1,4 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  ShieldCheckIcon,
-  AwardIcon,
-  WrenchIcon,
-  HardHatIcon } from
-'lucide-react';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getGuarantees } from '../../services/api/cms.api';
 import { getIcon } from '../../utils/iconRegistry';

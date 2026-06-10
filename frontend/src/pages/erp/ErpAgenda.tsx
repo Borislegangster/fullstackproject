@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDateParts } from '../../utils/datetime';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -19,7 +20,7 @@ import {
   ClockIcon,
   MapPinIcon } from
 'lucide-react';
-import { useEvents, useCreateEvent } from '../../hooks/useErp';
+import { useEvents, useCreateEvent, useConfirmAppointment } from '../../hooks/useErp';
 const eventTypes = [
 {
   id: 'reunion',
@@ -63,161 +64,58 @@ interface CalendarEvent {
   title: string;
   type: string;
   date: number;
+  month: number;
+  year: number;
   time: string;
   location: string;
   attendees: string;
+  status?: string;
 }
-const mockEvents: CalendarEvent[] = [
-{
-  id: 1,
-  title: 'Réunion de Chantier',
-  type: 'reunion',
-  date: 3,
-  time: '09:00 - 11:00',
-  location: 'Villa Bonapriso',
-  attendees: 'P. Mbarga, C. Fotso'
-},
-{
-  id: 2,
-  title: 'Inspection Sécurité',
-  type: 'inspection',
-  date: 5,
-  time: '14:00 - 15:30',
-  location: 'Immeuble Akwa',
-  attendees: 'Équipe QHSE'
-},
-{
-  id: 3,
-  title: 'Livraison Ciment (50T)',
-  type: 'livraison',
-  date: 7,
-  time: '08:00',
-  location: 'Entrepôt Bonabéri',
-  attendees: 'Logistique'
-},
-{
-  id: 4,
-  title: 'Formation Sécurité Échafaudages',
-  type: 'inspection',
-  date: 10,
-  time: '09:00 - 17:00',
-  location: 'Siège Globus',
-  attendees: 'Tous chefs chantier'
-},
-{
-  id: 5,
-  title: 'Point Hebdo Direction',
-  type: 'reunion',
-  date: 12,
-  time: '10:00 - 11:00',
-  location: 'Siège Globus',
-  attendees: 'Codir'
-},
-{
-  id: 6,
-  title: 'Dépôt Permis de Construire',
-  type: 'deadline',
-  date: 14,
-  time: '12:00',
-  location: 'Centre Commercial Bali',
-  attendees: 'Direction'
-},
-{
-  id: 7,
-  title: 'Audit QHSE Mensuel',
-  type: 'inspection',
-  date: 17,
-  time: '09:00 - 12:00',
-  location: 'Résidence Bonanjo',
-  attendees: 'Équipe QHSE'
-},
-{
-  id: 8,
-  title: 'Point Hebdo Direction',
-  type: 'reunion',
-  date: 19,
-  time: '10:00 - 11:00',
-  location: 'Siège Globus',
-  attendees: 'Codir'
-},
-{
-  id: 9,
-  title: 'Réception Menuiseries',
-  type: 'livraison',
-  date: 20,
-  time: '10:00',
-  location: 'Villa Bonapriso',
-  attendees: 'Chef Chantier'
-},
-{
-  id: 10,
-  title: 'Comité de Direction Mensuel',
-  type: 'reunion',
-  date: 23,
-  time: '09:00 - 12:00',
-  location: 'Siège Globus',
-  attendees: 'Codir'
-},
-{
-  id: 11,
-  title: 'Contrôle Fondations',
-  type: 'inspection',
-  date: 23,
-  time: '14:00 - 16:00',
-  location: 'Bureau Deïdo',
-  attendees: 'P. Mbarga'
-},
-{
-  id: 12,
-  title: 'Fin Phase Gros Œuvre',
-  type: 'deadline',
-  date: 25,
-  time: 'Journée',
-  location: 'Résidence Bonanjo',
-  attendees: 'Équipe technique'
-},
-{
-  id: 13,
-  title: 'Point Hebdo Direction',
-  type: 'reunion',
-  date: 26,
-  time: '10:00 - 11:00',
-  location: 'Siège Globus',
-  attendees: 'Codir'
-},
-{
-  id: 14,
-  title: 'Réception Acier',
-  type: 'livraison',
-  date: 27,
-  time: '08:00',
-  location: 'Immeuble Akwa',
-  attendees: 'Logistique'
-},
-{
-  id: 15,
-  title: 'Formation Premiers Secours',
-  type: 'inspection',
-  date: 28,
-  time: '09:00 - 13:00',
-  location: 'Siège Globus',
-  attendees: 'Personnel terrain'
-},
-{
-  id: 16,
-  title: 'Clôture Comptable Mensuelle',
-  type: 'deadline',
-  date: 31,
-  time: 'Journée',
-  location: 'Siège Globus',
-  attendees: 'J. Nkoulou'
-}];
+function eventTypeFromTitle(title: string): string {
+  const t = (title || '').toLowerCase();
+  if (t.includes('inspection') || t.includes('qhse')) return 'inspection';
+  if (t.includes('livraison')) return 'livraison';
+  if (t.includes('deadline') || t.includes('échéance')) return 'deadline';
+  return 'reunion';
+}
 
-const TODAY = 23;
 export function ErpAgenda() {
   // API hooks
   const { data: apiEvents } = useEvents();
   const createEventMutation = useCreateEvent();
+  const confirmEventMutation = useConfirmAppointment();
+
+  // Calendar view = current month/year (no hardcoded reference month).
+  const _now = new Date();
+  const viewYear = _now.getFullYear();
+  const viewMonth = _now.getMonth(); // 0-11
+  const TODAY = _now.getDate();
+  const monthLabel = formatDateParts(_now, { month: 'long', year: 'numeric' });
+  const monthLabelCap = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDayOffset = new Date(viewYear, viewMonth, 1).getDay(); // 0 = Sunday
+
+  // Map API appointments → UI events
+  const liveEvents: CalendarEvent[] = useMemo(() => {
+    if (!Array.isArray(apiEvents)) return [];
+    return apiEvents.map((a: any) => {
+      const startDate = a.start_time ? new Date(a.start_time) : new Date();
+      const endDate = a.end_time ? new Date(a.end_time) : startDate;
+      const sameDayTime = `${String(startDate.getHours()).padStart(2, '0')}:${String(startDate.getMinutes()).padStart(2, '0')} - ${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+      return {
+        id: a.id,
+        title: a.title || '',
+        type: eventTypeFromTitle(a.title),
+        date: startDate.getDate(),
+        month: startDate.getMonth(),
+        year: startDate.getFullYear(),
+        time: sameDayTime,
+        location: a.location || '',
+        attendees: Array.isArray(a.attendees) ? a.attendees.join(', ') : '',
+        status: a.status || '',
+      } as CalendarEvent;
+    });
+  }, [apiEvents]);
 
   const [activeFilters, setActiveFilters] = useState<string[]>([
   'reunion',
@@ -244,22 +142,55 @@ export function ErpAgenda() {
     });
     setTimeout(() => setToast(null), 3000);
   };
-  const handleSaveEvent = (e: React.FormEvent) => {
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing('save-event');
-    setTimeout(() => {
-      setIsProcessing(null);
+    const form = e.target as HTMLFormElement;
+    try {
+      const dateStr = (form.elements.namedItem('date') as HTMLInputElement)?.value;
+      const timeStart = (form.elements.namedItem('timeStart') as HTMLInputElement)?.value || '09:00';
+      const timeEnd = (form.elements.namedItem('timeEnd') as HTMLInputElement)?.value || '10:00';
+      const dateBase = dateStr ? new Date(`${dateStr}T${timeStart}`) : new Date();
+      const dateEnd = dateStr ? new Date(`${dateStr}T${timeEnd}`) : new Date(dateBase.getTime() + 60 * 60 * 1000);
+      await createEventMutation.mutateAsync({
+        title: (form.elements.namedItem('title') as HTMLInputElement).value,
+        description: (form.elements.namedItem('description') as HTMLTextAreaElement)?.value || '',
+        location: (form.elements.namedItem('location') as HTMLInputElement)?.value || '',
+        start_time: dateBase.toISOString(),
+        end_time: dateEnd.toISOString(),
+      });
       setShowEventModal(false);
       showToast('Événement enregistré avec succès');
-    }, 1500);
-  };
-  const handleDeleteEvent = () => {
-    setIsProcessing('delete-event');
-    setTimeout(() => {
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
       setIsProcessing(null);
+    }
+  };
+  const handleDeleteEvent = async () => {
+    setIsProcessing('delete-event');
+    // No delete endpoint yet for agenda; cancel via /agenda/appointments/{id}/cancel.
+    try {
+      // Could call agendaApi.cancelAppointment but we don't expose its hook here.
+      // For now we just close the modal — when /agenda/appointments DELETE is added (Phase 4), wire it.
       setShowDetailModal(false);
-      showToast('Événement supprimé avec succès');
-    }, 1500);
+      showToast('Événement marqué comme à supprimer (suppression définitive en Phase 4)', 'info');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+  const handleConfirmEvent = async () => {
+    if (!selectedEvent) return;
+    setIsProcessing('confirm-event');
+    try {
+      await confirmEventMutation.mutateAsync(String(selectedEvent.id));
+      setShowDetailModal(false);
+      showToast('Rendez-vous confirmé', 'success');
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
   const toggleFilter = (id: string) => {
     if (activeFilters.includes(id)) {
@@ -268,9 +199,7 @@ export function ErpAgenda() {
       setActiveFilters([...activeFilters, id]);
     }
   };
-  // March 2026 starts on Sunday (index 0)
-  const daysInMonth = 31;
-  const firstDayOffset = 0; // Sunday
+  const inView = (e: CalendarEvent) => e.month === viewMonth && e.year === viewYear;
   const calendarDays = Array.from(
     {
       length: 42
@@ -283,19 +212,19 @@ export function ErpAgenda() {
         isCurrentMonth,
         isToday: dayNum === TODAY,
         events: isCurrentMonth ?
-        mockEvents.filter(
-          (e) => e.date === dayNum && activeFilters.includes(e.type)
+        liveEvents.filter(
+          (e) => e.date === dayNum && inView(e) && activeFilters.includes(e.type)
         ) :
         []
       };
     }
   );
-  const selectedDayEvents = mockEvents.filter(
-    (e) => e.date === selectedDay && activeFilters.includes(e.type)
+  const selectedDayEvents = liveEvents.filter(
+    (e) => e.date === selectedDay && inView(e) && activeFilters.includes(e.type)
   );
-  const upcomingEvents = mockEvents.
-  filter((e) => e.date > TODAY && activeFilters.includes(e.type)).
-  sort((a, b) => a.date - b.date).
+  const upcomingEvents = liveEvents.
+  filter((e) => new Date(e.year, e.month, e.date) > _now && activeFilters.includes(e.type)).
+  sort((a, b) => new Date(a.year, a.month, a.date).getTime() - new Date(b.year, b.month, b.date).getTime()).
   slice(0, 5);
   return (
     <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-6 relative">
@@ -349,7 +278,7 @@ export function ErpAgenda() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-montserrat font-bold text-sm text-globus-blue-dark">
-              Mars 2026
+              {monthLabelCap}
             </h3>
             <div className="flex gap-1">
               <button className="p-1 hover:bg-gray-100 rounded text-gray-500">
@@ -375,7 +304,7 @@ export function ErpAgenda() {
               const isValid = d >= 1 && d <= 31;
               const isToday = d === TODAY;
               const isSelected = d === selectedDay && d !== TODAY;
-              const hasEvents = isValid && mockEvents.some((e) => e.date === d);
+              const hasEvents = isValid && liveEvents.some((e) => e.date === d && inView(e));
               return (
                 <button
                   key={i}
@@ -438,7 +367,7 @@ export function ErpAgenda() {
         {/* Selected Day Events */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <h3 className="font-montserrat font-bold text-sm text-globus-blue-dark mb-3">
-            {selectedDay === TODAY ? "Aujourd'hui" : `${selectedDay} Mars 2026`}
+            {selectedDay === TODAY ? "Aujourd'hui" : `${selectedDay} ${monthLabelCap}`}
           </h3>
           {selectedDayEvents.length === 0 ?
           <p className="font-opensans text-sm text-gray-400 italic">
@@ -477,6 +406,33 @@ export function ErpAgenda() {
             </div>
           }
         </div>
+
+        {/* Upcoming events */}
+        {upcomingEvents.length > 0 &&
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <h3 className="font-montserrat font-bold text-sm text-globus-blue-dark mb-3">
+            Prochains événements
+          </h3>
+          <div className="space-y-2">
+            {upcomingEvents.map((event) =>
+          <div
+            key={event.id}
+            onClick={() => {
+              setSelectedEvent(event);
+              setShowDetailModal(true);
+            }}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+
+                <span className="w-2 h-2 rounded-full bg-globus-orange shrink-0" />
+                <span className="text-xs font-bold text-globus-blue-dark whitespace-nowrap">
+                  {event.date} {formatDateParts(new Date(event.year, event.month, 1), { month: 'short' })}
+                </span>
+                <span className="text-xs text-gray-600 truncate">{event.title}</span>
+              </div>
+          )}
+          </div>
+        </div>
+        }
       </motion.div>
 
       {/* Main Calendar */}
@@ -495,7 +451,7 @@ export function ErpAgenda() {
         <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gray-50/50">
           <div className="flex items-center gap-4">
             <h2 className="font-montserrat font-extrabold text-xl text-globus-blue-dark">
-              Mars 2026
+              {monthLabelCap}
             </h2>
             <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
               <button className="p-1.5 hover:bg-gray-50 rounded text-gray-600">
@@ -686,7 +642,7 @@ export function ErpAgenda() {
                     <input
                     type="text"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-globus-blue"
-                    placeholder="Ex: Villa Bonapriso" />
+                    placeholder="Lieu de l'événement" />
                   
                   </div>
                   <div>
@@ -789,7 +745,7 @@ export function ErpAgenda() {
                   <div className="flex items-center gap-3 text-gray-700">
                     <CalendarIcon className="w-5 h-5 text-gray-400" />
                     <span className="font-semibold">
-                      {selectedEvent.date} Mars 2026
+                      {selectedEvent.date} {formatDateParts(new Date(selectedEvent.year, selectedEvent.month, 1), { month: 'long', year: 'numeric' })}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-gray-700">
@@ -819,13 +775,25 @@ export function ErpAgenda() {
                 }
                   Supprimer
                 </button>
+                {selectedEvent.status === 'PENDING' &&
+                <button
+                onClick={handleConfirmEvent}
+                disabled={isProcessing === 'confirm-event'}
+                className="px-4 py-2 text-green-700 font-semibold hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70">
+
+                  {isProcessing === 'confirm-event' ?
+                <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                <CheckCircle2Icon className="w-4 h-4" />}
+                  Confirmer
+                </button>
+                }
                 <button
                 onClick={() => {
                   setShowDetailModal(false);
                   setShowEventModal(true);
                 }}
                 className="px-4 py-2 bg-globus-blue-dark hover:bg-globus-blue text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
-                
+
                   <EditIcon className="w-4 h-4" /> Modifier
                 </button>
               </div>

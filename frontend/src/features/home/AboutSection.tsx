@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircleIcon } from 'lucide-react';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
@@ -18,9 +18,9 @@ export function AboutSection() {
     }, 6000);
     return () => clearTimeout(timer);
   }, []);
-  // Auto-advance carousel
+  // Auto-advance carousel — guard against an empty images array (modulo 0 = NaN).
   useEffect(() => {
-    if (isVideoPhase || !aboutContent) return;
+    if (isVideoPhase || !aboutContent || !aboutContent.images?.length) return;
     const interval = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % aboutContent.images.length);
     }, 4000);

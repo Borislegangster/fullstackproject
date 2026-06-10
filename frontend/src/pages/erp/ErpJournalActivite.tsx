@@ -1,121 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ActivityIcon,
-  SearchIcon,
-  FilterIcon,
-  UserIcon,
-  FileTextIcon,
-  WalletIcon,
-  HardHatIcon,
-  ShieldAlertIcon,
-  LogOutIcon,
-  LogInIcon,
-  SettingsIcon,
-  DownloadIcon,
-  CalendarIcon,
-  Loader2Icon,
-  XIcon,
-  CheckCircle2Icon } from
-'lucide-react';
+import { ActivityIcon, SearchIcon, FilterIcon, UserIcon, FileTextIcon, WalletIcon, HardHatIcon, ShieldAlertIcon, LogInIcon, SettingsIcon, DownloadIcon, CalendarIcon, Loader2Icon, XIcon, CheckCircle2Icon } from 'lucide-react';
 import { useActivityLogs } from '../../hooks/useErp';
-const activityLog = [
-{
-  id: 1,
-  user: 'Admin Globus',
-  role: 'Administrateur',
-  action: 'Connexion réussie',
-  module: 'Auth',
-  details: 'IP: 192.168.1.45',
-  time: "Aujourd'hui 08:30",
-  icon: LogInIcon,
-  color: 'text-green-600',
-  bg: 'bg-green-100'
-},
-{
-  id: 2,
-  user: 'Paul Mbarga',
-  role: 'Chef de Projet',
-  action: 'Upload document',
-  module: 'GED',
-  details: 'Plan_RDC_V3.pdf ajouté au projet Villa Bonapriso',
-  time: "Aujourd'hui 09:15",
-  icon: FileTextIcon,
-  color: 'text-blue-600',
-  bg: 'bg-blue-100'
-},
-{
-  id: 3,
-  user: 'Claire Fotso',
-  role: 'Architecte',
-  action: 'Modification statut',
-  module: 'Chantiers',
-  details: 'Étape "Fondations" marquée comme terminée (Immeuble Akwa)',
-  time: "Aujourd'hui 10:05",
-  icon: HardHatIcon,
-  color: 'text-globus-orange',
-  bg: 'bg-globus-orange/10'
-},
-{
-  id: 4,
-  user: 'Admin Globus',
-  role: 'Administrateur',
-  action: 'Génération facture',
-  module: 'Finances',
-  details: 'Facture FAC-2024-005 générée pour Mme Ngo Bassa',
-  time: "Aujourd'hui 11:20",
-  icon: WalletIcon,
-  color: 'text-purple-600',
-  bg: 'bg-purple-100'
-},
-{
-  id: 5,
-  user: 'Système',
-  role: 'Automatique',
-  action: 'Alerte sécurité',
-  module: 'Sécurité',
-  details: '3 tentatives de connexion échouées (IP: 45.33.22.11)',
-  time: "Aujourd'hui 12:45",
-  icon: ShieldAlertIcon,
-  color: 'text-red-600',
-  bg: 'bg-red-100'
-},
-{
-  id: 6,
-  user: 'Jean Talla',
-  role: 'Client',
-  action: 'Paiement reçu',
-  module: 'Portail Client',
-  details: 'Paiement en ligne de 12 750 000 FCFA (Appel de fonds #3)',
-  time: 'Hier 15:30',
-  icon: WalletIcon,
-  color: 'text-green-600',
-  bg: 'bg-green-100'
-},
-{
-  id: 7,
-  user: 'Admin Globus',
-  role: 'Administrateur',
-  action: 'Modification paramètres',
-  module: 'Configuration',
-  details: 'Mise à jour des permissions du rôle "Chef de Projet"',
-  time: 'Hier 16:45',
-  icon: SettingsIcon,
-  color: 'text-gray-600',
-  bg: 'bg-gray-100'
-},
-{
-  id: 8,
-  user: 'Paul Mbarga',
-  role: 'Chef de Projet',
-  action: 'Déconnexion',
-  module: 'Auth',
-  details: 'Fin de session',
-  time: 'Hier 18:00',
-  icon: LogOutIcon,
-  color: 'text-gray-500',
-  bg: 'bg-gray-100'
-}];
+import { downloadCSV } from '../../utils/download';
+import { formatDateTime } from '../../utils/datetime';
 
 // Helper functions to map API data to UI
 function getIconForModule(module: string) {
@@ -177,23 +65,23 @@ export function ErpJournalActivite() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
-  // Map API logs or use fallback mock data
+  // Map API logs (no static fallback — empty state if API returns nothing)
   const displayLogs = useMemo(() => {
-    if (apiLogs && Array.isArray(apiLogs) && apiLogs.length > 0) {
-      return apiLogs.map((log: any, i: number) => ({
-        id: log.id || i + 1,
-        user: log.user_name || log.user_email || 'Système',
-        role: log.user_role || 'Automatique',
-        action: log.action || 'Action',
-        module: log.entity_type || 'Système',
-        details: log.details || log.description || '',
-        time: log.created_at ? new Date(log.created_at).toLocaleString('fr-FR') : '',
-        icon: getIconForModule(log.entity_type || ''),
-        color: getColorForAction(log.action || ''),
-        bg: getBgForAction(log.action || ''),
-      }));
-    }
-    return activityLog;
+    const arr = Array.isArray(apiLogs) ? apiLogs : [];
+    return arr.map((log: any, i: number) => ({
+      id: log.id || i + 1,
+      user: log.user_name || log.actor_id || 'Système',
+      role: log.user_role || 'Automatique',
+      action: log.action || 'Action',
+      module: log.entity_type || 'Système',
+      details: log.description || (log.new_value ? JSON.stringify(log.new_value) : ''),
+      time: formatDateTime(log.created_at),
+      ip: log.ip_address || '',
+      userAgent: log.user_agent || '',
+      icon: getIconForModule(log.entity_type || ''),
+      color: getColorForAction(log.action || ''),
+      bg: getBgForAction(log.action || ''),
+    }));
   }, [apiLogs]);
   const showToast = (
   message: string,
@@ -206,11 +94,30 @@ export function ErpJournalActivite() {
     setTimeout(() => setToast(null), 3000);
   };
   const handleExport = () => {
+    if (filteredLogs.length === 0) {
+      showToast('Aucune entrée à exporter', 'info');
+      return;
+    }
     setIsProcessing('export');
-    setTimeout(() => {
-      setIsProcessing(null);
+    try {
+      downloadCSV(
+        `journal-activite-${new Date().toISOString().slice(0, 10)}.csv`,
+        filteredLogs,
+        [
+          { key: 'time', label: 'Date' },
+          { key: 'user', label: 'Utilisateur' },
+          { key: 'role', label: 'Rôle' },
+          { key: 'module', label: 'Module' },
+          { key: 'action', label: 'Action' },
+          { key: 'details', label: 'Détails' },
+        ],
+      );
       showToast('Journal exporté avec succès');
-    }, 2000);
+    } catch {
+      showToast("Échec de l'export", 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
   const filteredLogs = displayLogs.filter((log) => {
     const matchesSearch =
@@ -541,13 +448,13 @@ export function ErpJournalActivite() {
                       Informations Techniques
                     </p>
                     <div className="bg-gray-50 p-3 rounded-lg mt-1 font-mono text-xs text-gray-600">
-                      <p>
-                        ID: LOG-{selectedLog.id.toString().padStart(6, '0')}
-                      </p>
-                      <p>IP: 192.168.1.{Math.floor(Math.random() * 255)}</p>
-                      <p>
-                        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
-                      </p>
+                      <p>ID: {selectedLog.id}</p>
+                      {selectedLog.ip &&
+                      <p>IP: {selectedLog.ip}</p>
+                      }
+                      {selectedLog.userAgent &&
+                      <p className="break-all">User-Agent: {selectedLog.userAgent}</p>
+                      }
                     </div>
                   </div>
                 </div>

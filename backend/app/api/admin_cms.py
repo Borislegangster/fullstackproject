@@ -1,6 +1,12 @@
 """Admin CMS CRUD routes — All protected by require_admin."""
+import csv
+import io
+import json
 import uuid
+import zipfile
+from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +18,10 @@ from app.models.cms import (
     CMSStat, CMSService, CMSProject, CMSGuarantee, CMSTeamMember,
     CMSPartner, CMSTestimonial, CMSFaqCategory, CMSFaqItem,
     CMSBlogPost, CMSLegalPage, CMSSiteSettings, ContactSubmission,
+)
+from app.models.erp import (
+    Project, Invoice, Payment, Lead, Employee, StockItem,
+    Equipment, SubContractor, SAVTicket, PurchaseOrder,
 )
 from app.schemas.admin_cms import (
     FormResponse, BlogPostIn, BlogPostUpdate, ProjectIn, ProjectUpdate, ServiceIn, ServiceUpdate,
@@ -27,7 +37,7 @@ _id = lambda: str(uuid.uuid4())
 
 # ── Generic CRUD helper ──────────────────────────────────────
 async def _create(db, model, data, extra=None):
-    fields = data.dict()
+    fields = data.model_dump()
     if extra:
         fields.update(extra)
     obj = model(id=_id(), **fields)
@@ -37,7 +47,7 @@ async def _update(db, model, item_id, data):
     r = await db.execute(select(model).where(model.id == item_id))
     obj = r.scalars().first()
     if not obj: raise HTTPException(404, "Element non trouve")
-    for k, v in data.dict(exclude_unset=True).items():
+    for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(obj, k, v)
     await db.commit(); await db.refresh(obj); return obj
 
@@ -355,10 +365,76 @@ async def update_settings(data: SiteSettingsIn, db: AsyncSession = Depends(get_d
     r = await db.execute(select(CMSSiteSettings).limit(1))
     settings = r.scalars().first()
     if not settings: raise HTTPException(404, "Settings non trouves")
-    for k, v in data.dict(exclude_unset=True).items():
+    for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(settings, k, v)
     await db.commit()
     return FormResponse(success=True, message="Parametres mis a jour")
+
+# ══════════════════════════════════════════════════════════════
+# EXPORT — archive ZIP de toutes les données métier (un CSV / table)
+# ══════════════════════════════════════════════════════════════
+_EXPORT_SENSITIVE = (
+    "password", "hashed", "token", "secret", "otp", "2fa", "recovery", "salt",
+)
+
+
+def _csv_value(v):
+    if v is None:
+        return ""
+    if isinstance(v, (datetime, date)):
+        return v.isoformat()
+    if isinstance(v, (dict, list)):
+        return json.dumps(v, ensure_ascii=False)
+    return str(v)
+
+
+async def _model_to_csv(db, model) -> str:
+    """Sérialise toutes les lignes d'un modèle en CSV (colonnes sensibles exclues)."""
+    cols = [
+        c.name for c in model.__table__.columns
+        if not any(s in c.name.lower() for s in _EXPORT_SENSITIVE)
+    ]
+    rows = (await db.execute(select(model))).scalars().all()
+    buf = io.StringIO()
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow(cols)
+    for row in rows:
+        writer.writerow([_csv_value(getattr(row, c, None)) for c in cols])
+    return buf.getvalue()
+
+
+@router.get("/export")
+async def export_data(db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
+    """Archive ZIP de l'ensemble des données métier (un CSV par table).
+    Les colonnes sensibles (mots de passe, jetons, secrets) sont exclues."""
+    tables = {
+        "utilisateurs": User,
+        "projets": Project,
+        "factures": Invoice,
+        "paiements": Payment,
+        "devis_prospects": Lead,
+        "employes": Employee,
+        "stock": StockItem,
+        "materiel": Equipment,
+        "sous_traitants": SubContractor,
+        "tickets_sav": SAVTicket,
+        "bons_commande": PurchaseOrder,
+    }
+    zip_buf = io.BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for sheet, model in tables.items():
+            try:
+                content = await _model_to_csv(db, model)
+            except Exception:
+                content = ""
+            # BOM UTF-8 pour qu'Excel affiche correctement les accents
+            zf.writestr(f"{sheet}.csv", "﻿" + content)
+    zip_buf.seek(0)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M")
+    headers = {
+        "Content-Disposition": f'attachment; filename="globus-export-{stamp}.zip"'
+    }
+    return StreamingResponse(zip_buf, media_type="application/zip", headers=headers)
 
 # ══════════════════════════════════════════════════════════════
 # ABOUT CONTENT (singleton PUT)
@@ -368,7 +444,7 @@ async def update_about(data: AboutContentIn, db: AsyncSession = Depends(get_db),
     r = await db.execute(select(CMSAboutContent).limit(1))
     about = r.scalars().first()
     if not about: raise HTTPException(404, "About non trouve")
-    for k, v in data.dict(exclude_unset=True).items():
+    for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(about, k, v)
     await db.commit()
     return FormResponse(success=True, message="Contenu About mis a jour")
@@ -381,7 +457,7 @@ async def update_legal(slug: str, data: LegalPageIn, db: AsyncSession = Depends(
     r = await db.execute(select(CMSLegalPage).where(CMSLegalPage.slug == slug))
     page = r.scalars().first()
     if not page: raise HTTPException(404, "Page legale non trouvee")
-    for k, v in data.dict(exclude_unset=True).items():
+    for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(page, k, v)
     await db.commit()
     return FormResponse(success=True, message="Page legale mise a jour")

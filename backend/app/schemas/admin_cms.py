@@ -238,6 +238,19 @@ class SiteSettingsIn(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     address: Optional[str] = None
+    rc_number: Optional[str] = None
+    tax_id: Optional[str] = None
+    vat_rate: Optional[float] = None
+    role_permissions: Optional[dict] = None
+    # Préférences ERP (paramètres système)
+    default_currency: Optional[str] = None
+    fiscal_year: Optional[str] = None
+    system_language: Optional[str] = None
+    timezone: Optional[str] = None
+    date_format: Optional[str] = None
+    session_timeout: Optional[str] = None
+    email_notifications: Optional[bool] = None
+    enforce_2fa: Optional[bool] = None
     whatsapp_url: Optional[str] = None
     social_links: Optional[Any] = None
     footer_description: Optional[str] = None

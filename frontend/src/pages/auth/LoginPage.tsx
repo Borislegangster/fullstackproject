@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { EyeIcon, EyeOffIcon, LogInIcon, AlertCircleIcon } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { TwoFactorChallengeForm } from '../../components/auth/TwoFactorChallengeForm';
 import { useAuth, getLandingPage } from '../../context/AuthContext';
 
 export function LoginPage() {
@@ -17,6 +18,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState<string | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -31,11 +33,17 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       const result = await login({ email, password });
-      if (result.forceReset) {
-        navigate('/reset-mot-de-passe', { replace: true });
-      } else {
-        navigate('/espace-client', { replace: true });
+      if (result.twoFactorRequired && result.challengeToken) {
+        setTwoFactorChallenge(result.challengeToken);
+        return;
       }
+      if (result.forceReset) {
+        // Forced first-login change → onboarding page
+        navigate('/reset-mot-de-passe?forced=true', { replace: true });
+        return;
+      }
+      // Redirect by role (CLIENT → /espace-client, STAFF → /erp)
+      navigate(getLandingPage(result.role), { replace: true });
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 429) {
@@ -57,6 +65,19 @@ export function LoginPage() {
       backTo="/"
       backLabel="Retour à l'accueil"
     >
+      {/* 2FA Challenge Screen */}
+      {twoFactorChallenge ? (
+        <TwoFactorChallengeForm
+          challengeToken={twoFactorChallenge}
+          theme="client"
+          onSuccess={(role, forceReset) => {
+            if (forceReset) navigate('/reset-mot-de-passe?forced=true', { replace: true });
+            else navigate(getLandingPage(role), { replace: true });
+          }}
+          onCancel={() => setTwoFactorChallenge(null)}
+        />
+      ) : (
+      <>
       {/* Heading */}
       <h1 className="font-montserrat font-extrabold text-2xl md:text-3xl text-globus-blue-dark mb-2">
         Bienvenue !
@@ -209,6 +230,8 @@ export function LoginPage() {
           </Link>
         </p>
       </div>
+      </>)
+      }
     </AuthLayout>
   );
 }

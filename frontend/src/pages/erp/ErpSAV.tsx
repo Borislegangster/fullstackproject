@@ -1,23 +1,7 @@
-import React, { useState, Children } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShieldCheckIcon,
-  AlertTriangleIcon,
-  CheckCircle2Icon,
-  ClockIcon,
-  SearchIcon,
-  FilterIcon,
-  MessageSquareIcon,
-  UserIcon,
-  MapPinIcon,
-  ActivityIcon,
-  ChevronDownIcon,
-  PlusIcon,
-  XIcon,
-  Loader2Icon,
-  DownloadIcon,
-  SendIcon } from
-'lucide-react';
+import { ShieldCheckIcon, AlertTriangleIcon, CheckCircle2Icon, ClockIcon, SearchIcon, MessageSquareIcon, UserIcon, MapPinIcon, ActivityIcon, ChevronDownIcon, PlusIcon, XIcon, Loader2Icon, DownloadIcon, SendIcon } from 'lucide-react';
+import { formatDate, formatDateParts } from '../../utils/datetime';
 import {
   BarChart,
   Bar,
@@ -31,7 +15,15 @@ import {
   Cell,
   Legend } from
 'recharts';
-import { useSAVTickets, useCreateSAVTicket, useAssignSAVTicket, useResolveSAVTicket } from '../../hooks/useErp';
+import { useSAVTickets, useCreateSAVTicket, useAssignSAVTicket, useResolveSAVTicket, useReplySAVTicket, useSAVByCategory, useSAVStats, useProjects, useEmployees, useUsers, useWarranties } from '../../hooks/useErp';
+import { downloadCSV } from '../../utils/download';
+import { ChartEmpty } from '../../components/ui/ChartEmpty';
+
+const SAV_CAT_COLORS = ['#3B82F6', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444', '#9CA3AF'];
+const SAV_CAT_LABELS: Record<string, string> = {
+  plomberie: 'Plomberie', electricite: 'Électricité', structure: 'Structure',
+  finitions: 'Finitions', general: 'Général',
+};
 const tabs = [
 {
   id: 'open',
@@ -49,156 +41,8 @@ const tabs = [
   icon: ActivityIcon
 }];
 
-const mockTickets = [
-{
-  id: 'SAV-001',
-  title: 'Fuite robinet cuisine',
-  category: 'Plomberie',
-  priority: 'Normal',
-  client: 'Jean Talla',
-  project: 'Villa Bonapriso',
-  status: 'Résolu',
-  date: '12/04/2025',
-  desc: "Léger goutte à goutte sous l'évier de la cuisine.",
-  assignee: 'Paul Mbarga'
-},
-{
-  id: 'SAV-002',
-  title: 'Fissure mur salon',
-  category: 'Maçonnerie',
-  priority: 'Haute',
-  client: 'Jean Talla',
-  project: 'Villa Bonapriso',
-  status: 'En cours',
-  date: '20/05/2025',
-  desc: 'Micro-fissure apparue près de la baie vitrée.',
-  assignee: 'Paul Mbarga'
-},
-{
-  id: 'SAV-003',
-  title: 'Prise électrique défectueuse',
-  category: 'Électricité',
-  priority: 'Normal',
-  client: 'Jean Talla',
-  project: 'Villa Bonapriso',
-  status: 'Ouvert',
-  date: '01/06/2025',
-  desc: 'La prise murale de la chambre 2 ne fonctionne plus.',
-  assignee: 'Non assigné'
-},
-{
-  id: 'SAV-004',
-  title: 'Infiltration toiture',
-  category: 'Étanchéité',
-  priority: 'Urgente',
-  client: 'Mme Ndiaye',
-  project: 'Résidence Bonanjo',
-  status: 'Ouvert',
-  date: '15/03/2026',
-  desc: "Infiltration d'eau constatée suite aux fortes pluies.",
-  assignee: 'Non assigné'
-},
-{
-  id: 'SAV-005',
-  title: 'Porte garage bloquée',
-  category: 'Menuiserie',
-  priority: 'Normal',
-  client: 'M. Essomba',
-  project: 'Bureau Deïdo',
-  status: 'Ouvert',
-  date: '18/03/2026',
-  desc: 'Le moteur de la porte de garage fait un bruit anormal.',
-  assignee: 'Non assigné'
-},
-{
-  id: 'SAV-006',
-  title: 'Carrelage fissuré',
-  category: 'Revêtement',
-  priority: 'Basse',
-  client: 'SCI Akwa',
-  project: 'Immeuble Akwa',
-  status: 'En cours',
-  date: '10/03/2026',
-  desc: "Deux carreaux fissurés dans le hall d'entrée.",
-  assignee: 'Alain Messi'
-},
-{
-  id: 'SAV-007',
-  title: 'Climatisation défaillante',
-  category: 'CVC',
-  priority: 'Haute',
-  client: 'Tech Solutions',
-  project: 'Bureau Deïdo',
-  status: 'Ouvert',
-  date: '22/03/2026',
-  desc: 'Le split du bureau de direction ne refroidit plus.',
-  assignee: 'Non assigné'
-},
-{
-  id: 'SAV-008',
-  title: 'Peinture écaillée',
-  category: 'Peinture',
-  priority: 'Basse',
-  client: 'Logistics SA',
-  project: 'Entrepôt Bonabéri',
-  status: 'Ouvert',
-  date: '20/03/2026',
-  desc: 'Retouches peinture nécessaires sur façade ouest.',
-  assignee: 'Non assigné'
-}];
 
-const statsTicketsMois = [
-{
-  month: 'Oct',
-  tickets: 4
-},
-{
-  month: 'Nov',
-  tickets: 3
-},
-{
-  month: 'Déc',
-  tickets: 5
-},
-{
-  month: 'Jan',
-  tickets: 2
-},
-{
-  month: 'Fév',
-  tickets: 6
-},
-{
-  month: 'Mar',
-  tickets: 8
-}];
 
-const statsCategory = [
-{
-  name: 'Plomberie',
-  value: 30,
-  color: '#3B82F6'
-},
-{
-  name: 'Électricité',
-  value: 25,
-  color: '#F59E0B'
-},
-{
-  name: 'Maçonnerie',
-  value: 20,
-  color: '#6B7280'
-},
-{
-  name: 'Menuiserie',
-  value: 15,
-  color: '#8B5CF6'
-},
-{
-  name: 'Autres',
-  value: 10,
-  color: '#10B981'
-}];
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
@@ -249,7 +93,110 @@ const fadeUp = {
     }
   }
 };
+function ticketStatusToUi(status: string): string {
+  switch (status) {
+    case 'OUVERT': return 'Ouvert';
+    case 'EN_COURS': return 'En cours';
+    case 'RESOLU': return 'Résolu';
+    case 'FERME': return 'Fermé';
+    default: return status;
+  }
+}
+function ticketPriorityToUi(p: string): string {
+  switch (p) {
+    case 'URGENTE': return 'Urgente';
+    case 'HAUTE': return 'Haute';
+    case 'NORMALE': return 'Normal';
+    case 'BASSE': return 'Basse';
+    default: return p;
+  }
+}
+function ticketCategoryToUi(c: string): string {
+  if (!c) return 'Général';
+  return c.charAt(0).toUpperCase() + c.slice(1);
+}
+
 export function ErpSAV() {
+  const { data: apiTickets } = useSAVTickets();
+  const { data: apiWarranties } = useWarranties();
+  const { data: apiByCategory } = useSAVByCategory();
+  const { data: apiSAVStats } = useSAVStats();
+  const savStats = apiSAVStats || { open: 0, in_progress: 0, resolved: 0, avg_rating: 0 };
+  const createTicketMutation = useCreateSAVTicket();
+  const assignMutation = useAssignSAVTicket();
+  const { data: apiProjects } = useProjects();
+  const { data: apiEmployees } = useEmployees();
+  const { data: apiUsers } = useUsers();
+  const projectOptions: any[] = Array.isArray(apiProjects) ? apiProjects : [];
+  const employeeOptions: any[] = Array.isArray(apiEmployees) ? apiEmployees : [];
+  const clientOptions: any[] = Array.isArray(apiUsers) ? apiUsers.filter((u: any) => u.role === 'CLIENT') : [];
+  const resolveMutation = useResolveSAVTicket();
+  const replyMutation = useReplySAVTicket();
+
+  const tickets = useMemo(() => {
+    if (!Array.isArray(apiTickets)) return [];
+    return apiTickets.map((t: any) => ({
+      id: t.code || t.id,
+      raw_id: t.id,
+      title: t.subject || '',
+      category: ticketCategoryToUi(t.category),
+      priority: ticketPriorityToUi(t.priority),
+      client: t.client_id || '',
+      project: t.project_id || '',
+      status: ticketStatusToUi(t.status),
+      date: formatDate(t.created_at),
+      desc: t.description || '',
+      assignee: t.assigned_to || '',
+      rating: t.rating || 0,
+      ratingComment: t.rating_comment || '',
+    }));
+  }, [apiTickets]);
+
+  const liveWarranties = useMemo(() => {
+    if (!Array.isArray(apiWarranties)) return [] as any[];
+    return apiWarranties.map((w: any) => ({
+      id: w.id,
+      name: w.name || '',
+      duration: w.duration || '',
+      description: w.description || '',
+      status: w.status === 'ACTIVE' ? 'Active' : 'Expirée',
+      expires: formatDate(w.expires_at),
+    }));
+  }, [apiWarranties]);
+
+  const reviews = useMemo(
+    () => tickets.filter((t: any) => t.rating > 0).map((t: any) => ({
+      id: t.id, title: t.title, rating: t.rating, comment: t.ratingComment, date: t.date,
+    })),
+    [tickets],
+  );
+
+  // SAV by-category → pie (from /sav/stats/by-category).
+  const statsCategory = useMemo(() => {
+    if (!Array.isArray(apiByCategory)) return [];
+    return apiByCategory.map((c: any, i: number) => ({
+      name: SAV_CAT_LABELS[c.category] || c.category || 'Autre',
+      value: c.count || 0,
+      color: SAV_CAT_COLORS[i % SAV_CAT_COLORS.length],
+    }));
+  }, [apiByCategory]);
+
+  // Monthly ticket volume → bar (derived from the raw tickets list).
+  const statsTicketsMois = useMemo(() => {
+    if (!Array.isArray(apiTickets) || apiTickets.length === 0) return [];
+    const buckets: Record<string, number> = {};
+    for (const t of apiTickets) {
+      if (!t.created_at) continue;
+      const d = new Date(t.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      buckets[key] = (buckets[key] || 0) + 1;
+    }
+    return Object.keys(buckets).sort().slice(-6).map((k) => ({
+      month: formatDateParts(k + '-01', { month: 'short' }),
+      tickets: buckets[k],
+    }));
+  }, [apiTickets]);
+
   const [activeTab, setActiveTab] = useState('open');
   const [expandedTicket, setExpandedTicket] = useState<string | null>(null);
   // New states for interactive features
@@ -275,47 +222,137 @@ export function ErpSAV() {
     });
     setTimeout(() => setToast(null), 3000);
   };
-  const handleNewTicket = () => {
+  const handleNewTicket = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsProcessing('new-ticket');
-    setTimeout(() => {
-      setIsProcessing(null);
+    const form = e?.target as HTMLFormElement | undefined;
+    try {
+      await createTicketMutation.mutateAsync({
+        project_id: form ? (form.elements.namedItem('project_id') as HTMLSelectElement)?.value || '' : '',
+        subject: form ? (form.elements.namedItem('subject') as HTMLInputElement)?.value || 'Ticket' : 'Ticket',
+        description: form ? (form.elements.namedItem('description') as HTMLTextAreaElement)?.value || '' : '',
+        category: form ? (form.elements.namedItem('category') as HTMLSelectElement)?.value || 'general' : 'general',
+        priority: form ? (form.elements.namedItem('priority') as HTMLSelectElement)?.value || 'NORMALE' : 'NORMALE',
+      });
       setShowNewTicket(false);
       showToast('Nouveau ticket SAV créé', 'success');
-    }, 1500);
-  };
-  const handleAssign = () => {
-    setIsProcessing('assign');
-    setTimeout(() => {
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
       setIsProcessing(null);
+    }
+  };
+  const handleAssign = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsProcessing('assign');
+    const form = e?.target as HTMLFormElement | undefined;
+    const ticket = tickets.find((t) => t.id === selectedTicketId);
+    try {
+      if (!ticket) throw new Error('Ticket introuvable');
+      const assigneeId = form
+        ? (form.elements.namedItem('assignee') as HTMLSelectElement)?.value || ''
+        : '';
+      if (!assigneeId) throw new Error('Veuillez sélectionner un technicien');
+      await assignMutation.mutateAsync({
+        id: (ticket as any).raw_id || ticket.id,
+        assigneeId,
+      });
       setShowAssignModal(false);
       showToast('Technicien assigné au ticket', 'success');
-    }, 1500);
-  };
-  const handleResolve = (id: string) => {
-    setIsProcessing(`resolve-${id}`);
-    setTimeout(() => {
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || err?.message || 'Erreur', 'error');
+    } finally {
       setIsProcessing(null);
+    }
+  };
+  const handleResolve = async (id: string) => {
+    setIsProcessing(`resolve-${id}`);
+    const ticket = tickets.find((t) => t.id === id);
+    try {
+      await resolveMutation.mutateAsync((ticket as any)?.raw_id || id);
       setConfirmResolve(null);
       showToast('Ticket marqué comme résolu', 'success');
-    }, 1500);
-  };
-  const handleReply = () => {
-    setIsProcessing('reply');
-    setTimeout(() => {
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur', 'error');
+    } finally {
       setIsProcessing(null);
+    }
+  };
+  const handleReply = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsProcessing('reply');
+    const form = e?.target as HTMLFormElement | undefined;
+    const ticket = tickets.find((t) => t.id === selectedTicketId);
+    try {
+      if (!ticket) throw new Error('Ticket introuvable');
+      await replyMutation.mutateAsync({
+        id: (ticket as any).raw_id || ticket.id,
+        data: {
+          content: form ? (form.elements.namedItem('content') as HTMLTextAreaElement)?.value || '' : '',
+          is_internal: form ? !!(form.elements.namedItem('is_internal') as HTMLInputElement)?.checked : false,
+        },
+      });
       setShowReplyModal(false);
       showToast('Réponse envoyée au client', 'success');
-    }, 1500);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || err?.message || 'Erreur', 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
   const handleExport = () => {
+    if (tickets.length === 0) {
+      showToast('Aucun ticket à exporter', 'info');
+      return;
+    }
     setIsProcessing('export');
-    showToast('Génération du rapport...', 'info');
-    setTimeout(() => {
-      setIsProcessing(null);
+    try {
+      const projName = (id: string) =>
+        projectOptions.find((p: any) => p.id === id)?.name || id || '';
+      const cliName = (id: string) => {
+        const u = clientOptions.find((c: any) => c.id === id);
+        return u
+          ? u.name ||
+              `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+              u.email ||
+              id
+          : id || '';
+      };
+      downloadCSV(
+        `sav-tickets-${new Date().toISOString().slice(0, 10)}.csv`,
+        tickets.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          priority: t.priority,
+          status: t.status,
+          client: cliName(t.client),
+          project: projName(t.project),
+          date: t.date,
+          rating: t.rating || '',
+          comment: t.ratingComment || '',
+        })),
+        [
+          { key: 'id', label: 'Référence' },
+          { key: 'title', label: 'Sujet' },
+          { key: 'category', label: 'Catégorie' },
+          { key: 'priority', label: 'Priorité' },
+          { key: 'status', label: 'Statut' },
+          { key: 'client', label: 'Client' },
+          { key: 'project', label: 'Projet' },
+          { key: 'date', label: 'Date' },
+          { key: 'rating', label: 'Note' },
+          { key: 'comment', label: 'Commentaire' },
+        ],
+      );
       showToast('Rapport SAV exporté ✓', 'success');
-    }, 1500);
+    } catch {
+      showToast("Échec de l'export", 'error');
+    } finally {
+      setIsProcessing(null);
+    }
   };
-  const openTickets = mockTickets.filter(
+  const openTickets = tickets.filter(
     (t) => t.status === 'Ouvert' || t.status === 'En cours'
   );
   return (
@@ -403,7 +440,7 @@ export function ErpSAV() {
                   </div>
                 </div>
                 <h3 className="font-montserrat font-extrabold text-3xl text-globus-blue-dark">
-                  5
+                  {openTickets.length}
                 </h3>
               </motion.div>
               <motion.div
@@ -419,7 +456,16 @@ export function ErpSAV() {
                   </div>
                 </div>
                 <h3 className="font-montserrat font-extrabold text-3xl text-globus-blue-dark">
-                  4h
+                  {(() => {
+                    const resolved = Array.isArray(apiTickets) ? apiTickets.filter((t: any) => t.resolved_at && t.created_at) : [];
+                    if (resolved.length === 0) return '—';
+                    const totalHours = resolved.reduce((sum: number, t: any) => {
+                      const diff = new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime();
+                      return sum + diff / (1000 * 60 * 60);
+                    }, 0);
+                    const avg = totalHours / resolved.length;
+                    return avg < 24 ? `${Math.round(avg)}h` : `${(avg / 24).toFixed(1)}j`;
+                  })()}
                 </h3>
               </motion.div>
               <motion.div
@@ -435,7 +481,7 @@ export function ErpSAV() {
                   </div>
                 </div>
                 <h3 className="font-montserrat font-extrabold text-3xl text-globus-blue-dark">
-                  4.2<span className="text-lg text-gray-400">/5</span>
+                  {savStats.avg_rating || '—'}<span className="text-lg text-gray-400">/5</span>
                 </h3>
               </motion.div>
             </div>
@@ -626,7 +672,7 @@ export function ErpSAV() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-sm font-opensans">
-                    {mockTickets.map((ticket) =>
+                    {tickets.map((ticket) =>
                   <tr
                     key={ticket.id}
                     className="hover:bg-gray-50 transition-colors cursor-pointer">
@@ -691,6 +737,9 @@ export function ErpSAV() {
                   Tickets par Mois
                 </h3>
                 <div className="h-64">
+                  {statsTicketsMois.length === 0 ? (
+                    <ChartEmpty message="Aucun ticket sur la période" />
+                  ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                     data={statsTicketsMois}
@@ -740,17 +789,21 @@ export function ErpSAV() {
                     
                     </BarChart>
                   </ResponsiveContainer>
+                  )}
                 </div>
               </motion.div>
 
               <motion.div
               variants={fadeUp}
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              
+
                 <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-4">
                   Répartition par Catégorie
                 </h3>
                 <div className="h-64">
+                  {statsCategory.length === 0 ? (
+                    <ChartEmpty message="Aucune donnée par catégorie" />
+                  ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -787,6 +840,7 @@ export function ErpSAV() {
                     
                     </PieChart>
                   </ResponsiveContainer>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -804,7 +858,10 @@ export function ErpSAV() {
                     Taux de résolution global
                   </p>
                   <h3 className="font-montserrat font-extrabold text-3xl text-globus-blue-dark">
-                    87%
+                    {(() => {
+                      const total = savStats.open + savStats.in_progress + savStats.resolved;
+                      return total > 0 ? `${Math.round((savStats.resolved / total) * 100)}%` : '—';
+                    })()}
                   </h3>
                 </div>
               </motion.div>
@@ -820,7 +877,15 @@ export function ErpSAV() {
                     Délai moyen de résolution
                   </p>
                   <h3 className="font-montserrat font-extrabold text-3xl text-globus-blue-dark">
-                    3.2{' '}
+                    {(() => {
+                      const resolved = Array.isArray(apiTickets) ? apiTickets.filter((t: any) => t.resolved_at && t.created_at) : [];
+                      if (resolved.length === 0) return '—';
+                      const totalDays = resolved.reduce((sum: number, t: any) => {
+                        const diff = new Date(t.resolved_at).getTime() - new Date(t.created_at).getTime();
+                        return sum + diff / (1000 * 60 * 60 * 24);
+                      }, 0);
+                      return (totalDays / resolved.length).toFixed(1);
+                    })()}{' '}
                     <span className="text-lg text-gray-400 font-normal">
                       jours
                     </span>
@@ -840,60 +905,26 @@ export function ErpSAV() {
                   <CheckCircle2Icon className="w-5 h-5 text-globus-orange" />
                   Retours de Satisfaction Client
                 </h3>
-                <div className="space-y-4">
-                  {[
-                {
-                  ticket: 'SAV-001 (Fuite robinet)',
-                  client: 'Jean Talla',
-                  rating: 5,
-                  comment:
-                  'Intervention très rapide et efficace. Le technicien était très professionnel.',
-                  date: '15/04/2025'
-                },
-                {
-                  ticket: 'SAV-006 (Carrelage fissuré)',
-                  client: 'SCI Akwa',
-                  rating: 4,
-                  comment:
-                  'Problème résolu, mais délai un peu long pour avoir les carreaux de rechange.',
-                  date: '20/03/2026'
-                }].
-                map((review, idx) =>
-                <div
-                  key={idx}
-                  className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  
+                {reviews.length === 0 ?
+              <p className="text-sm text-gray-400 italic">Aucun retour de satisfaction pour le moment.</p> :
+              <div className="space-y-4">
+                  {reviews.map((rv) =>
+                <div key={rv.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                            {review.client}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {review.ticket}
-                          </p>
+                          <p className="font-montserrat font-bold text-sm text-globus-blue-dark">{rv.title}</p>
+                          <p className="text-xs text-gray-500">{rv.id}</p>
                         </div>
-                        <div className="flex gap-0.5">
-                          {[1, 2, 3, 4, 5].map((star) =>
-                      <svg
-                        key={star}
-                        className={`w-4 h-4 ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                      )}
-                        </div>
+                        <span className="text-sm font-bold text-yellow-500">{rv.rating}/5 ★</span>
                       </div>
-                      <p className="text-sm text-gray-600 italic">
-                        "{review.comment}"
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2 text-right">
-                        {review.date}
-                      </p>
+                      {rv.comment &&
+                  <p className="text-sm text-gray-600 italic">"{rv.comment}"</p>
+                  }
+                      <p className="text-xs text-gray-400 mt-2 text-right">{rv.date}</p>
                     </div>
                 )}
                 </div>
+              }
               </motion.div>
 
               {/* Guarantees Tracking */}
@@ -903,58 +934,36 @@ export function ErpSAV() {
               
                 <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-4 flex items-center gap-2">
                   <ShieldCheckIcon className="w-5 h-5 text-globus-orange" />
-                  Suivi des Garanties (Villa Bonapriso)
+                  Suivi des Garanties
                 </h3>
-                <div className="space-y-4">
-                  {[
-                {
-                  name: 'Garantie de parfait achèvement',
-                  duration: '1 an',
-                  expires: '15/06/2025',
-                  status: 'Active',
-                  desc: "Couvre tous les désordres signalés lors de la réception ou dans l'année qui suit."
-                },
-                {
-                  name: 'Garantie biennale',
-                  duration: '2 ans',
-                  expires: '15/06/2026',
-                  status: 'Active',
-                  desc: "Couvre les équipements dissociables de l'ouvrage (portes, fenêtres, plomberie apparente)."
-                },
-                {
-                  name: 'Garantie décennale',
-                  duration: '10 ans',
-                  expires: '15/06/2034',
-                  status: 'Active',
-                  desc: "Couvre les dommages compromettant la solidité de l'ouvrage ou le rendant impropre à sa destination."
-                }].
-                map((guarantee, idx) =>
-                <div
-                  key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-blue-50/50 border border-blue-100">
-                  
+                {liveWarranties.length === 0 ?
+              <p className="text-sm text-gray-400 italic">Aucune garantie suivie pour le moment.</p> :
+              <div className="space-y-4">
+                  {liveWarranties.map((w) =>
+                <div key={w.id} className="flex items-start gap-3 p-3 rounded-lg bg-blue-50/50 border border-blue-100">
                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                         <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-1">
                           <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                            {guarantee.name} ({guarantee.duration})
+                            {w.name}{w.duration ? ` (${w.duration})` : ''}
                           </h4>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">
-                            {guarantee.status}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${w.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {w.status}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-1">
-                          {guarantee.desc}
-                        </p>
-                        <p className="text-xs font-semibold text-globus-orange">
-                          Expire le : {guarantee.expires}
-                        </p>
+                        {w.description &&
+                    <p className="text-xs text-gray-600 mb-1">{w.description}</p>
+                    }
+                        {w.expires &&
+                    <p className="text-xs font-semibold text-globus-orange">Expire le : {w.expires}</p>
+                    }
                       </div>
                     </div>
                 )}
                 </div>
+              }
               </motion.div>
             </div>
           </motion.div>
@@ -1021,19 +1030,21 @@ export function ErpSAV() {
                       Client
                     </label>
                     <select className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                      <option>Jean Talla</option>
-                      <option>Mme Ndiaye</option>
-                      <option>SCI Akwa</option>
+                      <option value="">— Sélectionner —</option>
+                      {clientOptions.map((c) =>
+                      <option key={c.id} value={c.id}>{`${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email}</option>
+                      )}
                     </select>
                   </div>
                   <div>
                     <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-1">
                       Projet
                     </label>
-                    <select className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                      <option>Villa Bonapriso</option>
-                      <option>Résidence Bonanjo</option>
-                      <option>Immeuble Akwa</option>
+                    <select name="project_id" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
+                      <option value="">— Sélectionner un projet —</option>
+                      {projectOptions.map((pr) =>
+                      <option key={pr.id} value={pr.id}>{pr.name || pr.code}</option>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -1042,7 +1053,7 @@ export function ErpSAV() {
                     <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-1">
                       Catégorie
                     </label>
-                    <select className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
+                    <select name="category" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
                       <option>Plomberie</option>
                       <option>Électricité</option>
                       <option>Maçonnerie</option>
@@ -1153,11 +1164,11 @@ export function ErpSAV() {
                   <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-2">
                     Sélectionner un technicien
                   </label>
-                  <select className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-blue">
-                    <option>Paul Mbarga (Plomberie)</option>
-                    <option>Alain Messi (Électricité)</option>
-                    <option>Claire Fotso (Architecture)</option>
-                    <option>Moi-même</option>
+                  <select name="assignee" className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-blue">
+                    <option value="">— Sélectionner un technicien —</option>
+                    {employeeOptions.map((emp) =>
+                    <option key={emp.id} value={emp.id}>{`${emp.first_name || ''} ${emp.last_name || ''}`.trim()}{emp.position ? ` (${emp.position})` : ''}</option>
+                    )}
                   </select>
                 </div>
                 <div className="pt-4 flex gap-3">

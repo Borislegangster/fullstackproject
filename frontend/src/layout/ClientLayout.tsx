@@ -1,26 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  LayoutDashboardIcon,
-  HardHatIcon,
-  WalletIcon,
-  FolderIcon,
-  MessageSquareIcon,
-  UserIcon,
-  ShieldCheckIcon,
-  ArrowLeftIcon,
-  LogOutIcon,
-  MenuIcon,
-  XIcon,
-  BellIcon,
-  HelpCircleIcon,
-  CameraIcon,
-  CheckCircle2Icon,
-  FileTextIcon,
-  CalendarIcon } from
-'lucide-react';
+import { LayoutDashboardIcon, HardHatIcon, WalletIcon, FolderIcon, MessageSquareIcon, UserIcon, ShieldCheckIcon, ArrowLeftIcon, LogOutIcon, MenuIcon, BellIcon, HelpCircleIcon, CameraIcon, FileTextIcon, CalendarIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useClientNotifications, useClientUnreadCount, useMarkClientNotificationRead } from '../hooks/useClient';
+import { useCmsQuery } from '../hooks/useCmsQuery';
+import { getSiteSettings } from '../services/api/cms.api';
+import { configureDateFormatting } from '../utils/datetime';
 
 const navItems = [
 {
@@ -65,12 +51,52 @@ const navItems = [
   icon: ShieldCheckIcon
 }];
 
+function notifIcon(type: string) {
+  if (type === 'invoice') return WalletIcon;
+  if (type === 'message') return MessageSquareIcon;
+  if (type === 'document') return FileTextIcon;
+  if (type === 'project') return HardHatIcon;
+  if (type === 'appointment') return CalendarIcon;
+  return CameraIcon;
+}
+function notifColors(type: string) {
+  if (type === 'invoice') return { color: 'text-globus-orange', bg: 'bg-globus-orange/10' };
+  if (type === 'message') return { color: 'text-purple-600', bg: 'bg-purple-100' };
+  if (type === 'document') return { color: 'text-gray-600', bg: 'bg-gray-100' };
+  if (type === 'project') return { color: 'text-blue-600', bg: 'bg-blue-100' };
+  return { color: 'text-globus-blue', bg: 'bg-blue-100' };
+}
+function formatRelativeTime(iso?: string): string {
+  if (!iso) return '';
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return "À l'instant";
+  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}min`;
+  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
+  if (diff < 86400 * 2) return 'Hier';
+  return `Il y a ${Math.floor(diff / 86400)} jours`;
+}
+
 export function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const { data: liveNotifs } = useClientNotifications();
+  const { data: liveUnread } = useClientUnreadCount();
+  const markReadMutation = useMarkClientNotificationRead();
+
+  // Honore les préférences d'organisation (langue + fuseau/format de date)
+  // exposées publiquement via /cms/settings.
+  const { data: siteSettings } = useCmsQuery('site-settings', getSiteSettings);
+  useEffect(() => {
+    if (!siteSettings) return;
+    document.documentElement.lang = siteSettings.systemLanguage === 'English' ? 'en' : 'fr';
+    configureDateFormatting({
+      timezone: siteSettings.timezone,
+      dateFormat: siteSettings.dateFormat,
+    });
+  }, [siteSettings]);
 
   const userInitials = user ? `${user.first_name?.charAt(0) || ''}${user.last_name?.charAt(0) || ''}`.toUpperCase() : 'CL';
   const userName = user?.full_name || 'Client';
@@ -253,9 +279,11 @@ export function ClientLayout() {
                 className="bell-button relative p-2 text-globus-gray hover:bg-gray-100 rounded-full transition-colors">
                 
                 <BellIcon className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white">
-                  2
-                </span>
+                {(liveUnread ?? 0) > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold text-white">
+                    {(liveUnread ?? 0) > 9 ? '9+' : liveUnread}
+                  </span>
+                )}
               </button>
 
               {/* Notifications Dropdown */}
@@ -286,78 +314,52 @@ export function ClientLayout() {
                       <h3 className="font-montserrat font-bold text-globus-blue-dark">
                         Notifications
                       </h3>
-                      <button className="text-xs font-semibold text-globus-orange hover:underline">
+                      <button
+                        onClick={() => {
+                          const arr = Array.isArray(liveNotifs) ? liveNotifs : [];
+                          arr.filter((n: any) => !n.is_read).forEach((n: any) => {
+                            markReadMutation.mutate(String(n.id));
+                          });
+                        }}
+                        className="text-xs font-semibold text-globus-orange hover:underline">
                         Tout marquer comme lu
                       </button>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
-                      <div className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-50 transition-colors relative">
-                        <div className="w-2 h-2 bg-globus-blue rounded-full absolute left-2 top-1/2 -translate-y-1/2"></div>
-                        <div className="w-8 h-8 rounded-full bg-globus-orange/10 flex items-center justify-center shrink-0 ml-3">
-                          <WalletIcon className="w-4 h-4 text-globus-orange" />
+                      {(!Array.isArray(liveNotifs) || liveNotifs.length === 0) ? (
+                        <div className="p-8 text-center">
+                          <BellIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">Aucune notification</p>
                         </div>
-                        <div>
-                          <p className="font-montserrat font-semibold text-sm text-globus-blue-dark">
-                            Appel de fonds #4 en attente
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray mt-0.5">
-                            Il y a 2h
-                          </p>
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-50 transition-colors relative">
-                        <div className="w-2 h-2 bg-globus-blue rounded-full absolute left-2 top-1/2 -translate-y-1/2"></div>
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 ml-3">
-                          <CameraIcon className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-montserrat font-semibold text-sm text-globus-blue-dark">
-                            Nouvelle photo de chantier
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray mt-0.5">
-                            Il y a 5h
-                          </p>
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-50 transition-colors pl-6">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                          <CheckCircle2Icon className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-montserrat font-semibold text-sm text-globus-blue-dark opacity-80">
-                            Étape Fondations validée
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray mt-0.5">
-                            1 jour
-                          </p>
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-50 transition-colors pl-6">
-                        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-                          <MessageSquareIcon className="w-4 h-4 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="font-montserrat font-semibold text-sm text-globus-blue-dark opacity-80">
-                            Message de Ing. Paul Mbarga
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray mt-0.5">
-                            2 jours
-                          </p>
-                        </div>
-                      </div>
-                      <div className="p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 transition-colors pl-6">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                          <FileTextIcon className="w-4 h-4 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-montserrat font-semibold text-sm text-globus-blue-dark opacity-80">
-                            Document: Plan électrique v2
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray mt-0.5">
-                            3 jours
-                          </p>
-                        </div>
-                      </div>
+                      ) : (
+                        liveNotifs.slice(0, 5).map((n: any) => {
+                          const Icon = notifIcon(n.type);
+                          const colors = notifColors(n.type);
+                          return (
+                            <div
+                              key={n.id}
+                              onClick={() => !n.is_read && markReadMutation.mutate(String(n.id))}
+                              className={`p-3 hover:bg-gray-50 cursor-pointer flex items-start gap-3 border-b border-gray-50 transition-colors relative ${
+                                !n.is_read ? '' : 'pl-6'
+                              }`}>
+                              {!n.is_read && (
+                                <div className="w-2 h-2 bg-globus-blue rounded-full absolute left-2 top-1/2 -translate-y-1/2"></div>
+                              )}
+                              <div className={`w-8 h-8 rounded-full ${colors.bg} flex items-center justify-center shrink-0 ${!n.is_read ? 'ml-3' : ''}`}>
+                                <Icon className={`w-4 h-4 ${colors.color}`} />
+                              </div>
+                              <div>
+                                <p className={`font-montserrat font-semibold text-sm text-globus-blue-dark ${n.is_read ? 'opacity-80' : ''}`}>
+                                  {n.title}
+                                </p>
+                                <p className="font-opensans text-xs text-globus-gray mt-0.5">
+                                  {formatRelativeTime(n.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                     <div className="p-3 border-t border-gray-100 text-center bg-gray-50/50">
                       <Link

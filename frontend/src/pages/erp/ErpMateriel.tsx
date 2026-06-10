@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '../../utils/datetime';
 import {
   BoxIcon,
   ArrowRightLeftIcon,
@@ -12,156 +13,85 @@ import {
   XIcon,
   Loader2Icon,
   CheckCircle2Icon,
-  DownloadIcon } from
+  DownloadIcon,
+  Undo2Icon } from
 'lucide-react';
-import { useEquipment, useCreateEquipment, useEquipmentAssignments, useCreateEquipmentAssignment } from '../../hooks/useErp';
-const initialEquipment = [
-{
-  id: 'MAT-001',
-  name: 'Bétonnière 350L',
-  site: 'Villa Bonapriso',
-  state: 'Bon',
-  type: 'machine'
-},
-{
-  id: 'MAT-002',
-  name: 'Grue à tour 40m',
-  site: 'Immeuble Akwa',
-  state: 'Bon',
-  type: 'machine'
-},
-{
-  id: 'MAT-003',
-  name: 'Compacteur vibrant',
-  site: 'Dépôt central',
-  state: 'En maintenance',
-  type: 'machine'
-},
-{
-  id: 'MAT-004',
-  name: 'Groupe électrogène 50KVA',
-  site: 'Résidence Bonanjo',
-  state: 'Bon',
-  type: 'machine'
-},
-{
-  id: 'VEH-001',
-  name: 'Toyota Hilux',
-  site: '45 230 km',
-  state: 'Bon',
-  type: 'vehicle'
-},
-{
-  id: 'VEH-002',
-  name: 'Camion Benne 10T',
-  site: '89 100 km',
-  state: 'Pneus à changer',
-  type: 'vehicle'
-}];
+import {
+  useEquipment, useCreateEquipment, useEquipmentAssignments, useCreateEquipmentAssignment,
+  useMaintenance, useCreateMaintenance, useCompleteMaintenance, useReturnEquipmentAssignment,
+  useProjects,
+} from '../../hooks/useErp';
 
-const initialAssignments = [
-{
-  equip: 'Bétonnière 350L',
-  site: 'Villa Bonapriso',
-  since: '01/02/2024',
-  resp: 'Paul Mbarga'
-},
-{
-  equip: 'Grue à tour 40m',
-  site: 'Immeuble Akwa',
-  since: '15/01/2024',
-  resp: 'Chef Tabi'
-},
-{
-  equip: 'Groupe électrogène 50KVA',
-  site: 'Résidence Bonanjo',
-  since: '01/03/2024',
-  resp: 'Alain Messi'
-},
-{
-  equip: 'Toyota Hilux',
-  site: 'Logistique générale',
-  since: '01/01/2024',
-  resp: 'Alain Messi'
-},
-{
-  equip: 'Camion Benne 10T',
-  site: 'Villa Bonapriso',
-  since: '10/02/2024',
-  resp: 'Chauffeur Ndjock'
-}];
 
-const initialMaintenanceUpcoming = [
-{
-  equip: 'MAT-003 Compacteur',
-  task: 'Révision moteur',
-  date: '25/03/2026',
-  status: 'En cours'
-},
-{
-  equip: 'VEH-002 Camion Benne',
-  task: 'Changement pneus',
-  date: '28/03/2026',
-  status: 'Planifié'
-},
-{
-  equip: 'MAT-002 Grue',
-  task: 'Contrôle annuel',
-  date: '15/04/2026',
-  status: 'Planifié'
-},
-{
-  equip: 'VEH-001 Hilux',
-  task: 'Vidange 50 000 km',
-  date: '01/05/2026',
-  status: 'Planifié'
-}];
-
-const maintenanceHistory = [
-{
-  equip: 'MAT-001 Bétonnière',
-  task: 'Changement courroie',
-  date: '10/02/2026',
-  cost: 150000
-},
-{
-  equip: 'VEH-001 Hilux',
-  task: 'Vidange + filtres',
-  date: '15/01/2026',
-  cost: 85000
-},
-{
-  equip: 'MAT-002 Grue',
-  task: 'Graissage câbles',
-  date: '20/12/2025',
-  cost: 200000
-},
-{
-  equip: 'VEH-002 Camion',
-  task: 'Freins avant',
-  date: '05/12/2025',
-  cost: 320000
-},
-{
-  equip: 'MAT-004 Groupe',
-  task: 'Révision générale',
-  date: '01/11/2025',
-  cost: 450000
-}];
 
 export function ErpMateriel() {
   // API hooks
   const { data: apiEquipment } = useEquipment();
+  const { data: apiProjects } = useProjects();
+  const projectOptions: any[] = Array.isArray(apiProjects) ? apiProjects : [];
   const { data: apiAssignments } = useEquipmentAssignments();
+  const { data: apiMaintenance } = useMaintenance();
   const createEqMutation = useCreateEquipment();
   const assignEqMutation = useCreateEquipmentAssignment();
+  const createMaintenanceMutation = useCreateMaintenance();
+  const completeMaintenanceMutation = useCompleteMaintenance();
+  const returnAssignmentMutation = useReturnEquipmentAssignment();
 
   const [activeTab, setActiveTab] = useState('inventaire');
-  const [equipment, setEquipment] = useState(initialEquipment);
-  const [assignments, setAssignments] = useState(initialAssignments);
-  const [maintenanceUpcoming, setMaintenanceUpcoming] = useState(
-    initialMaintenanceUpcoming
-  );
+
+  // Live data from API (fallback to static demo when empty)
+  const equipment = useMemo<any[]>(() => {
+    if (!Array.isArray(apiEquipment)) return [] as any[];
+    return apiEquipment.map((e: any) => ({
+      id: e.code || e.id,
+      name: e.name || '',
+      site: e.current_project_id || 'Dépôt central',
+      state: e.status === 'DISPONIBLE' ? 'Bon'
+        : e.status === 'EN_MAINTENANCE' ? 'En maintenance'
+        : e.status === 'HORS_SERVICE' ? 'Hors service'
+        : 'En service',
+      type: e.category === 'Véhicule' ? 'vehicle' : 'machine',
+      raw_id: e.id,
+    }));
+  }, [apiEquipment]);
+
+  const assignments = useMemo<any[]>(() => {
+    if (!Array.isArray(apiAssignments)) return [] as any[];
+    return apiAssignments.map((a: any) => ({
+      equip: a.equipment_name || '',
+      site: a.project_id || '',
+      since: formatDate(a.assigned_from),
+      resp: a.responsible_id || '—',
+      raw_id: a.id,
+    }));
+  }, [apiAssignments]);
+
+  const maintenanceUpcoming = useMemo<any[]>(() => {
+    if (!Array.isArray(apiMaintenance)) return [] as any[];
+    return apiMaintenance
+      .filter((m: any) => m.status !== 'DONE' && m.status !== 'CANCELLED')
+      .map((m: any) => ({
+        equip: m.equipment_id || '',
+        task: m.description || '',
+        type: m.maintenance_type === 'PREVENTIVE' ? 'Préventive' : 'Curative',
+        date: formatDate(m.scheduled_for, 'À planifier'),
+        when: formatDate(m.scheduled_for, 'À planifier'),
+        status: m.status === 'IN_PROGRESS' ? 'En cours' : 'Planifié',
+        raw_id: m.id,
+      }));
+  }, [apiMaintenance]);
+
+  const maintenanceDone = useMemo<any[]>(() => {
+    if (!Array.isArray(apiMaintenance)) return [];
+    return apiMaintenance
+      .filter((m: any) => m.status === 'DONE' || m.status === 'COMPLETED' || m.status === 'TERMINE')
+      .map((m: any) => ({
+        equip: m.equipment_name || m.equipment_id || '',
+        task: m.description || '',
+        date: formatDate(m.completed_at || m.scheduled_for),
+        cost: m.cost || 0,
+      }));
+  }, [apiMaintenance]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [downloadState, setDownloadState] = useState({
     active: false,
@@ -184,6 +114,20 @@ export function ErpMateriel() {
     isOpen: false,
     eqId: null
   });
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  // Generate a *real* scannable QR (PNG data URL) for the equipment.
+  const openQr = async (eqId: string) => {
+    setQrModal({ isOpen: true, eqId });
+    setQrDataUrl('');
+    try {
+      const QRCode = (await import('qrcode')).default;
+      setQrDataUrl(
+        await QRCode.toDataURL(`GLOBUS-EQUIP:${eqId}`, { width: 320, margin: 1 }),
+      );
+    } catch {
+      setQrDataUrl('');
+    }
+  };
   const tabs = [
   {
     id: 'inventaire',
@@ -202,106 +146,101 @@ export function ErpMateriel() {
   }];
 
   const fmt = (v: number) => new Intl.NumberFormat('fr-FR').format(v) + ' FCFA';
-  const handleAddEq = (e: React.FormEvent) => {
+  const handleAddEq = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('add-eq');
-    setTimeout(() => {
+    try {
       const type = (e.target as any).type.value;
-      const newEq = {
-        id: `${type === 'vehicle' ? 'VEH' : 'MAT'}-00${Math.floor(Math.random() * 9) + 5}`,
+      await createEqMutation.mutateAsync({
         name: (e.target as any).name.value,
-        site: 'Dépôt central',
-        state: 'Bon',
-        type
-      };
-      setEquipment([newEq, ...equipment]);
-      setProcessingId(null);
+        category: type === 'vehicle' ? 'Véhicule' : 'Engin',
+      });
       setAddEqModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleTransfer = (e: React.FormEvent) => {
+  const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('transfer');
-    setTimeout(() => {
-      const site = (e.target as any).site.value;
-      const resp = (e.target as any).resp.value;
-      setAssignments((prev) =>
-      prev.map((a) =>
-      a.equip === transferModal.equip ?
-      {
-        ...a,
-        site,
-        resp,
-        since: new Date().toLocaleDateString('fr-FR')
-      } :
-      a
-      )
-      );
-      setEquipment((prev) =>
-      prev.map((eq) =>
-      eq.name === transferModal.equip ?
-      {
-        ...eq,
-        site
-      } :
-      eq
-      )
-      );
-      setProcessingId(null);
-      setTransferModal({
-        isOpen: false,
-        equip: null
+    const equipName = transferModal.equip;
+    const equipObj = equipment.find((eq) => eq.name === equipName);
+    try {
+      const projectId = (e.target as any).site.value;
+      const responsibleId = (e.target as any).resp.value;
+      if (!equipObj?.raw_id) {
+        throw new Error('Équipement introuvable');
+      }
+      await assignEqMutation.mutateAsync({
+        equipment_id: equipObj.raw_id,
+        project_id: projectId,
+        responsible_id: responsibleId,
       });
-    }, 1500);
+      setTransferModal({ isOpen: false, equip: null });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handlePlanMaint = (e: React.FormEvent) => {
+  const handlePlanMaint = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('plan-maint');
-    setTimeout(() => {
-      const newMaint = {
-        equip: (e.target as any).equip.value,
-        task: (e.target as any).task.value,
-        date: (e.target as any).date.value,
-        status: 'Planifié'
-      };
-      setMaintenanceUpcoming([newMaint, ...maintenanceUpcoming]);
-      setProcessingId(null);
+    try {
+      const equipName = (e.target as any).equip.value;
+      const equipObj = equipment.find((eq) => eq.name === equipName);
+      if (!equipObj?.raw_id) {
+        throw new Error('Équipement introuvable');
+      }
+      await createMaintenanceMutation.mutateAsync({
+        equipment_id: equipObj.raw_id,
+        description: (e.target as any).task.value,
+        maintenance_type: 'PREVENTIVE',
+        scheduled_for: (e.target as any).date.value,
+      });
       setPlanMaintModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleReturnAssignment = async (assignmentId: string) => {
+    setProcessingId(`return-${assignmentId}`);
+    try {
+      await returnAssignmentMutation.mutateAsync(assignmentId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleCompleteMaintenance = async (maintenanceId: string) => {
+    setProcessingId(`complete-${maintenanceId}`);
+    try {
+      await completeMaintenanceMutation.mutateAsync({ id: maintenanceId });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProcessingId(null);
+    }
   };
   const triggerDownload = () => {
-    if (downloadState.active) return;
-    setDownloadState({
-      active: true,
-      progress: 0,
-      done: false
-    });
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 10;
-      setDownloadState((prev) => ({
-        ...prev,
-        progress: p
-      }));
-      if (p >= 100) {
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          done: true
-        }));
-        setTimeout(() => {
-          setDownloadState({
-            active: false,
-            progress: 0,
-            done: false
-          });
-          setQrModal({
-            isOpen: false,
-            eqId: null
-          });
-        }, 2000);
-      }
-    }, 150);
+    if (downloadState.active || !qrDataUrl) return;
+    // Real PNG download of the generated QR.
+    const a = document.createElement('a');
+    a.href = qrDataUrl;
+    a.download = `QR_${qrModal.eqId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setDownloadState({ active: true, progress: 100, done: true });
+    setTimeout(() => {
+      setDownloadState({ active: false, progress: 0, done: false });
+      setQrModal({ isOpen: false, eqId: null });
+    }, 1500);
   };
   return (
     <div className="max-w-7xl mx-auto">
@@ -395,12 +334,7 @@ export function ErpMateriel() {
                         {eq.state}
                       </span>
                       <button
-                    onClick={() =>
-                    setQrModal({
-                      isOpen: true,
-                      eqId: eq.id
-                    })
-                    }
+                    onClick={() => openQr(eq.id)}
                     className="text-xs text-globus-blue hover:underline font-semibold flex items-center gap-1">
                     
                         <QrCodeIcon className="w-3 h-3" /> QR Code
@@ -458,7 +392,7 @@ export function ErpMateriel() {
                   </thead>
                   <tbody className="font-opensans text-sm">
                     <AnimatePresence>
-                      {assignments.map((a, i) =>
+                      {assignments.map((a) =>
                     <motion.tr
                       layout
                       key={a.equip}
@@ -477,7 +411,8 @@ export function ErpMateriel() {
                           <td className="p-4 text-globus-gray">{a.since}</td>
                           <td className="p-4 text-globus-gray">{a.resp}</td>
                           <td className="p-4 text-right">
-                            <button
+                            <div className="flex items-center justify-end gap-2">
+                              <button
                           onClick={() =>
                           setTransferModal({
                             isOpen: true,
@@ -485,9 +420,20 @@ export function ErpMateriel() {
                           })
                           }
                           className="text-xs bg-globus-blue/10 text-globus-blue hover:bg-globus-blue hover:text-white px-3 py-1.5 rounded-lg font-bold transition-colors">
-                          
-                              Transférer
-                            </button>
+
+                                Transférer
+                              </button>
+                              <button
+                          onClick={() => handleReturnAssignment(a.raw_id)}
+                          disabled={processingId === `return-${a.raw_id}`}
+                          title="Marquer comme retourné au dépôt"
+                          className="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-3 py-1.5 rounded-lg font-bold transition-colors flex items-center gap-1 disabled:opacity-60">
+                                {processingId === `return-${a.raw_id}` ?
+                          <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                          <Undo2Icon className="w-3.5 h-3.5" />}
+                                Retour
+                              </button>
+                            </div>
                           </td>
                         </motion.tr>
                     )}
@@ -530,7 +476,7 @@ export function ErpMateriel() {
               </div>
               <div className="space-y-4">
                 <AnimatePresence>
-                  {maintenanceUpcoming.map((m, i) =>
+                  {maintenanceUpcoming.map((m) =>
                 <motion.div
                   layout
                   key={m.equip + m.task}
@@ -565,9 +511,21 @@ export function ErpMateriel() {
                         </span>
                         <span
                       className={`px-2.5 py-1 rounded-full text-xs font-bold font-montserrat ${m.status === 'En cours' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                      
+
                           {m.status}
                         </span>
+                        {m.status !== 'Terminé' &&
+                    <button
+                      onClick={() => handleCompleteMaintenance(m.raw_id)}
+                      disabled={processingId === `complete-${m.raw_id}`}
+                      title="Marquer la maintenance comme terminée"
+                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2.5 py-1 rounded-lg font-bold transition-colors flex items-center gap-1 disabled:opacity-60">
+                          {processingId === `complete-${m.raw_id}` ?
+                      <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> :
+                      <CheckCircle2Icon className="w-3.5 h-3.5" />}
+                          Terminer
+                        </button>
+                    }
                       </div>
                     </motion.div>
                 )}
@@ -600,7 +558,10 @@ export function ErpMateriel() {
                     </tr>
                   </thead>
                   <tbody className="font-opensans text-sm">
-                    {maintenanceHistory.map((m, i) =>
+                    {maintenanceDone.length === 0 &&
+                  <tr><td colSpan={4} className="p-8 text-center text-globus-gray">Aucune intervention terminée.</td></tr>
+                  }
+                    {maintenanceDone.map((m, i) =>
                   <tr
                     key={i}
                     className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
@@ -779,15 +740,12 @@ export function ErpMateriel() {
                   </label>
                   <select
                   name="site"
-                  required
                   className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2 text-sm focus:border-globus-blue focus:ring-2 focus:ring-globus-blue/20 outline-none">
-                  
-                    <option value="Villa Bonapriso">Villa Bonapriso</option>
-                    <option value="Immeuble Akwa">Immeuble Akwa</option>
-                    <option value="Résidence Bonanjo">Résidence Bonanjo</option>
-                    <option value="Dépôt central">
-                      Dépôt central (Retour)
-                    </option>
+
+                    <option value="">Dépôt central (Retour)</option>
+                    {projectOptions.map((p) =>
+                    <option key={p.id} value={p.id}>{p.name || p.code}</option>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -980,10 +938,15 @@ export function ErpMateriel() {
                 {qrModal.eqId}
               </p>
 
-              <div className="w-48 h-48 mx-auto bg-white border-4 border-globus-blue-dark rounded-xl p-2 mb-6 relative">
-                <div className="absolute inset-2 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <QrCodeIcon className="w-24 h-24 text-globus-blue-dark" />
-                </div>
+              <div className="w-48 h-48 mx-auto bg-white border-4 border-globus-blue-dark rounded-xl p-2 mb-6 relative flex items-center justify-center">
+                {qrDataUrl ?
+                <img
+                  src={qrDataUrl}
+                  alt={`QR ${qrModal.eqId}`}
+                  className="w-full h-full object-contain" /> :
+
+                <Loader2Icon className="w-10 h-10 text-globus-blue-dark animate-spin" />
+                }
               </div>
 
               <div className="flex gap-3">
@@ -1000,7 +963,7 @@ export function ErpMateriel() {
                 </button>
                 <button
                 onClick={triggerDownload}
-                disabled={downloadState.active}
+                disabled={downloadState.active || !qrDataUrl}
                 className="flex-1 bg-globus-blue hover:bg-globus-blue/90 text-white font-montserrat font-bold text-sm rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70">
                 
                   {downloadState.active ?

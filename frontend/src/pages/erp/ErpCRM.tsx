@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate } from '../../utils/datetime';
 import {
   TargetIcon,
   CalculatorIcon,
@@ -13,189 +14,31 @@ import {
   XIcon,
   CheckCircle2Icon,
   Loader2Icon,
-  FileTextIcon,
+  Trash2Icon,
   PhoneIcon,
   MailIcon,
   MapPinIcon,
   MessageSquareIcon,
-  SendIcon,
-  ClockIcon,
-  ActivityIcon,
-  WalletIcon,
-  AlertTriangleIcon } from
+  HistoryIcon,
+  GitBranchIcon } from
 'lucide-react';
-import { useLeads, useCreateLead, useConvertLead } from '../../hooks/useErp';
-const initialPipelineColumns = [
-{
-  id: 'prospect',
-  label: 'PROSPECT',
-  color: 'border-t-gray-400',
-  bg: 'bg-gray-50',
-  items: [
-  {
-    id: 'P-001',
-    name: 'M. Essomba',
-    project: 'Villa 5 chambres',
-    budget: 95000000,
-    source: 'Recommandation',
-    date: '20/03/2026',
-    prob: 20,
-    phone: '+237 699 00 11 22',
-    email: 'essomba@email.com',
-    location: 'Yaoundé'
-  },
-  {
-    id: 'P-002',
-    name: 'Société SABC',
-    project: 'Extension usine',
-    budget: 500000000,
-    source: 'Salon BTP',
-    date: '18/03/2026',
-    prob: 15,
-    phone: '+237 677 88 99 00',
-    email: 'contact@sabc.cm',
-    location: 'Douala'
-  }]
+import {
+  useLeads, useCreateLead, useConvertLead, useUpdateLead, useDeleteLead,
+  useQuotes, useCreateQuote, useUpdateQuote, useReviseQuote, useQuoteVersions,
+  useProjectTemplates,
+} from '../../hooks/useErp';
+import { ExportButton } from '../../components/ui/ExportButton';
+import { exportLeadsXlsx, downloadQuotePdf } from '../../services/api/downloads';
+import { EmptyState } from '../../components/ui/EmptyState';
+// Pipeline column skeleton (metadata only — lead items come from the API).
+const PIPELINE_COLUMNS = [
+  { id: 'prospect', label: 'PROSPECT', color: 'border-t-gray-400', bg: 'bg-gray-50', items: [] as any[] },
+  { id: 'qualification', label: 'QUALIFICATION', color: 'border-t-blue-500', bg: 'bg-blue-50/30', items: [] as any[] },
+  { id: 'devis', label: 'DEVIS ENVOYÉ', color: 'border-t-globus-orange', bg: 'bg-orange-50/30', items: [] as any[] },
+  { id: 'nego', label: 'NÉGOCIATION', color: 'border-t-purple-500', bg: 'bg-purple-50/30', items: [] as any[] },
+  { id: 'won', label: 'GAGNÉ', color: 'border-t-emerald-500', bg: 'bg-emerald-50/30', items: [] as any[] },
+];
 
-},
-{
-  id: 'qualification',
-  label: 'QUALIFICATION',
-  color: 'border-t-blue-500',
-  bg: 'bg-blue-50/30',
-  items: [
-  {
-    id: 'P-003',
-    name: 'Mme Ngo Bassa',
-    project: 'Immeuble R+2',
-    budget: 180000000,
-    source: 'Site web',
-    date: '15/03/2026',
-    prob: 40,
-    phone: '+237 655 44 33 22',
-    email: 'ngo.bassa@email.com',
-    location: 'Douala'
-  },
-  {
-    id: 'P-004',
-    name: 'Dr. Fotso',
-    project: 'Clinique privée',
-    budget: 250000000,
-    source: 'Recommandation',
-    date: '12/03/2026',
-    prob: 50,
-    phone: '+237 699 88 77 66',
-    email: 'dr.fotso@clinique.cm',
-    location: 'Bafoussam'
-  }]
-
-},
-{
-  id: 'devis',
-  label: 'DEVIS ENVOYÉ',
-  color: 'border-t-globus-orange',
-  bg: 'bg-orange-50/30',
-  items: [
-  {
-    id: 'P-005',
-    name: 'M. Tchoupo',
-    project: 'Villa 4 chambres',
-    budget: 85000000,
-    source: 'Site web',
-    date: '10/03/2026',
-    prob: 65,
-    phone: '+237 677 11 22 33',
-    email: 'tchoupo@email.com',
-    location: 'Kribi'
-  }]
-
-},
-{
-  id: 'nego',
-  label: 'NÉGOCIATION',
-  color: 'border-t-purple-500',
-  bg: 'bg-purple-50/30',
-  items: [
-  {
-    id: 'P-006',
-    name: 'Import-Export SA',
-    project: 'Entrepôt 800m²',
-    budget: 150000000,
-    source: 'Salon BTP',
-    date: '05/03/2026',
-    prob: 80,
-    phone: '+237 699 55 44 33',
-    email: 'direction@importexport.cm',
-    location: 'Douala Port'
-  }]
-
-},
-{
-  id: 'won',
-  label: 'GAGNÉ',
-  color: 'border-t-emerald-500',
-  bg: 'bg-emerald-50/30',
-  items: [
-  {
-    id: 'P-007',
-    name: 'Mme Nguema',
-    project: 'Immeuble R+3',
-    budget: 350000000,
-    source: 'Recommandation',
-    date: '01/03/2026',
-    prob: 100,
-    phone: '+237 655 99 88 77',
-    email: 'nguema@email.com',
-    location: 'Yaoundé'
-  },
-  {
-    id: 'P-008',
-    name: 'CAMTEL',
-    project: 'Rénovation bureau',
-    budget: 25000000,
-    source: "Appel d'offre",
-    date: '25/02/2026',
-    prob: 100,
-    phone: '+237 222 33 44 55',
-    email: 'marches@camtel.cm',
-    location: 'Yaoundé'
-  }]
-
-}];
-
-const initialQuotes = [
-{
-  id: 'DEV-2026-015',
-  project: 'Villa 4 chambres',
-  client: 'M. Tchoupo',
-  amount: 85000000,
-  status: 'Envoyé',
-  date: '15/03/2026'
-},
-{
-  id: 'DEV-2026-014',
-  project: 'Immeuble R+3',
-  client: 'Mme Nguema',
-  amount: 350000000,
-  status: 'Accepté',
-  date: '10/03/2026'
-},
-{
-  id: 'DEV-2026-013',
-  project: 'Rénovation bureau',
-  client: 'CAMTEL',
-  amount: 25000000,
-  status: 'En rédaction',
-  date: '08/03/2026'
-},
-{
-  id: 'DEV-2026-012',
-  project: 'Entrepôt 500m²',
-  client: 'Import-Export SA',
-  amount: 120000000,
-  status: 'Refusé',
-  date: '01/03/2026'
-}];
 
 const fmt = (v: number) =>
 new Intl.NumberFormat('fr-FR', {
@@ -205,62 +48,100 @@ const fmtShort = (v: number) => {
   if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M FCFA';
   return fmt(v);
 };
+// Map backend pipeline status → UI column id
+const STATUS_TO_COL: Record<string, string> = {
+  NOUVEAU: 'prospect',
+  QUALIFICATION: 'qualification',
+  DEVIS: 'devis',
+  NEGOCIATION: 'nego',
+  GAGNE: 'won',
+  PERDU: 'lost',
+};
+const COL_TO_STATUS: Record<string, string> = {
+  prospect: 'NOUVEAU',
+  qualification: 'QUALIFICATION',
+  devis: 'DEVIS',
+  nego: 'NEGOCIATION',
+  won: 'GAGNE',
+  lost: 'PERDU',
+};
+
+function leadToCard(lead: any) {
+  return {
+    id: lead.id,
+    name: `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || lead.company || lead.email,
+    project: lead.project_type || '',
+    budget: lead.quote_amount || 0,
+    source: lead.source || 'website',
+    date: formatDate(lead.created_at),
+    prob: { NOUVEAU: 20, QUALIFICATION: 40, DEVIS: 60, NEGOCIATION: 80, GAGNE: 100, PERDU: 0 }[lead.status as string] || 30,
+    phone: lead.phone || '',
+    email: lead.email || '',
+    location: lead.location || '',
+    notes: lead.pipeline_notes || '',
+    raw: lead,
+  };
+}
+
 export function ErpCRM() {
   // API hooks for CRM data
   const { data: apiLeads } = useLeads();
   const createLeadMutation = useCreateLead();
   const convertLeadMutation = useConvertLead();
+  const updateLeadMutation = useUpdateLead();
+  const deleteLeadMutation = useDeleteLead();
 
   const [activeTab, setActiveTab] = useState('pipeline');
-  // Data States — use API data if available, else mock data
-  const apiPipelineColumns = useMemo(() => {
-    if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
-      // Group leads by status into pipeline columns
-      const statusMap: Record<string, any[]> = {
-        prospect: [], qualification: [], proposition: [], negotiation: [], gagné: []
-      };
-      apiLeads.forEach((lead: any) => {
-        const status = (lead.status || 'prospect').toLowerCase();
-        if (statusMap[status]) {
-          statusMap[status].push({
-            id: lead.id,
-            name: lead.contact_name || lead.company_name || '',
-            project: lead.project_description || '',
-            budget: lead.estimated_budget || 0,
-            source: lead.source || '',
-            date: lead.created_at ? new Date(lead.created_at).toLocaleDateString('fr-FR') : '',
-            prob: lead.probability || 0,
-            phone: lead.phone || '',
-            email: lead.email || '',
-            location: lead.city || '',
-          });
-        }
-      });
-      return initialPipelineColumns.map(col => ({
-        ...col,
-        items: statusMap[col.id] && statusMap[col.id].length > 0 ? statusMap[col.id] : col.items,
-      }));
+
+  // Pipeline columns rebuilt LIVE from server leads (no more local state)
+  const pipelineColumns = useMemo(() => {
+    const leadsByCol: Record<string, any[]> = {
+      prospect: [], qualification: [], devis: [], nego: [], won: [], lost: [],
+    };
+    if (Array.isArray(apiLeads)) {
+      for (const lead of apiLeads) {
+        const colId = STATUS_TO_COL[lead.status] || 'prospect';
+        if (leadsByCol[colId]) leadsByCol[colId].push(leadToCard(lead));
+      }
     }
-    return null;
+    // Apply server data over the static skeleton (preserves colors/styles).
+    return PIPELINE_COLUMNS.map((col) => ({
+      ...col,
+      items: leadsByCol[col.id] || [],
+    }));
   }, [apiLeads]);
 
-  const [pipelineColumns, setPipelineColumns] = useState(initialPipelineColumns);
-  const [quotes, setQuotes] = useState(initialQuotes);
-
-  // Sync API data into state when available
-  useMemo(() => {
-    if (apiPipelineColumns) {
-      setPipelineColumns(apiPipelineColumns);
-    }
-  }, [apiPipelineColumns]);
+  // Quotes — live from /quotes (Phase 14).
+  const { data: apiQuotes } = useQuotes();
+  const createQuoteMutation = useCreateQuote();
+  const updateQuoteMutation = useUpdateQuote();
+  const QUOTE_STATUS_UI: Record<string, string> = {
+    EN_REDACTION: 'En rédaction', ENVOYE: 'Envoyé', ACCEPTE: 'Accepté', REFUSE: 'Refusé',
+  };
+  const QUOTE_STATUS_API: Record<string, string> = {
+    'En rédaction': 'EN_REDACTION', 'Envoyé': 'ENVOYE', 'Accepté': 'ACCEPTE', 'Refusé': 'REFUSE',
+  };
+  const quotes = useMemo(() => {
+    if (!Array.isArray(apiQuotes)) return [];
+    return apiQuotes.map((q: any) => ({
+      rawId: q.id,
+      id: q.code,
+      project: q.project_label || '',
+      client: q.client_name || '',
+      amount: q.amount || 0,
+      version: q.version || 1,
+      status: QUOTE_STATUS_UI[q.status] || q.status,
+      date: formatDate(q.created_at),
+    }));
+  }, [apiQuotes]);
+  const reviseQuoteMutation = useReviseQuote();
+  const [reviseModal, setReviseModal] = useState<{ isOpen: boolean; quote: any }>({ isOpen: false, quote: null });
+  const [versionHistoryModal, setVersionHistoryModal] = useState<{ isOpen: boolean; quoteId: string | null }>({ isOpen: false, quoteId: null });
+  const { data: versionHistory } = useQuoteVersions(versionHistoryModal.quoteId);
   // UI States
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [downloadState, setDownloadState] = useState({
-    active: false,
-    progress: 0,
-    done: false,
-    filename: ''
-  });
+  const [convertTemplateId, setConvertTemplateId] = useState<string>('');
+  const { data: projectTemplates } = useProjectTemplates();
   // Modals
   const [prospectModal, setProspectModal] = useState(false);
   const [devisModal, setDevisModal] = useState(false);
@@ -312,181 +193,144 @@ export function ErpCRM() {
     }
   };
   // Handlers
-  const handleNewProspect = (e: React.FormEvent) => {
+  const handleNewProspect = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('new-prospect');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newProspect = {
-        id: `P-${Math.floor(Math.random() * 1000)}`,
-        name: (form.elements.namedItem('name') as HTMLInputElement).value,
-        project: (form.elements.namedItem('project') as HTMLInputElement).value,
-        budget: parseInt(
-          (form.elements.namedItem('budget') as HTMLInputElement).value
-        ),
-        source: (form.elements.namedItem('source') as HTMLSelectElement).value,
-        prob: parseInt(
-          (form.elements.namedItem('prob') as HTMLInputElement).value
-        ),
-        phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
+    const form = e.target as HTMLFormElement;
+    const fullName = (form.elements.namedItem('name') as HTMLInputElement).value.trim();
+    const [first, ...rest] = fullName.split(' ');
+    try {
+      await createLeadMutation.mutateAsync({
+        first_name: first || fullName,
+        last_name: rest.join(' '),
         email: (form.elements.namedItem('email') as HTMLInputElement).value,
-        location: (form.elements.namedItem('location') as HTMLInputElement).
-        value,
-        date: new Date().toLocaleDateString('fr-FR')
-      };
-      setPipelineColumns((prev) =>
-      prev.map((col) => {
-        if (col.id === 'prospect') {
-          return {
-            ...col,
-            items: [newProspect, ...col.items]
-          };
-        }
-        return col;
-      })
-      );
-      setProcessingId(null);
+        phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
+        project_type: (form.elements.namedItem('project') as HTMLInputElement).value,
+        location: (form.elements.namedItem('location') as HTMLInputElement).value,
+        source: (form.elements.namedItem('source') as HTMLSelectElement).value,
+        quote_amount: parseFloat(
+          (form.elements.namedItem('budget') as HTMLInputElement).value
+        ) || undefined,
+        message: '',
+      });
       setProspectModal(false);
-    }, 1500);
-  };
-  const handleMoveProspect = (
-  prospectId: string,
-  fromColId: string,
-  toColId: string) =>
-  {
-    setProcessingId(`move-${prospectId}`);
-    setTimeout(() => {
-      let prospectToMove: any = null;
-      setPipelineColumns((prev) => {
-        // First find and remove from source column
-        const newCols = prev.map((col) => {
-          if (col.id === fromColId) {
-            prospectToMove = col.items.find((p) => p.id === prospectId);
-            return {
-              ...col,
-              items: col.items.filter((p) => p.id !== prospectId)
-            };
-          }
-          return col;
-        });
-        // Then add to target column
-        if (prospectToMove) {
-          // Update probability based on column
-          if (toColId === 'won') prospectToMove.prob = 100;else
-          if (toColId === 'nego') prospectToMove.prob = 80;else
-          if (toColId === 'devis') prospectToMove.prob = 60;else
-          if (toColId === 'qualification') prospectToMove.prob = 40;else
-          if (toColId === 'prospect') prospectToMove.prob = 20;
-          return newCols.map((col) => {
-            if (col.id === toColId) {
-              return {
-                ...col,
-                items: [prospectToMove, ...col.items]
-              };
-            }
-            return col;
-          });
-        }
-        return newCols;
-      });
+    } catch (err) {
+      // Errors will show through console; React Query exposes them.
+      console.error('Lead creation failed', err);
+    } finally {
       setProcessingId(null);
-      setProspectDetailModal({
-        isOpen: false,
-        prospect: null,
-        colId: ''
-      });
-    }, 1000);
+    }
   };
-  const handleNewDevis = (e: React.FormEvent) => {
+  const handleMoveProspect = async (
+    prospectId: string,
+    _fromColId: string,
+    toColId: string
+  ) => {
+    setProcessingId(`move-${prospectId}`);
+    const targetStatus = COL_TO_STATUS[toColId];
+    if (!targetStatus) {
+      setProcessingId(null);
+      return;
+    }
+    try {
+      await updateLeadMutation.mutateAsync({
+        id: prospectId,
+        data: { status: targetStatus },
+      });
+      setProspectDetailModal({ isOpen: false, prospect: null, colId: '' });
+    } catch (err) {
+      console.error('Lead status update failed', err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleConvertLead = async (leadId: string) => {
+    const prospect = prospectDetailModal.prospect;
+    setProcessingId(`convert-${leadId}`);
+    try {
+      await convertLeadMutation.mutateAsync({
+        id: leadId,
+        data: {
+          project_name: prospect?.project || prospect?.name || 'Nouveau projet',
+          template_id: convertTemplateId || undefined,
+        },
+      });
+      setConvertTemplateId('');
+      setProspectDetailModal({ isOpen: false, prospect: null, colId: '' });
+    } catch (err) {
+      console.error('Lead conversion failed', err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleDeleteLead = async (leadId: string) => {
+    setProcessingId(`delete-${leadId}`);
+    try {
+      await deleteLeadMutation.mutateAsync(leadId);
+      setProspectDetailModal({ isOpen: false, prospect: null, colId: '' });
+    } catch (err) {
+      console.error('Lead deletion failed', err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleNewDevis = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('new-devis');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const newDevis = {
-        id: `DEV-2026-${Math.floor(Math.random() * 100) + 20}`,
-        project: (form.elements.namedItem('project') as HTMLInputElement).value,
-        client: (form.elements.namedItem('client') as HTMLInputElement).value,
-        amount: parseInt(
-          (form.elements.namedItem('amount') as HTMLInputElement).value
-        ),
-        status: 'En rédaction',
-        date: new Date().toLocaleDateString('fr-FR')
-      };
-      setQuotes([newDevis, ...quotes]);
-      setProcessingId(null);
+    const form = e.target as HTMLFormElement;
+    try {
+      await createQuoteMutation.mutateAsync({
+        project_label: (form.elements.namedItem('project') as HTMLInputElement).value,
+        client_name: (form.elements.namedItem('client') as HTMLInputElement).value,
+        amount: parseInt((form.elements.namedItem('amount') as HTMLInputElement).value) || 0,
+      });
       setDevisModal(false);
-    }, 1500);
+    } catch (err) {
+      console.error('Create quote failed', err);
+    } finally {
+      setProcessingId(null);
+    }
   };
-  const handleEditDevis = (e: React.FormEvent) => {
+  const handleEditDevis = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessingId('edit-devis');
-    setTimeout(() => {
-      const form = e.target as HTMLFormElement;
-      const status = (form.elements.namedItem('status') as HTMLSelectElement).
-      value;
-      setQuotes((prev) =>
-      prev.map((q) =>
-      q.id === editDevisModal.quote.id ?
-      {
-        ...q,
-        status
-      } :
-      q
-      )
-      );
-      setProcessingId(null);
-      setEditDevisModal({
-        isOpen: false,
-        quote: null
+    const form = e.target as HTMLFormElement;
+    const uiStatus = (form.elements.namedItem('status') as HTMLSelectElement).value;
+    try {
+      await updateQuoteMutation.mutateAsync({
+        id: editDevisModal.quote.rawId,
+        data: { status: QUOTE_STATUS_API[uiStatus] || uiStatus },
       });
-    }, 1000);
-  };
-  const handleDuplicateDevis = (quote: any) => {
-    setProcessingId(`dup-${quote.id}`);
-    setTimeout(() => {
-      const duplicated = {
-        ...quote,
-        id: `DEV-2026-${Math.floor(Math.random() * 100) + 20}`,
-        status: 'En rédaction',
-        date: new Date().toLocaleDateString('fr-FR')
-      };
-      setQuotes([duplicated, ...quotes]);
+      setEditDevisModal({ isOpen: false, quote: null });
+    } catch (err) {
+      console.error('Update quote failed', err);
+    } finally {
       setProcessingId(null);
-    }, 1000);
+    }
   };
-  const triggerDownload = (filename: string) => {
-    if (downloadState.active) return;
-    setDownloadState({
-      active: true,
-      progress: 0,
-      done: false,
-      filename
-    });
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 10;
-      setDownloadState((prev) => ({
-        ...prev,
-        progress: p
-      }));
-      if (p >= 100) {
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          done: true
-        }));
-        setTimeout(
-          () =>
-          setDownloadState({
-            active: false,
-            progress: 0,
-            done: false,
-            filename: ''
-          }),
-          3000
-        );
-      }
-    }, 150);
+  const handleDuplicateDevis = async (quote: any) => {
+    setProcessingId(`dup-${quote.id}`);
+    try {
+      await createQuoteMutation.mutateAsync({
+        project_label: quote.project,
+        client_name: quote.client,
+        amount: quote.amount,
+      });
+    } catch (err) {
+      console.error('Duplicate quote failed', err);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  const handleDownloadDevis = async (quote: any) => {
+    setProcessingId(`dl-${quote.id}`);
+    try {
+      await downloadQuotePdf(quote.rawId, quote.id);
+    } catch (err) {
+      console.error('Download quote PDF failed', err);
+    } finally {
+      setProcessingId(null);
+    }
   };
   return (
     <div className="max-w-7xl mx-auto">
@@ -517,16 +361,18 @@ export function ErpCRM() {
           y: 0
         }}>
         
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 gap-2 flex-wrap">
             <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
               Tunnel de Vente
             </h2>
-            <button
-            onClick={() => setProspectModal(true)}
-            className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-5 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
-            
-              <PlusIcon className="w-4 h-4" /> Nouveau Prospect
-            </button>
+            <div className="flex gap-2">
+              <ExportButton onAction={exportLeadsXlsx} />
+              <button
+                onClick={() => setProspectModal(true)}
+                className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold py-2 px-5 rounded-lg transition-colors shadow-sm flex items-center gap-2 text-sm">
+                <PlusIcon className="w-4 h-4" /> Nouveau Prospect
+              </button>
+            </div>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 items-start min-h-[600px]">
             {pipelineColumns.map((col, ci) =>
@@ -649,6 +495,11 @@ export function ErpCRM() {
             </button>
           </div>
           <div className="space-y-4">
+            {quotes.length === 0 &&
+              <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-globus-gray font-opensans text-sm">
+                Aucun devis pour le moment. Créez-en un avec « Nouveau Devis ».
+              </div>
+            }
             <AnimatePresence>
               {quotes.map((q, idx) =>
             <motion.div
@@ -681,6 +532,11 @@ export function ErpCRM() {
                       <span className="font-mono text-xs font-bold text-globus-blue bg-blue-50 px-2 py-0.5 rounded">
                         {q.id}
                       </span>
+                      {q.version > 1 && (
+                        <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-700 font-montserrat">
+                          V{q.version}
+                        </span>
+                      )}
                       <span
                     className={`px-2.5 py-0.5 rounded-full text-xs font-bold font-montserrat ${getStatusStyle(q.status)}`}>
                     
@@ -706,11 +562,15 @@ export function ErpCRM() {
                     </p>
                     <div className="flex gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-100">
                       <button
-                    onClick={() => triggerDownload(`Devis_${q.id}.pdf`)}
-                    className="p-2 text-gray-500 hover:text-globus-blue hover:bg-white rounded-md transition-all shadow-sm"
-                    title="Télécharger">
+                    onClick={() => handleDownloadDevis(q)}
+                    disabled={processingId === `dl-${q.id}`}
+                    className="p-2 text-gray-500 hover:text-globus-blue hover:bg-white rounded-md transition-all shadow-sm disabled:opacity-50"
+                    title="Télécharger PDF">
                     
-                        <DownloadIcon className="w-4 h-4" />
+                        {processingId === `dl-${q.id}` ?
+                    <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                    <DownloadIcon className="w-4 h-4" />
+                    }
                       </button>
                       <button
                     onClick={() => handleDuplicateDevis(q)}
@@ -731,6 +591,18 @@ export function ErpCRM() {
                     
                         <PencilIcon className="w-4 h-4" />
                       </button>
+                      <button
+                    onClick={() => setReviseModal({ isOpen: true, quote: q })}
+                    className="p-2 text-gray-500 hover:text-purple-600 hover:bg-white rounded-md transition-all shadow-sm"
+                    title="Créer une révision">
+                        <GitBranchIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                    onClick={() => setVersionHistoryModal({ isOpen: true, quoteId: q.rawId })}
+                    className="p-2 text-gray-500 hover:text-amber-600 hover:bg-white rounded-md transition-all shadow-sm"
+                    title="Historique des versions">
+                        <HistoryIcon className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
@@ -741,278 +613,15 @@ export function ErpCRM() {
       }
 
       {activeTab === 'portail' &&
-      <motion.div
-        initial={{
-          opacity: 0,
-          y: 10
-        }}
-        animate={{
-          opacity: 1,
-          y: 0
-        }}>
-        
-          <div className="space-y-6">
-            {/* Client Info Header */}
-            <div className="bg-gradient-to-r from-globus-blue-dark to-globus-blue rounded-xl shadow-sm border border-gray-200 p-6 text-white">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold">
-                  JT
-                </div>
-                <div>
-                  <h3 className="font-montserrat font-bold text-xl">
-                    M. Jean Talla
-                  </h3>
-                  <p className="text-blue-100 text-sm">
-                    Villa Moderne Bonapriso
-                  </p>
-                  <div className="flex gap-4 mt-2 text-sm">
-                    <span className="flex items-center gap-1">
-                      <PhoneIcon className="w-3.5 h-3.5" /> +237 699 123 456
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MailIcon className="w-3.5 h-3.5" /> jean.talla@email.com
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages & Appointments Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Messages */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-4 flex items-center gap-2">
-                  <MessageSquareIcon className="w-5 h-5 text-globus-orange" />
-                  Messages Client
-                </h3>
-                <div className="space-y-3">
-                  {[
-                {
-                  from: 'Jean Talla',
-                  to: 'Paul Mbarga',
-                  subject: 'Question sur les finitions',
-                  preview:
-                  'Bonjour, je souhaiterais discuter des choix de carrelage...',
-                  date: '23/03/2026 14:30',
-                  unread: true
-                },
-                {
-                  from: 'Jean Talla',
-                  to: 'Support Technique',
-                  subject: 'Accès caméra chantier',
-                  preview: 'La caméra ne fonctionne plus depuis hier...',
-                  date: '22/03/2026 09:15',
-                  unread: false
-                },
-                {
-                  from: 'Jean Talla',
-                  to: 'Claire Fotso',
-                  subject: 'Modification plan',
-                  preview: 'Serait-il possible de modifier légèrement...',
-                  date: '20/03/2026 16:45',
-                  unread: false
-                }].
-                map((msg, idx) =>
-                <div
-                  key={idx}
-                  className={`p-3 rounded-lg border transition-colors cursor-pointer ${msg.unread ? 'bg-blue-50 border-globus-blue/30' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
-                  
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          {msg.unread &&
-                      <div className="w-2 h-2 rounded-full bg-globus-blue"></div>
-                      }
-                          <span className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                            {msg.subject}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {msg.date}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-1">
-                        De: {msg.from} → À: {msg.to}
-                      </p>
-                      <p className="text-xs text-gray-500 line-clamp-1">
-                        {msg.preview}
-                      </p>
-                      <button
-                    onClick={() => {
-                      setProcessingId(`reply-${idx}`);
-                      setTimeout(() => {
-                        setProcessingId(null);
-                        showToast('Réponse envoyée au client', 'success');
-                      }, 1500);
-                    }}
-                    disabled={processingId === `reply-${idx}`}
-                    className="mt-2 text-xs font-bold text-globus-blue hover:text-globus-orange transition-colors flex items-center gap-1">
-                    
-                        {processingId === `reply-${idx}` ?
-                    <Loader2Icon className="w-3 h-3 animate-spin" /> :
-
-                    <SendIcon className="w-3 h-3" />
-                    }{' '}
-                        Répondre
-                      </button>
-                    </div>
-                )}
-                </div>
-              </div>
-
-              {/* Appointments */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-4 flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-globus-orange" />
-                  Demandes de RDV
-                </h3>
-                <div className="space-y-3">
-                  {[
-                {
-                  type: 'Visite chantier',
-                  date: '28/03/2026',
-                  time: '10:00',
-                  status: 'En attente',
-                  note: "Souhaite voir l'avancement des travaux"
-                },
-                {
-                  type: 'Choix finitions',
-                  date: '30/03/2026',
-                  time: '14:00',
-                  status: 'Confirmé',
-                  note: 'Sélection carrelage et peinture'
-                }].
-                map((rdv, idx) =>
-                <div
-                  key={idx}
-                  className="p-3 rounded-lg bg-gray-50 border border-gray-200">
-                  
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                          {rdv.type}
-                        </span>
-                        <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${rdv.status === 'Confirmé' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      
-                          {rdv.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="w-3 h-3" /> {rdv.date}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <ClockIcon className="w-3 h-3" /> {rdv.time}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500">{rdv.note}</p>
-                      {rdv.status === 'En attente' &&
-                  <div className="flex gap-2 mt-2">
-                          <button
-                      onClick={() => {
-                        setProcessingId(`confirm-${idx}`);
-                        setTimeout(() => {
-                          setProcessingId(null);
-                          showToast('RDV confirmé', 'success');
-                        }, 1000);
-                      }}
-                      disabled={processingId === `confirm-${idx}`}
-                      className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg font-bold transition-colors">
-                      
-                            {processingId === `confirm-${idx}` ?
-                      <Loader2Icon className="w-3 h-3 animate-spin mx-auto" /> :
-
-                      'Confirmer'
-                      }
-                          </button>
-                          <button className="flex-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 py-1.5 rounded-lg font-bold transition-colors">
-                            Refuser
-                          </button>
-                        </div>
-                  }
-                    </div>
-                )}
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Log */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <h3 className="font-montserrat font-bold text-lg text-globus-blue-dark mb-4 flex items-center gap-2">
-                <ActivityIcon className="w-5 h-5 text-globus-orange" />
-                Activité Portail Client
-              </h3>
-              <div className="space-y-3">
-                {[
-              {
-                action: 'Paiement effectué',
-                detail: 'Appel de fonds #3 - 17 000 000 FCFA (MTN MoMo)',
-                date: '15/05/2024 16:23',
-                icon: WalletIcon,
-                color: 'text-green-600',
-                bg: 'bg-green-100'
-              },
-              {
-                action: 'Document signé',
-                detail: 'Avenant budgétaire #1 (signature OTP)',
-                date: '10/05/2024 11:45',
-                icon: FileTextIcon,
-                color: 'text-blue-600',
-                bg: 'bg-blue-100'
-              },
-              {
-                action: 'Ticket SAV créé',
-                detail: 'Prise électrique défectueuse - Chambre 2',
-                date: '01/06/2025 09:30',
-                icon: AlertTriangleIcon,
-                color: 'text-orange-600',
-                bg: 'bg-orange-100'
-              },
-              {
-                action: 'Validation matériaux',
-                detail: 'Choix carrelage cuisine confirmé',
-                date: '25/04/2024 14:15',
-                icon: CheckCircle2Icon,
-                color: 'text-purple-600',
-                bg: 'bg-purple-100'
-              },
-              {
-                action: 'Connexion portail',
-                detail: 'Consultation planning et photos',
-                date: '24/03/2026 08:12',
-                icon: UserIcon,
-                color: 'text-gray-600',
-                bg: 'bg-gray-100'
-              }].
-              map((activity, idx) => {
-                const Icon = activity.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    
-                      <div
-                      className={`w-8 h-8 rounded-lg ${activity.bg} flex items-center justify-center shrink-0`}>
-                      
-                        <Icon className={`w-4 h-4 ${activity.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                          {activity.action}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {activity.detail}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {activity.date}
-                        </p>
-                      </div>
-                    </div>);
-
-              })}
-              </div>
-            </div>
-          </div>
-        </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <EmptyState
+            icon={<MessageSquareIcon className="w-7 h-7" />}
+            title="Communication client"
+            description="Les messages et les rendez-vous des clients sont gérés dans les modules dédiés Messagerie et Agenda de l'ERP."
+          />
+        </div>
+      </motion.div>
       }
 
       {/* MODALS */}
@@ -1349,6 +958,43 @@ export function ErpCRM() {
                   )}
                   </div>
                 </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">
+                    Modèle de projet (phases pré-remplies)
+                  </label>
+                  <select
+                  value={convertTemplateId}
+                  onChange={(e) => setConvertTemplateId(e.target.value)}
+                  className="w-full mb-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue">
+                    <option value="">— Sans modèle —</option>
+                    {(Array.isArray(projectTemplates) ? projectTemplates : []).map((t: any) =>
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                    )}
+                  </select>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                  onClick={() => handleConvertLead(prospectDetailModal.prospect.id)}
+                  disabled={processingId === `convert-${prospectDetailModal.prospect.id}`}
+                  className="flex-1 bg-globus-blue-dark hover:bg-globus-blue text-white font-montserrat font-bold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 disabled:opacity-70">
+
+                    {processingId === `convert-${prospectDetailModal.prospect.id}` ?
+                  <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                  <CheckCircle2Icon className="w-4 h-4" />}
+                    Convertir en projet
+                  </button>
+                  <button
+                  onClick={() => handleDeleteLead(prospectDetailModal.prospect.id)}
+                  disabled={processingId === `delete-${prospectDetailModal.prospect.id}`}
+                  className="px-4 py-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-montserrat font-bold text-sm flex items-center gap-2 disabled:opacity-70">
+
+                    {processingId === `delete-${prospectDetailModal.prospect.id}` ?
+                  <Loader2Icon className="w-4 h-4 animate-spin" /> :
+                  <Trash2Icon className="w-4 h-4" />}
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1565,65 +1211,132 @@ export function ErpCRM() {
         }
       </AnimatePresence>
 
-      {/* Download Toast */}
+      {/* Revise Quote Modal */}
       <AnimatePresence>
-        {downloadState.active &&
+        {reviseModal.isOpen &&
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-            x: 20
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            x: 0
-          }}
-          exit={{
-            opacity: 0,
-            y: 20,
-            x: 20
-          }}
-          className="fixed bottom-4 right-4 z-50 bg-white shadow-xl rounded-xl border border-gray-200 p-4 w-80">
-          
-            <div className="flex items-center gap-3 mb-3">
-              {downloadState.done ?
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                  <CheckCircle2Icon className="w-4 h-4 text-green-600" />
-                </div> :
-
-            <div className="w-8 h-8 rounded-full bg-globus-orange/10 flex items-center justify-center shrink-0">
-                  <Loader2Icon className="w-4 h-4 text-globus-orange animate-spin" />
-                </div>
-            }
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setReviseModal({ isOpen: false, quote: null })}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-purple-700 p-6 text-white flex items-center justify-between">
               <div>
-                <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                  {downloadState.done ?
-                'Téléchargement terminé' :
-                'Génération du PDF...'}
-                </p>
-                <p className="font-opensans text-xs text-globus-gray truncate max-w-[200px]">
-                  {downloadState.filename}
-                </p>
+                <h3 className="font-montserrat font-bold text-xl">Nouvelle révision</h3>
+                <p className="text-purple-200 text-sm mt-1">{reviseModal.quote?.id} — V{(reviseModal.quote?.version || 1)} → V{(reviseModal.quote?.version || 1) + 1}</p>
               </div>
+              <button onClick={() => setReviseModal({ isOpen: false, quote: null })} className="p-2 hover:bg-white/10 rounded-lg">
+                <XIcon className="w-5 h-5" />
+              </button>
             </div>
-            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-              className={`h-full rounded-full ${downloadState.done ? 'bg-green-500' : 'bg-globus-orange'}`}
-              initial={{
-                width: '0%'
-              }}
-              animate={{
-                width: `${downloadState.progress}%`
-              }}
-              transition={{
-                duration: 0.1
-              }} />
-            
-            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setProcessingId('revise-devis');
+              const form = e.target as HTMLFormElement;
+              try {
+                await reviseQuoteMutation.mutateAsync({
+                  id: reviseModal.quote.rawId,
+                  data: {
+                    amount: parseFloat((form.elements.namedItem('amount') as HTMLInputElement).value) || undefined,
+                    notes: (form.elements.namedItem('notes') as HTMLTextAreaElement).value || undefined,
+                    version_note: (form.elements.namedItem('version_note') as HTMLInputElement).value,
+                  },
+                });
+                setReviseModal({ isOpen: false, quote: null });
+              } catch (err) {
+                console.error('Revise quote failed', err);
+              } finally {
+                setProcessingId(null);
+              }
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="font-montserrat text-sm font-bold text-globus-blue-dark block mb-1">Motif de la révision *</label>
+                <input name="version_note" required placeholder="ex: Ajustement prix terrassement"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="font-montserrat text-sm font-bold text-globus-blue-dark block mb-1">Nouveau montant (FCFA)</label>
+                <input name="amount" type="number" defaultValue={reviseModal.quote?.amount || 0}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+              </div>
+              <div>
+                <label className="font-montserrat text-sm font-bold text-globus-blue-dark block mb-1">Notes</label>
+                <textarea name="notes" rows={3} defaultValue=""
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setReviseModal({ isOpen: false, quote: null })}
+                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-lg">Annuler</button>
+                <button type="submit" disabled={processingId === 'revise-devis'}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 disabled:opacity-70">
+                  {processingId === 'revise-devis' ? <Loader2Icon className="w-4 h-4 animate-spin" /> : <GitBranchIcon className="w-4 h-4" />}
+                  Créer V{(reviseModal.quote?.version || 1) + 1}
+                </button>
+              </div>
+            </form>
           </motion.div>
+        </motion.div>
         }
       </AnimatePresence>
+
+      {/* Version History Modal */}
+      <AnimatePresence>
+        {versionHistoryModal.isOpen &&
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setVersionHistoryModal({ isOpen: false, quoteId: null })}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="bg-amber-600 p-6 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-montserrat font-bold text-xl">Historique des versions</h3>
+                <p className="text-amber-100 text-sm mt-1">
+                  {Array.isArray(versionHistory) && versionHistory.length > 0 ? versionHistory[0]?.code?.split('__v')[0] : ''}
+                </p>
+              </div>
+              <button onClick={() => setVersionHistoryModal({ isOpen: false, quoteId: null })} className="p-2 hover:bg-white/10 rounded-lg">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 max-h-[400px] overflow-y-auto">
+              {Array.isArray(versionHistory) && versionHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {versionHistory.map((v: any, i: number) => (
+                    <div key={v.id} className={`p-4 rounded-xl border ${i === 0 ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-gray-50'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold font-montserrat ${i === 0 ? 'bg-amber-200 text-amber-800' : 'bg-gray-200 text-gray-600'}`}>
+                            V{v.version}
+                          </span>
+                          {i === 0 && <span className="text-xs font-bold text-amber-600">Actuelle</span>}
+                        </div>
+                        <span className="text-xs text-gray-500 font-opensans">{formatDate(v.created_at)}</span>
+                      </div>
+                      <p className="font-montserrat font-bold text-globus-blue-dark">
+                        {(v.amount || 0).toLocaleString('fr-FR')} FCFA
+                      </p>
+                      {v.version_note && (
+                        <p className="text-sm text-gray-600 font-opensans mt-1 italic">
+                          {v.version_note}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-400 font-opensans py-8">Aucun historique disponible</p>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+        }
+      </AnimatePresence>
+
     </div>);
 
 }

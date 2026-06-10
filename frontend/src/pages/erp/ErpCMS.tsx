@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAdminCMS } from '../../hooks/useAdminCMS';
+import { formatDate } from '../../utils/datetime';
 import {
   ArticleModal, ArticlePreviewModal, ProjectModal, ServiceModal, TeamModal,
   TestimonialModal, PartnerModal, FaqItemModal, FaqCategoryModal,
@@ -10,58 +11,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { getAnalyticsStats } from '../../services/api/admin.api';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FileTextIcon,
-  ImageIcon,
-  BriefcaseIcon,
-  UsersIcon,
-  HelpCircleIcon,
-  SearchIcon,
-  PlusIcon,
-  EditIcon,
-  Trash2Icon,
-  EyeIcon,
-  EyeOffIcon,
-  GripVerticalIcon,
-  CheckCircle2Icon,
-  MessageSquareIcon,
-  MailIcon,
-  ClockIcon,
-  Loader2Icon,
-  XIcon,
-  UploadCloudIcon,
-  SaveIcon,
-  LayoutDashboardIcon,
-  SettingsIcon,
-  GlobeIcon,
-  ScaleIcon,
-  ChevronDownIcon,
-  PlayCircleIcon,
-  LinkIcon,
-  TypeIcon,
-  HashIcon,
-  ShieldCheckIcon,
-  VideoIcon,
-  HandshakeIcon,
-  StarIcon,
-  PhoneIcon,
-  MapPinIcon,
-  FacebookIcon,
-  InstagramIcon,
-  LinkedinIcon,
-  TwitterIcon,
-  FolderOpenIcon,
-  FileIcon,
-  MusicIcon,
-  CopyIcon,
-  FilmIcon,
-  BarChart3Icon,
-  TagIcon,
-  CodeIcon,
-  MapIcon,
-  RefreshCwIcon
-} from
-  'lucide-react';
+import { FileTextIcon, ImageIcon, BriefcaseIcon, UsersIcon, HelpCircleIcon, SearchIcon, PlusIcon, EditIcon, Trash2Icon, EyeIcon, EyeOffIcon, GripVerticalIcon, CheckCircle2Icon, MailIcon, ClockIcon, Loader2Icon, XIcon, UploadCloudIcon, SaveIcon, LayoutDashboardIcon, SettingsIcon, GlobeIcon, ScaleIcon, ChevronDownIcon, PlayCircleIcon, LinkIcon, TypeIcon, HashIcon, ShieldCheckIcon, VideoIcon, HandshakeIcon, StarIcon, FacebookIcon, InstagramIcon, LinkedinIcon, TwitterIcon, FolderOpenIcon, FileIcon, MusicIcon, BarChart3Icon, TagIcon, CodeIcon, MapIcon, RefreshCwIcon } from 'lucide-react';
 const tabs = [
   {
     id: 'blog',
@@ -151,14 +101,14 @@ export function ErpCMS() {
     faqCategories, faqItems, heroSlides, engagements,
     methodology, stats, guarantees, contacts, mediaItems,
     siteSettings, aboutContent, legalPages,
-    blogStats, mediaStats, contactStats,
+    blogStats,
     createBlog, updateBlog, deleteBlog,
     projectsCrud, servicesCrud, teamCrud, testimonialsCrud,
     partnersCrud, faqCategoriesCrud, faqItemsCrud, heroSlidesCrud,
     engagementsCrud, methodologyCrud, statsCrud, guaranteesCrud,
     updateSettings, updateAbout, updateLegal,
     markContactRead, replyContact, uploadMedia, importYouTube, deleteMedia,
-    loading, isSaving,
+    loading,
   } = cms;
 
   // ── Aliases for template compatibility ────────────────────
@@ -167,9 +117,8 @@ export function ErpCMS() {
   const servicesData = services;
   const teamData = team;
   const testimonialsData = testimonials;
-  const faqData = faqItems;
   const contactData = contacts.map(c => ({
-    ...c, date: new Date(c.created_at).toLocaleDateString('fr-FR'),
+    ...c, date: formatDate(c.created_at),
     status: c.replied ? 'Répondu' : c.is_read ? 'Lu' : 'Nouveau',
   }));
   const heroSlidesData = heroSlides;
@@ -179,31 +128,17 @@ export function ErpCMS() {
   const guaranteesData = guarantees;
   const partnersData = partners;
   const mediaData = mediaItems.map(m => ({
-    ...m, uploadDate: m.uploaded_at ? new Date(m.uploaded_at).toLocaleDateString('fr-FR') : '',
+    ...m, uploadDate: formatDate(m.uploaded_at),
     usageCount: m.usage_count || 0,
   }));
   // Settings aliases (fallback to empty object)
   const s = siteSettings || {} as any;
   const heroVideoData = { url: s.hero_video_src || '', poster: s.hero_video_poster || '', duration: 6 };
-  const aboutSectionData = {
-    paragraph1: aboutContent?.paragraphs?.[0] || '',
-    paragraph2: aboutContent?.paragraphs?.[1] || '',
-    bulletPoints: aboutContent?.highlights || [],
-    badgeText: aboutContent?.badge_value || '',
-    images: aboutContent?.images || [],
-  };
-  const videoSectionData = { youtubeUrl: s.video_section_youtube_url || '', title: s.video_section_title || '', subtitle: s.video_section_subtitle || '' };
-  const ctaBannerData = { title: s.cta_title || '', subtitle: s.cta_subtitle || '', buttonText: s.cta_text || '', buttonLink: s.cta_href || '' };
-  const headerSettingsData = { logoUrl: s.logo || '/globusLogo.jpg', phone: s.phone || '', email: s.email || '', hours: s.top_bar_text || '' };
-  const footerSettingsData = { description: s.footer_description || '', address: s.address || '', phone: s.phone || '', email: s.email || '', facebook: s.social_links?.facebook || '', twitter: s.social_links?.twitter || '', linkedin: s.social_links?.linkedin || '', instagram: s.social_links?.instagram || '', newsletterEnabled: true };
-  const seoSettingsData = { metaTitle: '', metaDescription: '', ogImage: '' };
-  const aboutPageData = { heroImage: aboutContent?.hero_image || '', historyTitle: aboutContent?.hero_title || '', historyP1: aboutContent?.paragraphs?.[0] || '', historyP2: aboutContent?.paragraphs?.[1] || '', values: aboutContent?.values || [], certifications: aboutContent?.certifications || [] };
   const contactPageData = { address: s.contact_address || '', phoneStandard: s.contact_phone || '', phoneWhatsApp: s.contact_whatsapp || '', emailContact: s.contact_email || '', emailDevis: s.email || '', hoursWeekday: s.contact_hours || '', hoursSaturday: '', mapUrl: s.contact_map_embed_url || '', formSubjects: ['Demande de devis', 'Renseignement général', 'Candidature / Emploi', 'Autre demande'] };
   const faqPageData = faqCategories.map(cat => ({
     id: cat.id, category: cat.name,
     items: faqItems.filter(item => item.category_id === cat.id).map(item => ({ id: item.id, q: item.question, a: item.answer, category_id: item.category_id, sort_order: item.sort_order })),
   }));
-  const helpCenterData = { supportEmail: s.contact_email || '', whatsappNumber: s.contact_whatsapp || '', faqDesc: 'Trouvez des réponses immédiates.', whatsappDesc: 'Discutez en direct.', emailDesc: 'Réponse sous 24h.' };
 
 
   // ── Local UI state ────────────────────────────────────────
@@ -228,13 +163,10 @@ export function ErpCMS() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [deleteEntityType, setDeleteEntityType] = useState<string>('');
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewItem, setPreviewItem] = useState<any>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>('hero');
   const [activeSettingsTab, setActiveSettingsTab] = useState('header');
   const [activePagesTab, setActivePagesTab] = useState('about');
   const [activeLegalTab, setActiveLegalTab] = useState('legalNotice');
-  const [showEditModal, setShowEditModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editEntityType, setEditEntityType] = useState<string>('');
   // Media Tab State
@@ -359,7 +291,6 @@ export function ErpCMS() {
       showToast('Erreur lors de la sauvegarde', 'error');
     }
     setIsProcessing(null);
-    setShowEditModal(false);
     setEditItem(null);
   };
 
@@ -3602,15 +3533,6 @@ export function ErpCMS() {
                               </div>
                           }
                           <div className="absolute top-2 right-2 flex gap-1">
-                            <button
-                              onClick={() => {
-                                setEditItem(media);
-                                setShowEditModal(true);
-                              }}
-                              className="p-1.5 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded transition-colors">
-
-                              <EditIcon className="w-4 h-4" />
-                            </button>
                             <button
                               onClick={() => confirmDelete(media, 'media')}
                               className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">

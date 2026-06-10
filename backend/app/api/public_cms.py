@@ -7,9 +7,11 @@ These endpoints match EXACTLY the paths in frontend/src/services/api/cms.api.ts
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 import httpx
+from app.rate_limit import limiter
 
 from app.database import get_db
 from app.services import cms_service as svc
+from app.services.lead_service import create_lead as create_lead_record, split_full_name
 from app.schemas.cms import (
     HeroSlideOut, CtaButton, HeroVideoOut, EngagementOut, AboutContentOut,
     MethodologyStepOut, StatOut, ServiceItemOut, ServiceDetailOut,
@@ -231,9 +233,8 @@ async def get_services_page(db: AsyncSession = Depends(get_db)):
 async def get_service_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
     service = await svc.get_service_by_slug(db, slug)
     if not service:
-        # Fallback to first service (like the frontend mock behavior)
-        service = await svc.get_service_by_slug(db, "construction-batiments")
-    if not service:
+        # Phase 9/10: no silent fallback — an unknown slug must 404 so the
+        # front shows its "introuvable" state instead of the wrong service.
         raise HTTPException(404, "Service not found")
     return ServiceDetailFullOut(
         slug=service.slug, title=service.title, subtitle=service.subtitle,
@@ -262,8 +263,7 @@ async def get_projects_page(db: AsyncSession = Depends(get_db)):
 async def get_project_by_slug(slug: str, db: AsyncSession = Depends(get_db)):
     project = await svc.get_project_by_slug(db, slug)
     if not project:
-        project = await svc.get_project_by_slug(db, "default")
-    if not project:
+        # Phase 9/10: no silent fallback to a "default" project — 404 instead.
         raise HTTPException(404, "Project not found")
     return ProjectDetailFullOut(
         slug=project.slug, title=project.title, category=project.category,
@@ -336,6 +336,12 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
     return SiteSettingsOut(
         companyName=settings.company_name, logo=settings.logo,
         phone=settings.phone, email=settings.email, address=settings.address,
+        rcNumber=getattr(settings, "rc_number", "") or "",
+        taxId=getattr(settings, "tax_id", "") or "",
+        vatRate=getattr(settings, "vat_rate", 19.25) if getattr(settings, "vat_rate", None) is not None else 19.25,
+        timezone=getattr(settings, "timezone", None),
+        dateFormat=getattr(settings, "date_format", None),
+        systemLanguage=getattr(settings, "system_language", None),
         whatsappUrl=settings.whatsapp_url,
         socialLinks=SocialLinksOut(
             facebook=social.get("facebook", ""),
@@ -391,12 +397,27 @@ async def get_about_page(db: AsyncSession = Depends(get_db)):
 # ══════════════════════════════════════════════════════════════
 
 @router.post("/contact/submit", response_model=FormResponse)
-async def submit_contact(data: ContactFormIn, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def submit_contact(request: Request, data: ContactFormIn, db: AsyncSession = Depends(get_db)):
     await svc.create_contact_submission(db, {
         "name": data.name, "email": data.email, "phone": data.phone,
         "subject": data.subject, "message": data.message,
         "project_type": data.projectType or "",
     })
+
+    # Mutualised lead funnel (Phase 16): a website contact also enters the CRM
+    # pipeline via the shared lead_service helper — same path as POST /crm/leads.
+    _first, _last = split_full_name(data.name)
+    await create_lead_record(
+        db,
+        first_name=_first,
+        last_name=_last,
+        email=data.email,
+        phone=data.phone or "",
+        project_type=data.projectType or data.subject or "",
+        message=data.message or "",
+        source="contact_form",
+    )
 
     # Emails notification (Admin + Visiteur) via SMTP
     import smtplib, os
@@ -476,7 +497,8 @@ async def submit_contact(data: ContactFormIn, db: AsyncSession = Depends(get_db)
 
 
 @router.post("/newsletter/subscribe", response_model=FormResponse)
-async def subscribe_newsletter(data: NewsletterIn, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def subscribe_newsletter(request: Request, data: NewsletterIn, db: AsyncSession = Depends(get_db)):
     await svc.create_newsletter_subscriber(db, data.email)
     return FormResponse(success=True, message="Inscription à la newsletter réussie !")
 

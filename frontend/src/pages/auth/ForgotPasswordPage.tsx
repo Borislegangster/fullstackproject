@@ -1,24 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MailIcon, ArrowLeftIcon, SendIcon } from 'lucide-react';
+import { MailIcon, ArrowLeftIcon, SendIcon, AlertCircleIcon } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { forgotPasswordApi } from '../../services/api/auth.api';
 
 export function ForgotPasswordPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) return;
+    setError('');
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await forgotPasswordApi({ email: email.trim() });
       setIsSuccess(true);
-    }, 1500);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 429) {
+        setError('Trop de tentatives. Réessayez dans quelques minutes.');
+      } else {
+        // For privacy reasons, the backend never reveals if an email exists,
+        // so any unexpected error is technical.
+        setError('Une erreur est survenue. Veuillez réessayer plus tard.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,6 +81,17 @@ export function ForgotPasswordPage() {
             réinitialisation.
           </p>
 
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 rounded-xl p-3.5 mb-5 flex items-center gap-3"
+            >
+              <AlertCircleIcon className="w-5 h-5 text-red-500 shrink-0" />
+              <p className="font-opensans text-sm text-red-700">{error}</p>
+            </motion.div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -77,6 +104,11 @@ export function ForgotPasswordPage() {
                 type="email"
                 id="forgot-email"
                 required
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
                 className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-opensans text-sm focus:outline-none focus:border-globus-orange focus:ring-2 focus:ring-globus-orange/20 transition-all placeholder:text-gray-400"
                 placeholder="votre@email.com"
               />

@@ -1,9 +1,9 @@
-import React, { useState, Children } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { formatDateTime } from '../../utils/datetime';
 import {
   BellIcon,
   WalletIcon,
-  CameraIcon,
   FileTextIcon,
   MessageSquareIcon,
   CheckCircle2Icon,
@@ -13,7 +13,7 @@ import {
   XIcon } from
 'lucide-react';
 import { useClientUser } from '../../hooks/useClientUser';
-import { useClientNotifications, useMarkClientNotificationRead } from '../../hooks/useClient';
+import { useClientNotifications, useMarkClientNotificationRead, useDeleteClientNotification } from '../../hooks/useClient';
 const categories = [
 {
   id: 'all',
@@ -24,7 +24,7 @@ const categories = [
   label: 'Non lues'
 },
 {
-  id: 'chantier',
+  id: 'chantier',     
   label: 'Chantier'
 },
 {
@@ -51,139 +51,6 @@ interface Notification {
   time: string;
   read: boolean;
 }
-const notificationsData: Notification[] = [
-{
-  id: 1,
-  category: 'finances',
-  icon: WalletIcon,
-  iconColor: 'text-globus-orange',
-  iconBg: 'bg-globus-orange/10',
-  title: 'Appel de fonds #4 en attente',
-  description: 'Montant : 12 750 000 FCFA. Échéance : 01/08/2024',
-  time: 'Il y a 2h',
-  read: false
-},
-{
-  id: 2,
-  category: 'chantier',
-  icon: CameraIcon,
-  iconColor: 'text-blue-600',
-  iconBg: 'bg-blue-100',
-  title: 'Nouvelle photo de chantier',
-  description: 'Coulage dalle RDC - 5 nouvelles photos ajoutées',
-  time: 'Il y a 5h',
-  read: false
-},
-{
-  id: 3,
-  category: 'chantier',
-  icon: CheckCircle2Icon,
-  iconColor: 'text-green-600',
-  iconBg: 'bg-green-100',
-  title: 'Étape Fondations validée',
-  description: 'Les fondations ont été validées par le bureau de contrôle',
-  time: '1 jour',
-  read: true
-},
-{
-  id: 4,
-  category: 'messages',
-  icon: MessageSquareIcon,
-  iconColor: 'text-purple-600',
-  iconBg: 'bg-purple-100',
-  title: 'Message de Ing. Paul Mbarga',
-  description: 'Concernant le planning de la semaine prochaine',
-  time: '2 jours',
-  read: true
-},
-{
-  id: 5,
-  category: 'documents',
-  icon: FileTextIcon,
-  iconColor: 'text-gray-600',
-  iconBg: 'bg-gray-100',
-  title: 'Document: Plan électrique v2',
-  description: 'Un nouveau document a été ajouté à votre dossier',
-  time: '3 jours',
-  read: true
-},
-{
-  id: 6,
-  category: 'chantier',
-  icon: HardHatIcon,
-  iconColor: 'text-globus-blue',
-  iconBg: 'bg-globus-blue/10',
-  title: 'Début élévation murs RDC',
-  description: 'Les travaux de maçonnerie ont démarré ce matin',
-  time: '4 jours',
-  read: true
-},
-{
-  id: 7,
-  category: 'finances',
-  icon: CheckCircle2Icon,
-  iconColor: 'text-green-600',
-  iconBg: 'bg-green-100',
-  title: 'Paiement #3 confirmé',
-  description: 'Votre paiement de 17 000 000 FCFA a été reçu',
-  time: '5 jours',
-  read: true
-},
-{
-  id: 8,
-  category: 'documents',
-  icon: FileTextIcon,
-  iconColor: 'text-globus-orange',
-  iconBg: 'bg-globus-orange/10',
-  title: 'Signature requise: Avenant #1',
-  description: "Veuillez signer l'avenant budgétaire dans Documents",
-  time: '6 jours',
-  read: true
-},
-{
-  id: 9,
-  category: 'system',
-  icon: InfoIcon,
-  iconColor: 'text-blue-500',
-  iconBg: 'bg-blue-50',
-  title: 'Bienvenue sur votre espace client',
-  description: 'Découvrez toutes les fonctionnalités de votre portail',
-  time: '1 semaine',
-  read: true
-},
-{
-  id: 10,
-  category: 'chantier',
-  icon: AlertCircleIcon,
-  iconColor: 'text-yellow-600',
-  iconBg: 'bg-yellow-100',
-  title: 'Météo: Pluie prévue demain',
-  description: 'Les travaux extérieurs pourraient être reportés',
-  time: '1 semaine',
-  read: true
-},
-{
-  id: 11,
-  category: 'messages',
-  icon: MessageSquareIcon,
-  iconColor: 'text-purple-600',
-  iconBg: 'bg-purple-100',
-  title: 'Message de Mme. Claire Fotso',
-  description: 'Choix des finitions - rendez-vous proposé',
-  time: '2 semaines',
-  read: true
-},
-{
-  id: 12,
-  category: 'finances',
-  icon: FileTextIcon,
-  iconColor: 'text-gray-600',
-  iconBg: 'bg-gray-100',
-  title: 'Facture #2 disponible',
-  description: "Votre facture est disponible dans l'onglet Finances",
-  time: '2 semaines',
-  read: true
-}];
 
 const stagger = {
   hidden: {},
@@ -206,40 +73,66 @@ const fadeUp = {
     }
   }
 };
+function notifVisuals(type: string) {
+  const map: Record<string, { icon: any; color: string; bg: string; category: Notification['category'] }> = {
+    invoice: { icon: WalletIcon, color: 'text-globus-orange', bg: 'bg-globus-orange/10', category: 'finances' },
+    message: { icon: MessageSquareIcon, color: 'text-purple-600', bg: 'bg-purple-100', category: 'messages' },
+    document: { icon: FileTextIcon, color: 'text-gray-600', bg: 'bg-gray-100', category: 'documents' },
+    project: { icon: HardHatIcon, color: 'text-blue-600', bg: 'bg-blue-100', category: 'chantier' },
+    appointment: { icon: CheckCircle2Icon, color: 'text-green-600', bg: 'bg-green-100', category: 'chantier' },
+    success: { icon: CheckCircle2Icon, color: 'text-green-600', bg: 'bg-green-100', category: 'system' },
+    warning: { icon: AlertCircleIcon, color: 'text-yellow-600', bg: 'bg-yellow-100', category: 'system' },
+    error: { icon: AlertCircleIcon, color: 'text-red-600', bg: 'bg-red-100', category: 'system' },
+    info: { icon: InfoIcon, color: 'text-blue-600', bg: 'bg-blue-100', category: 'system' },
+  };
+  return map[type] || map.info;
+}
+
 export function ClientNotifications() {
   const { data: apiNotifications } = useClientNotifications();
   const markReadMutation = useMarkClientNotificationRead();
+  const deleteNotifMutation = useDeleteClientNotification();
   const clientUser = useClientUser();
+  void clientUser;
   const [activeFilter, setActiveFilter] = useState('all');
-  const [notifications, setNotifications] = useState(notificationsData);
+
+  // Live notifications from API
+  const notifications = React.useMemo(() => {
+    if (!Array.isArray(apiNotifications)) {
+      return [] as any[];
+    }
+    return apiNotifications
+      .map((n: any) => {
+        const v = notifVisuals(n.type || 'info');
+        return {
+          id: n.id,
+          category: v.category,
+          icon: v.icon,
+          iconColor: v.color,
+          iconBg: v.bg,
+          title: n.title || '',
+          description: n.message || '',
+          time: formatDateTime(n.created_at),
+          read: !!n.is_read,
+        };
+      });
+  }, [apiNotifications]);
+
   const filteredNotifications = notifications.filter((notif) => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'unread') return !notif.read;
     return notif.category === activeFilter;
   });
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const markAsRead = (id: number) => {
-    setNotifications((prev) =>
-    prev.map((n) =>
-    n.id === id ?
-    {
-      ...n,
-      read: true
-    } :
-    n
-    )
-    );
+
+  const markAsRead = (id: number | string) => {
+    markReadMutation.mutate(String(id));
   };
   const markAllAsRead = () => {
-    setNotifications((prev) =>
-    prev.map((n) => ({
-      ...n,
-      read: true
-    }))
-    );
+    notifications.filter((n) => !n.read).forEach((n) => markReadMutation.mutate(String(n.id)));
   };
-  const deleteNotification = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = (id: number | string) => {
+    deleteNotifMutation.mutate(String(id));
   };
   return (
     <div className="max-w-5xl mx-auto space-y-6">

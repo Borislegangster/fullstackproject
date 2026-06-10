@@ -1,8 +1,24 @@
-import React from 'react';
 interface SkeletonProps {
   className?: string;
+  /** When set, SkeletonText renders this many stacked lines. */
+  lines?: number;
 }
-export function SkeletonText({ className = '' }: SkeletonProps) {
+export function SkeletonText({ className = '', lines }: SkeletonProps) {
+  if (lines && lines > 1) {
+    return (
+      <div className={`space-y-2 ${className}`}>
+        {Array.from({ length: lines }).map((_, i) => (
+          <div
+            key={i}
+            className={`bg-globus-light animate-pulse rounded h-4 ${
+              i === lines - 1 ? 'w-3/4' : 'w-full'
+            }`}>
+            <div className="invisible">placeholder</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className={`bg-globus-light animate-pulse rounded ${className}`}>
       <div className="invisible">placeholder</div>

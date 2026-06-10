@@ -9,7 +9,10 @@ import {
   ShieldCheckIcon,
 } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
-import { useAuth } from '../../context/AuthContext';
+import { TwoFactorChallengeForm } from '../../components/auth/TwoFactorChallengeForm';
+import { useAuth, getLandingPage } from '../../context/AuthContext';
+
+const STAFF_ROLES = ['ADMIN', 'CHEF_PROJET', 'COMPTABLE', 'RH'];
 
 export function ErpLoginPage() {
   useEffect(() => {
@@ -23,10 +26,11 @@ export function ErpLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState<string | null>(null);
 
-  // Redirect if already authenticated as ADMIN
+  // Redirect if already authenticated as STAFF (ADMIN/CHEF_PROJET/COMPTABLE/RH)
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'ADMIN') {
+    if (isAuthenticated && user && STAFF_ROLES.includes(user.role)) {
       navigate('/erp', { replace: true });
     }
   }, [isAuthenticated, user, navigate]);
@@ -37,12 +41,19 @@ export function ErpLoginPage() {
     setIsSubmitting(true);
     try {
       const result = await login({ email, password });
-      if (result.forceReset) {
-        // User must change password before accessing the app
-        navigate('/reset-mot-de-passe', { replace: true });
-      } else {
-        navigate('/erp', { replace: true });
+      if (result.twoFactorRequired && result.challengeToken) {
+        setTwoFactorChallenge(result.challengeToken);
+        return;
       }
+      if (result.forceReset) {
+        navigate('/reset-mot-de-passe?forced=true', { replace: true });
+        return;
+      }
+      if (!STAFF_ROLES.includes(result.role)) {
+        navigate(getLandingPage(result.role), { replace: true });
+        return;
+      }
+      navigate('/erp', { replace: true });
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 429) {
@@ -93,7 +104,24 @@ export function ErpLoginPage() {
         </motion.div>
       )}
 
-      {/* Form */}
+      {/* 2FA Challenge */}
+      {twoFactorChallenge ? (
+        <TwoFactorChallengeForm
+          challengeToken={twoFactorChallenge}
+          theme="erp"
+          onSuccess={(role, forceReset) => {
+            if (forceReset) {
+              navigate('/reset-mot-de-passe?forced=true', { replace: true });
+            } else if (!STAFF_ROLES.includes(role)) {
+              navigate(getLandingPage(role), { replace: true });
+            } else {
+              navigate('/erp', { replace: true });
+            }
+          }}
+          onCancel={() => setTwoFactorChallenge(null)}
+        />
+      ) : (
+      /* Form */
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Email */}
         <div>
@@ -189,6 +217,7 @@ export function ErpLoginPage() {
           )}
         </button>
       </form>
+      )}
 
       {/* Footer link */}
       <div className="mt-8 pt-6 border-t border-gray-100 text-center">

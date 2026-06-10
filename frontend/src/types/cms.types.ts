@@ -123,6 +123,17 @@ export interface ProjectDetail {
   features: string[];
 }
 
+/** Item returned by GET /cms/projects-page — richer than the home `Project`. */
+export interface ProjectPageItem {
+  id: string;
+  title: string;
+  category: string;
+  location: string;
+  description: string;
+  image: string;
+  progress: number;
+}
+
 export interface ProjectDetailFull {
   slug: string;
   title: string;
@@ -211,6 +222,20 @@ export interface BlogPost {
   htmlContent?: string;
 }
 
+/** Item returned by GET /cms/blog & /cms/blog/{slug} — richer than home `BlogPost`. */
+export interface BlogPostPageItem {
+  id: string;
+  title: string;
+  category: string;
+  date: string;
+  readTime?: string;
+  author?: string;
+  excerpt: string;
+  image: string;
+  featured?: boolean;
+  htmlContent?: string;
+}
+
 export interface BlogPostDetail {
   slug: string;
   title: string;
@@ -249,6 +274,12 @@ export interface SiteSettings {
   phone: string;
   email: string;
   address: string;
+  rcNumber?: string;
+  taxId?: string;
+  vatRate?: number;
+  timezone?: string;
+  dateFormat?: string;
+  systemLanguage?: string;
   whatsappUrl: string;
   socialLinks: {
     facebook: string;

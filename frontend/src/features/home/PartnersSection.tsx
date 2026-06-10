@@ -1,4 +1,3 @@
-import React from 'react';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getPartners } from '../../services/api/cms.api';
 export function PartnersSection() {

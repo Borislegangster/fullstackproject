@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getStats } from '../../services/api/cms.api';

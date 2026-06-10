@@ -1,12 +1,5 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  FileTextIcon,
-  CheckSquareIcon,
-  AlertTriangleIcon,
-  ScaleIcon,
-  BriefcaseIcon } from
-'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getLegalPage } from '../../services/api/cms.api';

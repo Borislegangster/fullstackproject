@@ -1,16 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  SearchIcon,
-  MessageCircleIcon,
-  MailIcon,
-  PhoneIcon,
-  FileTextIcon,
-  ArrowRightIcon,
-  SendIcon,
-  HelpCircleIcon,
-  CheckCircleIcon } from
-'lucide-react';
+import { MessageCircleIcon, MailIcon, FileTextIcon, SendIcon, HelpCircleIcon, CheckCircleIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { submitSupportTicket, getContactInfo } from '../../services/api/cms.api';
@@ -172,10 +162,10 @@ export function HelpCenterPage() {
                 répondre sous 24h ouvrées.
               </p>
               <a
-                href={`mailto:${contactInfo?.email || 'support@globus-btp.com'}`}
+                href={`mailto:${contactInfo?.email || ''}`}
                 className="w-full bg-globus-light hover:bg-gray-100 border border-gray-200 text-globus-blue-dark font-montserrat font-bold py-3 px-6 rounded-lg transition-colors">
                 
-                {contactInfo?.email || 'support@globus-btp.com'}
+                {contactInfo?.email || ''}
               </a>
             </motion.div>
           </div>

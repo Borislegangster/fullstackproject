@@ -1,0 +1,69 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>Devis N° {{ quote.code }}{% if quote.version and quote.version > 1 %} <span class="badge badge-orange">V{{ quote.version }}</span>{% endif %}</h1>
+<p class="small">
+  Établi le {{ quote.created_at|date_fr }}
+  {% if quote.valid_until %} · Valide jusqu'au {{ quote.valid_until|date_fr }}{% endif %}
+  · Statut :
+  <span class="badge {% if quote.status == 'ACCEPTE' %}badge-green{% elif quote.status == 'REFUSE' %}badge-red{% elif quote.status == 'ENVOYE' %}badge-orange{% else %}badge-gray{% endif %}">
+    {% if quote.status == 'EN_REDACTION' %}En rédaction{% elif quote.status == 'ENVOYE' %}Envoyé{% elif quote.status == 'ACCEPTE' %}Accepté{% elif quote.status == 'REFUSE' %}Refusé{% else %}{{ quote.status }}{% endif %}
+  </span>
+</p>
+
+<h2>Client</h2>
+<p><strong>{{ quote.client_name|default('—') }}</strong></p>
+
+<h2>Projet</h2>
+<p><strong>{{ quote.project_label|default('—') }}</strong></p>
+
+<h2>Détail des prestations</h2>
+<table class="lines">
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th style="text-align:right">Qté</th>
+      <th style="text-align:right">Prix unitaire</th>
+      <th style="text-align:right">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in quote.lines or [] %}
+    <tr>
+      <td>{{ line.designation|default(line.description|default('—')) }}</td>
+      <td style="text-align:right">{{ line.qty|default(1) }}</td>
+      <td style="text-align:right">{{ line.unit_price|default(0)|currency }}</td>
+      <td style="text-align:right">{{ line.total|default(0)|currency }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="small">Aucune ligne de détail — montant forfaitaire</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="total-block">
+  <table>
+    <tr class="grand"><td>Total HT :</td><td style="text-align:right">{{ quote.amount|currency }}</td></tr>
+  </table>
+</div>
+
+{% if quote.notes %}
+<h2>Observations</h2>
+<p>{{ quote.notes }}</p>
+{% endif %}
+
+<div class="signature-block">
+  <div class="col">
+    <p class="small"><strong>Le Client</strong><br>Signature précédée de la mention<br>« Bon pour accord »</p>
+    <div class="box"></div>
+  </div>
+  <div class="col" style="margin-left:6%">
+    <p class="small"><strong>{{ company_name|default('Globus Engineering SARL') }}</strong><br>Cachet et signature</p>
+    <div class="box"></div>
+  </div>
+</div>
+
+<p class="small" style="margin-top:20pt;">
+  Ce devis est valable {% if quote.valid_until %}jusqu'au {{ quote.valid_until|date_fr }}{% else %}30 jours à compter de sa date d'émission{% endif %}.
+  Les prix sont exprimés en FCFA et s'entendent hors taxes.
+</p>
+{% endblock %}

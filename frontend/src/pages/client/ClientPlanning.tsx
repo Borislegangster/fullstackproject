@@ -1,5 +1,6 @@
-import React, { useEffect, useState, Children } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatDate, formatDateParts } from '../../utils/datetime';
 import {
   CalendarIcon,
   CheckCircle2Icon,
@@ -10,170 +11,16 @@ import {
   FlagIcon,
   XIcon,
   SendIcon,
-  PhoneIcon,
   PaperclipIcon,
   DownloadIcon,
-  MicIcon,
-  MicOffIcon,
-  PhoneOffIcon,
   MessageSquareIcon,
+  UserIcon,
   ChevronDownIcon } from
 'lucide-react';
 import { useClientUser } from '../../hooks/useClientUser';
-import { useClientPlanning, useRequestAppointment } from '../../hooks/useClient';
-const projectPhases = [
-{
-  id: 1,
-  name: 'Études & Conception',
-  start: 'Jan 2024',
-  end: 'Fév 2024',
-  status: 'Terminé',
-  details:
-  'Validation des plans architecturaux, études de sol, et obtention du permis de construire. Tous les documents administratifs ont été signés.',
-  milestones: ['Plans validés', 'Permis obtenu', 'Étude géotechnique'],
-  responsible: 'Mme. Claire Fotso (Architecte)'
-},
-{
-  id: 2,
-  name: 'Terrassement',
-  start: 'Mar 2024',
-  end: 'Mar 2024',
-  status: 'Terminé',
-  details:
-  'Préparation du terrain, nivellement, et fouilles pour les fondations. Évacuation des terres excédentaires.',
-  milestones: [
-  'Installation de chantier',
-  'Fouilles en rigole',
-  'Évacuation'],
+import { useClientPlanning, useRequestAppointment, useClientProject, useSendClientMessage } from '../../hooks/useClient';
+import { downloadCSV } from '../../utils/download';
 
-  responsible: 'Ing. Paul Mbarga'
-},
-{
-  id: 3,
-  name: 'Fondations',
-  start: 'Avr 2024',
-  end: 'Mai 2024',
-  status: 'Terminé',
-  details:
-  'Coulage du béton de propreté, ferraillage, et coulage des semelles et longrines. Mise en place des attentes pour les poteaux.',
-  milestones: [
-  'Ferraillage validé',
-  'Coulage semelles',
-  'Murs de soubassement'],
-
-  responsible: 'Ing. Paul Mbarga'
-},
-{
-  id: 4,
-  name: 'Élévation Murs RDC',
-  start: 'Juin 2024',
-  end: 'Août 2024',
-  status: 'En cours',
-  details:
-  'Montage des murs en parpaings, réalisation des chaînages verticaux et horizontaux, pose des linteaux.',
-  milestones: ['Murs extérieurs', 'Murs de refend', 'Coffrage poteaux'],
-  responsible: 'Ing. Paul Mbarga'
-},
-{
-  id: 5,
-  name: 'Plancher Haut RDC',
-  start: 'Sep 2024',
-  end: 'Sep 2024',
-  status: 'À venir',
-  details:
-  'Coffrage de la dalle, ferraillage, passage des gaines électriques et plomberie, coulage du béton.',
-  milestones: ['Coffrage', 'Ferraillage & Gaines', 'Coulage dalle'],
-  responsible: 'Ing. Paul Mbarga'
-},
-{
-  id: 6,
-  name: 'Élévation R+1',
-  start: 'Oct 2024',
-  end: 'Nov 2024',
-  status: 'À venir',
-  details:
-  "Montage des murs de l'étage, chaînages, et préparation pour la toiture.",
-  milestones: ['Murs R+1', 'Chaînages', 'Pignons'],
-  responsible: 'Ing. Paul Mbarga'
-},
-{
-  id: 7,
-  name: "Mise Hors d'Eau",
-  start: 'Déc 2024',
-  end: 'Jan 2025',
-  status: 'À venir',
-  details:
-  'Pose de la charpente, couverture, et zinguerie. Le bâtiment sera protégé des intempéries.',
-  milestones: ['Charpente', 'Couverture', 'Gouttières'],
-  responsible: 'Équipe Charpente'
-},
-{
-  id: 8,
-  name: 'Second Œuvre',
-  start: 'Fév 2025',
-  end: 'Avr 2025',
-  status: 'À venir',
-  details:
-  'Installation électrique, plomberie, chauffage, isolation, et cloisons intérieures.',
-  milestones: ['Électricité', 'Plomberie', 'Plâtrerie'],
-  responsible: 'Sous-traitants spécialisés'
-},
-{
-  id: 9,
-  name: 'Finitions',
-  start: 'Mai 2025',
-  end: 'Juin 2025',
-  status: 'À venir',
-  details:
-  'Revêtements de sols (carrelage), peinture, menuiseries intérieures, et équipements sanitaires.',
-  milestones: ['Carrelage', 'Peinture', 'Sanitaires'],
-  responsible: 'Équipe Finitions'
-},
-{
-  id: 10,
-  name: 'Livraison',
-  start: 'Juil 2025',
-  end: 'Juil 2025',
-  status: 'À venir',
-  details:
-  'Nettoyage de fin de chantier, levée des réserves, et remise des clés au propriétaire.',
-  milestones: ['Pré-réception', 'Levée des réserves', 'Remise des clés'],
-  responsible: 'Ing. Paul Mbarga & Client'
-}];
-
-const upcomingEvents = [
-{
-  id: 1,
-  title: 'Visite de chantier avec le client',
-  date: '28/03/2026',
-  time: '10h00',
-  location: 'Sur site',
-  type: 'site'
-},
-{
-  id: 2,
-  title: 'Réunion choix carrelage',
-  date: '02/04/2026',
-  time: '14h00',
-  location: 'Showroom Globus',
-  type: 'meeting'
-},
-{
-  id: 3,
-  title: "Point d'avancement mensuel",
-  date: '15/04/2026',
-  time: '10h00',
-  location: 'Visioconférence',
-  type: 'video'
-},
-{
-  id: 4,
-  title: 'Visite architecte pour finitions',
-  date: '25/04/2026',
-  time: '09h00',
-  location: 'Sur site',
-  type: 'site'
-}];
 
 const stagger = {
   hidden: {},
@@ -196,76 +43,142 @@ const fadeUp = {
     }
   }
 };
+function phaseStatusToFr(s: string): string {
+  switch ((s || '').toUpperCase()) {
+    case 'TERMINE': return 'Terminé';
+    case 'EN_COURS': return 'En cours';
+    case 'BLOQUE': return 'Bloqué';
+    case 'EN_ATTENTE': return 'À venir';
+    default: return 'À venir';
+  }
+}
+
 export function ClientPlanning() {
   const { data: apiPlanningData } = useClientPlanning();
   const requestAppointmentMutation = useRequestAppointment();
-  
   const clientUser = useClientUser();
-  const [expandedPhase, setExpandedPhase] = useState<number | null>(4); // Default expand "En cours"
+  void clientUser;
+
+  // Live phases from API (no mock fallback).
+  const livePhases = React.useMemo(() => {
+    const phases = (apiPlanningData as any)?.phases;
+    if (!Array.isArray(phases)) return [];
+    return phases.map((p: any, i: number) => ({
+      id: p.id || i + 1,
+      name: p.name || '',
+      start: formatDateParts(p.start_date, { month: 'short', year: 'numeric' }, '—'),
+      end: formatDateParts(p.end_date, { month: 'short', year: 'numeric' }, '—'),
+      status: phaseStatusToFr(p.status),
+      details: p.description || `Avancement: ${p.progress || 0}%`,
+      milestones: [],
+      responsible: '',
+    }));
+  }, [apiPlanningData]);
+
+  // Upcoming events derived from the project's not-yet-completed phases.
+  const liveUpcomingEvents = React.useMemo(() => {
+    const phases = (apiPlanningData as any)?.phases;
+    if (!Array.isArray(phases)) return [];
+    return phases
+      .filter((p: any) => p.status !== 'TERMINE' && p.start_date)
+      .sort((a: any, b: any) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+      .slice(0, 5)
+      .map((p: any, i: number) => ({
+        id: p.id || i + 1,
+        title: `Phase : ${p.name || ''}`,
+        date: formatDate(p.start_date),
+        time: '—',
+        location: 'Chantier',
+        type: 'site',
+      }));
+  }, [apiPlanningData]);
+
+  const { data: projectData } = useClientProject();
+  const sendMessageMutation = useSendClientMessage();
+  // Real project KPIs for the header + key dates (no hardcoded values).
+  const progress = Math.round(Number((projectData as any)?.progress ?? 0));
+  const RADIUS = 28;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+  const dashOffset = CIRCUMFERENCE * (1 - Math.min(Math.max(progress, 0), 100) / 100);
+  const currentPhaseName =
+    livePhases.find((p) => p.status === 'En cours')?.name ||
+    livePhases.find((p) => p.status !== 'Terminé')?.name ||
+    '—';
+  const nextPhaseName = livePhases.find((p) => p.status !== 'Terminé')?.name || '—';
+  const fmtDate = (d: string | null) =>
+    formatDateParts(d, { day: '2-digit', month: 'short', year: 'numeric' }, '—');
+  const startDateLabel = fmtDate((projectData as any)?.start_date || null);
+  const estimatedEnd = (projectData as any)?.estimated_end_date || null;
+  const deliveryLabel = fmtDate(estimatedEnd);
+  const daysRemaining = estimatedEnd
+    ? Math.max(0, Math.ceil((new Date(estimatedEnd).getTime() - Date.now()) / 86_400_000))
+    : null;
+  const handleDownloadPlanning = () => {
+    if (livePhases.length === 0) return;
+    downloadCSV(
+      `planning-${new Date().toISOString().slice(0, 10)}.csv`,
+      livePhases.map((p) => ({ name: p.name, status: p.status, start: p.start, end: p.end })),
+      [
+        { key: 'name', label: 'Phase' },
+        { key: 'status', label: 'Statut' },
+        { key: 'start', label: 'Début' },
+        { key: 'end', label: 'Fin' },
+      ],
+    );
+  };
+  const [expandedPhase, setExpandedPhase] = useState<number | null>(null);
   // Modals state
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [appointmentSuccess, setAppointmentSuccess] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [contactMode, setContactMode] = useState<'select' | 'message' | 'call'>(
+  const [contactMode, setContactMode] = useState<'select' | 'message'>(
     'select'
   );
   const [messageSuccess, setMessageSuccess] = useState(false);
-  // Call simulation state
-  const [callState, setCallState] = useState<'ringing' | 'connected' | 'ended'>(
-    'ringing'
-  );
-  const [callDuration, setCallDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  // Call timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (callState === 'connected') {
-      interval = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
+  const handleAppointmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    try {
+      const type = (form.elements.namedItem('rdv_type') as RadioNodeList | null)?.value || 'Visite de chantier';
+      const dateStr = (form.elements.namedItem('date') as HTMLInputElement)?.value;
+      const timeStr = (form.elements.namedItem('time') as HTMLSelectElement)?.value || '09:00';
+      const subject = (form.elements.namedItem('subject') as HTMLInputElement)?.value || '';
+      const message = (form.elements.namedItem('message') as HTMLTextAreaElement)?.value || '';
+      const start = dateStr ? new Date(`${dateStr}T${timeStr}`) : new Date();
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+      await requestAppointmentMutation.mutateAsync({
+        title: subject || type,
+        description: [type, message].filter(Boolean).join(' — '),
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+      });
+      setAppointmentSuccess(true);
+      setTimeout(() => {
+        setIsAppointmentModalOpen(false);
+        setAppointmentSuccess(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Appointment request failed', err);
     }
-    return () => clearInterval(interval);
-  }, [callState]);
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60).
-    toString().
-    padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
   };
-  const handleAppointmentSubmit = (e: React.FormEvent) => {
+  const handleMessageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAppointmentSuccess(true);
-    setTimeout(() => {
-      setIsAppointmentModalOpen(false);
-      setAppointmentSuccess(false);
-    }, 3000);
-  };
-  const handleMessageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessageSuccess(true);
-    setTimeout(() => {
-      setIsContactModalOpen(false);
-      setContactMode('select');
-      setMessageSuccess(false);
-    }, 3000);
-  };
-  const startCall = () => {
-    setContactMode('call');
-    setCallState('ringing');
-    setCallDuration(0);
-    setIsMuted(false);
-    // Simulate answer after 3 seconds
-    setTimeout(() => {
-      setCallState('connected');
-    }, 3000);
-  };
-  const endCall = () => {
-    setCallState('ended');
-    setTimeout(() => {
-      setIsContactModalOpen(false);
-      setContactMode('select');
-    }, 2000);
+    const form = e.target as HTMLFormElement;
+    const subject = (form.elements.namedItem('subject') as HTMLInputElement)?.value || '';
+    const body = (form.elements.namedItem('message') as HTMLTextAreaElement)?.value || '';
+    const content = [subject, body].filter(Boolean).join(' — ');
+    if (!content.trim()) return;
+    try {
+      await sendMessageMutation.mutateAsync(content);
+      setMessageSuccess(true);
+      setTimeout(() => {
+        setIsContactModalOpen(false);
+        setContactMode('select');
+        setMessageSuccess(false);
+      }, 2500);
+    } catch {
+      /* keep the modal open on error */
+    }
   };
   const closeContactModal = () => {
     setIsContactModalOpen(false);
@@ -296,8 +209,10 @@ export function ClientPlanning() {
                 {clientUser.projectName}
               </strong>
             </p>
-            <button className="mt-4 flex items-center gap-2 text-sm font-montserrat font-bold text-globus-blue hover:text-globus-blue-dark transition-colors">
-              <DownloadIcon className="w-4 h-4" /> Télécharger le planning PDF
+            <button
+              onClick={handleDownloadPlanning}
+              className="mt-4 flex items-center gap-2 text-sm font-montserrat font-bold text-globus-blue hover:text-globus-blue-dark transition-colors">
+              <DownloadIcon className="w-4 h-4" /> Télécharger le planning
             </button>
           </div>
           <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -318,13 +233,13 @@ export function ClientPlanning() {
                   stroke="#F97316"
                   strokeWidth="6"
                   fill="none"
-                  strokeDasharray="175.9"
-                  strokeDashoffset="96.7"
+                  strokeDasharray={CIRCUMFERENCE}
+                  strokeDashoffset={dashOffset}
                   className="transition-all duration-1000" />
                 
               </svg>
               <span className="absolute font-montserrat font-bold text-sm text-globus-blue-dark">
-                45%
+                {progress}%
               </span>
             </div>
             <div>
@@ -332,7 +247,7 @@ export function ClientPlanning() {
                 Avancement Global
               </p>
               <p className="text-sm font-semibold text-gray-800">
-                Élévation Murs RDC
+                {currentPhaseName}
               </p>
             </div>
           </div>
@@ -354,7 +269,7 @@ export function ClientPlanning() {
             Date de début
           </p>
           <p className="font-montserrat font-bold text-lg text-globus-blue-dark">
-            15 Jan 2024
+            {startDateLabel}
           </p>
         </motion.div>
         <motion.div
@@ -365,7 +280,7 @@ export function ClientPlanning() {
             Livraison prévue
           </p>
           <p className="font-montserrat font-bold text-lg text-globus-blue-dark">
-            15 Juil 2025
+            {deliveryLabel}
           </p>
         </motion.div>
         <motion.div
@@ -376,7 +291,7 @@ export function ClientPlanning() {
             Prochaine étape
           </p>
           <p className="font-montserrat font-bold text-lg text-globus-blue-dark">
-            Plancher Haut RDC
+            {nextPhaseName}
           </p>
         </motion.div>
         <motion.div
@@ -387,7 +302,7 @@ export function ClientPlanning() {
             Temps restant estimé
           </p>
           <p className="font-montserrat font-bold text-lg text-globus-blue-dark">
-            ~480 jours
+            {daysRemaining !== null ? `~${daysRemaining} jours` : '—'}
           </p>
         </motion.div>
       </motion.div>
@@ -414,7 +329,7 @@ export function ClientPlanning() {
           </h2>
 
           <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-100 space-y-6">
-            {projectPhases.map((phase) => {
+            {livePhases.map((phase) => {
               const isDone = phase.status === 'Terminé';
               const isCurrent = phase.status === 'En cours';
               const isExpanded = expandedPhase === phase.id;
@@ -557,7 +472,12 @@ export function ClientPlanning() {
             </h2>
 
             <div className="space-y-4">
-              {upcomingEvents.map((event) =>
+              {liveUpcomingEvents.length === 0 &&
+                <p className="text-center text-globus-gray font-opensans text-sm py-6">
+                  Aucun rendez-vous à venir
+                </p>
+              }
+              {liveUpcomingEvents.map((event) =>
               <div
                 key={event.id}
                 className="border border-gray-100 rounded-xl p-4 hover:border-globus-blue/30 hover:shadow-sm transition-all bg-gray-50/50">
@@ -705,6 +625,7 @@ export function ClientPlanning() {
                           <input
                         type="radio"
                         name="rdv_type"
+                        value="Visite de chantier"
                         defaultChecked
                         className="w-4 h-4 text-globus-orange focus:ring-globus-orange" />
                       
@@ -717,8 +638,9 @@ export function ClientPlanning() {
                           <input
                         type="radio"
                         name="rdv_type"
+                        value="Visioconférence"
                         className="w-4 h-4 text-globus-orange focus:ring-globus-orange" />
-                      
+
                           <span className="ml-3 font-opensans text-sm text-gray-700 flex items-center gap-2">
                             <VideoIcon className="w-4 h-4 text-gray-400" />{' '}
                             Visioconférence
@@ -728,8 +650,9 @@ export function ClientPlanning() {
                           <input
                         type="radio"
                         name="rdv_type"
+                        value="Réunion au bureau Globus"
                         className="w-4 h-4 text-globus-orange focus:ring-globus-orange" />
-                      
+
                           <span className="ml-3 font-opensans text-sm text-gray-700 flex items-center gap-2">
                             <ClockIcon className="w-4 h-4 text-gray-400" />{' '}
                             Réunion au bureau Globus
@@ -745,6 +668,7 @@ export function ClientPlanning() {
                         </label>
                         <input
                       required
+                      name="date"
                       type="date"
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
                     
@@ -755,8 +679,9 @@ export function ClientPlanning() {
                         </label>
                         <select
                       required
+                      name="time"
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                      
+
                           <option value="">Sélectionner...</option>
                           <option value="08:00">08:00</option>
                           <option value="09:00">09:00</option>
@@ -775,6 +700,7 @@ export function ClientPlanning() {
                       </label>
                       <input
                     required
+                    name="subject"
                     type="text"
                     placeholder="Ex: Point d'avancement, Choix matériaux..."
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
@@ -787,6 +713,7 @@ export function ClientPlanning() {
                       </label>
                       <textarea
                     rows={3}
+                    name="message"
                     placeholder="Précisez vos attentes pour ce rendez-vous..."
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-3 font-opensans text-sm focus:outline-none focus:border-globus-orange resize-none">
                   </textarea>
@@ -863,12 +790,12 @@ export function ClientPlanning() {
                   </div>
                   <div className="p-6 space-y-4">
                     <div className="flex items-center gap-4 mb-6 p-4 bg-globus-light rounded-xl border border-gray-100">
-                      <div className="w-14 h-14 rounded-full bg-globus-blue-dark text-white flex items-center justify-center font-montserrat font-bold text-xl shrink-0">
-                        PM
+                      <div className="w-14 h-14 rounded-full bg-globus-blue-dark text-white flex items-center justify-center shrink-0">
+                        <UserIcon className="w-7 h-7" />
                       </div>
                       <div>
                         <p className="font-montserrat font-bold text-globus-blue-dark text-lg">
-                          Ing. Paul Mbarga
+                          Votre chef de projet
                         </p>
                         <p className="text-sm text-globus-orange font-bold">
                           Chef de Projet
@@ -889,23 +816,6 @@ export function ClientPlanning() {
                         </p>
                         <p className="font-opensans text-xs text-gray-500">
                           Réponse sous 24h ouvrées
-                        </p>
-                      </div>
-                    </button>
-
-                    <button
-                  onClick={startCall}
-                  className="w-full flex items-center gap-4 p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all group">
-                  
-                      <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center shrink-0 group-hover:bg-green-500 group-hover:text-white transition-colors text-green-600">
-                        <PhoneIcon className="w-6 h-6" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-montserrat font-bold text-globus-blue-dark">
-                          Appel en ligne
-                        </p>
-                        <p className="font-opensans text-xs text-gray-500">
-                          Appel via la plateforme Globus — gratuit
                         </p>
                       </div>
                     </button>
@@ -945,7 +855,7 @@ export function ClientPlanning() {
                           Message envoyé
                         </h4>
                         <p className="font-opensans text-globus-gray">
-                          Paul Mbarga a bien reçu votre message.
+                          Votre chef de projet a bien reçu votre message.
                         </p>
                       </motion.div> :
 
@@ -959,9 +869,10 @@ export function ClientPlanning() {
                           </label>
                           <input
                       required
+                      name="subject"
                       type="text"
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
-                    
+
                         </div>
                         <div>
                           <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-2">
@@ -969,6 +880,7 @@ export function ClientPlanning() {
                           </label>
                           <textarea
                       required
+                      name="message"
                       rows={5}
                       className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-3 font-opensans text-sm focus:outline-none focus:border-globus-orange resize-none">
                     </textarea>
@@ -1003,63 +915,6 @@ export function ClientPlanning() {
                 </>
             }
 
-              {/* CALL MODE */}
-              {contactMode === 'call' &&
-            <div className="bg-gray-900 text-white p-8 flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
-                  {/* Background pulse for ringing */}
-                  {callState === 'ringing' &&
-              <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-32 h-32 bg-green-500/20 rounded-full animate-ping"></div>
-                    </div>
-              }
-
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-full bg-globus-blue text-white flex items-center justify-center font-montserrat font-bold text-3xl mb-6 shadow-lg border-4 border-gray-800">
-                      PM
-                    </div>
-                    <h3 className="font-montserrat font-bold text-2xl mb-2">
-                      Ing. Paul Mbarga
-                    </h3>
-
-                    <div className="h-8 mb-12">
-                      {callState === 'ringing' &&
-                  <p className="text-gray-400 animate-pulse">
-                          Appel en cours...
-                        </p>
-                  }
-                      {callState === 'connected' &&
-                  <p className="text-green-400 font-mono text-lg">
-                          {formatDuration(callDuration)}
-                        </p>
-                  }
-                      {callState === 'ended' &&
-                  <p className="text-red-400">Appel terminé</p>
-                  }
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <button
-                    onClick={() => setIsMuted(!isMuted)}
-                    disabled={callState !== 'connected'}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-white text-gray-900' : 'bg-gray-800 text-white hover:bg-gray-700'} ${callState !== 'connected' ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    
-                        {isMuted ?
-                    <MicOffIcon className="w-6 h-6" /> :
-
-                    <MicIcon className="w-6 h-6" />
-                    }
-                      </button>
-
-                      <button
-                    onClick={endCall}
-                    className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105">
-                    
-                        <PhoneOffIcon className="w-7 h-7" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-            }
             </motion.div>
           </motion.div>
         }

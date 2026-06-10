@@ -25,6 +25,19 @@ class CMSSiteSettings(Base):
     phone = Column(String, default="")
     email = Column(String, default="")
     address = Column(String, default="")
+    rc_number = Column(String, default="")   # Registre de commerce
+    tax_id = Column(String, default="")      # NIU / identifiant fiscal
+    vat_rate = Column(Float, default=19.25)  # Taux de TVA légal (Cameroun)
+    role_permissions = Column(JSON, default=dict)  # {role: {module: bool}} matrice des permissions
+    # ── Préférences ERP (paramètres système) ──
+    default_currency = Column(String, default="FCFA (XAF)")
+    fiscal_year = Column(String, default="1er Janvier - 31 Décembre")
+    system_language = Column(String, default="Français")
+    timezone = Column(String, default="Africa/Douala (WAT)")
+    date_format = Column(String, default="JJ/MM/AAAA")
+    session_timeout = Column(String, default="30 minutes")
+    email_notifications = Column(Boolean, default=True)
+    enforce_2fa = Column(Boolean, default=False)
     whatsapp_url = Column(String, default="")
     social_links = Column(JSON, default=dict)       # {facebook, twitter, linkedin, instagram}
     footer_description = Column(Text, default="")

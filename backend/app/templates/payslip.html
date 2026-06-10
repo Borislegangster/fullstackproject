@@ -1,0 +1,54 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>Bulletin de paie — {{ payroll.period }}</h1>
+<p class="small">Référence {{ payroll.id|truncate(8, True, '', 0) }}</p>
+
+<h2>Employé</h2>
+<table style="width:100%">
+  <tr>
+    <td><strong>Nom :</strong> {{ worker.full_name|default(worker.first_name ~ ' ' ~ worker.last_name) }}</td>
+    <td><strong>Matricule :</strong> {{ worker.employee_code|default('—') }}</td>
+  </tr>
+  <tr>
+    <td><strong>Poste :</strong> {{ worker.position|default('—') }}</td>
+    <td><strong>Département :</strong> {{ worker.department|default('—') }}</td>
+  </tr>
+  <tr>
+    <td><strong>Contrat :</strong> {{ worker.contract_type|default('CDI') }}</td>
+    <td><strong>Type :</strong> {{ payroll.worker_type }}</td>
+  </tr>
+</table>
+
+<h2>Détail de la rémunération</h2>
+<table class="lines">
+  <thead>
+    <tr><th>Rubrique</th><th style="text-align:right">Montant</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Salaire de base ({{ payroll.days_worked }} j)</td><td style="text-align:right">{{ payroll.base_amount|currency }}</td></tr>
+    {% if payroll.bonuses %}<tr><td>Primes</td><td style="text-align:right">{{ payroll.bonuses|currency }}</td></tr>{% endif %}
+    {% if payroll.deductions %}<tr><td>Retenues</td><td style="text-align:right">- {{ payroll.deductions|currency }}</td></tr>{% endif %}
+    {% if payroll.advances %}<tr><td>Avances déjà perçues</td><td style="text-align:right">- {{ payroll.advances|currency }}</td></tr>{% endif %}
+  </tbody>
+</table>
+
+<div class="total-block">
+  <table>
+    <tr class="grand"><td>Net à payer :</td><td style="text-align:right">{{ payroll.net_amount|currency }}</td></tr>
+  </table>
+</div>
+
+<p class="small">Statut : {{ payroll.status }}{% if payroll.paid_at %} · Payé le {{ payroll.paid_at|date_fr }}{% endif %}</p>
+
+<div class="signature-block">
+  <div class="col">
+    <p><strong>Employeur</strong></p>
+    <div class="box"></div>
+  </div>
+  &nbsp;
+  <div class="col">
+    <p><strong>Salarié</strong> (lu et approuvé)</p>
+    <div class="box"></div>
+  </div>
+</div>
+{% endblock %}

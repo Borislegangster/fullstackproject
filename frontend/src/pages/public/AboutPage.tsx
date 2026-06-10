@@ -1,13 +1,6 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  CheckCircle2Icon,
-  ShieldCheckIcon,
-  UsersIcon,
-  TargetIcon,
-  AwardIcon,
-  ArrowRightIcon } from
-'lucide-react';
+import { CheckCircle2Icon, AwardIcon } from 'lucide-react';
 import { SEOHead } from '../../components/seo/SEOHead';
 import { Link } from 'react-router-dom';
 import { useCmsQuery } from '../../hooks/useCmsQuery';

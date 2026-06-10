@@ -1,45 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  LayoutDashboardIcon,
-  UsersIcon,
-  PackageIcon,
-  TruckIcon,
-  WalletIcon,
-  TargetIcon,
-  CalendarDaysIcon,
-  ShieldAlertIcon,
-  FolderGit2Icon,
-  FileOutputIcon,
-  UsersRoundIcon,
-  ArrowLeftIcon,
-  LogOutIcon,
-  MenuIcon,
-  XIcon,
-  BellIcon,
-  SearchIcon,
-  HardHatIcon,
-  SettingsIcon,
-  BarChart3Icon,
-  CalendarIcon,
-  GlobeIcon,
-  LifeBuoyIcon,
-  ReceiptIcon,
-  ActivityIcon } from
-'lucide-react';
+import { LayoutDashboardIcon, UsersIcon, PackageIcon, TruckIcon, WalletIcon, TargetIcon, CalendarDaysIcon, ShieldAlertIcon, ShieldCheckIcon, FolderGit2Icon, FileOutputIcon, UsersRoundIcon, ArrowLeftIcon, LogOutIcon, MenuIcon, BellIcon, SearchIcon, HardHatIcon, SettingsIcon, BarChart3Icon, CalendarIcon, GlobeIcon, LifeBuoyIcon, ReceiptIcon, ActivityIcon, MicroscopeIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useUnreadCount } from '../hooks/useErp';
+import { useUnreadCount, useCompanySettings } from '../hooks/useErp';
+import { configureDateFormatting } from '../utils/datetime';
 
 interface NavSection {
   label: string;
+  /** If set, only users with one of these roles can see this section. */
+  roles?: string[];
   items: {
     path: string;
     label: string;
     icon: React.ElementType;
     exact?: boolean;
+    /** If set, only users with one of these roles can see this item. */
+    roles?: string[];
   }[];
 }
+
+
 const navSections: NavSection[] = [
 {
   label: 'PRINCIPAL',
@@ -58,17 +39,20 @@ const navSections: NavSection[] = [
   {
     path: '/erp/rh',
     label: 'Ressources Humaines',
-    icon: UsersIcon
+    icon: UsersIcon,
+    roles: ['ADMIN', 'RH'],
   },
   {
     path: '/erp/achats',
     label: 'Achats & Stocks',
-    icon: PackageIcon
+    icon: PackageIcon,
+    roles: ['ADMIN', 'CHEF_PROJET', 'COMPTABLE'],
   },
   {
     path: '/erp/materiel',
     label: 'Parc Matériel',
-    icon: TruckIcon
+    icon: TruckIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 },
@@ -78,17 +62,20 @@ const navSections: NavSection[] = [
   {
     path: '/erp/finances',
     label: 'Comptabilité',
-    icon: WalletIcon
+    icon: WalletIcon,
+    roles: ['ADMIN', 'COMPTABLE'],
   },
   {
     path: '/erp/facturation',
     label: 'Facturation',
-    icon: ReceiptIcon
+    icon: ReceiptIcon,
+    roles: ['ADMIN', 'COMPTABLE'],
   },
   {
     path: '/erp/crm',
     label: 'CRM & Devis',
-    icon: TargetIcon
+    icon: TargetIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 },
@@ -98,17 +85,26 @@ const navSections: NavSection[] = [
   {
     path: '/erp/chantiers',
     label: 'Chantiers',
-    icon: HardHatIcon
+    icon: HardHatIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   },
   {
     path: '/erp/planification',
     label: 'Planification',
-    icon: CalendarDaysIcon
+    icon: CalendarDaysIcon,
+    roles: ['ADMIN', 'CHEF_PROJET', 'RH'],
   },
   {
     path: '/erp/qhse',
     label: 'QHSE',
-    icon: ShieldAlertIcon
+    icon: ShieldAlertIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
+  },
+  {
+    path: '/erp/bureau-etudes',
+    label: "Bureau d'Études",
+    icon: MicroscopeIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 },
@@ -118,12 +114,14 @@ const navSections: NavSection[] = [
   {
     path: '/erp/ged',
     label: 'GED Technique',
-    icon: FolderGit2Icon
+    icon: FolderGit2Icon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   },
   {
     path: '/erp/documents',
     label: 'Génération Docs',
-    icon: FileOutputIcon
+    icon: FileOutputIcon,
+    roles: ['ADMIN', 'CHEF_PROJET', 'COMPTABLE'],
   }]
 
 },
@@ -133,7 +131,8 @@ const navSections: NavSection[] = [
   {
     path: '/erp/sous-traitants',
     label: 'Sous-Traitants',
-    icon: UsersRoundIcon
+    icon: UsersRoundIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 },
@@ -143,12 +142,13 @@ const navSections: NavSection[] = [
   {
     path: '/erp/cms',
     label: 'Site Public (CMS)',
-    icon: GlobeIcon
+    icon: GlobeIcon,
+    roles: ['ADMIN'],
   },
   {
     path: '/erp/sav',
     label: 'SAV & Tickets',
-    icon: LifeBuoyIcon
+    icon: LifeBuoyIcon,
   }]
 
 },
@@ -158,12 +158,13 @@ const navSections: NavSection[] = [
   {
     path: '/erp/rapports',
     label: 'Rapports',
-    icon: BarChart3Icon
+    icon: BarChart3Icon,
+    roles: ['ADMIN', 'COMPTABLE', 'CHEF_PROJET'],
   },
   {
     path: '/erp/agenda',
     label: 'Agenda',
-    icon: CalendarIcon
+    icon: CalendarIcon,
   }]
 
 },
@@ -173,28 +174,60 @@ const navSections: NavSection[] = [
   {
     path: '/erp/parametres',
     label: 'Paramètres',
-    icon: SettingsIcon
+    icon: SettingsIcon,
+    roles: ['ADMIN'],
+  },
+  {
+    path: '/erp/securite',
+    label: 'Sécurité',
+    icon: ShieldCheckIcon,
   },
   {
     path: '/erp/journal-activite',
     label: "Journal d'Activité",
-    icon: ActivityIcon
+    icon: ActivityIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 }];
 
 const allNavItems = navSections.flatMap((s) => s.items);
+
 export function ErpLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, mustSetup2fa } = useAuth();
   const { data: unreadData } = useUnreadCount();
+  const { data: companySettings } = useCompanySettings();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Applique la langue + le formatage date/fuseau persistés (settings ERP).
+  useEffect(() => {
+    const s = companySettings as any;
+    document.documentElement.lang = s?.system_language === 'English' ? 'en' : 'fr';
+    configureDateFormatting({ timezone: s?.timezone, dateFormat: s?.date_format });
+  }, [companySettings]);
+
+  const userRole = user?.role || '';
   const userInitials = user ? `${user.first_name?.charAt(0) || ''}${user.last_name?.charAt(0) || ''}`.toUpperCase() : 'AG';
   const userName = user?.full_name || 'Admin Globus';
-  const userRole = user?.role === 'ADMIN' ? 'Administrateur' : user?.role === 'CHEF_PROJET' ? 'Chef de Projet' : user?.role === 'COMPTABLE' ? 'Comptable' : user?.role === 'RH' ? 'Ressources Humaines' : 'Utilisateur';
+  const userRoleLabel =
+    userRole === 'ADMIN' ? 'Administrateur' :
+    userRole === 'CHEF_PROJET' ? 'Chef de Projet' :
+    userRole === 'COMPTABLE' ? 'Comptable' :
+    userRole === 'RH' ? 'Ressources Humaines' : 'Utilisateur';
   const unreadCount = unreadData?.count ?? 0;
+
+  /** Filter nav sections and items based on the current user's role. */
+  const filteredNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        // If item has role restriction, check user role; otherwise show to all staff
+        !item.roles || item.roles.includes(userRole)
+      ),
+    }))
+    .filter((section) => section.items.length > 0); // Remove empty sections
 
   const handleLogout = () => {
     logout();
@@ -224,7 +257,7 @@ export function ErpLayout() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {navSections.map((section) =>
+        {filteredNavSections.map((section) =>
       <div key={section.label}>
             <p className="text-[10px] font-montserrat font-bold text-gray-500 uppercase tracking-[0.15em] px-3 mt-5 mb-2">
               {section.label}
@@ -273,7 +306,7 @@ export function ErpLayout() {
               {userName}
             </p>
             <p className="font-opensans text-[10px] text-gray-500 truncate">
-              {userRole}
+              {userRoleLabel}
             </p>
           </div>
         </div>
@@ -371,6 +404,20 @@ export function ErpLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {mustSetup2fa && location.pathname !== '/erp/securite' &&
+          <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <ShieldAlertIcon className="w-5 h-5 shrink-0 text-amber-600" />
+              <span className="flex-1">
+                La double authentification (2FA) est <strong>obligatoire</strong> selon la
+                politique de sécurité. Activez-la pour sécuriser votre compte.
+              </span>
+              <Link
+              to="/erp/securite"
+              className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white font-montserrat font-bold py-1.5 px-3 rounded-lg text-xs whitespace-nowrap transition-colors">
+                Configurer la 2FA
+              </Link>
+            </div>
+          }
           <Outlet />
         </main>
       </div>

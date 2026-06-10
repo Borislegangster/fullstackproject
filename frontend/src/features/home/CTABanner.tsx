@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getCtaBanner } from '../../services/api/cms.api';

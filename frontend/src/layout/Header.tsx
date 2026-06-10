@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PhoneIcon, MailIcon, ClockIcon, MenuIcon, XIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,31 +55,31 @@ export function Header() {
         className={`bg-globus-blue-dark text-white text-sm py-2 transition-all duration-300 ${isScrolled ? 'hidden' : 'block'}`}>
         
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+          {siteSettings?.topBarText &&
           <div className="flex items-center space-x-2 mb-2 md:mb-0">
             <ClockIcon className="w-4 h-4 text-globus-orange" />
-            <span className="font-opensans">
-              {siteSettings?.topBarText || 'Lun - Sam: 08:00 - 18:00'}
-            </span>
+            <span className="font-opensans">{siteSettings.topBarText}</span>
           </div>
+          }
           <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
+            {siteSettings?.phone &&
             <a
-              href={`tel:${siteSettings?.phone?.replace(/[^0-9+]/g, '') || '+33123456789'}`}
+              href={`tel:${siteSettings.phone.replace(/[^0-9+]/g, '')}`}
               className="flex items-center space-x-2 hover:text-globus-orange transition-colors">
-              
+
               <PhoneIcon className="w-4 h-4 text-globus-orange" />
-              <span className="font-opensans">
-                {siteSettings?.phone || '+33 1 23 45 67 89'}
-              </span>
+              <span className="font-opensans">{siteSettings.phone}</span>
             </a>
+            }
+            {siteSettings?.email &&
             <a
-              href={`mailto:${siteSettings?.email || 'contact@globus-btp.com'}`}
+              href={`mailto:${siteSettings.email}`}
               className="flex items-center space-x-2 hover:text-globus-orange transition-colors">
-              
+
               <MailIcon className="w-4 h-4 text-globus-orange" />
-              <span className="font-opensans">
-                {siteSettings?.email || 'contact@globus-btp.com'}
-              </span>
+              <span className="font-opensans">{siteSettings.email}</span>
             </a>
+            }
           </div>
         </div>
       </div>

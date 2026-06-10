@@ -1,4 +1,4 @@
-import React, { useEffect, createElement } from 'react';
+import { useEffect } from 'react';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
 import { getSiteSettings } from '../../services/api/cms.api';
 export function SchemaOrg() {
@@ -17,12 +17,11 @@ export function SchemaOrg() {
         siteSettings?.footerDescription ||
         'Votre partenaire de confiance pour la construction BTP clé en main au Cameroun.',
         url: 'https://www.globus-btp.com',
-        telephone: siteSettings?.phone || '+33 1 23 45 67 89',
-        email: siteSettings?.email || 'contact@globus-btp.com',
+        telephone: siteSettings?.phone || '',
+        email: siteSettings?.email || '',
         address: {
           '@type': 'PostalAddress',
-          streetAddress:
-          siteSettings?.address || '123 Avenue de la Construction',
+          streetAddress: siteSettings?.address || '',
           addressLocality: 'Douala',
           addressCountry: 'CM'
         },

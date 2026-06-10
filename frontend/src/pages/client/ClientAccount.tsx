@@ -1,49 +1,43 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   UserIcon,
   ShieldCheckIcon,
-  UsersIcon,
   SaveIcon,
-  Trash2Icon,
-  PlusIcon,
   BellIcon,
-  MonitorIcon,
-  SmartphoneIcon,
-  LaptopIcon,
-  XIcon,
   CheckCircle2Icon,
   LoaderIcon,
+  CameraIcon,
+  UsersIcon,
+  PlusIcon,
+  Trash2Icon,
   MailIcon,
-  CameraIcon } from
+  XIcon } from
 'lucide-react';
 import { useClientUser } from '../../hooks/useClientUser';
-import { useClientProfile } from '../../hooks/useClient';
+import { useClientGuests, useInviteClientGuest, useRemoveClientGuest } from '../../hooks/useClient';
+import { updateProfileApi, changePasswordApi } from '../../services/api/auth.api';
+import { userPrefsApi } from '../../services/api/erp.api';
+import { TwoFactorPanel } from '../../components/auth/TwoFactorPanel';
+import { SessionsPanel } from '../../components/auth/SessionsPanel';
 export function ClientAccount() {
-  const { data: apiProfileData } = useClientProfile();
   const clientUser = useClientUser();
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  // Family / guest access — real data from /client/guests.
+  const { data: guestsData } = useClientGuests();
+  const guests = Array.isArray(guestsData) ? guestsData : [];
+  const inviteGuestMutation = useInviteClientGuest();
+  const removeGuestMutation = useRemoveClientGuest();
+  const [removingGuestId, setRemovingGuestId] = useState<string | null>(null);
+  // Notification prefs are loaded from /me/preferences — no hardcoded defaults.
   const [notifs, setNotifs] = useState({
-    chantier: {
-      email: true,
-      sms: true,
-      push: true
-    },
-    finances: {
-      email: true,
-      sms: true,
-      push: false
-    },
-    docs: {
-      email: true,
-      sms: false,
-      push: false
-    },
-    messages: {
-      email: false,
-      sms: false,
-      push: true
-    }
+    chantier: { email: false, sms: false, push: false },
+    finances: { email: false, sms: false, push: false },
+    docs: { email: false, sms: false, push: false },
+    messages: { email: false, sms: false, push: false }
+  });
+  // Raw per-channel dicts from the API (preserves categories not shown here, e.g. sav/qhse).
+  const rawPrefsRef = useRef<{ notif_email: any; notif_sms: any; notif_push: any }>({
+    notif_email: {}, notif_sms: {}, notif_push: {}
   });
   // Toast State
   const [toastMessage, setToastMessage] = useState('');
@@ -65,38 +59,99 @@ export function ClientAccount() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   // Invite Modal State
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [inviteState, setInviteState] = useState<
-    'idle' | 'sending' | 'success'>(
-    'idle');
-  const [inviteData, setInviteData] = useState({
-    email: '',
-    role: 'Lecture seule'
+  const [inviteState, setInviteState] = useState<'idle' | 'sending' | 'success'>('idle');
+  const [inviteData, setInviteData] = useState<{ email: string; name: string; role: 'READ_ONLY' | 'EDIT' }>({
+    email: '', name: '', role: 'READ_ONLY'
   });
+  // UI category id → API category key (the API uses 'documents', the UI uses 'docs').
+  const CAT_MAP: Record<string, string> = {
+    chantier: 'chantier', finances: 'finances', docs: 'documents', messages: 'messages'
+  };
+  // Load real notification preferences from the API on mount.
+  useEffect(() => {
+    let mounted = true;
+    userPrefsApi.get().then((p: any) => {
+      if (!mounted || !p) return;
+      rawPrefsRef.current = {
+        notif_email: p.notif_email || {},
+        notif_sms: p.notif_sms || {},
+        notif_push: p.notif_push || {}
+      };
+      const read = (
+      channel: 'notif_email' | 'notif_sms' | 'notif_push',
+      uiCat: string) =>
+      !!(p[channel] || {})[CAT_MAP[uiCat]];
+      setNotifs({
+        chantier: { email: read('notif_email', 'chantier'), sms: read('notif_sms', 'chantier'), push: read('notif_push', 'chantier') },
+        finances: { email: read('notif_email', 'finances'), sms: read('notif_sms', 'finances'), push: read('notif_push', 'finances') },
+        docs: { email: read('notif_email', 'docs'), sms: read('notif_sms', 'docs'), push: read('notif_push', 'docs') },
+        messages: { email: read('notif_email', 'messages'), sms: read('notif_sms', 'messages'), push: read('notif_push', 'messages') }
+      });
+    }).catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+  // Persist the full per-channel dicts (merging preserved categories like sav/qhse).
+  const persistNotifs = async (next: typeof notifs) => {
+    const raw = rawPrefsRef.current;
+    const build = (channel: 'email' | 'sms' | 'push') => ({
+      ...(raw[`notif_${channel}` as 'notif_email' | 'notif_sms' | 'notif_push'] || {}),
+      chantier: next.chantier[channel],
+      finances: next.finances[channel],
+      documents: next.docs[channel],
+      messages: next.messages[channel]
+    });
+    const payload = {
+      notif_email: build('email'),
+      notif_sms: build('sms'),
+      notif_push: build('push')
+    };
+    rawPrefsRef.current = payload;
+    try {
+      await userPrefsApi.update(payload);
+      showToast('Préférences enregistrées');
+    } catch {
+      showToast('Erreur lors de la sauvegarde des préférences');
+    }
+  };
   const toggleNotif = (
   category: keyof typeof notifs,
   type: 'email' | 'sms' | 'push') =>
   {
-    setNotifs((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [type]: !prev[category][type]
-      }
-    }));
+    setNotifs((prev) => {
+      const next = {
+        ...prev,
+        [category]: { ...prev[category], [type]: !prev[category][type] }
+      };
+      void persistNotifs(next);
+      return next;
+    });
   };
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    const form = e.target as HTMLFormElement;
     setSaveState('saving');
-    setTimeout(() => {
-      setSaveState('idle');
+    try {
+      const fullName = (form.elements.namedItem('name') as HTMLInputElement)?.value || '';
+      const [first, ...rest] = fullName.split(' ');
+      await updateProfileApi({
+        first_name: first || fullName,
+        last_name: rest.join(' '),
+        phone: (form.elements.namedItem('phone') as HTMLInputElement)?.value || '',
+      });
       showToast('Modifications enregistrées avec succès !');
-    }, 2000);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaveState('idle');
+    }
   };
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwdError('');
     if (!pwdData.current || !pwdData.new || !pwdData.confirm) {
@@ -107,42 +162,63 @@ export function ClientAccount() {
       setPwdError('Les nouveaux mots de passe ne correspondent pas.');
       return;
     }
+    if (pwdData.new.length < 8) {
+      setPwdError('Le nouveau mot de passe doit faire au moins 8 caractères.');
+      return;
+    }
     setPwdState('saving');
-    setTimeout(() => {
-      setPwdState('success');
-      setPwdData({
-        current: '',
-        new: '',
-        confirm: ''
+    try {
+      await changePasswordApi({
+        current_password: pwdData.current,
+        new_password: pwdData.new,
       });
-    }, 2000);
-  };
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploadingPhoto(true);
-      setTimeout(() => {
-        setIsUploadingPhoto(false);
-        setPhotoPreview(
-          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&q=80'
-        );
-        showToast('Photo de profil mise à jour !');
-      }, 2000);
+      setPwdState('success');
+      setPwdData({ current: '', new: '', confirm: '' });
+      setTimeout(() => setPwdState('idle'), 3000);
+    } catch (err: any) {
+      setPwdError(err?.response?.data?.detail || 'Erreur lors du changement de mot de passe');
+      setPwdState('idle');
     }
   };
-  const handleInvite = (e: React.FormEvent) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    // Real local preview of the chosen file — no mock image.
+    setPhotoPreview(URL.createObjectURL(file));
+    setIsUploadingPhoto(false);
+    showToast('Photo sélectionnée');
+  };
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setInviteState('sending');
-    setTimeout(() => {
+    try {
+      await inviteGuestMutation.mutateAsync({
+        email: inviteData.email,
+        name: inviteData.name,
+        role: inviteData.role,
+      });
       setInviteState('success');
       setTimeout(() => {
         setIsInviteModalOpen(false);
         setInviteState('idle');
-        setInviteData({
-          email: '',
-          role: 'Lecture seule'
-        });
-      }, 3000);
-    }, 2000);
+        setInviteData({ email: '', name: '', role: 'READ_ONLY' });
+      }, 2500);
+    } catch (err: any) {
+      setInviteState('idle');
+      showToast(err?.response?.data?.detail || "Erreur lors de l'envoi de l'invitation");
+    }
+  };
+  const handleRemoveGuest = async (id: string) => {
+    setRemovingGuestId(id);
+    try {
+      await removeGuestMutation.mutateAsync(id);
+    } catch (err: any) {
+      showToast(err?.response?.data?.detail || 'Erreur lors du retrait');
+    } finally {
+      setRemovingGuestId(null);
+    }
   };
   return (
     <div className="max-w-5xl mx-auto space-y-8 relative pb-20">
@@ -368,34 +444,9 @@ export function ClientAccount() {
                 Sécurité
               </h2>
             </div>
-            <div className="p-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-montserrat font-bold text-globus-blue-dark mb-1">
-                  Authentification à deux facteurs (2FA)
-                </h3>
-                <p className="font-opensans text-sm text-globus-gray max-w-md">
-                  Protégez votre compte avec un code de vérification
-                  supplémentaire envoyé par SMS lors de la connexion.
-                </p>
-                <span
-                  className={`inline-block mt-2 text-xs font-bold px-2.5 py-1 rounded-full ${is2FAEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  
-                  {is2FAEnabled ? 'Activé' : 'Non activé'}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setIs2FAEnabled(!is2FAEnabled);
-                  showToast(
-                    is2FAEnabled ? '2FA désactivé' : '2FA activé avec succès'
-                  );
-                }}
-                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${is2FAEnabled ? 'bg-globus-orange' : 'bg-gray-300'}`}>
-                
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${is2FAEnabled ? 'translate-x-8' : 'translate-x-1'}`} />
-                
-              </button>
+            <div className="p-6 space-y-6">
+              <TwoFactorPanel />
+              <SessionsPanel />
             </div>
           </motion.div>
 
@@ -473,105 +524,16 @@ export function ClientAccount() {
             </div>
           </motion.div>
 
-          {/* Session History */}
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              delay: 0.2
-            }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            
-            <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-              <MonitorIcon className="w-6 h-6 text-globus-blue-dark" />
-              <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark">
-                Dernières Connexions
-              </h2>
-            </div>
-            <div className="p-0">
-              <div className="divide-y divide-gray-100">
-                {[
-                {
-                  id: 1,
-                  device: 'Chrome sur Windows',
-                  location: 'Paris, France',
-                  time: "Aujourd'hui 14:30",
-                  active: true,
-                  icon: LaptopIcon
-                },
-                {
-                  id: 2,
-                  device: 'Safari sur iPhone',
-                  location: 'Douala, Cameroun',
-                  time: 'Hier 09:15',
-                  active: false,
-                  icon: SmartphoneIcon
-                },
-                {
-                  id: 3,
-                  device: 'Chrome sur MacBook',
-                  location: 'Paris, France',
-                  time: '20/07/2024 18:00',
-                  active: false,
-                  icon: LaptopIcon
-                }].
-                map((session) => {
-                  const Icon = session.icon;
-                  return (
-                    <div
-                      key={session.id}
-                      className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                      
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${session.active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                          
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="font-montserrat font-bold text-sm text-globus-blue-dark flex items-center gap-2">
-                            {session.device}
-                            {session.active &&
-                            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">
-                                Active
-                              </span>
-                            }
-                          </p>
-                          <p className="font-opensans text-xs text-globus-gray">
-                            {session.location} • {session.time}
-                          </p>
-                        </div>
-                      </div>
-                    </div>);
-
-                })}
-              </div>
-            </div>
-          </motion.div>
         </div>
 
-        {/* Right Col: Family Access */}
+        {/* Right Col: Family Access — real /client/guests */}
         <div className="lg:col-span-1">
           <motion.div
-            initial={{
-              opacity: 0,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              y: 0
-            }}
-            transition={{
-              delay: 0.2
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
             className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-            
+
             <div className="p-6 border-b border-gray-100 flex items-center gap-3 bg-globus-light">
               <UsersIcon className="w-6 h-6 text-globus-blue-dark" />
               <h2 className="font-montserrat font-bold text-lg text-globus-blue-dark">
@@ -585,35 +547,59 @@ export function ClientAccount() {
               </p>
 
               <div className="space-y-4 mb-6">
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-globus-blue-dark text-white flex items-center justify-center font-montserrat font-bold text-xs shrink-0">
-                      MT
-                    </div>
-                    <div>
-                      <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                        Marie Talla
-                      </p>
-                      <p className="font-opensans text-xs text-globus-gray">
-                        Lecture seule
-                      </p>
-                    </div>
+                {/* Account owner (real, from useClientUser) */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-globus-blue-dark text-white flex items-center justify-center font-montserrat font-bold text-xs shrink-0">
+                    {clientUser.initials || '—'}
                   </div>
-                  <button className="text-gray-400 hover:text-red-500 transition-colors">
-                    <Trash2Icon className="w-4 h-4" />
-                  </button>
+                  <div className="min-w-0">
+                    <p className="font-montserrat font-bold text-sm text-globus-blue-dark truncate">
+                      {clientUser.name || '—'}
+                    </p>
+                    <p className="font-opensans text-xs text-globus-gray">Propriétaire</p>
+                  </div>
                 </div>
+
+                {/* Real invited guests from /client/guests */}
+                {guests.map((g) =>
+                <div
+                  key={g.id}
+                  className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-globus-blue text-white flex items-center justify-center font-montserrat font-bold text-xs shrink-0">
+                        {(g.name || g.email).slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-montserrat font-bold text-sm text-globus-blue-dark truncate">
+                          {g.name || g.email}
+                        </p>
+                        <p className="font-opensans text-xs text-globus-gray">
+                          {g.role === 'EDIT' ? 'Modification' : 'Lecture seule'}
+                          {g.status === 'PENDING' ? ' • Invitation envoyée' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                    onClick={() => handleRemoveGuest(g.id)}
+                    disabled={removingGuestId === g.id}
+                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 shrink-0">
+                      {removingGuestId === g.id ?
+                    <LoaderIcon className="w-4 h-4 animate-spin" /> :
+                    <Trash2Icon className="w-4 h-4" />}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button
                 onClick={() => setIsInviteModalOpen(true)}
                 className="w-full border-2 border-dashed border-gray-300 hover:border-globus-orange hover:text-globus-orange text-globus-gray font-montserrat font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
-                
                 <PlusIcon className="w-4 h-4" /> Inviter un membre
               </button>
             </div>
           </motion.div>
         </div>
+
       </div>
 
       {/* Success Toasts */}
@@ -685,48 +671,28 @@ export function ClientAccount() {
         }
       </AnimatePresence>
 
-      {/* Invite Modal */}
+      {/* Invite Modal — real POST /client/guests */}
       <AnimatePresence>
         {isInviteModalOpen &&
         <motion.div
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() =>
-          inviteState === 'idle' && setIsInviteModalOpen(false)
-          }>
-          
+          onClick={() => inviteState === 'idle' && setIsInviteModalOpen(false)}>
+
             <motion.div
-            initial={{
-              scale: 0.95,
-              opacity: 0
-            }}
-            animate={{
-              scale: 1,
-              opacity: 1
-            }}
-            exit={{
-              scale: 0.95,
-              opacity: 0
-            }}
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-            
+
               <div className="bg-globus-blue-dark p-6 text-white flex items-center justify-between">
-                <h3 className="font-montserrat font-bold text-xl">
-                  Inviter un membre
-                </h3>
+                <h3 className="font-montserrat font-bold text-xl">Inviter un membre</h3>
                 <button
                 onClick={() => setIsInviteModalOpen(false)}
                 className="text-white/70 hover:text-white transition-colors">
-                
                   <XIcon className="w-6 h-6" />
                 </button>
               </div>
@@ -734,29 +700,31 @@ export function ClientAccount() {
               <div className="p-6">
                 {inviteState === 'success' ?
               <motion.div
-                initial={{
-                  opacity: 0,
-                  scale: 0.9
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1
-                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-6">
-                
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <CheckCircle2Icon className="w-8 h-8 text-green-600" />
                     </div>
                     <h4 className="font-montserrat font-bold text-xl text-globus-blue-dark mb-2">
-                      Invitation envoyée !
+                      Invitation enregistrée !
                     </h4>
                     <p className="font-opensans text-globus-gray">
-                      Un email a été envoyé à {inviteData.email} avec les
-                      instructions de connexion.
+                      {inviteData.email} a été ajouté(e) à vos accès.
                     </p>
                   </motion.div> :
 
               <form onSubmit={handleInvite} className="space-y-4">
+                    <div>
+                      <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-2">
+                        Nom (optionnel)
+                      </label>
+                      <input
+                    type="text"
+                    value={inviteData.name}
+                    onChange={(e) => setInviteData({ ...inviteData, name: e.target.value })}
+                    className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
+                    </div>
                     <div>
                       <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-2">
                         Adresse E-mail
@@ -765,14 +733,8 @@ export function ClientAccount() {
                     required
                     type="email"
                     value={inviteData.email}
-                    onChange={(e) =>
-                    setInviteData({
-                      ...inviteData,
-                      email: e.target.value
-                    })
-                    }
+                    onChange={(e) => setInviteData({ ...inviteData, email: e.target.value })}
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange" />
-                  
                     </div>
                     <div>
                       <label className="block font-montserrat font-semibold text-globus-blue-dark text-sm mb-2">
@@ -780,16 +742,10 @@ export function ClientAccount() {
                       </label>
                       <select
                     value={inviteData.role}
-                    onChange={(e) =>
-                    setInviteData({
-                      ...inviteData,
-                      role: e.target.value
-                    })
-                    }
+                    onChange={(e) => setInviteData({ ...inviteData, role: e.target.value as 'READ_ONLY' | 'EDIT' })}
                     className="w-full bg-globus-light border border-gray-200 rounded-lg px-4 py-2.5 font-opensans text-sm focus:outline-none focus:border-globus-orange">
-                    
-                        <option>Lecture seule</option>
-                        <option>Modification (Signature, Paiement)</option>
+                        <option value="READ_ONLY">Lecture seule</option>
+                        <option value="EDIT">Modification (Signature, Paiement)</option>
                       </select>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">
@@ -797,19 +753,15 @@ export function ClientAccount() {
                     type="button"
                     onClick={() => setIsInviteModalOpen(false)}
                     className="px-5 py-2.5 rounded-lg font-montserrat font-bold text-globus-gray hover:bg-gray-100 transition-colors text-sm">
-                    
                         Annuler
                       </button>
                       <button
                     type="submit"
                     disabled={inviteState === 'sending'}
                     className="bg-globus-orange hover:bg-globus-orange-hover disabled:opacity-70 text-white font-montserrat font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md text-sm flex items-center gap-2">
-                    
                         {inviteState === 'sending' ?
                     <LoaderIcon className="w-4 h-4 animate-spin" /> :
-
-                    <MailIcon className="w-4 h-4" />
-                    }
+                    <MailIcon className="w-4 h-4" />}
                         Envoyer l'invitation
                       </button>
                     </div>
@@ -820,6 +772,7 @@ export function ClientAccount() {
           </motion.div>
         }
       </AnimatePresence>
+
     </div>);
 
 }

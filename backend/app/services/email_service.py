@@ -197,6 +197,99 @@ def send_appointment_notification(email: str, title: str, date_str: str, first_n
     _send_email(email, subject, html)
 
 
+def send_password_reset_email(email: str, reset_token: str, first_name: str = ""):
+    """Send the forgot-password magic link."""
+    reset_url = f"{FRONTEND_URL}/reset-mot-de-passe?token={reset_token}"
+    subject = "Globus BTP — Réinitialisation de votre mot de passe"
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1a365d 0%, #2d4a7c 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Globus Engineering SARL</h1>
+        </div>
+        <div style="background: #ffffff; padding: 30px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+            <h2 style="color: #1a365d; margin-top: 0;">Bonjour {first_name or 'cher client'}</h2>
+            <p style="color: #4a5568; line-height: 1.6;">
+                Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous
+                pour en créer un nouveau (lien valable 1 heure) :
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_url}"
+                   style="background: #ed8936; color: white; padding: 14px 32px; text-decoration: none;
+                          border-radius: 8px; font-weight: 700; display: inline-block;">
+                    Réinitialiser mon mot de passe →
+                </a>
+            </div>
+            <p style="color: #a0aec0; font-size: 12px;">
+                Si vous n'avez pas demandé cette réinitialisation, ignorez simplement cet email.
+                Votre mot de passe restera inchangé.
+            </p>
+        </div>
+    </div>
+    """
+    _send_email(email, subject, html)
+
+
+def send_password_changed_notification(email: str, first_name: str = ""):
+    """Notify the user that their password was successfully changed."""
+    subject = "Globus BTP — Mot de passe modifié"
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #16a34a; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">✅ Mot de passe modifié</h1>
+        </div>
+        <div style="background: white; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+            <h2 style="color: #1a365d;">Bonjour {first_name or 'cher client'}</h2>
+            <p style="color: #4a5568;">
+                Votre mot de passe Globus BTP vient d'être modifié avec succès.
+            </p>
+            <p style="color: #4a5568;">
+                Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement notre support.
+            </p>
+        </div>
+    </div>
+    """
+    _send_email(email, subject, html)
+
+
+def send_signing_otp(email: str, code: str, document_name: str, first_name: str = ""):
+    """Email a 6-digit OTP for the electronic-signature flow.
+
+    The code is shown big and bold; we also remind the user to never share it.
+    """
+    subject = f"Globus BTP — Code de signature ({code})"
+    html = f"""
+    <div style=\"font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">
+        <div style=\"background: #1a365d; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;\">
+            <h1 style=\"color: white; margin: 0;\">Code de signature</h1>
+            <p style=\"color: rgba(255,255,255,0.85); margin: 6px 0 0;\">Globus BTP</p>
+        </div>
+        <div style=\"background: white; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;\">
+            <h2 style=\"color: #1a365d; margin-top: 0;\">Bonjour {first_name or ''} 👋</h2>
+            <p style=\"color: #4a5568; line-height: 1.6;\">
+                Vous êtes sur le point de signer électroniquement le document
+                <strong>{document_name}</strong>. Saisissez le code ci-dessous
+                pour finaliser votre signature.
+            </p>
+            <div style=\"text-align: center; margin: 30px 0;\">
+                <div style=\"display: inline-block; padding: 16px 32px; background: #f7fafc;
+                            border: 2px dashed #1a365d; border-radius: 12px;
+                            font-size: 28pt; letter-spacing: 8px; font-weight: 700; color: #1a365d;\">
+                    {code}
+                </div>
+            </div>
+            <p style=\"color: #c53030; font-size: 14px; font-weight: 600;\">
+                ⚠️ Ne communiquez jamais ce code. Il expire dans 10 minutes.
+            </p>
+            <p style=\"color: #718096; font-size: 12px; margin-top: 24px;\">
+                Si vous n'êtes pas à l'origine de cette demande, ignorez ce message
+                ou contactez notre support.
+            </p>
+        </div>
+    </div>
+    """
+    _send_email(email, subject, html)
+
+
 def send_overdue_invoice_reminder(email: str, invoice_code: str, total: float, first_name: str = ""):
     """Remind client about an overdue invoice."""
     subject = f"Globus BTP — Rappel de paiement {invoice_code}"
@@ -216,6 +309,67 @@ def send_overdue_invoice_reminder(email: str, invoice_code: str, total: float, f
                    style="background: #c53030; color: white; padding: 12px 24px; text-decoration: none;
                           border-radius: 8px; font-weight: 700; display: inline-block;">
                     Régler maintenant →
+                </a>
+            </div>
+        </div>
+    </div>
+    """
+    _send_email(email, subject, html)
+
+
+def send_payment_confirmation_client(email: str, invoice_code: str, amount: float,
+                                     first_name: str = "", method: str = ""):
+    """Confirm to the client that their online payment was received."""
+    subject = f"Globus BTP — Paiement reçu (facture {invoice_code})"
+    via = f" via {method}" if method else ""
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #2f855a; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">✅ Paiement confirmé</h1>
+        </div>
+        <div style="background: white; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+            <h2 style="color: #1a365d;">Bonjour {first_name}</h2>
+            <p style="color: #4a5568;">Nous avons bien reçu votre paiement{via}. Merci !</p>
+            <div style="background: #f0fff4; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <p style="margin: 4px 0;"><strong>Facture :</strong> {invoice_code}</p>
+                <p style="margin: 4px 0;"><strong>Montant réglé :</strong> {amount:,.0f} FCFA</p>
+            </div>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="{FRONTEND_URL}/espace-client/finances"
+                   style="background: #ed8936; color: white; padding: 12px 24px; text-decoration: none;
+                          border-radius: 8px; font-weight: 700; display: inline-block;">
+                    Voir mes reçus →
+                </a>
+            </div>
+        </div>
+    </div>
+    """
+    _send_email(email, subject, html)
+
+
+def send_payment_received_staff(email: str, invoice_code: str, amount: float,
+                                client_name: str = "", method: str = "", first_name: str = ""):
+    """Alert finance staff / the project chef that an online payment was received."""
+    subject = f"Globus BTP — Paiement reçu en ligne (facture {invoice_code})"
+    via = f" via {method}" if method else ""
+    who = f" de {client_name}" if client_name else ""
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #1a365d; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0;">💳 Paiement reçu en ligne</h1>
+        </div>
+        <div style="background: white; padding: 30px; border: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+            <h2 style="color: #1a365d;">Bonjour {first_name}</h2>
+            <p style="color: #4a5568;">Un paiement en ligne{who} a été reçu et vérifié{via}.</p>
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <p style="margin: 4px 0;"><strong>Facture :</strong> {invoice_code}</p>
+                <p style="margin: 4px 0;"><strong>Montant :</strong> {amount:,.0f} FCFA</p>
+            </div>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="{FRONTEND_URL}/erp/facturation"
+                   style="background: #ed8936; color: white; padding: 12px 24px; text-decoration: none;
+                          border-radius: 8px; font-weight: 700; display: inline-block;">
+                    Ouvrir la facturation →
                 </a>
             </div>
         </div>

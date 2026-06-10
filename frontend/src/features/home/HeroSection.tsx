@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { useCmsQuery } from '../../hooks/useCmsQuery';
@@ -16,13 +16,16 @@ export function HeroSection() {
   const [isVideoPhase, setIsVideoPhase] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [direction, setDirection] = useState(1);
-  // Transition from video to carousel after 6 seconds
+  // Transition from video to carousel after 6 seconds — only if slides exist.
+  // With zero slides we stay on the static video phase instead of crashing on
+  // slides[currentSlide].
   useEffect(() => {
+    if (!slides || slides.length === 0) return;
     const timer = setTimeout(() => {
       setIsVideoPhase(false);
     }, 6000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [slides]);
   // Auto-advance carousel slides
   useEffect(() => {
     if (isVideoPhase || !slides) return;

@@ -63,9 +63,16 @@ export async function ensureAuth(): Promise<boolean> {
       localStorage.removeItem('globus_token');
     }
   }
-  // Dev auto-login
+  // Optional dev auto-login — only when explicit env credentials are provided.
+  // No hardcoded credentials: in production the ERP login flow (ProtectedRoute)
+  // supplies the token, so this fallback simply no-ops.
+  const email = (import.meta as any).env?.VITE_ADMIN_EMAIL || '';
+  const password = (import.meta as any).env?.VITE_ADMIN_PASSWORD || '';
+  if (!email || !password) {
+    return false;
+  }
   try {
-    await loginAdmin('admin@globus-btp.com', 'Globus2024!');
+    await loginAdmin(email, password);
     return true;
   } catch (e) {
     console.error('[Admin] Auto-login failed:', e);

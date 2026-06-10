@@ -1,4 +1,6 @@
 """JWT + password hashing service — Extended with RBAC and invitation tokens."""
+import hashlib
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -12,12 +14,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.config import get_settings
 from app.auth.models import User
+from app.utils.time import utcnow_naive
 
 settings = get_settings()
 
 # ── Config ────────────────────────────────────────────────────
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
+
+
+# ── Generic SHA-256 hex helper (reused for reset tokens + session tokens) ──
+def sha256_hex(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+# ── Password reset helpers ───────────────────────────────────
+def generate_reset_token() -> str:
+    """Generate a secure random reset token (raw, to send via email)."""
+    return secrets.token_urlsafe(48)
+
+
+def hash_reset_token(token: str) -> str:
+    """Hash a reset token for safe DB storage (SHA-256)."""
+    return sha256_hex(token)
 
 
 # ── Password ─────────────────────────────────────────────────
@@ -30,9 +49,14 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 # ── JWT Tokens ───────────────────────────────────────────────
-def create_access_token(user_id: str, role: str) -> str:
-    """Create a short-lived access token."""
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+def create_access_token(user_id: str, role: str, minutes: Optional[int] = None) -> str:
+    """Create a short-lived access token.
+
+    `minutes` overrides the default TTL when provided — driven by the persisted
+    `session_timeout` setting so admins can tune session expiration.
+    """
+    ttl = minutes if minutes is not None else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    expire = datetime.utcnow() + timedelta(minutes=ttl)
     payload = {
         "sub": user_id,
         "role": role,
@@ -96,6 +120,90 @@ def decode_invitation_token(token: str) -> dict:
         return payload
     except JWTError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Lien d'invitation invalide ou expiré")
+
+
+# ── Préférences de session / politique 2FA (persistées en settings) ──
+_SESSION_TIMEOUT_MINUTES = {
+    "30 minutes": 30,
+    "1 heure": 60,
+    "2 heures": 120,
+    "4 heures": 240,
+    "8 heures": 480,
+    "Jamais": 60 * 24 * 365,  # ~1 an
+}
+
+
+async def _site_settings(db: AsyncSession):
+    """Fetch the singleton CMSSiteSettings row (lazy import avoids cycles)."""
+    from app.models.cms import CMSSiteSettings
+    r = await db.execute(select(CMSSiteSettings).limit(1))
+    return r.scalars().first()
+
+
+def session_timeout_minutes(label: Optional[str]) -> int:
+    """Map the persisted session_timeout label to a number of minutes."""
+    return _SESSION_TIMEOUT_MINUTES.get(
+        (label or "").strip(), settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+
+async def is_2fa_enforced_for(db: AsyncSession, user: User) -> bool:
+    """True when the org policy makes 2FA mandatory for this (staff) user."""
+    s = await _site_settings(db)
+    return bool(s and getattr(s, "enforce_2fa", False) and user.role != "CLIENT")
+
+
+async def needs_2fa_setup(db: AsyncSession, user: User) -> bool:
+    """True when 2FA is mandatory for this user but not yet enabled —
+    used to prompt a forced enrollment after login."""
+    if not await is_2fa_enforced_for(db, user):
+        return False
+    from app.services.twofactor_service import is_2fa_enabled
+    return not await is_2fa_enabled(db, user.id)
+
+
+async def issue_token_response(user: User, db: Optional[AsyncSession] = None):
+    """Build a TokenResponse (access + refresh + user out) for a logged-in user.
+
+    Centralised so login / refresh / set-password / reset-password / 2FA
+    verify all return the exact same shape. When `db` is provided the access
+    token TTL honours the persisted `session_timeout` setting and
+    `must_setup_2fa` reflects the `enforce_2fa` policy.
+    """
+    from app.auth.schemas import TokenResponse, user_to_out
+    minutes: Optional[int] = None
+    must_setup = False
+    if db is not None:
+        s = await _site_settings(db)
+        minutes = session_timeout_minutes(getattr(s, "session_timeout", None) if s else None)
+        if s and getattr(s, "enforce_2fa", False) and user.role != "CLIENT":
+            from app.services.twofactor_service import is_2fa_enabled
+            must_setup = not await is_2fa_enabled(db, user.id)
+    return TokenResponse(
+        access_token=create_access_token(user.id, user.role, minutes),
+        refresh_token=create_refresh_token(user.id, user.role),
+        force_reset=user.must_change_password,
+        must_setup_2fa=must_setup,
+        user=user_to_out(user),
+    )
+
+
+def create_2fa_challenge_token(user_id: str, minutes: int = 5) -> str:
+    """Short-lived token issued after password OK but before 2FA verified."""
+    expire = utcnow_naive() + timedelta(minutes=minutes)
+    payload = {"sub": user_id, "exp": expire, "type": "2fa_challenge"}
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_2fa_challenge_token(token: str) -> str:
+    """Decode a 2FA challenge token, returning the user_id."""
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "2fa_challenge":
+            raise JWTError("Invalid token type")
+        return payload["sub"]
+    except JWTError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Challenge token invalide ou expiré")
 
 
 # ── Dependencies ─────────────────────────────────────────────

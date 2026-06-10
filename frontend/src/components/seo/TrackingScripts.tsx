@@ -1,4 +1,4 @@
-import React, { useEffect, createElement } from 'react';
+import { useEffect } from 'react';
 interface TrackingScriptsProps {
   gaId?: string;
   gtmId?: string;

@@ -1,174 +1,70 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FolderIcon,
-  FileTextIcon,
-  ImageIcon,
-  DownloadIcon,
-  CheckCircle2Icon,
-  PenToolIcon,
-  FileSignatureIcon,
-  SearchIcon,
-  UploadCloudIcon,
-  XIcon,
-  CheckIcon,
-  LoaderIcon,
-  EyeIcon,
-  FileIcon } from
-'lucide-react';
-import { useClientDocuments, useUploadClientDocument, useSignDocumentOTP, useSubmitMaterialChoice } from '../../hooks/useClient';
-const categories = [
-{
-  id: 'administratif',
-  label: 'Administratif',
-  count: 5
-},
-{
-  id: 'technique',
-  label: 'Technique',
-  count: 8
-},
-{
-  id: 'financier',
-  label: 'Financier',
-  count: 6
-},
-{
-  id: 'validations',
-  label: 'Validations Requises',
-  count: 3,
-  alert: true
-},
-{
-  id: 'envois',
-  label: 'Mes Envois',
-  count: 2
-}];
+import { AlertTriangleIcon, FolderIcon, FileTextIcon, ImageIcon, DownloadIcon, CheckCircle2Icon, PenToolIcon, SearchIcon, UploadCloudIcon, XIcon, CheckIcon, LoaderIcon, FileIcon } from 'lucide-react';
+import { useClientDocuments, useUploadClientDocumentFile, useSubmitMaterialChoice, useClientMaterialChoices } from '../../hooks/useClient';
+import { openOrDownloadUrl } from '../../utils/download';
+import { formatDate } from '../../utils/datetime';
+import { SigningOtpDialog } from '../../components/client/SigningOtpDialog';
+import { useQueryClient } from '@tanstack/react-query';
+// Document folders (UI structure only — the counts are computed from real data).
+const categories: { id: string; label: string; alert?: boolean }[] = [
+{ id: 'administratif', label: 'Administratif' },
+{ id: 'technique', label: 'Technique' },
+{ id: 'financier', label: 'Financier' },
+{ id: 'validations', label: 'Validations Requises', alert: true },
+{ id: 'envois', label: 'Mes Envois' }];
 
-const initialDocumentsData: Record<string, any[]> = {
-  administratif: [
-  {
-    id: 1,
-    name: 'Contrat de construction.pdf',
-    date: '10/01/2024',
-    size: '2.4 MB',
-    type: 'pdf'
-  },
-  {
-    id: 2,
-    name: 'Permis de construire.pdf',
-    date: '25/02/2024',
-    size: '4.1 MB',
-    type: 'pdf'
-  },
-  {
-    id: 3,
-    name: 'Assurance dommages-ouvrage.pdf',
-    date: '05/03/2024',
-    size: '1.8 MB',
-    type: 'pdf'
-  },
-  {
-    id: 4,
-    name: 'PV de réception terrain.pdf',
-    date: '15/03/2024',
-    size: '0.9 MB',
-    type: 'pdf'
-  }],
+function categoryFromBackend(cat: string): string {
+  // Map backend categories to UI tabs
+  switch ((cat || '').toLowerCase()) {
+    case 'contrat': return 'administratif';
+    case 'architecture':
+    case 'structure':
+    case 'electricite':
+    case 'plomberie': return 'technique';
+    case 'facture': return 'financier';
+    case 'envoi_client': return 'envois';
+    default: return 'administratif';
+  }
+}
 
-  technique: [
-  {
-    id: 5,
-    name: 'Plan architectural RDC.pdf',
-    date: '12/01/2024',
-    size: '5.2 MB',
-    type: 'pdf'
-  },
-  {
-    id: 6,
-    name: 'Plan R+1.pdf',
-    date: '12/01/2024',
-    size: '4.8 MB',
-    type: 'pdf'
-  },
-  {
-    id: 7,
-    name: 'Plan électrique.pdf',
-    date: '20/01/2024',
-    size: '3.1 MB',
-    type: 'pdf'
-  },
-  {
-    id: 8,
-    name: 'Étude de sol.pdf',
-    date: '05/02/2024',
-    size: '8.5 MB',
-    type: 'pdf'
-  },
-  {
-    id: 9,
-    name: 'Rendu_3D_Facade.jpg',
-    date: '15/02/2024',
-    size: '6.2 MB',
-    type: 'img'
-  }],
-
-  financier: [
-  {
-    id: 10,
-    name: 'Devis initial signé.pdf',
-    date: '10/01/2024',
-    size: '1.5 MB',
-    type: 'pdf'
-  },
-  {
-    id: 11,
-    name: 'Facture #1 - Acompte.pdf',
-    date: '15/01/2024',
-    size: '0.5 MB',
-    type: 'pdf'
-  },
-  {
-    id: 12,
-    name: 'Quittance paiement #1.pdf',
-    date: '16/01/2024',
-    size: '0.4 MB',
-    type: 'pdf'
-  },
-  {
-    id: 13,
-    name: 'Facture #2 - Démarrage.pdf',
-    date: '01/03/2024',
-    size: '0.5 MB',
-    type: 'pdf'
-  }],
-
-  envois: [
-  {
-    id: 14,
-    name: 'Attestation_bancaire_2024.pdf',
-    date: '20/03/2024',
-    size: '1.2 MB',
-    type: 'pdf'
-  },
-  {
-    id: 15,
-    name: 'Justificatif_domicile.pdf',
-    date: '15/01/2024',
-    size: '0.8 MB',
-    type: 'pdf'
-  }]
-
-};
 export function ClientDocuments() {
   const { data: apiDocumentsData } = useClientDocuments();
-  const uploadDocumentMutation = useUploadClientDocument();
-  const signDocumentMutation = useSignDocumentOTP();
+  const uploadFileMutation = useUploadClientDocumentFile();
   const submitMaterialChoiceMutation = useSubmitMaterialChoice();
+  const { data: apiMaterialChoices } = useClientMaterialChoices();
+  const materialChoicesList: any[] = Array.isArray(apiMaterialChoices) ? apiMaterialChoices : [];
+  const pendingChoice: any = materialChoicesList.find((c: any) => !c.selected) || materialChoicesList[0] || null;
+  const choiceOptionLabel = (opt: any): string =>
+    typeof opt === 'string' ? opt : (opt?.label || opt?.name || opt?.title || '');
 
   const [activeCategory, setActiveCategory] = useState('administratif');
   const [searchQuery, setSearchQuery] = useState('');
-  const [documentsData, setDocumentsData] = useState(initialDocumentsData);
+
+  // Live documents from API, grouped by category for the existing UI structure.
+  const documentsData = React.useMemo(() => {
+    const grouped: Record<string, any[]> = {
+      administratif: [],
+      technique: [],
+      financier: [],
+      validations: [],
+      envois: [],
+    };
+    if (!Array.isArray(apiDocumentsData)) return grouped;
+    for (const d of apiDocumentsData) {
+      const catUi = categoryFromBackend(d.category);
+      grouped[catUi].push({
+        id: d.id,
+        name: d.name,
+        date: formatDate(d.created_at),
+        size: d.file_size || '',
+        type: (d.name || '').toLowerCase().endsWith('.pdf') ? 'pdf' : 'doc',
+        file_url: d.file_url,
+        signed_at: d.signed_at,
+      });
+    }
+    return grouped;
+  }, [apiDocumentsData]);
   // Download State
   const [downloadState, setDownloadState] = useState({
     isDownloading: false,
@@ -178,20 +74,18 @@ export function ClientDocuments() {
   });
   // Preview Modal State
   const [previewDoc, setPreviewDoc] = useState<any>(null);
+  // Phase 7 — real OTP signing flow (request-otp + verify-otp + hash).
+  const [signingDoc, setSigningDoc] = useState<{ id: string; name: string } | null>(null);
+  const queryClient = useQueryClient();
   // Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadState, setUploadState] = useState<
     'idle' | 'uploading' | 'success'>(
     'idle');
   const [uploadProgress, setUploadProgress] = useState(0);
-  // Signature State
-  const [signatureState, setSignatureState] = useState<
-    'idle' | 'processing' | 'success'>(
-    'idle');
-  const [otpCode, setOtpCode] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   // Material Choice State
-  const [selectedMaterial, setSelectedMaterial] = useState<number | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [materialChoiceState, setMaterialChoiceState] = useState<
     'idle' | 'confirming' | 'success'>(
     'idle');
@@ -202,96 +96,84 @@ export function ClientDocuments() {
     categoryId: catId
   }))
   );
+  // Real per-category counts (validations = documents not yet signed).
+  const validationsCount = allDocuments.filter((d: any) => !d.signed_at).length;
+  const categoryCount = (catId: string) =>
+    catId === 'validations' ? validationsCount : documentsData[catId]?.length || 0;
   const filteredDocuments = searchQuery ?
   allDocuments.filter((doc) =>
   doc.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) :
   documentsData[activeCategory] || [];
   // Handlers
-  const handleDownload = (fileName: string, e?: React.MouseEvent) => {
+  const handleDownload = async (doc: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (downloadState.isDownloading) return;
-    setDownloadState({
-      isDownloading: true,
-      progress: 0,
-      fileName,
-      isComplete: false
-    });
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 15 + 5;
-      if (currentProgress >= 100) {
-        currentProgress = 100;
-        clearInterval(interval);
-        setDownloadState((prev) => ({
-          ...prev,
-          progress: 100,
-          isComplete: true
-        }));
-        setTimeout(() => {
-          setDownloadState({
-            isDownloading: false,
-            progress: 0,
-            fileName: '',
-            isComplete: false
-          });
-        }, 3000);
-      } else {
-        setDownloadState((prev) => ({
-          ...prev,
-          progress: currentProgress
-        }));
-      }
-    }, 200);
+    const fileUrl = doc?.file_url;
+    const fileName = doc?.name || 'document';
+    if (!fileUrl) {
+      setToastMessage('Aucun fichier disponible pour ce document');
+      setTimeout(() => setToastMessage(''), 3000);
+      return;
+    }
+    setDownloadState({ isDownloading: true, progress: 0, fileName, isComplete: false });
+    try {
+      await openOrDownloadUrl(fileUrl, fileName, (pct) =>
+        setDownloadState((prev) => ({ ...prev, progress: pct })),
+      );
+      setDownloadState((prev) => ({ ...prev, progress: 100, isComplete: true }));
+      setTimeout(
+        () =>
+          setDownloadState({ isDownloading: false, progress: 0, fileName: '', isComplete: false }),
+        2500,
+      );
+    } catch {
+      setDownloadState({ isDownloading: false, progress: 0, fileName: '', isComplete: false });
+      setToastMessage('Échec du téléchargement');
+      setTimeout(() => setToastMessage(''), 3000);
+    }
   };
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setUploadState('uploading');
       setUploadProgress(0);
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        if (progress >= 100) {
-          clearInterval(interval);
-          setUploadState('success');
-          // Add new simulated file
-          const newDoc = {
-            id: Date.now(),
-            name: file.name,
-            date: new Date().toLocaleDateString('fr-FR'),
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            type: file.type.includes('image') ? 'img' : 'pdf'
-          };
-          setDocumentsData((prev) => ({
-            ...prev,
-            envois: [newDoc, ...(prev.envois || [])]
-          }));
-          setTimeout(() => setUploadState('idle'), 3000);
-        }
-      }, 200);
+      try {
+        // Real binary upload — the backend stores the file and returns its URL.
+        await uploadFileMutation.mutateAsync({
+          file,
+          category: 'envoi_client',
+          onProgress: (pct) => setUploadProgress(pct),
+        });
+        setUploadState('success');
+      } catch {
+        setUploadState('idle');
+        setToastMessage("Échec de l'envoi du document");
+        setTimeout(() => setToastMessage(''), 3000);
+      } finally {
+        setTimeout(() => setUploadState('idle'), 3000);
+        e.target.value = '';
+      }
     }
   };
-  const handleSignDocument = () => {
-    if (otpCode.length !== 6) return;
-    setSignatureState('processing');
-    setTimeout(() => {
-      setSignatureState('success');
-    }, 2000);
-  };
-  const handleResendCode = () => {
-    setToastMessage('Code renvoyé !');
-    setTimeout(() => setToastMessage(''), 3000);
-  };
-  const handleMaterialConfirm = () => {
-    setMaterialChoiceState('success');
-    setTimeout(() => {
+  const handleMaterialConfirm = async () => {
+    if (!selectedMaterial || !pendingChoice) return;
+    try {
+      await submitMaterialChoiceMutation.mutateAsync({
+        choice_id: pendingChoice.id,
+        selection: selectedMaterial,
+      });
+      setMaterialChoiceState('success');
+      setTimeout(() => {
+        setMaterialChoiceState('idle');
+      }, 3000);
+    } catch (err) {
+      console.error('Material choice failed', err);
       setMaterialChoiceState('idle');
-    }, 3000);
+    }
   };
   return (
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 relative pb-20">
@@ -324,15 +206,13 @@ export function ClientDocuments() {
                   {cat.label}
                 </div>
                 <div className="flex items-center gap-2">
-                  {cat.alert &&
+                  {cat.alert && categoryCount(cat.id) > 0 &&
                 <span className="w-2 h-2 rounded-full bg-globus-orange animate-pulse"></span>
                 }
                   <span
                   className={`text-xs ${activeCategory === cat.id ? 'bg-globus-blue/20 text-globus-blue' : 'bg-gray-100 text-gray-500'} px-2 py-0.5 rounded-full`}>
                   
-                    {cat.id === 'envois' ?
-                  documentsData.envois.length :
-                  cat.count}
+                    {categoryCount(cat.id)}
                   </span>
                 </div>
               </button>
@@ -408,7 +288,7 @@ export function ClientDocuments() {
                       </div>
                     </div>
                     <button
-                onClick={(e) => handleDownload(doc.name, e)}
+                onClick={(e) => handleDownload(doc, e)}
                 className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded-lg transition-colors">
                 
                       <DownloadIcon className="w-5 h-5" />
@@ -530,7 +410,7 @@ export function ClientDocuments() {
                     </div>
                   </div>
                   <button
-                onClick={(e) => handleDownload(doc.name, e)}
+                onClick={(e) => handleDownload(doc, e)}
                 className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded-lg transition-colors">
                 
                     <DownloadIcon className="w-5 h-5" />
@@ -556,12 +436,6 @@ export function ClientDocuments() {
               <h2 className="font-montserrat font-bold text-xl text-globus-blue-dark capitalize">
                 Dossier {activeCategory}
               </h2>
-              <button
-              onClick={() => handleDownload(`Dossier_${activeCategory}.zip`)}
-              className="text-sm font-montserrat font-bold text-globus-blue hover:text-globus-blue-dark transition-colors flex items-center gap-2">
-              
-                <DownloadIcon className="w-4 h-4" /> Tout télécharger
-              </button>
             </div>
 
             <div className="divide-y divide-gray-100">
@@ -591,7 +465,7 @@ export function ClientDocuments() {
                     </div>
                   </div>
                   <button
-                onClick={(e) => handleDownload(doc.name, e)}
+                onClick={(e) => handleDownload(doc, e)}
                 className="p-2 text-gray-400 hover:text-globus-blue hover:bg-blue-50 rounded-lg transition-colors">
                 
                     <DownloadIcon className="w-5 h-5" />
@@ -617,103 +491,37 @@ export function ClientDocuments() {
               Validations & Signatures requises
             </h2>
 
-            {/* Signature Card */}
-            <div className="bg-white rounded-2xl shadow-md border-2 border-globus-orange/20 p-6 md:p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-globus-orange/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-
-              <div className="flex items-start gap-4 mb-6 relative z-10">
-                <div className="w-12 h-12 bg-globus-orange/10 rounded-xl flex items-center justify-center shrink-0">
-                  <FileSignatureIcon className="w-6 h-6 text-globus-orange" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="font-montserrat font-bold text-xl text-globus-blue-dark">
-                      Avenant budgétaire #1
-                    </h3>
-                    {signatureState !== 'success' &&
-                  <span className="bg-red-100 text-red-600 px-2.5 py-0.5 rounded-full text-xs font-bold font-montserrat">
-                        Urgent
-                      </span>
-                  }
-                  </div>
-                  <p className="font-opensans text-sm text-globus-gray">
-                    Modification des fondations suite à l'étude de sol
-                    complémentaire. Montant : +10 000 000 FCFA.
-                  </p>
-                </div>
+            {/* Real signature flow — any unsigned doc shared with the client */}
+            {(allDocuments.filter((d: any) => !d.signed_at).length > 0) && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+                <h3 className="font-montserrat font-bold text-base text-globus-blue-dark mb-3">
+                  Documents en attente de signature
+                </h3>
+                <ul className="divide-y divide-gray-100">
+                  {allDocuments
+                    .filter((d: any) => !d.signed_at)
+                    .slice(0, 8)
+                    .map((d: any) => (
+                      <li key={d.id} className="py-3 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-montserrat font-bold text-sm text-globus-blue-dark truncate">
+                            {d.name}
+                          </p>
+                          <p className="text-xs text-globus-gray font-opensans">
+                            {d.date} • {d.size}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setSigningDoc({ id: String(d.id), name: d.name })}
+                          className="bg-globus-orange hover:bg-globus-orange-hover text-white font-montserrat font-bold text-xs py-2 px-3 rounded-lg shrink-0">
+                          Signer (OTP)
+                        </button>
+                      </li>
+                    ))}
+                </ul>
               </div>
-
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 flex items-center justify-between border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <FileTextIcon className="w-5 h-5 text-red-500" />
-                  <span className="font-montserrat font-semibold text-sm text-globus-blue-dark">
-                    Avenant_01_Fondations.pdf
-                  </span>
-                </div>
-                <button
-                onClick={() => handleDownload('Avenant_01_Fondations.pdf')}
-                className="text-globus-blue hover:underline text-sm font-semibold flex items-center gap-1">
-                
-                  <DownloadIcon className="w-4 h-4" /> Consulter
-                </button>
-              </div>
-
-              {signatureState === 'success' ?
-            <div className="border-t border-gray-100 pt-6 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                    <CheckCircle2Icon className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-montserrat font-bold text-green-800">
-                      Document signé avec succès !
-                    </p>
-                    <p className="font-opensans text-sm text-gray-500">
-                      Un email de confirmation a été envoyé.
-                    </p>
-                  </div>
-                </div> :
-            signatureState === 'processing' ?
-            <div className="border-t border-gray-100 pt-6 flex flex-col items-center justify-center py-4">
-                  <LoaderIcon className="w-8 h-8 text-globus-orange animate-spin mb-2" />
-                  <p className="font-montserrat font-bold text-globus-blue-dark">
-                    Signature en cours...
-                  </p>
-                </div> :
-
-            <div className="border-t border-gray-100 pt-6">
-                  <p className="font-montserrat font-bold text-sm text-globus-blue-dark mb-3">
-                    Signature électronique (OTP)
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <input
-                  type="text"
-                  placeholder="Code à 6 chiffres reçu par SMS"
-                  value={otpCode}
-                  onChange={(e) =>
-                  setOtpCode(
-                    e.target.value.replace(/\D/g, '').slice(0, 6)
-                  )
-                  }
-                  className="flex-1 bg-white border border-gray-300 rounded-lg px-4 py-3 font-mono text-center tracking-[0.5em] focus:outline-none focus:border-globus-orange focus:ring-1 focus:ring-globus-orange"
-                  maxLength={6} />
-                
-                    <button
-                  onClick={handleSignDocument}
-                  disabled={otpCode.length !== 6}
-                  className="bg-globus-blue hover:bg-globus-blue/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-montserrat font-bold py-3 px-6 rounded-lg transition-colors shadow-md shrink-0">
-                  
-                      Signer le document
-                    </button>
-                  </div>
-                  <button
-                onClick={handleResendCode}
-                className="text-xs text-globus-gray hover:text-globus-blue mt-2 underline">
-                
-                    Renvoyer le code SMS
-                  </button>
-                </div>
-            }
-            </div>
+            )}
 
             {/* Material Choice Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
@@ -724,11 +532,12 @@ export function ClientDocuments() {
                 <div className="flex-1 flex justify-between items-start">
                   <div>
                     <h3 className="font-montserrat font-bold text-xl text-globus-blue-dark mb-1">
-                      Choix du carrelage RDC
+                      {pendingChoice?.category || 'Choix de matériaux'}
                     </h3>
                     <p className="font-opensans text-sm text-globus-gray">
-                      Veuillez sélectionner l'une des 3 options proposées par
-                      l'architecte pour le salon et la salle à manger.
+                      {pendingChoice
+                        ? "Veuillez sélectionner l'une des options proposées par l'architecte."
+                        : 'Aucun choix de matériaux en attente.'}
                     </p>
                   </div>
                   {materialChoiceState === 'success' &&
@@ -740,82 +549,60 @@ export function ClientDocuments() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                {[1, 2, 3].map((i) =>
-              <label
-                key={i}
-                className={`cursor-pointer group ${materialChoiceState === 'success' && selectedMaterial !== i ? 'opacity-50 grayscale' : ''}`}>
-                
+                {(pendingChoice?.options || []).map((opt: any, i: number) => {
+                const label = choiceOptionLabel(opt) || `Option ${i + 1}`;
+                const img = typeof opt === 'object' ? (opt.image || opt.img) : undefined;
+                const desc = typeof opt === 'object' ? (opt.description || opt.desc) : undefined;
+                return (
+                  <label
+                    key={i}
+                    className={`cursor-pointer group ${materialChoiceState === 'success' && selectedMaterial !== label ? 'opacity-50 grayscale' : ''}`}>
+
                     <input
-                  type="radio"
-                  name="carrelage"
-                  className="peer sr-only"
-                  checked={selectedMaterial === i}
-                  onChange={() =>
-                  materialChoiceState !== 'success' &&
-                  setSelectedMaterial(i)
-                  }
-                  disabled={materialChoiceState === 'success'} />
-                
+                      type="radio"
+                      name="material-option"
+                      className="peer sr-only"
+                      checked={selectedMaterial === label}
+                      onChange={() =>
+                      materialChoiceState !== 'success' &&
+                      setSelectedMaterial(label)
+                      }
+                      disabled={materialChoiceState === 'success'} />
+
                     <div className="border-2 border-gray-200 rounded-xl overflow-hidden peer-checked:border-globus-orange peer-checked:ring-1 peer-checked:ring-globus-orange transition-all">
+                      {img &&
                       <div className="aspect-square bg-gray-200 relative">
-                        <img
-                      src={`https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&q=80`}
-                      alt={`Option ${i}`}
-                      className="w-full h-full object-cover" />
-                    
+                        <img src={img} alt={label} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-globus-orange/20 opacity-0 peer-checked:opacity-100 transition-opacity flex items-center justify-center">
                           <CheckCircle2Icon className="w-10 h-10 text-white drop-shadow-md" />
                         </div>
                       </div>
+                      }
                       <div className="p-3 bg-white text-center">
-                        <p className="font-montserrat font-bold text-sm text-globus-blue-dark">
-                          Option {i}
-                        </p>
-                        <p className="font-opensans text-xs text-globus-gray">
-                          Grès cérame 60x60
-                        </p>
+                        <p className="font-montserrat font-bold text-sm text-globus-blue-dark">{label}</p>
+                        {desc &&
+                        <p className="font-opensans text-xs text-globus-gray">{desc}</p>
+                        }
                       </div>
                     </div>
                   </label>
-              )}
+                );
+              })}
               </div>
 
-              {materialChoiceState !== 'success' &&
+              {pendingChoice && materialChoiceState !== 'success' &&
             <div className="flex justify-end">
                   <button
-                onClick={() =>
-                selectedMaterial && setMaterialChoiceState('confirming')
-                }
+                onClick={handleMaterialConfirm}
                 disabled={!selectedMaterial}
                 className="bg-globus-orange hover:bg-globus-orange-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-montserrat font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md">
-                
+
                     Valider ce choix
                   </button>
                 </div>
             }
             </div>
 
-            {/* Validated Card */}
-            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 opacity-75">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                    <CheckCircle2Icon className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-montserrat font-bold text-lg text-gray-700 line-through">
-                      Choix peinture intérieure
-                    </h3>
-                    <p className="font-opensans text-xs text-gray-500">
-                      Validé le 12/02/2024 par Jean Talla
-                    </p>
-                  </div>
-                </div>
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold font-montserrat">
-                  Validé ✓
-                </span>
-              </div>
-            </div>
           </motion.div>
         }
       </div>
@@ -892,10 +679,16 @@ export function ClientDocuments() {
                     </p>
                   </div> :
 
+              previewDoc.file_url ?
               <img
-                src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80"
-                alt="Preview"
-                className="max-w-full max-h-full object-contain shadow-lg" />
+                src={previewDoc.file_url}
+                alt={previewDoc.name}
+                className="max-w-full max-h-full object-contain shadow-lg" /> :
+
+              <div className="bg-white w-full max-w-2xl h-[400px] shadow-lg border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+                    <ImageIcon className="w-20 h-20 mb-4 opacity-20" />
+                    <p className="font-opensans text-sm">{previewDoc.name}</p>
+                  </div>
 
               }
               </div>
@@ -909,7 +702,7 @@ export function ClientDocuments() {
                 </button>
                 <button
                 onClick={() => {
-                  handleDownload(previewDoc.name);
+                  handleDownload(previewDoc);
                   setPreviewDoc(null);
                 }}
                 className="bg-globus-blue hover:bg-globus-blue-dark text-white font-montserrat font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md text-sm flex items-center gap-2">
@@ -1065,6 +858,20 @@ export function ClientDocuments() {
             </div>
           </motion.div>
         }
+      </AnimatePresence>
+
+      {/* Phase 7 — Electronic signature dialog (OTP + document hash) */}
+      <AnimatePresence>
+        {signingDoc && (
+          <SigningOtpDialog
+            documentId={signingDoc.id}
+            documentName={signingDoc.name}
+            onClose={() => setSigningDoc(null)}
+            onSigned={() => {
+              queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>);
 

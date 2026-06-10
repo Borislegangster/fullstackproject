@@ -10,3 +10,30 @@ passlib[bcrypt]==1.7.4
 httpx==0.27.2
 aiofiles==24.1.0
 slowapi==0.1.9
+# PostgreSQL (production)
+asyncpg==0.30.0
+psycopg2-binary==2.9.9
+# Email
+python-dotenv==1.0.1
+# Phase 4 — Security & robustness
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+Pillow==10.2.0          # imported directly in qr_service / pdf rendering
+python-magic==0.4.27; sys_platform != 'win32'
+python-magic-bin==0.4.14; sys_platform == 'win32'
+bleach==6.1.0
+structlog==24.4.0
+sentry-sdk[fastapi]==2.18.0
+user-agents==2.2.0
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0
+# Phase 7 — Documents & exports
+xhtml2pdf==0.2.16
+openpyxl==3.1.5
+jinja2==3.1.4
+reportlab==4.5.1
+
+# Cloud storage — AWS S3 / Cloudflare R2 (client & ERP files)
+aioboto3==15.5.0
+botocore==1.40.61

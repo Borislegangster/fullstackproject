@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -13,6 +13,7 @@ function ProjectCarousel({
 }: {images: string[];height: string;title: string;}) {
   const [current, setCurrent] = useState(0);
   useEffect(() => {
+    if (!images?.length) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, 3000);
@@ -318,7 +319,7 @@ export function PortfolioSection() {
     'ongoing-project',
     getOngoingProject
   );
-  if (isLoadingProjects || isLoadingOngoing || !projects || !ongoingProject) {
+  if (isLoadingProjects || isLoadingOngoing) {
     return (
       <section id="projets" className="py-16 md:py-24 bg-globus-light">
         <div className="container mx-auto px-4">
@@ -327,6 +328,10 @@ export function PortfolioSection() {
       </section>);
 
   }
+  // No projects configured → hide the whole section.
+  if (!projects || projects.length === 0) return null;
+  // The "ongoing project" highlight is optional (404 when none is flagged).
+  const hasOngoing = !!ongoingProject && (ongoingProject.images?.length ?? 0) > 0;
   const filteredProjects =
   activeFilter === 'Tous' ?
   projects :
@@ -376,8 +381,8 @@ export function PortfolioSection() {
           </motion.h2>
         </div>
 
-        {/* NEW: Ongoing Project Showcase */}
-        <OngoingProjectShowcase project={ongoingProject} />
+        {/* NEW: Ongoing Project Showcase (optional) */}
+        {hasOngoing && <OngoingProjectShowcase project={ongoingProject} />}
 
         {/* Filters */}
         <div className="flex flex-wrap justify-center gap-4 mb-12">
