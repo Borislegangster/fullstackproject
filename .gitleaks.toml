@@ -1,0 +1,10 @@
+# Détection de secrets (CI GLOBUS V4) : règles par défaut de gitleaks + faux positifs vérifiés et documentés.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Faux positifs vérifiés : modèles d'environnement sans valeur, mots de passe factices des tests"
+# Modèles .env.example : variables documentées sans aucune valeur (les secrets réels sont générés sur le serveur).
+paths = ['''(^|/)\.env\.example$''']
+# Mot de passe factice du test qui vérifie que l'inscription libre est refusée (tests/test_access_policy.py).
+regexes = ['''Tres-Long-Secret-2026''']
