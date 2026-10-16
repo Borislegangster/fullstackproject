@@ -3,9 +3,9 @@ name: GLOBUS V4 — qualité, sécurité, images
 on:
   push:
     branches: [main, develop]
-    paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml"]
+    paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml", ".gitleaks.toml"]
   pull_request:
-    paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml"]
+    paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml", ".gitleaks.toml"]
 
 concurrency:
   group: globus-v4-${{ github.ref }}

@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 
 import { getBrand } from "@/lib/brand";
 
+// Lu à chaque demande (cache de données 60 s) : jamais figé à la construction de l'image, où l'API est injoignable.
+export const dynamic = "force-dynamic";
+
 /** Application installable (PWA) : nom et icônes issus du réglage CMS « Icône de la plateforme ». */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const brand = await getBrand();
