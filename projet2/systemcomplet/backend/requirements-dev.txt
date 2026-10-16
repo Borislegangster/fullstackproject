@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=8.3
+pytest-cov>=6.0
+ruff>=0.8
+mypy>=1.13
+bandit>=1.8
+pip-audit>=2.7
+pgserver>=0.1.4  # PostgreSQL embarqué : tests et scripts/dev_server.py sans installation locale

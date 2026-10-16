@@ -1,0 +1,179 @@
+# GLOBUS ENGINEERING — pile de production mono-serveur (Docker Compose v2).
+#
+#   cd infra
+#   ./scripts/init-env.sh --domain <domaine> --public-ip <ip> --acme-email <email>   # une seule fois
+#   ./scripts/deploy.sh                                                               # construction + mise en ligne
+#
+# Réseaux : « backend » interne (PostgreSQL, Redis : jamais exposés), « edge » (nginx, web, API, worker).
+# Profils optionnels : calls (coturn), antivirus (ClamAV), tls (renouvellement Let's Encrypt).
+
+name: globus
+
+x-api-image: &api-image
+  image: globus/api:${GLOBUS_VERSION:-4.0.0}
+  env_file: ./env/api.env
+  restart: unless-stopped
+  logging: &logging
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: ./env/postgres.env
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "max_connections=200", "-c", "log_min_duration_statement=1000"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+    logging: *logging
+
+  migrate:
+    <<: *api-image
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [backend]
+
+  api:
+    <<: *api-image
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    volumes:
+      - media:/data/public_media
+      - private:/data/private
+      - backups:/data/backups
+    networks: [backend, edge]
+
+  worker:
+    <<: *api-image
+    command: ["python", "-m", "app.workers.main"]
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    volumes:
+      - media:/data/public_media
+      - private:/data/private
+      - backups:/data/backups
+    networks: [backend, edge]
+
+  web:
+    image: globus/web:${GLOBUS_VERSION:-4.0.0}
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: https://${GLOBUS_DOMAIN:?GLOBUS_DOMAIN requis}
+    env_file: ./env/web.env
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [edge]
+    logging: *logging
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    # Recharge périodique : prise en compte des certificats renouvelés par certbot sans coupure.
+    command: ["/bin/sh", "-c", "(while :; do sleep 12h; nginx -s reload; done) & exec /docker-entrypoint.sh nginx -g 'daemon off;'"]
+    environment:
+      GLOBUS_DOMAIN: ${GLOBUS_DOMAIN:?GLOBUS_DOMAIN requis}
+      GLOBUS_WWW_DOMAIN: ${GLOBUS_WWW_DOMAIN:?GLOBUS_WWW_DOMAIN requis}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/globus.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - letsencrypt:/etc/letsencrypt:ro
+      - acme:/var/www/acme:ro
+    depends_on:
+      web: { condition: service_healthy }
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate --header \"Host: $${GLOBUS_DOMAIN}\" https://127.0.0.1/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [edge]
+    logging: *logging
+
+  certbot:
+    image: certbot/certbot:v3.1.0
+    profiles: ["tls"]
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew --webroot -w /var/www/acme --quiet --deploy-hook 'touch /etc/letsencrypt/.renewed'; sleep 12h & wait $${!}; done"]
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - acme:/var/www/acme
+    logging: *logging
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    profiles: ["calls"]
+    restart: unless-stopped
+    user: "0:0"  # lit les certificats TLS puis abandonne ses privilèges (proc-user=nobody)
+    network_mode: host
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+    volumes:
+      - ./env/turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - letsencrypt:/etc/letsencrypt:ro
+    logging: *logging
+
+  clamav:
+    image: clamav/clamav:1.4
+    profiles: ["antivirus"]
+    restart: unless-stopped
+    volumes:
+      - clamdb:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+    networks: [backend, edge]
+    logging: *logging
+
+volumes:
+  pgdata:
+  redisdata:
+  media:
+  private:
+  backups:
+  letsencrypt:
+  acme:
+  clamdb:
+
+networks:
+  backend:
+    internal: true
+  edge:

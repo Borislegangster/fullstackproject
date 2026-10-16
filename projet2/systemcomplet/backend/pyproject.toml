@@ -1,0 +1,47 @@
+[project]
+name = "globus-backend"
+version = "4.0.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "N", "SIM", "RUF"]
+ignore = [
+  "S101",   # assert dans les tests
+  "S311",   # random non crypto pour données de démo
+  "B008",   # Depends() dans les signatures FastAPI
+  "RUF001", "RUF002", "RUF003",  # caractères français (apostrophes typographiques)
+  "N818",   # noms d'exceptions métier
+  "RUF012",
+  "SIM108",
+  "UP042",
+  "S608",
+  "S110",
+  "SIM105",
+]
+
+[tool.ruff.lint.isort]
+# le dossier alembic/ du projet ne doit pas masquer le paquet tiers « alembic »
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/modules/*/models.py" = ["E501"]
+"app/modules/notifications/defaults.py" = ["E501"]
+"app/seeds/*" = ["E501", "S105"]
+"tests/*" = ["S", "B", "N", "E501"]
+"scripts/*" = ["S", "T201"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = false

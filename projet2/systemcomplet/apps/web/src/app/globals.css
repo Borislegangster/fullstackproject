@@ -1,0 +1,92 @@
+@import "tailwindcss";
+@import "./fx.css";
+@import "./loader.css";
+
+/* Charte §3 : Gilroy (display), Poppins (UI / corps), Doxent (accent) — fichiers dans src/fonts (next/font). */
+@theme inline {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-title: var(--font-gilroy), "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-accent: var(--font-doxent), var(--font-gilroy), ui-serif, serif;
+}
+
+@theme {
+  --color-brand-50: #eef2fa;
+  --color-brand-100: #d8e1f3;
+  --color-brand-200: #b3c3e6;
+  --color-brand-300: #8aa1d6;
+  --color-brand-400: #5f7ec2;
+  --color-brand-500: #385aa6;
+  --color-brand-600: #2f4c8d;
+  --color-brand-700: #263d72;
+  --color-brand-800: #1d2e57;
+  --color-brand-900: #141f3b;
+  --color-accent-50: #fff4ec;
+  --color-accent-100: #ffe3cf;
+  --color-accent-200: #fec59e;
+  --color-accent-300: #fda96f;
+  --color-accent-400: #fc9a58;
+  --color-accent-500: #fb8c43;
+  --color-accent-600: #e37326;
+  --color-accent-700: #b8591a;
+  --color-surface: #f4f4f4;
+  --color-ink: #1b2236;
+  --color-muted: #5d6578;
+  --color-line: #e2e5ec;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgb(20 31 59 / 0.06), 0 8px 24px rgb(20 31 59 / 0.06);
+  --animate-fade-in: fade-in 0.3s ease-out both;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+  body { @apply bg-surface text-ink font-sans antialiased; }
+  h1, h2, h3, h4 { @apply font-title tracking-tight text-ink; }
+  :focus-visible { outline: 2px solid var(--color-accent-500); outline-offset: 2px; }
+  ::selection { background: var(--color-brand-200); }
+}
+
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .card { @apply rounded-[1.25rem] bg-white shadow-[var(--shadow-card)] ring-1 ring-line/80; }
+  .prose-globus h2 { @apply mt-8 mb-3 text-2xl font-bold text-brand-800; }
+  .prose-globus h3 { @apply mt-6 mb-2 text-xl font-semibold text-brand-700; }
+  .prose-globus p { @apply my-3 leading-relaxed text-muted; }
+  .prose-globus ul { @apply my-3 list-disc pl-6 text-muted; }
+  .prose-globus ol { @apply my-3 list-decimal pl-6 text-muted; }
+  .prose-globus a { @apply text-brand-600 underline underline-offset-2 hover:text-accent-600; }
+  .prose-globus blockquote { @apply border-l-4 border-accent-500 pl-4 italic text-ink; }
+  .prose-globus table { @apply my-4 w-full border-collapse text-sm; }
+  .prose-globus th, .prose-globus td { @apply border border-line px-3 py-2 text-left; }
+  .prose-globus h4, .prose-globus h5, .prose-globus h6 { @apply mt-5 mb-2 font-semibold text-brand-700; }
+  .prose-globus hr { @apply my-6 border-line; }
+  .prose-globus pre { @apply my-4 overflow-x-auto rounded-xl bg-night-900 p-4 text-xs text-white; }
+  .prose-globus details { @apply my-3 rounded-xl border border-line px-4 py-2; }
+  .prose-globus summary { @apply cursor-pointer font-semibold text-ink; }
+  .prose-globus dt { @apply mt-3 font-semibold text-ink; }
+  .prose-globus dd { @apply text-muted; }
+  .prose-globus caption { @apply mb-2 text-left text-sm text-muted; }
+
+  /* Médias insérés depuis la médiathèque et code HTML intégré (texte riche du CMS). */
+  .prose-globus img, .prose-globus video, .rich-text-editor img { @apply h-auto max-w-full rounded-xl; }
+  .prose-globus iframe { @apply my-4 aspect-video h-auto w-full rounded-xl border-0; }
+  .prose-globus figure, .rich-text-editor figure { @apply my-5; }
+  .prose-globus figcaption, .rich-text-editor figcaption { @apply mt-1.5 text-center text-sm text-muted; }
+  .rt-figure.rt-center { @apply mx-auto table max-w-full; }
+  .rt-figure.rt-full img { @apply w-full; }
+  .rt-figure.rt-left { @apply mb-3 mr-5 sm:float-left sm:max-w-[45%]; }
+  .rt-figure.rt-right { @apply mb-3 ml-5 sm:float-right sm:max-w-[45%]; }
+  .prose-globus::after { content: ""; display: table; clear: both; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+}

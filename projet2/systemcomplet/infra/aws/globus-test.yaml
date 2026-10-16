@@ -1,0 +1,413 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  GLOBUS ENGINEERING - production test host. One EC2 instance runs the same docker compose stack as the
+  target VPS (nginx, Next.js, FastAPI, worker, PostgreSQL, Redis, coturn). No SSH: administration through
+  SSM Session Manager. Emails through Amazon SES with the instance role (no stored password).
+  Without a domain the host name is derived from the Elastic IP (sslip.io).
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  com.aws.cloudformation.Context:
+    ref:
+      - { at: infra/aws/README.md, has: runbook + design choices of this test host, scope: stack }
+      - { at: docs/DEPLOIEMENT.md, has: target VPS architecture mirrored here, scope: shared }
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: ""
+    Description: >-
+      Optional public host name (ex. test.example.cm) with a DNS A record to the Elastic IP. Empty means
+      <elastic-ip-with-dashes>.sslip.io (no DNS to manage, emails sent from SenderEmail).
+    AllowedPattern: "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$"
+  SenderEmail:
+    Type: String
+    Default: ""
+    Description: >-
+      Verified sender address for platform emails when no domain is given (AWS sends a verification email).
+      Must differ from TestRecipientEmail.
+  InstanceType:
+    Type: String
+    Default: t3.large
+    AllowedValues: [t3.medium, t3.large, t3.xlarge]
+    Description: t3.large (2 vCPU, 8 GiB) mirrors a Hostinger KVM 2 VPS.
+  VolumeSize:
+    Type: Number
+    Default: 40
+    MinValue: 30
+    MaxValue: 200
+    Description: Root volume size in GiB (gp3, encrypted).
+  EnableCalls:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Open the TURN ports used by audio and video calls (coturn).
+  TestRecipientEmail:
+    Type: String
+    Default: ""
+    Description: Optional. Recipient to verify while SES is in sandbox mode (AWS sends a verification email).
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Description: Ubuntu 24.04 LTS (resolved at deploy time from the public Canonical SSM parameter).
+
+Conditions:
+  CallsEnabled: !Equals [!Ref EnableCalls, "true"]
+  HasTestRecipient: !Not [!Equals [!Ref TestRecipientEmail, ""]]
+  HasDomain: !Not [!Equals [!Ref DomainName, ""]]
+  HasSenderEmail: !Not [!Equals [!Ref SenderEmail, ""]]
+
+Resources:
+  # ------------------------------------------------------------------ network
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.40.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.40.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: false
+      Tags: [{ Key: Name, Value: globus-test-public }]
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  # A public web host needs this route (inbound visitors, ACME, image builds). A private subnet + NAT + load
+  # balancer was rejected for the test: about 50 USD/month more and it would no longer mirror the target VPS.
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Metadata:
+      guard:
+        SuppressedRules: [NO_UNRESTRICTED_ROUTE_TO_IGW]
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  # Public website by design: 80 must stay open to all for Let's Encrypt HTTP-01 validation and the HTTPS
+  # redirect; 443 serves end users. Nothing else is reachable (PostgreSQL / Redis stay on internal networks).
+  HostSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: GLOBUS test host - HTTP, HTTPS and optional TURN relay. No SSH.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0, Description: HTTP (ACME challenge and redirect) }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0, Description: HTTPS }
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  TurnUdpIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CallsEnabled
+    Properties:
+      GroupId: !Ref HostSecurityGroup
+      IpProtocol: udp
+      FromPort: 3478
+      ToPort: 3478
+      CidrIp: 0.0.0.0/0
+      Description: TURN over UDP
+
+  TurnTcpIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CallsEnabled
+    Properties:
+      GroupId: !Ref HostSecurityGroup
+      IpProtocol: tcp
+      FromPort: 3478
+      ToPort: 3478
+      CidrIp: 0.0.0.0/0
+      Description: TURN over TCP
+
+  TurnTlsIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CallsEnabled
+    Properties:
+      GroupId: !Ref HostSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5349
+      ToPort: 5349
+      CidrIp: 0.0.0.0/0
+      Description: TURN over TLS
+
+  TurnRelayIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CallsEnabled
+    Properties:
+      GroupId: !Ref HostSecurityGroup
+      IpProtocol: udp
+      FromPort: 49160
+      ToPort: 49260
+      CidrIp: 0.0.0.0/0
+      Description: TURN media relay range (min-port and max-port of turnserver.conf)
+
+  # ------------------------------------------------------------------ release transfer bucket
+  # Ephemeral transfer of source archives only (no data of record): objects expire after 7 days, no versioning
+  # and Delete policy so that globus-aws.sh down can empty the bucket and remove the whole stack. Versioning,
+  # access logging, replication and Object Lock add no value to immutable timestamped archives (Object Lock
+  # would even block the teardown).
+  TransferBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Metadata:
+      guard:
+        SuppressedRules:
+          - S3_BUCKET_VERSIONING_ENABLED
+          - S3_BUCKET_LOGGING_ENABLED
+          - S3_BUCKET_REPLICATION_ENABLED
+          - S3_BUCKET_DEFAULT_LOCK_ENABLED
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-releases
+            Status: Enabled
+            ExpirationInDays: 7
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 }
+      Tags: [{ Key: Name, Value: globus-test-releases }]
+
+  # must: keep the TLS-only deny on bucket and objects. The registry rule matches one literal statement with
+  # Resource "*", which S3 rejects in a bucket policy; this scoped statement is the equivalent control.
+  TransferBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      guard:
+        SuppressedRules: [S3_BUCKET_SSL_REQUESTS_ONLY]
+    Properties:
+      Bucket: !Ref TransferBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt TransferBucket.Arn
+              - !Sub "${TransferBucket.Arn}/*"
+            Condition:
+              Bool: { "aws:SecureTransport": false }
+
+  # ------------------------------------------------------------------ instance identity (least privilege)
+  HostRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: GLOBUS test host - SSM management, release download, SES sending.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - !Ref ReleaseReadPolicy
+        - !Ref SesSendPolicy
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  # must: read-only and limited to the releases/ prefix of the transfer bucket.
+  ReleaseReadPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: GLOBUS test host - download release archives from the transfer bucket.
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: s3:GetObject
+            Resource: !Sub "${TransferBucket.Arn}/releases/*"
+
+  # must: send-only (no identity or account management) and limited to this account and region.
+  SesSendPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: GLOBUS test host - send platform emails through Amazon SES (API v2).
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: [ses:SendEmail, ses:SendRawEmail]
+            Resource:
+              - !Sub "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+              - !Sub "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/*"
+
+  HostInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref HostRole]
+
+  # ------------------------------------------------------------------ host
+  Host:
+    Type: AWS::EC2::Instance
+    DependsOn: DefaultRoute
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref HostInstanceProfile
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds: [!Ref HostSecurityGroup]
+      # One-minute CloudWatch metrics (about 2 USD/month) to watch CPU credits during image builds.
+      Monitoring: true
+      EbsOptimized: true
+      # IMDSv2 only ; hop limit 2 so that containers (bridge network) can obtain the role credentials for SES.
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+        HttpPutResponseHopLimit: 2
+      # Test data is disposable: the volume is deleted with the stack (globus-aws.sh down).
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: !Ref VolumeSize
+            Encrypted: true
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # GLOBUS test host bootstrap: Docker engine + compose plugin, AWS CLI v2, swap for image builds.
+          set -euxo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          # Internet access starts once the Elastic IP is associated (a few seconds after launch).
+          for i in $(seq 1 90); do
+            if curl -fsS --max-time 5 -o /dev/null https://download.docker.com; then break; fi
+            sleep 5
+          done
+          apt-get -o Acquire::Retries=5 update
+          apt-get -o Acquire::Retries=5 install -y ca-certificates curl gnupg unzip rsync jq dnsutils
+          install -m 0755 -d /etc/apt/keyrings
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          chmod a+r /etc/apt/keyrings/docker.asc
+          . /etc/os-release
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list
+          apt-get -o Acquire::Retries=5 update
+          apt-get -o Acquire::Retries=5 install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          systemctl enable --now docker
+          cd /tmp
+          curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+          unzip -q -o awscliv2.zip
+          ./aws/install --update
+          rm -rf aws awscliv2.zip
+          if [ ! -f /swapfile ]; then
+            fallocate -l 4G /swapfile
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            echo "/swapfile none swap sw 0 0" >> /etc/fstab
+            echo "vm.swappiness=10" > /etc/sysctl.d/99-globus.conf
+            sysctl --system
+          fi
+          mkdir -p /opt/globus
+          touch /opt/globus/.bootstrap-done
+      Tags:
+        - { Key: Name, Value: globus-test }
+        - { Key: Project, Value: globus-engineering }
+
+  # No auto-assigned public IP: internet egress starts when this address is associated (bootstrap waits).
+  HostElasticIp:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachment
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Host
+      Tags: [{ Key: Name, Value: globus-test }]
+
+  # ------------------------------------------------------------------ email (Amazon SES)
+  SenderDomainIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: HasDomain
+    Properties:
+      EmailIdentity: !Ref DomainName
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+
+  SenderEmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: HasSenderEmail
+    Properties:
+      EmailIdentity: !Ref SenderEmail
+
+  TestRecipientIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: HasTestRecipient
+    Properties:
+      EmailIdentity: !Ref TestRecipientEmail
+
+Outputs:
+  PublicIp:
+    Description: Elastic IP of the host (DNS A record target).
+    Value: !Ref HostElasticIp
+  PrivateIp:
+    Description: Private IP of the host (coturn NAT mapping).
+    Value: !GetAtt Host.PrivateIp
+  InstanceId:
+    Description: EC2 instance managed through SSM.
+    Value: !Ref Host
+  TransferBucket:
+    Description: Private bucket used to ship releases to the host.
+    Value: !Ref TransferBucket
+  DomainName:
+    Description: Effective public host name (given domain, or sslip.io name derived from the Elastic IP).
+    Value: !If
+      - HasDomain
+      - !Ref DomainName
+      - !Sub
+        - "${Dashed}.sslip.io"
+        - Dashed: !Join ["-", !Split [".", !Ref HostElasticIp]]
+  EmailFrom:
+    Description: Sender address of platform emails (EMAIL_FROM).
+    Value: !If [HasDomain, !Sub "no-reply@${DomainName}", !Ref SenderEmail]
+  DnsRecordA:
+    Condition: HasDomain
+    Description: DNS record to create at your DNS provider.
+    Value: !Sub "${DomainName} A ${HostElasticIp}"
+  DkimRecord1:
+    Condition: HasDomain
+    Description: SES DKIM CNAME record 1.
+    Value: !Sub "${SenderDomainIdentity.DkimDNSTokenName1} CNAME ${SenderDomainIdentity.DkimDNSTokenValue1}"
+  DkimRecord2:
+    Condition: HasDomain
+    Description: SES DKIM CNAME record 2.
+    Value: !Sub "${SenderDomainIdentity.DkimDNSTokenName2} CNAME ${SenderDomainIdentity.DkimDNSTokenValue2}"
+  DkimRecord3:
+    Condition: HasDomain
+    Description: SES DKIM CNAME record 3.
+    Value: !Sub "${SenderDomainIdentity.DkimDNSTokenName3} CNAME ${SenderDomainIdentity.DkimDNSTokenValue3}"

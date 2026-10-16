@@ -1,0 +1,159 @@
+/** Sources des listes de sélection (clés étrangères) utilisées par les formulaires générés. */
+
+import { optionLabel } from "./labels";
+
+export interface RefSource {
+  /** Chemin de l'API ; `{project_id}` est remplacé par la valeur du champ correspondant du formulaire. */
+  path: string;
+  query?: Record<string, string | number | boolean>;
+  /** Champ du formulaire dont la valeur est transmise en filtre (ex. project_id → ?project_id=). */
+  dependsOn?: string[];
+  label: (row: any) => string;
+  sublabel?: (row: any) => string | undefined;
+  /** L'API renvoie une liste paginée (items) ou un tableau simple. */
+  paginated?: boolean;
+  searchable?: boolean;
+}
+
+const name = (r: any) => r.name ?? r.title ?? r.label ?? r.full_name ?? r.code ?? r.number ?? r.id;
+const person = (r: any) => r.full_name ?? ([r.first_name, r.last_name].filter(Boolean).join(" ") || r.email || r.id);
+const users: RefSource = {
+  path: "/users/directory",
+  label: person,
+  sublabel: (r) => r.job_title ?? r.email,
+  paginated: false,
+  searchable: false,
+};
+
+export const REFS: Record<string, RefSource> = {
+  projects: { path: "/projects", label: (r) => `${r.code ? `${r.code} — ` : ""}${r.name}`, sublabel: (r) => r.city, paginated: true, searchable: true },
+  sites: { path: "/sites", dependsOn: ["project_id"], label: (r) => `${r.code ? `${r.code} — ` : ""}${r.name}`, paginated: true, searchable: true },
+  lots: { path: "/lots", dependsOn: ["project_id"], label: (r) => `${r.code} — ${r.name}`, paginated: true, searchable: true },
+  phases: { path: "/phases", dependsOn: ["project_id"], label: name, paginated: true, searchable: true },
+  milestones: { path: "/milestones", dependsOn: ["project_id"], label: name, paginated: true, searchable: true },
+  tasks: { path: "/projects/{project_id}/tasks", dependsOn: ["project_id"], label: (r) => `${r.wbs_code ? `${r.wbs_code} ` : ""}${r.title}`, paginated: true, searchable: true },
+  zones: { path: "/projects/{project_id}/bim/zones", dependsOn: ["project_id"], label: (r) => `${r.code} — ${r.name}`, paginated: false },
+  suppliers: { path: "/suppliers", label: (r) => r.trade_name || r.legal_name, sublabel: (r) => r.city, paginated: true, searchable: true },
+  subcontractors: { path: "/subcontractors", label: (r) => r.trade_name || r.legal_name, sublabel: (r) => (r.trades ?? []).map((t: string) => optionLabel(t)).join(", "), paginated: true, searchable: true },
+  stockItems: { path: "/stock-items", label: (r) => `${r.sku} — ${r.name}`, sublabel: (r) => r.unit, paginated: true, searchable: true },
+  supplierProducts: { path: "/supplier-products", label: (r) => `${r.reference ?? ""} ${r.name}`.trim(), sublabel: (r) => r.unit, paginated: true, searchable: true },
+  warehouses: { path: "/warehouses", label: (r) => `${r.code} — ${r.name}`, paginated: true, searchable: true },
+  locations: { path: "/stock-locations", dependsOn: ["warehouse_id"], label: (r) => `${r.code}${r.label ? ` — ${r.label}` : ""}`, paginated: true },
+  employees: { path: "/hr/employees", label: (r) => `${r.first_name} ${r.last_name}`, sublabel: (r) => r.job_title, paginated: true, searchable: true },
+  teams: { path: "/teams", label: name, paginated: false },
+  users,
+  organizations: { path: "/organizations", label: name, sublabel: (r) => optionLabel(r.kind), paginated: true, searchable: true },
+  clientOrganizations: { path: "/organizations", query: { kind: "client" }, label: name, paginated: true, searchable: true },
+  contacts: { path: "/crm/contacts", label: person, sublabel: (r) => r.email, paginated: true, searchable: true },
+  opportunities: { path: "/crm/opportunities", label: (r) => `${r.number ?? ""} ${r.title}`.trim(), paginated: true, searchable: true },
+  leads: { path: "/crm/leads", label: (r) => `${r.number ?? ""} ${[r.first_name, r.last_name].filter(Boolean).join(" ")}`.trim(), paginated: true, searchable: true },
+  equipment: { path: "/equipment", label: (r) => `${r.code} — ${r.name}`, paginated: true, searchable: true },
+  purchaseOrders: { path: "/procurement/orders", label: (r) => `${r.number}${r.supplier_name ? ` — ${r.supplier_name}` : ""}`, paginated: true, searchable: true },
+  subcontracts: { path: "/subcontracts", label: (r) => `${r.number} — ${r.title}`, paginated: true, searchable: true },
+  bankAccounts: { path: "/bank-accounts", label: (r) => `${r.name}${r.bank_name ? ` (${r.bank_name})` : ""}`, paginated: true },
+  universes: { path: "/cms/universes", label: name, paginated: true },
+  folders: { path: "/document-folders", dependsOn: ["project_id"], label: (r) => r.path ?? r.name, paginated: true, searchable: true },
+  ppeItems: { path: "/qhse/ppe-items", label: (r) => `${r.name}${r.size ? ` (${r.size})` : ""}`, paginated: true, searchable: true },
+  inspectionTemplates: { path: "/qhse/inspection-templates", label: name, sublabel: (r) => optionLabel(r.category), paginated: true },
+  maintenancePlans: { path: "/maintenance-plans", dependsOn: ["equipment_id"], label: name, paginated: true },
+  materialCategories: { path: "/configurator/material-categories", label: name, paginated: true },
+  materials: { path: "/configurator/materials", label: name, sublabel: (r) => optionLabel(r.tier), paginated: true, searchable: true },
+  blogCategories: { path: "/cms/blog-categories", label: name, paginated: true },
+  blogAuthors: { path: "/cms/blog-authors", label: name, paginated: true },
+  faqCategories: { path: "/cms/faq-categories", label: name, paginated: true },
+  helpCategories: { path: "/cms/help-categories", label: name, paginated: true },
+  testimonials: { path: "/cms/testimonials", label: (r) => r.author_name, paginated: true },
+  portfolioProjects: { path: "/cms/projects", label: (r) => r.title, paginated: true, searchable: true },
+  offers: { path: "/cms/offers", label: name, paginated: true, searchable: true },
+  faqItems: { path: "/cms/faq-items", label: (r) => r.question, paginated: true, searchable: true },
+  tenders: { path: "/tenders", label: (r) => `${r.number} — ${r.title}`, paginated: true, searchable: true },
+  clashRules: { path: "/bim/clash-rules", label: name, paginated: true },
+  slaPolicies: { path: "/crm/sla-policies", label: name, paginated: true },
+  pettyCashFunds: { path: "/petty-cash-funds", label: name, paginated: true },
+  supplierInvoices: { path: "/supplier-invoices", label: (r) => `${r.number} — ${r.supplier_reference ?? ""}`, paginated: true, searchable: true },
+  clientInvoices: { path: "/client-invoices", label: (r) => `${r.number} — ${r.title ?? ""}`, paginated: true, searchable: true },
+  workSchedules: { path: "/hr/work-schedules", label: name, paginated: true },
+  roles: { path: "/roles", label: (r) => `${r.name} (${r.code})`, paginated: false },
+  segments: { path: "/newsletter/segments", label: name, paginated: true },
+  emailTemplates: { path: "/newsletter/templates", label: name, paginated: false },
+};
+
+/** Association par défaut nom de champ → source de référence. */
+export const FIELD_REFS: Record<string, keyof typeof REFS> = {
+  project_id: "projects",
+  current_project_id: "projects",
+  erp_project_id: "projects",
+  site_id: "sites",
+  lot_id: "lots",
+  phase_id: "phases",
+  milestone_id: "milestones",
+  task_id: "tasks",
+  planning_task_id: "tasks",
+  predecessor_id: "tasks",
+  successor_id: "tasks",
+  parent_task_id: "tasks",
+  zone_id: "zones",
+  supplier_id: "suppliers",
+  preferred_supplier_id: "suppliers",
+  rental_supplier_id: "suppliers",
+  subcontractor_id: "subcontractors",
+  stock_item_id: "stockItems",
+  item_id: "stockItems",
+  supplier_product_id: "supplierProducts",
+  warehouse_id: "warehouses",
+  from_warehouse_id: "warehouses",
+  to_warehouse_id: "warehouses",
+  location_id: "locations",
+  employee_id: "employees",
+  team_id: "teams",
+  assignee_id: "users",
+  assigned_to_id: "users",
+  owner_id: "users",
+  manager_id: "users",
+  director_id: "users",
+  commercial_id: "users",
+  responsible_id: "users",
+  site_manager_id: "users",
+  custodian_id: "users",
+  technician_id: "users",
+  operator_id: "users",
+  leader_id: "users",
+  user_id: "users",
+  author_id: "users",
+  responsible_party_id: "users",
+  organization_id: "organizations",
+  client_organization_id: "clientOrganizations",
+  contact_id: "contacts",
+  opportunity_id: "opportunities",
+  lead_id: "leads",
+  source_lead_id: "leads",
+  equipment_id: "equipment",
+  purchase_order_id: "purchaseOrders",
+  subcontract_id: "subcontracts",
+  bank_account_id: "bankAccounts",
+  universe_id: "universes",
+  folder_id: "folders",
+  ppe_item_id: "ppeItems",
+  plan_id: "maintenancePlans",
+  default_material_id: "materials",
+  material_id: "materials",
+  portfolio_project_id: "portfolioProjects",
+  testimonial_id: "testimonials",
+  tender_id: "tenders",
+  rule_id: "clashRules",
+  fund_id: "pettyCashFunds",
+};
+
+export const LIST_REFS: Record<string, keyof typeof REFS> = {
+  assignee_ids: "users",
+  attendee_ids: "users",
+  participant_ids: "users",
+  member_ids: "users",
+  client_user_ids: "users",
+  subcontractor_ids: "subcontractors",
+  project_ids: "projects",
+  allowed_material_ids: "materials",
+  related_offer_ids: "offers",
+  faq_item_ids: "faqItems",
+  segment_ids: "segments",
+};

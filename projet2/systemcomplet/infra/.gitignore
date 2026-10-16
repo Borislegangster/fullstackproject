@@ -1,0 +1,3 @@
+# Secrets de production générés sur le serveur (init-env.sh) : jamais versionnés.
+env/*
+!env/README.md

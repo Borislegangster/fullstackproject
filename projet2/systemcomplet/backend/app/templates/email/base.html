@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ subject }}</title>
+  <style>
+    body { margin:0; padding:0; background:#F4F4F4; font-family: Poppins, Arial, Helvetica, sans-serif; color:#1F2937; }
+    .wrapper { width:100%; background:#F4F4F4; padding:24px 0; }
+    .card { max-width:600px; margin:0 auto; background:#FFFFFF; border-radius:12px; overflow:hidden; }
+    .header { background:#385AA6; padding:24px 32px; color:#FFFFFF; }
+    .brand { font-size:20px; font-weight:700; letter-spacing:0.5px; }
+    .tagline { font-size:12px; opacity:0.85; margin-top:4px; }
+    .content { padding:32px; font-size:15px; line-height:1.6; }
+    .content p { margin:0 0 16px 0; }
+    a.btn { display:inline-block; background:#FB8C43; color:#FFFFFF !important; text-decoration:none; font-weight:600;
+            padding:12px 24px; border-radius:8px; }
+    .code { font-size:28px; letter-spacing:6px; font-weight:700; color:#385AA6; }
+    .footer { padding:20px 32px; font-size:12px; color:#6B7280; border-top:1px solid #E5E7EB; }
+    .footer a { color:#385AA6; }
+    .preheader { display:none !important; visibility:hidden; opacity:0; height:0; width:0; overflow:hidden; }
+  </style>
+</head>
+<body>
+  {% if preheader %}<span class="preheader">{{ preheader }}</span>{% endif %}
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="brand">GLOBUS ENGINEERING</div>
+        <div class="tagline">Concevoir. Calculer. Construire. Contrôler.</div>
+      </div>
+      <div class="content">
+        {{ content | safe }}
+      </div>
+      <div class="footer">
+        <p>GLOBUS ENGINEERING — <a href="{{ base_url }}">{{ base_url }}</a></p>
+        {% if marketing and unsubscribe_url %}
+        <p>Vous recevez cet e-mail car vous êtes inscrit(e) à nos communications.
+          <a href="{{ unsubscribe_url }}">Se désabonner</a></p>
+        {% else %}
+        <p>Message de service lié à votre compte ou à votre projet. Ne répondez pas à cet e-mail automatique.</p>
+        {% endif %}
+        <p>© {{ year }} GLOBUS ENGINEERING</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

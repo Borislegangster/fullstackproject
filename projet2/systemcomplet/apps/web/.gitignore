@@ -1,0 +1,15 @@
+node_modules
+.next
+.next-dev
+out
+.env
+.env.local
+*.tsbuildinfo
+.openapi.json
+.routes.txt
+.bodies.txt
+.gets.txt
+.models.txt
+.models.txt
+.getq.txt
+public/wasm/

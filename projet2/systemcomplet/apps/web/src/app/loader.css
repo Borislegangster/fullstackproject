@@ -1,0 +1,137 @@
+/* ============================================================================ GlobusLoader
+   Chargement « du plan au bâtiment » : la grille se trace (Concevoir), l'ossature se calcule (Calculer), les
+   niveaux montent et s'éclairent pendant que la grue livre une poutre (Construire), un scan valide l'ouvrage
+   (Contrôler) — puis l'écran s'ouvre comme un obturateur. 100 % CSS : l'animation démarre avant l'hydratation. */
+
+@property --gl-p {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+
+.gl-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  pointer-events: auto;
+  animation: gl-failsafe 0.5s ease 7s forwards;
+}
+.gl-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.5%;
+  background: radial-gradient(120% 140% at 20% 0%, #16306b 0%, #0a1530 48%, #050b1a 100%);
+  transition: transform 0.85s cubic-bezier(0.76, 0, 0.24, 1) 0.25s;
+  overflow: hidden;
+}
+.gl-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(120 160 255 / 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(120 160 255 / 0.09) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gl-fade 0.8s ease both;
+}
+.gl-panel-top { top: 0; }
+.gl-panel-top::before { background-position: 0 0; }
+.gl-panel-bottom { bottom: 0; }
+.gl-panel-bottom::before { background-position: 0 100%; }
+.gl-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, transparent, var(--color-accent-400) 20%, #fff 50%, var(--color-accent-400) 80%, transparent);
+  box-shadow: 0 0 24px 4px rgb(251 140 67 / 0.7);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease 0.6s;
+}
+.gl-stage-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  width: min(92vw, 30rem);
+  transition: opacity 0.3s ease, transform 0.4s ease, filter 0.4s ease;
+}
+.gl-glow {
+  position: absolute;
+  inset: -20% -10% auto;
+  height: 70%;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgb(56 90 166 / 0.55), transparent);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+/* sortie : laser puis ouverture de l'obturateur */
+.gl-root[data-phase="exit"] { pointer-events: none; }
+.gl-root[data-phase="exit"] .gl-stage-area { opacity: 0; transform: scale(1.06); filter: blur(6px); }
+.gl-root[data-phase="exit"] .gl-laser { transform: scaleX(1); opacity: 0; }
+.gl-root[data-phase="exit"] .gl-panel-top { transform: translateY(-101%); }
+.gl-root[data-phase="exit"] .gl-panel-bottom { transform: translateY(101%); }
+
+/* ---- scène SVG */
+.gl-svg { width: 100%; height: auto; overflow: visible; }
+.gl-draw { stroke-dasharray: var(--len, 400); stroke-dashoffset: var(--len, 400); animation: draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) forwards; animation-delay: var(--d, 0s); }
+.gl-dim { stroke: rgb(160 190 255 / 0.55); stroke-width: 0.8; fill: none; stroke-dasharray: 3 3; opacity: 0; animation: gl-fade 0.5s ease forwards; animation-delay: var(--d, 0s); }
+.gl-dim-text { fill: rgb(190 210 255 / 0.75); font: 600 7px var(--font-gilroy), sans-serif; letter-spacing: 0.08em; opacity: 0; animation: gl-fade 0.5s ease forwards; animation-delay: var(--d, 0s); }
+.gl-appear { opacity: 0; animation: gl-fade 0.5s ease forwards; animation-delay: var(--d, 0s); }
+.gl-col { stroke: var(--color-accent-500); stroke-width: 1.2; }
+.gl-floor { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0); animation: rise 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; animation-delay: var(--d, 0s); }
+.gl-floor rect.gl-slab { fill: rgb(56 90 166 / 0.42); stroke: #8fb0ff; stroke-width: 0.9; }
+.gl-win { fill: rgb(255 255 255 / 0.08); animation: gl-light 0.5s ease forwards; animation-delay: var(--d, 0s); }
+.gl-trolley { animation: gl-trolley 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.9s both; }
+.gl-cable { transform-box: fill-box; transform-origin: 50% 0; animation: gl-cable 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.9s both; }
+.gl-load { animation: gl-load 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.9s both; }
+.gl-beacon { animation: gl-blink 1s steps(2, jump-none) infinite; }
+.gl-scan { opacity: 0; animation: gl-scan 0.75s cubic-bezier(0.45, 0, 0.55, 1) 2s forwards; }
+.gl-check { opacity: 0; transform-box: fill-box; transform-origin: center; animation: gl-pop 0.35s cubic-bezier(0.34, 1.6, 0.64, 1) forwards; animation-delay: var(--d, 2.4s); }
+
+/* ---- textes */
+.gl-brand { font-family: var(--font-gilroy), sans-serif; font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: 0.32em; line-height: 1; padding-left: 0.32em; }
+.gl-brand span { display: inline-block; opacity: 0; animation: word-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--d, 0s); }
+.gl-sub { font-family: var(--font-doxent), var(--font-gilroy), sans-serif; font-size: 0.7rem; letter-spacing: 0.55em; padding-left: 0.55em; color: rgb(255 255 255 / 0.55); text-transform: uppercase; }
+.gl-stages { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 1rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+.gl-step { display: inline-flex; align-items: center; gap: 0.45rem; color: rgb(255 255 255 / 0.3); animation: gl-step-on 0.3s ease forwards; animation-delay: var(--d, 0s); }
+.gl-step::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 9999px; background: rgb(255 255 255 / 0.2); animation: gl-dot 0.7s ease forwards; animation-delay: var(--d, 0s); }
+.gl-meter { display: flex; align-items: center; gap: 0.9rem; width: 100%; }
+.gl-bar { position: relative; flex: 1; height: 3px; overflow: hidden; border-radius: 9999px; background: rgb(255 255 255 / 0.12); }
+.gl-bar > span { position: absolute; inset: 0; transform-origin: left; background: linear-gradient(90deg, #6d8ee0, var(--color-accent-500)); animation: progress-fill 2.6s cubic-bezier(0.45, 0.05, 0.25, 1) forwards; box-shadow: 0 0 12px rgb(251 140 67 / 0.8); }
+.gl-percent { min-width: 3.2rem; text-align: right; font: 700 0.85rem var(--font-gilroy), sans-serif; font-variant-numeric: tabular-nums; counter-reset: gl var(--gl-p); animation: gl-count 2.6s cubic-bezier(0.45, 0.05, 0.25, 1) forwards; }
+.gl-percent::after { content: counter(gl) " %"; }
+
+@keyframes gl-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gl-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@keyframes gl-light { 0% { fill: rgb(255 255 255 / 0.08); } 40% { fill: #fff6d6; } 100% { fill: rgb(255 214 150 / 0.85); } }
+@keyframes gl-trolley { 0%, 45% { transform: translateX(0); } 100% { transform: translateX(-110px); } }
+@keyframes gl-cable { 0% { transform: scaleY(1); } 45%, 100% { transform: scaleY(0.2); } }
+@keyframes gl-load { 0% { transform: translateY(0); } 45%, 100% { transform: translateY(-85px); } }
+@keyframes gl-blink { 50% { opacity: 0.15; } }
+@keyframes gl-scan { 0% { opacity: 0; transform: translateY(0); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(-150px); } }
+@keyframes gl-pop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
+@keyframes gl-step-on { to { color: #fff; } }
+@keyframes gl-dot { 0% { background: var(--color-accent-500); box-shadow: 0 0 0 0 rgb(251 140 67 / 0.8); } 70% { box-shadow: 0 0 0 7px rgb(251 140 67 / 0); } 100% { background: var(--color-accent-500); box-shadow: none; } }
+@keyframes gl-count { to { --gl-p: 100; } }
+
+/* ---- chargeur de navigation (compact, en boucle) */
+.rl-floor { transform-box: fill-box; transform-origin: 50% 100%; animation: rl-rise 2.4s cubic-bezier(0.34, 1.3, 0.64, 1) infinite; animation-delay: var(--d, 0s); }
+.rl-scan { animation: rl-scan 2.4s ease-in-out infinite; }
+@keyframes rl-rise { 0% { transform: scaleY(0); opacity: 0; } 18%, 80% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+@keyframes rl-scan { 0%, 55% { transform: translateY(0); opacity: 0; } 65% { opacity: 1; } 95% { opacity: 1; } 100% { transform: translateY(-64px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gl-root { display: none; }
+  .rl-floor, .rl-scan { animation: none; }
+}
+@media print {
+  .gl-root { display: none; }
+}

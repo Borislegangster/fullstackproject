@@ -1,0 +1,143 @@
+# GLOBUS ENGINEERING — frontal nginx (TLS, routage web / API / temps réel).
+# Gabarit traité par l'image nginx officielle (envsubst) : ${GLOBUS_DOMAIN}, ${GLOBUS_WWW_DOMAIN}.
+#   /api/v1/*      → API FastAPI (REST, médias publics, webhooks paiement / WhatsApp / e-mail)
+#   /ws            → API (WebSocket : notifications, messagerie, présence, signalisation des appels)
+#   /health/*      → API (sondes de supervision)
+#   /api/revalidate → web (revalidation ISR déclenchée par l'API lors des publications CMS)
+#   /*             → web Next.js (vitrine, espace client, ERP, extranet)
+#   /metrics       → jamais exposé (supervision interne uniquement)
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+upstream globus_api {
+    server api:8000;
+    keepalive 32;
+}
+
+upstream globus_web {
+    server web:3000;
+    keepalive 32;
+}
+
+# Défense en profondeur (l'API applique ses propres quotas par route).
+limit_req_zone $binary_remote_addr zone=globus_auth:10m rate=30r/m;
+limit_req_status 429;
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${GLOBUS_DOMAIN} ${GLOBUS_WWW_DOMAIN};
+    server_tokens off;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/acme;
+        default_type text/plain;
+    }
+
+    location / {
+        return 301 https://${GLOBUS_DOMAIN}$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${GLOBUS_WWW_DOMAIN};
+    server_tokens off;
+    ssl_certificate     /etc/letsencrypt/live/${GLOBUS_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${GLOBUS_DOMAIN}/privkey.pem;
+    include /etc/nginx/snippets/tls.conf;
+    return 301 https://${GLOBUS_DOMAIN}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${GLOBUS_DOMAIN};
+    server_tokens off;
+
+    ssl_certificate     /etc/letsencrypt/live/${GLOBUS_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${GLOBUS_DOMAIN}/privkey.pem;
+    include /etc/nginx/snippets/tls.conf;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    client_max_body_size 60m;
+    client_body_timeout 120s;
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml;
+
+    location = /metrics {
+        return 404;
+    }
+
+    location /health/ {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_api;
+        access_log off;
+    }
+
+    # Authentification : quota supplémentaire au frontal.
+    location ~ ^/api/v1/auth/(login|password|mfa|break-glass|register) {
+        limit_req zone=globus_auth burst=20 nodelay;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_api;
+    }
+
+    # Dépôts volumineux (maquettes BIM / IFC / RVT, plans, modèles 3D) : flux direct vers l'API.
+    location ~ ^/api/v1/(bim/models/[^/]+/versions|documents|documents/[^/]+/versions|chat/files|configurator/models/[^/]+/file)$ {
+        client_max_body_size 1100m;
+        client_body_timeout 600s;
+        proxy_request_buffering off;
+        proxy_read_timeout 900s;
+        proxy_send_timeout 900s;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_api;
+    }
+
+    location /api/v1/ {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_read_timeout 180s;
+        proxy_pass http://globus_api;
+    }
+
+    location = /ws {
+        include /etc/nginx/snippets/proxy-headers.conf;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+        proxy_pass http://globus_api;
+    }
+
+    location = /api/revalidate {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_web;
+    }
+
+    location = /api/health {
+        return 404;
+    }
+
+    # Ressources Next.js immuables (empreinte dans le nom).
+    location /_next/static/ {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_web;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
+    location / {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://globus_web;
+    }
+}

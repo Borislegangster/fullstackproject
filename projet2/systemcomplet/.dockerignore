@@ -1,0 +1,22 @@
+# Contexte de construction des images (racine systemcomplet/) : uniquement les sources nécessaires.
+**/.git
+**/node_modules
+**/.next
+**/.next-dev
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/.env
+**/.env.*
+backend/.venv
+backend/storage
+backend/storage-dev
+backend/tests
+apps/web/.openapi.json
+apps/web/tsconfig.tsbuildinfo
+apps/web/public/wasm
+infra/env
+docs
+*.log
