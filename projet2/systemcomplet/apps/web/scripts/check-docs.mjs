@@ -6,7 +6,7 @@
  *  - les liens vers les écrans, les liens « doc: », les permissions, rôles et espaces cités existent.
  * Échoue (code 1) en listant ce qui manque : une nouvelle fonction ne peut pas être livrée sans sa documentation.
  */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
 import { inventory, WEB } from "./docs-inventory.mjs";
@@ -68,6 +68,18 @@ const appRoutes = walk(APP, (n) => n === "page.tsx").map((f) =>
     .filter((s) => !/^\(.*\)$/.test(s))
     .join("/"),
 );
+// Écrans des applications mobiles (apps/mobile-*/lib/app.dart) : l'aide est aussi servie aux pages propres au mobile
+// (accueil chantier, synchronisation, validations…), désignées par leur chemin `$base/...`.
+for (const app of ["mobile-client", "mobile-field", "mobile-direction"]) {
+  const file = join(ROOT, "apps", app, "lib", "app.dart");
+  if (!existsSync(file)) continue;
+  const src = readFileSync(file, "utf8");
+  const base = (src.match(/const base = '([^']+)'/) || [])[1] ?? "";
+  for (const m of src.matchAll(/AppPage\(\s*'([^']+)'/g)) {
+    appRoutes.push(m[1].replace("$base", base).replace(/:(\w+)/g, "[$1]"));
+  }
+}
+
 const routeExists = (path) => {
   const clean = path.split(/[?#]/)[0].replace(/\/$/, "") || "/";
   const parts = clean.split("/").filter(Boolean);

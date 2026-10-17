@@ -201,7 +201,24 @@ def _incident(db: Session, access: Access, m: dict[str, Any], force: bool) -> di
     data = {k: v for k, v in payload.items() if k in allowed}
     data["project_id"] = project_id
     data["occurred_at"] = datetime.fromisoformat(str(data["occurred_at"]))
-    data["source"] = "offline"
+    data["source"] = "mobile" if payload.get("source") == "mobile" else "offline"
+    # Photos prises hors ligne : envoyées (/qhse/files) avant la mutation, retrouvées par empreinte et auteur.
+    checksums = [str(c) for c in (payload.get("photo_checksums") or [])][:30]
+    if checksums:
+        from app.modules.system.models import StoredFile
+
+        rows = db.execute(
+            select(StoredFile.id, StoredFile.checksum_sha256)
+            .where(
+                StoredFile.checksum_sha256.in_(checksums),
+                StoredFile.uploaded_by_id == access.p.id,
+                StoredFile.purpose == "qhse",
+                StoredFile.deleted_at.is_(None),
+            )
+            .order_by(StoredFile.created_at)
+        ).all()
+        by_checksum = {checksum: str(file_id) for file_id, checksum in rows}
+        data["photo_file_ids"] = [by_checksum[c] for c in dict.fromkeys(checksums) if c in by_checksum]
     incident = declare_incident(db, data=data, user_id=access.p.id)
     return {"incident_id": str(incident.id), "number": incident.number}
 

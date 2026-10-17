@@ -584,9 +584,12 @@ def list_leaves(
         stmt = stmt.where(LeaveRequest.status == status)
     if employee_id:
         stmt = stmt.where(LeaveRequest.employee_id == employee_id)
-    return paginate(
-        db, stmt, params, default_sort=LeaveRequest.start_date.desc(), transform=lambda r: jsonable(serialize(r))
-    )
+
+    def leave_out(r: LeaveRequest) -> dict[str, Any]:
+        employee = db.get(Employee, r.employee_id)
+        return jsonable({**serialize(r), "employee_name": employee.full_name if employee else None})
+
+    return paginate(db, stmt, params, default_sort=LeaveRequest.start_date.desc(), transform=leave_out)
 
 
 @router.post("/hr/leaves", status_code=201)

@@ -1,0 +1,58 @@
+name: globus_field
+description: "GLOBUS ENGINEERING — application terrain et entreprise (tous corps de métier, hors ligne)."
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  crypto: ^3.0.6
+  flutter_localizations:
+    sdk: flutter
+  geolocator: ^14.0.1
+  globus_core:
+    path: ../../packages/globus_core
+  go_router: ^18.1.0
+  mobile_scanner: ^7.4.2
+  path_provider: ^2.1.6
+  provider: ^6.1.5+1
+  record: ^7.1.2
+  shared_preferences: ^2.5.6
+  url_launcher: ^6.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+# Icône du lanceur = icône de la plateforme (réglage CMS « Icône de la plateforme »), jamais le logo.
+# Mise à jour : `dart run tool/sync_brand.dart <URL du serveur>` télécharge le pack d'icônes puis régénère les icônes.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/brand/icon-1024.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/brand/icon-maskable-512.png
+  remove_alpha_ios: true
+  background_color_ios: "#FFFFFF"
+  web:
+    generate: true
+    image_path: assets/brand/icon-1024.png
+    background_color: "#FFFFFF"
+    theme_color: "#385AA6"
+  windows:
+    generate: true
+    image_path: assets/brand/icon-1024.png
+    icon_size: 256

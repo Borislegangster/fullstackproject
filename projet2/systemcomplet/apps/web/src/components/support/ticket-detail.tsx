@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { Bot, Paperclip, Play, RotateCcw, Send, Star, Wrench } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SchemaForm } from "@/components/forms/schema-form";
 import { RowsEditor } from "@/components/forms/structured-fields";
@@ -74,6 +74,29 @@ function MaterialsEditor({ value, onChange }: { value: unknown; onChange: (v: Ma
       max={100}
       footer={rows.length ? <p className="text-right text-sm text-muted">Total : <strong className="text-ink">{money(total)}</strong> (à reporter dans le coût matériel)</p> : null}
     />
+  );
+}
+
+/** Preuves d'intervention : photos du ticket (avant / après) cochées ; les photos « après » sont proposées d'office. */
+function ProofPicker({ attachments, value, onChange }: { attachments: TicketData["attachments"]; value: unknown; onChange: (v: string[]) => void }) {
+  const photos = attachments.filter((a) => a.kind !== "document");
+  const selected: string[] = Array.isArray(value) ? (value as string[]) : [];
+  useEffect(() => {
+    if (!Array.isArray(value)) onChange(photos.filter((a) => a.kind === "after").map((a) => a.file_id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  if (!photos.length) return <Alert tone="warning">Ajoutez d&apos;abord les photos avant / après dans « Photos et documents » : elles servent de preuve.</Alert>;
+  return (
+    <div className="space-y-1.5">
+      {photos.map((a) => (
+        <Checkbox
+          key={a.id}
+          checked={selected.includes(a.file_id)}
+          onChange={(on) => onChange(on ? [...selected, a.file_id] : selected.filter((x) => x !== a.file_id))}
+          label={`${optionLabel(a.kind)} · ${dateTime(a.created_at)}`}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -334,7 +357,7 @@ export function TicketDetail({ ticketId, staff = false, onChanged }: { ticketId:
         <SchemaForm endpoint="POST /support/tickets/{ticket_id}/diagnosis" params={{ ticket_id: t.id }} initial={{ diagnosis: t.diagnosis ?? "" }} onSuccess={(res) => { refresh(res); setDialog(null); }} onCancel={() => setDialog(null)} columns={1} />
       </Modal>
       <Modal open={dialog === "warranty"} onClose={() => setDialog(null)} title="Décision de garantie">
-        <SchemaForm endpoint="POST /support/tickets/{ticket_id}/warranty" params={{ ticket_id: t.id }} fields={{ responsible_party_id: { ref: null, label: "Identifiant de la partie responsable (facultatif)" } }} onSuccess={(res) => { refresh(res); setDialog(null); }} onCancel={() => setDialog(null)} columns={1} />
+        <SchemaForm endpoint="POST /support/tickets/{ticket_id}/warranty" params={{ ticket_id: t.id }} fields={{ responsible_party_id: { hidden: true } }} onSuccess={(res) => { refresh(res); setDialog(null); }} onCancel={() => setDialog(null)} columns={1} />
       </Modal>
       <Modal open={dialog === "intervention"} onClose={() => setDialog(null)} title="Planifier une intervention">
         <SchemaForm endpoint="POST /support/tickets/{ticket_id}/interventions" params={{ ticket_id: t.id }} fields={{ technician_id: { ref: "users", label: "Technicien" } }} onSuccess={() => { refresh(); setDialog(null); }} onCancel={() => setDialog(null)} columns={1} />
@@ -343,7 +366,13 @@ export function TicketDetail({ ticketId, staff = false, onChanged }: { ticketId:
         <SchemaForm
           endpoint="POST /support/interventions/{intervention_id}/finish"
           params={{ intervention_id: finishId ?? "" }}
-          fields={{ proof_file_ids: { hidden: true }, materials: { span: 2, label: "Fournitures utilisées", render: ({ value, onChange }) => <MaterialsEditor value={value} onChange={onChange} /> } }}
+          fields={{
+            proof_file_ids: {
+              span: 2,
+              label: "Preuves de l'intervention (photos avant / après)",
+              render: ({ value, onChange }) => <ProofPicker attachments={t.attachments} value={value} onChange={onChange} />,
+            },
+            materials: { span: 2, label: "Fournitures utilisées", render: ({ value, onChange }) => <MaterialsEditor value={value} onChange={onChange} /> } }}
           onSuccess={() => {
             refresh();
             setDialog(null);

@@ -1290,12 +1290,27 @@ async def upload_site_media(
     latitude: float | None = Form(None),
     longitude: float | None = Form(None),
     publish: bool = Form(False),
+    client_mutation_id: str | None = Form(None, max_length=80),
     db: Session = Depends(get_db),
     access: Access = Depends(get_access),
 ) -> dict[str, Any]:
     _project(db, access, project_id, "site:report")
     _check_media_stage(stage)
     upload = validate_upload(file.filename or "media", await file.read(), category="media", max_mb=500)
+    if client_mutation_id:
+        # Envoi rejoué par la file hors ligne de l'application terrain : même fichier, même auteur, même projet
+        # → le média déjà enregistré est renvoyé (aucun doublon).
+        replay = db.execute(
+            select(SiteMedia, StoredFile)
+            .join(StoredFile, StoredFile.id == SiteMedia.file_id)
+            .where(
+                SiteMedia.project_id == project_id,
+                SiteMedia.uploaded_by_id == access.p.id,
+                StoredFile.checksum_sha256 == upload.sha256,
+            )
+        ).first()
+        if replay is not None:
+            return _media_out(replay[0], replay[1], access.p.id)
     extra: dict[str, Any] = {}
     if latitude is not None and longitude is not None:
         extra["geo"] = {"lat": latitude, "lng": longitude}

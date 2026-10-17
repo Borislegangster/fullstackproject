@@ -85,6 +85,107 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_URL: https://ci.globus.invalid
 
+  mobile:
+    name: Mobile — analyse, tests, APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Libellés et charte synchronisés avec le web (source unique)
+        working-directory: ${{ env.ROOT }}
+        run: node packages/globus_core/tool/gen_shared.mjs --check
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      - name: Socle partagé (globus_core)
+        working-directory: ${{ env.ROOT }}/packages/globus_core
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze --fatal-infos
+          flutter test
+      - name: Application client — analyse et tests
+        working-directory: ${{ env.ROOT }}/apps/mobile-client
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test integration_test tool
+          flutter analyze --fatal-infos
+          flutter test
+      - name: Application client — APK (serveur de test)
+        working-directory: ${{ env.ROOT }}/apps/mobile-client
+        run: flutter build apk --release --dart-define-from-file=config/test-aws.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: globus-client-apk
+          path: ${{ env.ROOT }}/apps/mobile-client/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+      - name: Application terrain — analyse et tests
+        working-directory: ${{ env.ROOT }}/apps/mobile-field
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test integration_test tool
+          flutter analyze --fatal-infos
+          flutter test
+      - name: Application terrain — APK (serveur de test)
+        working-directory: ${{ env.ROOT }}/apps/mobile-field
+        run: flutter build apk --release --dart-define-from-file=config/test-aws.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: globus-terrain-apk
+          path: ${{ env.ROOT }}/apps/mobile-field/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+      - name: Application direction — analyse et tests
+        working-directory: ${{ env.ROOT }}/apps/mobile-direction
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test integration_test tool
+          flutter analyze --fatal-infos
+          flutter test
+      - name: Application direction — APK (serveur de test)
+        working-directory: ${{ env.ROOT }}/apps/mobile-direction
+        run: flutter build apk --release --dart-define-from-file=config/test-aws.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: globus-direction-apk
+          path: ${{ env.ROOT }}/apps/mobile-direction/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+  mobile-ios:
+    name: Mobile — compilation iOS (sans signature)
+    runs-on: macos-latest
+    if: github.event_name == 'push'
+    needs: [mobile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      - name: Application client — iOS
+        working-directory: ${{ env.ROOT }}/apps/mobile-client
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define-from-file=config/test-aws.json
+      - name: Application terrain — iOS
+        working-directory: ${{ env.ROOT }}/apps/mobile-field
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define-from-file=config/test-aws.json
+      - name: Application direction — iOS
+        working-directory: ${{ env.ROOT }}/apps/mobile-direction
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define-from-file=config/test-aws.json
+
   security:
     name: Sécurité — secrets, dépendances
     runs-on: ubuntu-latest

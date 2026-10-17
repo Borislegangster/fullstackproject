@@ -79,7 +79,7 @@ export function ProjectBuildingTab({ projectId, projectCode }: { projectId: stri
     const form = new FormData();
     form.set("file", file);
     try {
-      await api(`/equipment/${row.id}/manual`, { method: "POST", form });
+      await api(`/building-equipment/${row.id}/manual`, { method: "POST", form });
       toast.success("Notice ajoutée", "Consultable par le client dans « Mon bâtiment ».");
       reload();
     } catch (err) {
@@ -233,7 +233,7 @@ export function ProjectBuildingTab({ projectId, projectCode }: { projectId: stri
             initial={editing === "new" ? { client_visible: true } : { ...editing }}
             fields={fields}
             onSubmit={(payload) =>
-              editing === "new" ? api(`/projects/${projectId}/equipment`, { method: "POST", body: payload }) : api(`/equipment/${editing.id}`, { method: "PATCH", body: payload })
+              editing === "new" ? api(`/projects/${projectId}/equipment`, { method: "POST", body: payload }) : api(`/building-equipment/${editing.id}`, { method: "PATCH", body: payload })
             }
             onCancel={() => setEditing(null)}
             onSuccess={() => {
@@ -252,7 +252,7 @@ export function ProjectBuildingTab({ projectId, projectCode }: { projectId: stri
         tone="danger"
         confirmLabel="Supprimer"
         onConfirm={async () => {
-          await api(`/equipment/${removing?.id}`, { method: "DELETE" });
+          await api(`/building-equipment/${removing?.id}`, { method: "DELETE" });
           toast.success("Équipement supprimé");
           reload();
         }}

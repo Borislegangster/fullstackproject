@@ -7,8 +7,9 @@ from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -97,14 +98,17 @@ def _equipment(db: Session, access: Access, equipment_id: uuid.UUID, perm: str) 
     return equipment
 
 
-@router.patch("/equipment/{equipment_id}")
+@router.patch("/building-equipment/{equipment_id}")
 def equipment_update(
     equipment_id: uuid.UUID, data: dict[str, Any], db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, Any]:
     equipment = _equipment(db, access, equipment_id, "projects:write")
-    values = EquipmentIn.model_validate(
-        {**{k: getattr(equipment, k) for k in EquipmentIn.model_fields}, **data}
-    ).model_dump()
+    try:
+        values = EquipmentIn.model_validate(
+            {**{k: getattr(equipment, k) for k in EquipmentIn.model_fields}, **data}
+        ).model_dump()
+    except ValidationError as exc:  # corps libre fusionné : même réponse 422 qu'un corps typé, pas une erreur 500
+        raise RequestValidationError(exc.errors()) from exc
     for key, value in values.items():
         setattr(equipment, key, value)
     service.schedule_for(db, equipment)
@@ -112,7 +116,7 @@ def equipment_update(
     return service.equipment_out(db, equipment, user_id=access.p.id)
 
 
-@router.post("/equipment/{equipment_id}/manual")
+@router.post("/building-equipment/{equipment_id}/manual")
 async def equipment_manual(
     equipment_id: uuid.UUID,
     file: UploadFile = File(...),
@@ -132,7 +136,7 @@ async def equipment_manual(
     return service.equipment_out(db, equipment, user_id=access.p.id)
 
 
-@router.delete("/equipment/{equipment_id}")
+@router.delete("/building-equipment/{equipment_id}")
 def equipment_delete(
     equipment_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, str]:

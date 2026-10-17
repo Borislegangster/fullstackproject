@@ -125,6 +125,54 @@ def test_building_equipment_maintenance_plan_reminders_predictive_and_certified_
     assert client.get(f"{API}/client/projects/{pid}/building", headers=env["strh"]).status_code in (403, 404)
 
 
+def test_building_equipment_update_manual_and_delete_on_their_own_routes(client: Any, db: Any) -> None:
+    """Routes /building-equipment/… : distinctes de /equipment/… (parc matériel), qui les masquait auparavant."""
+    from app.modules.maintenance.models import BuildingEquipment
+
+    env = _setup(client, db)
+    pid = env["project"]["id"]
+    created = client.post(
+        f"{API}/projects/{pid}/equipment",
+        headers=env["cph"],
+        json={"category": "pompe", "name": "Surpresseur", "brand": "Grundfos", "location": "Local technique"},
+    )
+    assert created.status_code == 201, created.text
+    eid = created.json()["id"]
+
+    updated = client.patch(
+        f"{API}/building-equipment/{eid}",
+        headers=env["cph"],
+        json={"location": "Sous-sol", "maintenance_interval_days": 90},
+    )
+    assert updated.status_code == 200, updated.text
+    body = updated.json()
+    assert body["location"] == "Sous-sol" and body["maintenance_interval_days"] == 90 and body["brand"] == "Grundfos"
+    db.expire_all()
+    row = db.get(BuildingEquipment, uuid.UUID(eid))
+    assert row.location == "Sous-sol" and row.name == "Surpresseur"
+    invalid = client.patch(f"{API}/building-equipment/{eid}", headers=env["cph"], json={"category": "fusee"})
+    assert invalid.status_code == 422 and invalid.json()["error"]["details"][0]["field"] == "category"
+    forbidden = client.patch(f"{API}/building-equipment/{eid}", headers=env["custh"], json={"name": "Pompe"})
+    assert forbidden.status_code == 403
+
+    hidden = client.patch(f"{API}/building-equipment/{eid}", headers=env["cph"], json={"client_visible": False})
+    assert hidden.status_code == 200 and hidden.json()["client_visible"] is False
+    building = client.get(f"{API}/client/projects/{pid}/building", headers=env["custh"]).json()
+    assert all(e["id"] != eid for e in building["equipment"])
+
+    manual = client.post(
+        f"{API}/building-equipment/{eid}/manual",
+        headers=env["cph"],
+        files={"file": ("notice.pdf", _pdf("Notice surpresseur"), "application/pdf")},
+    )
+    assert manual.status_code == 200, manual.text
+    assert manual.json()["manual_url"]
+
+    assert client.delete(f"{API}/building-equipment/{eid}", headers=env["cph"]).json() == {"status": "deleted"}
+    gone = client.patch(f"{API}/building-equipment/{eid}", headers=env["cph"], json={"name": "Surpresseur 2"})
+    assert gone.status_code == 404 and gone.json()["error"]["message"] == "Équipement introuvable"
+
+
 # ============================================================================ I3 — énergie & confort
 def test_energy_simulation_tiers_measures_lead_and_project_request(client: Any, db: Any) -> None:
     from app.modules.crm.models import Lead

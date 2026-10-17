@@ -9,6 +9,7 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request, Response
+from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -45,6 +46,7 @@ from app.modules.identity.models import (
     User,
     UserRole,
     UserSession,
+    UserToken,
 )
 from app.modules.identity.schemas import (
     ApiKeyCreated,
@@ -572,6 +574,95 @@ def ws_ticket(principal: Principal = Depends(get_principal)) -> dict[str, Any]:
     """Ticket WebSocket à usage court (évite d'exposer les jetons dans l'URL)."""
     ticket = create_purpose_token("ws", str(principal.id), 60, {"sid": str(principal.session_id or "")})
     return {"ticket": ticket, "url": settings.ws_public_url, "expires_in": 60}
+
+
+# ---------------------------------------------------------------------------- passerelle applications → web
+# Les applications mobiles affichent les visionneuses 3D du web (maquette BIM, configurateur, 360°) dans une vue web :
+# un lien à usage unique (60 s) ouvre une session web liée à la session de l'application, limitée aux pages /embarque/.
+WEB_HANDOFF_TTL_SECONDS = 60
+WEB_HANDOFF_PREFIX = "/embarque/"
+
+
+class WebSessionIn(BaseModel):
+    next: str = Field(min_length=len(WEB_HANDOFF_PREFIX) + 1, max_length=500)
+
+
+@router.post("/web-session")
+def web_session(
+    data: WebSessionIn, principal: Principal = Depends(get_principal), db: Session = Depends(get_db)
+) -> dict[str, Any]:
+    if _is_web() or principal.session_id is None:
+        raise Forbidden("Passerelle réservée aux applications mobiles et de bureau", code="WEB_HANDOFF_FORBIDDEN")
+    target = data.next
+    if not target.startswith(WEB_HANDOFF_PREFIX) or "//" in target or "\\" in target or ".." in target:
+        raise AppError("Destination non autorisée", code="INVALID_NEXT")
+    token = random_token(32)
+    db.add(
+        UserToken(
+            user_id=principal.id,
+            purpose="web_handoff",
+            token_hash=sha256_hex(token),
+            expires_at=utcnow() + timedelta(seconds=WEB_HANDOFF_TTL_SECONDS),
+            payload={"next": target, "sid": str(principal.session_id), "mfa": principal.mfa_verified},
+            ip=get_context().ip,
+        )
+    )
+    audit.record(
+        db,
+        family="security",
+        module="auth",
+        action="WEB_HANDOFF_ISSUED",
+        resource_type="user",
+        resource_id=principal.id,
+        actor_id=principal.id,
+        diff={"next": target, "application": get_context().application},
+    )
+    db.commit()
+    base = settings.PUBLIC_BASE_URL.rstrip("/")
+    return {"url": f"{base}{settings.API_PREFIX}/auth/web-session/{token}", "expires_in": WEB_HANDOFF_TTL_SECONDS}
+
+
+@router.get("/web-session/{token}")
+def web_session_open(token: str, db: Session = Depends(get_db)) -> Response:
+    """Ouvre la session web (cookies) puis redirige vers la page embarquée demandée par l'application."""
+    from fastapi.responses import RedirectResponse
+
+    row = service._consume_token(db, token, "web_handoff")
+    payload = row.payload or {}
+    user = db.get(User, row.user_id) if row.user_id else None
+    parent = db.get(UserSession, uuid.UUID(payload["sid"])) if payload.get("sid") else None
+    if (
+        user is None
+        or not user.is_active
+        or user.deleted_at is not None
+        or parent is None
+        or parent.revoked_at is not None
+        or parent.expires_at < utcnow()
+    ):
+        db.commit()
+        raise Unauthorized("Session de l'application expirée", code="WEB_HANDOFF_EXPIRED")
+    session, access, refresh = service.create_session(
+        db, user, device=None, mfa_verified=bool(payload.get("mfa")), remember=False, auth_method="app_handoff"
+    )
+    audit.record(
+        db,
+        family="security",
+        module="auth",
+        action="WEB_HANDOFF_OPENED",
+        resource_type="session",
+        resource_id=session.id,
+        actor_id=user.id,
+        diff={"parent_session": str(parent.id), "next": payload.get("next")},
+    )
+    db.commit()
+    target = str(payload.get("next") or WEB_HANDOFF_PREFIX)
+    if not target.startswith(WEB_HANDOFF_PREFIX):
+        target = WEB_HANDOFF_PREFIX
+    response = RedirectResponse(url=target, status_code=303)
+    _set_cookies(response, access, refresh, remember=False)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 # ============================================================================ administration

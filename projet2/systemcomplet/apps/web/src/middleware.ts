@@ -43,5 +43,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|erp|espace-client|extranet|connexion|inscription|activation|brand|fonts|favicon|sitemap.xml|robots.txt|manifest.webmanifest|sw.js|.*\\.[a-zA-Z0-9]+$).*)"],
+  matcher: ["/((?!api|_next|erp|espace-client|extranet|embarque|connexion|inscription|activation|brand|fonts|favicon|sitemap.xml|robots.txt|manifest.webmanifest|sw.js|.*\\.[a-zA-Z0-9]+$).*)"],
 };

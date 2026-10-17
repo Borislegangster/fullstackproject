@@ -36,7 +36,7 @@ function csp(viewer = false): string {
     ...((process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://") ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 }
-const VIEWER_ROUTES = ["/erp/hub/:path*", "/erp/bim/:path*", "/espace-client/immersion/:path*"];
+const VIEWER_ROUTES = ["/erp/hub/:path*", "/erp/bim/:path*", "/espace-client/immersion/:path*", "/embarque/:path*"];
 
 const nextConfig: NextConfig = {
   // `npm run dev:local` travaille dans .next-dev : un build de production lancé en parallèle ne casse pas le serveur de dev.
