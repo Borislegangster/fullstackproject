@@ -8,8 +8,10 @@ on:
     paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml", ".gitleaks.toml"]
 
 concurrency:
-  group: globus-v4-${{ github.ref }}
-  # Jamais d'annulation sur main : un déploiement en cours va toujours à son terme.
+  # Branches / PR : une exécution par branche (la précédente est annulée). Main : chaque commit a sa propre exécution
+  # (aucune attente derrière les compilations mobiles) ; seuls les déploiements sont sérialisés (job deploy) et le
+  # serveur refuse une version plus ancienne que celle en service (infra/scripts/ci-deploy.sh).
+  group: globus-v4-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'branche' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:

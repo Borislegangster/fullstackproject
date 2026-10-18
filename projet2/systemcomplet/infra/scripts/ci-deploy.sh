@@ -30,6 +30,13 @@ if ! git -C "$REPO" merge-base --is-ancestor "$sha" origin/main; then
   echo "Le commit $sha n'appartient pas à la branche main" >&2
   exit 3
 fi
+# Exécutions CI parallèles : une version plus ancienne que celle en service n'est jamais remise en ligne.
+current="$(sed -n 's/^GLOBUS_VERSION=//p' "$ROOT/infra/env/compose.env" 2>/dev/null || true)"
+if [[ "$current" =~ ^[0-9a-f]{40}$ && "$current" != "$sha" ]] \
+  && git -C "$REPO" merge-base --is-ancestor "$sha" "$current" 2>/dev/null; then
+  echo "Commit ${sha:0:12} plus ancien que la version en service ${current:0:12} : déploiement ignoré"
+  exit 0
+fi
 git -C "$REPO" -c advice.detachedHead=false checkout --quiet --force --detach "$sha"
 
 DOCKER_CONFIG="$(mktemp -d)"
