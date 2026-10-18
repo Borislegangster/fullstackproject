@@ -1,4 +1,8 @@
 {
   "GLOBUS_API_URL": "https://globus-engineering-sarl.com",
-  "GLOBUS_ENV": "production"
+  "GLOBUS_ENV": "production",
+  "FIREBASE_PROJECT_ID": "globus-41293",
+  "FIREBASE_SENDER_ID": "295713459575",
+  "FIREBASE_APP_ID": "1:295713459575:android:b2af8e1f39ce396a9f2572",
+  "FIREBASE_API_KEY": "AIzaSyC-LWrVqchs4lN0mq1z_T9XIMEsmYbig04"
 }

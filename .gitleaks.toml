@@ -5,6 +5,11 @@ useDefault = true
 [allowlist]
 description = "Faux positifs vérifiés : modèles d'environnement sans valeur, mots de passe factices des tests"
 # Modèles .env.example : variables documentées sans aucune valeur (les secrets réels sont générés sur le serveur).
-paths = ['''(^|/)\.env\.example$''']
+paths = [
+  '''(^|/)\.env\.example$''',
+  # Identifiants Firebase des applications Android (clé API publique par conception, embarquée dans chaque APK,
+  # utilisable seulement par les packages com.globusengineering.* ; aucun accès aux données) : apps/mobile-*/config.
+  '''projet2/systemcomplet/apps/mobile-[a-z]+/config/production\.json$''',
+]
 # Mot de passe factice du test qui vérifie que l'inscription libre est refusée (tests/test_access_policy.py).
 regexes = ['''Tres-Long-Secret-2026''']
