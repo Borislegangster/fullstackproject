@@ -64,6 +64,7 @@ from app.modules.identity.schemas import (
     MeUpdate,
     MfaDisableIn,
     MfaFactorOut,
+    MfaStepUpIn,
     MfaVerifyIn,
     OrganizationIn,
     OrganizationOut,
@@ -325,7 +326,23 @@ def totp_confirm(
 ) -> dict[str, Any]:
     user = db.get(User, principal.id)
     assert user is not None
-    return {"codes": service.totp_confirm(db, user, data.code)}
+    codes = service.totp_confirm(db, user, data.code)
+    # Le facteur vient d'être prouvé : la session en cours est validée par MFA (opérations sensibles).
+    service.mark_session_mfa(db, principal.session_id)
+    db.commit()
+    return {"codes": codes}
+
+
+@router.post("/mfa/step-up", dependencies=[Depends(rate_limit("mfa", settings.RATE_LIMIT_LOGIN))])
+def mfa_step_up(
+    data: MfaStepUpIn, principal: Principal = Depends(get_principal), db: Session = Depends(get_db)
+) -> dict[str, str]:
+    """Confirme la session en cours par un code MFA (exigé par les opérations sensibles : MFA_REQUIRED)."""
+    user = db.get(User, principal.id)
+    assert user is not None
+    method = service.step_up_mfa(db, user, principal.session_id, code=data.code, recovery_code=data.recovery_code)
+    db.commit()
+    return {"status": "ok", "method": method}
 
 
 @router.post("/mfa/recovery-codes", response_model=RecoveryCodesOut)
@@ -375,7 +392,10 @@ def webauthn_register_verify(
 ) -> MFAFactor:
     user = db.get(User, principal.id)
     assert user is not None
-    return service.webauthn_register_verify(db, user, data.credential, data.challenge_token, data.name)
+    factor = service.webauthn_register_verify(db, user, data.credential, data.challenge_token, data.name)
+    service.mark_session_mfa(db, principal.session_id)
+    db.commit()
+    return factor
 
 
 @router.delete("/mfa/factors/{factor_id}")

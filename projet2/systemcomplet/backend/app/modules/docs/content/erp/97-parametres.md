@@ -78,7 +78,7 @@ Chaque envoi, filtrable par canal et par statut (envoyé, échoué, en attente) 
 Les secrets sont chiffrés au repos et jamais réaffichés ; seule leur empreinte est visible.
 
 1. **Régler** sur la ligne du secret ouvre **Définir — …** (ou **Renouveler — …** s'il existe déjà).
-2. Saisissez la **Valeur** et votre code de double authentification, puis enregistrez.
+2. Saisissez la **Valeur**, puis **Enregistrer**. Si votre session n'est pas encore confirmée par la double authentification, la fenêtre **Confirmer avec votre double authentification** demande votre code, puis l'enregistrement reprend ([Mon compte](doc:erp-compte)).
 
 ### Webhooks sortants
 

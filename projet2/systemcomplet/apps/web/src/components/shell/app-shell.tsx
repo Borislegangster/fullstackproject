@@ -9,6 +9,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { CallProvider } from "@/components/calls/call-provider";
 import { RouteLoader } from "@/components/site/globus-loader";
 import { FilePreviewHost } from "@/components/ui/file-preview";
+import { MfaStepUpHost } from "@/components/ui/mfa-step-up";
 import { Avatar } from "@/components/ui/primitives";
 import { accountPathFor, useAuth, useSpaceGuard } from "@/lib/auth";
 import { useOnline } from "@/lib/hooks";
@@ -216,6 +217,7 @@ function ShellFrame({ sections, title, base, accountHref, children, topbar }: { 
           <div className="relative">{children}</div>
         </main>
         <FilePreviewHost />
+        <MfaStepUpHost accountHref={account} />
       </div>
     </div>
   );

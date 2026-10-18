@@ -710,6 +710,44 @@ def totp_confirm(db: Session, user: User, code: str) -> list[str]:
     return codes
 
 
+def mark_session_mfa(db: Session, session_id: uuid.UUID | None) -> None:
+    """Marque la session courante comme validée par MFA (facteur prouvé à l'instant)."""
+    if session_id is None:
+        return
+    session = db.get(UserSession, session_id)
+    if session is not None and session.revoked_at is None:
+        session.mfa_verified_at = utcnow()
+
+
+def step_up_mfa(
+    db: Session, user: User, session_id: uuid.UUID | None, *, code: str | None, recovery_code: str | None
+) -> str:
+    """Confirmation MFA d'une session déjà ouverte (opérations sensibles) : TOTP ou code de secours."""
+    if session_id is None:
+        raise Forbidden("Confirmation impossible sans session", code="MFA_SESSION_REQUIRED")
+    _lock_check(user)
+    method = None
+    if code and verify_totp(db, user, code):
+        method = "totp"
+    elif recovery_code and use_recovery_code(db, user, recovery_code):
+        method = "recovery"
+    if method is None:
+        _fail_login(db, user, user.email, "Code MFA invalide (confirmation d'opération sensible)")
+        raise AppError("Code de vérification invalide", code="INVALID_MFA_CODE")
+    mark_session_mfa(db, session_id)
+    audit.record(
+        db,
+        family="security",
+        module="auth",
+        action="MFA_STEP_UP",
+        resource_type="user",
+        resource_id=user.id,
+        diff={"method": method},
+        criticality="MEDIUM",
+    )
+    return method
+
+
 def mfa_disable(db: Session, user: User, password: str, code: str) -> None:
     if role_requires_mfa(user) and settings.MFA_ENFORCEMENT == "enforce":
         raise Forbidden("Le MFA est obligatoire pour votre rôle", code="MFA_MANDATORY")

@@ -33,6 +33,10 @@ La double authentification est **Obligatoire** pour votre espace client.
 > [!TIP]
 > Téléphone perdu et plus de code de secours : contactez votre chef de projet, qui fera réinitialiser votre double authentification après vérification de votre identité.
 
+### Confirmer une opération sensible
+
+Certaines opérations (secrets des intégrations, réglages de sécurité) exigent une session confirmée par la double authentification. Si votre session ne l'est pas encore, la fenêtre **Confirmer avec votre double authentification** s'ouvre : saisissez le **Code à 6 chiffres de votre application d'authentification** (ou **Utiliser un code de secours**), puis **Confirmer** : l'opération reprend automatiquement et votre session reste confirmée. Sans double authentification active, **Activer la double authentification** ouvre cet onglet.
+
 ## Onglet « Sessions et appareils »
 
 - **Sessions actives** (la **Session actuelle** est signalée) : **Révoquer** ferme une session ; **Fermer les autres sessions** déconnecte tous vos autres appareils.

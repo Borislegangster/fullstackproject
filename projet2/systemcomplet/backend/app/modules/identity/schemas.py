@@ -149,6 +149,11 @@ class CodeIn(BaseModel):
     code: str = Field(min_length=6, max_length=12)
 
 
+class MfaStepUpIn(BaseModel):
+    code: str | None = Field(default=None, min_length=6, max_length=12)
+    recovery_code: str | None = Field(default=None, min_length=6, max_length=32)
+
+
 class MfaDisableIn(BaseModel):
     password: str = Field(max_length=256)
     code: str = Field(min_length=6, max_length=32)

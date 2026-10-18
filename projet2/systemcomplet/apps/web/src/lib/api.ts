@@ -77,6 +77,28 @@ async function refreshSession(): Promise<boolean> {
   return refreshing;
 }
 
+// Confirmation MFA d'une session ouverte (opérations sensibles) : la coque des espaces fournit la fenêtre de saisie
+// du code ; la requête refusée (MFA_REQUIRED) est rejouée une fois la session confirmée.
+const STEP_UP_CODES = new Set(["MFA_REQUIRED", "MFA_SESSION_REQUIRED"]);
+let stepUpHandler: (() => Promise<boolean>) | null = null;
+let stepUpPending: Promise<boolean> | null = null;
+
+export function setMfaStepUpHandler(handler: (() => Promise<boolean>) | null): void {
+  stepUpHandler = handler;
+}
+
+function confirmMfa(): Promise<boolean> {
+  if (!stepUpHandler) return Promise.resolve(false);
+  if (!stepUpPending) {
+    stepUpPending = stepUpHandler()
+      .catch(() => false)
+      .finally(() => {
+        setTimeout(() => (stepUpPending = null), 0);
+      });
+  }
+  return stepUpPending;
+}
+
 async function parseError(response: Response): Promise<ApiError> {
   let payload: any = null;
   try {
@@ -94,7 +116,7 @@ async function parseError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, "HTTP_" + response.status, response.statusText || "Erreur réseau");
 }
 
-export async function api<T = any>(path: string, options: RequestOptions = {}, retried = false): Promise<T> {
+export async function api<T = any>(path: string, options: RequestOptions = {}, retried = false, steppedUp = false): Promise<T> {
   const method = options.method ?? (options.body !== undefined || options.form ? "POST" : "GET");
   const headers: Record<string, string> = { "X-Client-App": "web", Accept: "application/json" };
   if (method !== "GET") headers["X-CSRF-Token"] = readCookie("globus_csrf") ?? "";
@@ -113,12 +135,15 @@ export async function api<T = any>(path: string, options: RequestOptions = {}, r
     signal: options.signal,
   });
   if (response.status === 401 && !retried && !path.startsWith("/auth/login") && !path.startsWith("/auth/refresh")) {
-    if (await refreshSession()) return api<T>(path, options, true);
+    if (await refreshSession()) return api<T>(path, options, true, steppedUp);
     if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("globus:unauthorized"));
   }
   if (!response.ok) {
     const error = await parseError(response);
     if (error.code === "MFA_ENROLLMENT_REQUIRED" && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("globus:mfa-required"));
+    if (STEP_UP_CODES.has(error.code) && !steppedUp && !path.startsWith("/auth/mfa/step-up") && (await confirmMfa())) {
+      return api<T>(path, options, retried, true);
+    }
     throw error;
   }
   if (options.raw) return response as unknown as T;

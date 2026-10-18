@@ -68,6 +68,40 @@ def test_mfa_totp_flow(client, db):
     assert reuse.status_code == 401
 
 
+def test_mfa_step_up_for_sensitive_operations(client, db, monkeypatch):
+    """Session ouverte avant l'activation du MFA : activation = session confirmée ; sinon confirmation par code."""
+    from app.core.config import settings
+    from app.modules.identity.models import UserSession
+
+    monkeypatch.setattr(settings, "MFA_ENFORCEMENT", "enforce")
+    user = make_user(db, email="stepup@example.com", roles=["ADMIN"])
+    headers = login(client, user.email)
+    secret = {"value": "valeur-de-test-0001"}
+    assert client.put("/api/v1/admin/secrets/STT_HTTP_TOKEN", headers=headers, json=secret).status_code == 403
+    setup = client.post("/api/v1/auth/mfa/totp/setup", headers=headers).json()
+    totp = pyotp.TOTP(setup["secret"])
+    confirm = client.post("/api/v1/auth/mfa/totp/confirm", headers=headers, json={"code": totp.now()})
+    assert confirm.status_code == 200, confirm.text
+    recovery = confirm.json()["codes"]
+    # Le facteur vient d'être prouvé : la session en cours est confirmée, l'opération sensible passe.
+    ok = client.put("/api/v1/admin/secrets/STT_HTTP_TOKEN", headers=headers, json=secret)
+    assert ok.status_code == 200, ok.text
+    # Session non confirmée (ex. ouverte avant l'activation) : refus explicite puis confirmation par code.
+    for session in db.execute(select(UserSession).where(UserSession.user_id == user.id)).scalars():
+        session.mfa_verified_at = None
+    db.commit()
+    denied = client.put("/api/v1/admin/secrets/STT_HTTP_TOKEN", headers=headers, json=secret)
+    assert denied.status_code == 403 and denied.json()["error"]["code"] == "MFA_REQUIRED"
+    bad = client.post("/api/v1/auth/mfa/step-up", headers=headers, json={"code": "000000"})
+    assert bad.status_code == 400 and bad.json()["error"]["code"] == "INVALID_MFA_CODE"
+    step = client.post("/api/v1/auth/mfa/step-up", headers=headers, json={"recovery_code": recovery[0]})
+    assert step.status_code == 200, step.text
+    assert step.json()["method"] == "recovery"
+    again = client.put("/api/v1/admin/secrets/STT_HTTP_TOKEN", headers=headers, json=secret)
+    assert again.status_code == 200, again.text
+    assert db.execute(text("select count(*) from audit_events where action = 'MFA_STEP_UP'")).scalar_one() >= 1
+
+
 def test_refresh_rotation_and_reuse_detection(client, db):
     user = make_user(db, email="rot@example.com", roles=["COMMERCIAL"])
     data = client.post("/api/v1/auth/login", json={"email": user.email, "password": PASSWORD}).json()

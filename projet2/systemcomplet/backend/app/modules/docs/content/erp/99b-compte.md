@@ -40,6 +40,10 @@ Donnez un nom (ex. « Téléphone pro », « YubiKey ») puis **Ajouter une clé
 
 **Régénérer les codes de secours** ouvre **Régénérer les codes de secours** : saisissez le **Code de votre application d'authentification**, puis **Régénérer**. Les anciens codes ne fonctionnent plus.
 
+### Confirmer une opération sensible
+
+Certaines opérations (secrets des intégrations, réglages de sécurité) exigent une session confirmée par la double authentification. Si votre session ne l'est pas encore, la fenêtre **Confirmer avec votre double authentification** s'ouvre : saisissez le **Code à 6 chiffres de votre application d'authentification** (ou **Utiliser un code de secours**), puis **Confirmer** : l'opération reprend automatiquement et votre session reste confirmée. Sans double authentification active, **Activer la double authentification** ouvre cet onglet.
+
 ### Désactiver la double authentification
 
 **Désactiver le MFA** ouvre **Désactiver la double authentification** (impossible si votre rôle l'exige) : **Mot de passe** et **Code TOTP ou code de secours**, puis **Désactiver**. Votre compte sera moins protégé.
