@@ -76,13 +76,16 @@ class S3Storage:
     def __init__(self) -> None:
         import boto3
 
+        from app.core.secrets import get_secret
+
         self.bucket = settings.S3_BUCKET
+        # Clé secrète : coffre chiffré (saisie ERP / set-secret.sh) prioritaire, sinon variable d'environnement.
         self.client = boto3.client(
             "s3",
             endpoint_url=settings.S3_ENDPOINT_URL,
             region_name=settings.S3_REGION,
             aws_access_key_id=settings.S3_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+            aws_secret_access_key=get_secret("S3_SECRET_ACCESS_KEY"),
         )
 
     def put(self, key: str, data: bytes, content_type: str | None = None) -> None:

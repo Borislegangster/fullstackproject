@@ -88,6 +88,7 @@ comptes internes, paramétrer l'entreprise (Paramètres), les intégrations, pui
 | E-mails | messagerie Hostinger `contact@globus-engineering-sarl.com` : SMTP `smtp.hostinger.com:465` (SSL) ; SPF, DKIM et DMARC dans la zone DNS |
 | Code | `/opt/globus/repo` (utilisateur `deploy`, extraction partielle de `projet2/systemcomplet`) |
 | Images | `ghcr.io/borislegangster/globus-api` et `globus-web`, étiquette = commit |
+| Stockage objet | AWS S3 `globus-engineering-storage-<compte>` (eu-west-3, pile CloudFormation `globus-storage`, [`infra/aws/globus-storage.yaml`](../infra/aws/globus-storage.yaml)) : fichiers privés + copies hors site des sauvegardes chiffrées ; versionné, chiffré, TLS obligatoire, journaux d'accès 90 j ; utilisateur IAM `globus-vps-storage` limité à ce bucket (clé secrète dans le coffre de l'API) |
 
 Préparation (une fois, en root) puis environnement (en `deploy`) :
 

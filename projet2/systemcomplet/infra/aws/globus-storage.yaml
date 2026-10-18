@@ -1,0 +1,210 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: GLOBUS ENGINEERING - stockage objet prive (fichiers prives et copies hors site des sauvegardes chiffrees) pour le VPS de production
+
+# Deploiement :
+#   aws cloudformation deploy --stack-name globus-storage --template-file infra/aws/globus-storage.yaml \
+#       --capabilities CAPABILITY_NAMED_IAM --region eu-west-3
+# Cle d'acces de l'utilisateur IAM : creee hors modele (aws iam create-access-key) et transmise directement au coffre
+# chiffre de l'API sur le serveur, jamais stockee dans CloudFormation.
+
+Parameters:
+  NoncurrentVersionDays:
+    Type: Number
+    Default: 30
+    MinValue: 7
+    Description: Duree de conservation des versions remplacees ou supprimees (protection contre effacement accidentel)
+  BackupRetentionDays:
+    Type: Number
+    Default: 365
+    MinValue: 30
+    Description: Duree de conservation des copies hors site des sauvegardes (prefixe backups/)
+
+Resources:
+  AccessLogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      guard:
+        SuppressedRules:
+          - S3_BUCKET_LOGGING_ENABLED  # bucket de journaux lui-meme : pas de journalisation recursive
+          - S3_BUCKET_REPLICATION_ENABLED
+          - S3_BUCKET_DEFAULT_LOCK_ENABLED
+    Properties:
+      BucketName: !Sub globus-engineering-storage-logs-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: journaux-90-jours
+            Status: Enabled
+            ExpirationInDays: 90
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
+      Tags:
+        - Key: Project
+          Value: globus
+
+  AccessLogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      guard:
+        SuppressedRules:
+          # Equivalent strict : refus de tout acces non TLS, limite aux ressources du bucket (Resource "*" refuse par S3).
+          - S3_BUCKET_SSL_REQUESTS_ONLY
+    Properties:
+      Bucket: !Ref AccessLogBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: S3ServerAccessLogsDelivery
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub ${AccessLogBucket.Arn}/storage/*
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub arn:${AWS::Partition}:s3:::globus-engineering-storage-${AWS::AccountId}
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt AccessLogBucket.Arn
+              - !Sub ${AccessLogBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      guard:
+        SuppressedRules:
+          - S3_BUCKET_REPLICATION_ENABLED  # copie hors site du VPS : une seule region suffit (cout)
+          - S3_BUCKET_DEFAULT_LOCK_ENABLED  # versionnement + conservation des versions ; WORM inutile a ce stade
+    Properties:
+      BucketName: !Sub globus-engineering-storage-${AWS::AccountId}
+      LoggingConfiguration:
+        DestinationBucketName: !Ref AccessLogBucket
+        LogFilePrefix: storage/
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: versions-remplacees
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref NoncurrentVersionDays
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: sauvegardes-hors-site
+            Status: Enabled
+            Prefix: backups/
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+            ExpirationInDays: !Ref BackupRetentionDays
+      Tags:
+        - Key: Project
+          Value: globus
+        - Key: Environment
+          Value: production
+
+  StorageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      guard:
+        SuppressedRules:
+          # Equivalent strict : refus de tout acces non TLS, limite aux ressources du bucket (Resource "*" refuse par S3).
+          - S3_BUCKET_SSL_REQUESTS_ONLY
+    Properties:
+      Bucket: !Ref StorageBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt StorageBucket.Arn
+              - !Sub ${StorageBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  VpsStorageUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: globus-vps-storage
+      Tags:
+        - Key: Project
+          Value: globus
+        - Key: Purpose
+          Value: VPS Hostinger - acces au seul bucket de stockage GLOBUS
+
+  VpsStoragePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: globus-vps-storage-access
+      Description: Lecture et ecriture des objets du seul bucket de stockage GLOBUS
+      Users:
+        - !Ref VpsStorageUser
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ListBucket
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: !GetAtt StorageBucket.Arn
+          - Sid: ObjectReadWrite
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: !Sub ${StorageBucket.Arn}/*
+
+Outputs:
+  BucketName:
+    Description: Nom du bucket (S3_BUCKET)
+    Value: !Ref StorageBucket
+  Region:
+    Description: Region (S3_REGION)
+    Value: !Ref AWS::Region
+  UserName:
+    Description: Utilisateur IAM du VPS (cle d'acces creee hors modele)
+    Value: !Ref VpsStorageUser
