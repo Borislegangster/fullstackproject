@@ -78,10 +78,57 @@ Se connecter, activer le MFA (obligatoire : `MFA_ENFORCEMENT=enforce` pour ADMIN
 comptes internes, paramétrer l'entreprise (Paramètres), les intégrations, puis vérifier « Sécurité » et
 « Système et sauvegardes ».
 
+## 3 bis. Production actuelle : VPS Hostinger + déploiement continu
+
+| Élément | Valeur |
+| --- | --- |
+| Serveur | Hostinger KVM 2 (2 vCPU, 8 Go, 100 Go), Ubuntu 26.04, `88.223.95.244` (`srv2071586.hstgr.cloud`) |
+| Domaine | `globus-engineering-sarl.com` (A → VPS) ; `www` → redirection 301 vers le domaine |
+| Pare-feu | pare-feu Hostinger `globus-production` : 22, 80, 443/tcp, 3478 tcp+udp, 5349/tcp, 49160-49260/udp |
+| E-mails | messagerie Hostinger `contact@globus-engineering-sarl.com` : SMTP `smtp.hostinger.com:465` (SSL) ; SPF, DKIM et DMARC dans la zone DNS |
+| Code | `/opt/globus/repo` (utilisateur `deploy`, extraction partielle de `projet2/systemcomplet`) |
+| Images | `ghcr.io/borislegangster/globus-api` et `globus-web`, étiquette = commit |
+
+Préparation (une fois, en root) puis environnement (en `deploy`) :
+
+```bash
+bash vps-bootstrap.sh --repo https://github.com/Borislegangster/fullstackproject.git --ci-key "<clé publique CI>"
+```
+
+```bash
+runuser -u deploy -- /opt/globus/repo/projet2/systemcomplet/infra/scripts/init-env.sh --domain globus-engineering-sarl.com --public-ip 88.223.95.244 --acme-email contact@globus-engineering-sarl.com --email-from "GLOBUS ENGINEERING <contact@globus-engineering-sarl.com>" --smtp-host smtp.hostinger.com --smtp-port 465 --smtp-user contact@globus-engineering-sarl.com --no-payments --registry ghcr.io/borislegangster
+```
+
+Mot de passe de la boîte mail (saisie masquée, stocké chiffré dans le coffre de l'API, jamais dans un fichier) :
+
+```bash
+/opt/globus/repo/projet2/systemcomplet/infra/scripts/set-secret.sh SMTP_PASSWORD
+```
+
+**Déploiement continu** (`.github/workflows/globus-v4.yml`) : à chaque push sur `main` touchant
+`projet2/systemcomplet/`, la CI teste l'API (PostgreSQL réel), le web (types, lint, anti-mock, liens, build), la
+sécurité (gitleaks, pip-audit, npm audit), construit et publie les images sur GHCR, puis le job `deploy`
+(environnement GitHub `production`) se connecte en SSH à `deploy@VPS`. La clé de la CI est limitée par
+`authorized_keys` à la commande `/usr/local/sbin/globus-ci-deploy` (copie de `infra/scripts/ci-deploy.sh`) : elle
+vérifie que le commit appartient à `main`, l'extrait, se connecte au registre avec le jeton éphémère du job (jamais
+écrit sur disque) et lance `deploy.sh` (images tirées, migrations, redémarrage, contrôle de santé). Le job vérifie
+ensuite le site public. Réglages GitHub : variables `GLOBUS_DEPLOY_ENABLED=true`, `GLOBUS_SITE_URL`, `VPS_HOST`,
+`VPS_KNOWN_HOSTS` ; secret d'environnement `VPS_SSH_KEY`. Les APK Android (configuration `production.json`) sont
+publiés comme artefacts du job `mobile`.
+
 ## 4. Mises à jour
+
+Avec le déploiement continu : fusionner sur `main`, la mise en ligne suit automatiquement. Sans CI (images
+construites sur le serveur) :
 
 ```bash
 git pull && ./infra/scripts/deploy.sh
+```
+
+Retour arrière immédiat à une version publiée (les 3 dernières restent en cache ; historique `infra/env/releases.log`) :
+
+```bash
+GLOBUS_RELEASE=<commit> ./infra/scripts/deploy.sh
 ```
 
 Les migrations sont appliquées avant le redémarrage de l'API (`migrate` doit réussir, sinon l'API reste sur

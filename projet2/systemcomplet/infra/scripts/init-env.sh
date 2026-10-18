@@ -8,13 +8,17 @@
 # Options : --no-www (domaine unique, ex. sous-domaine de test) ; --private-ip 10.0.1.23 (serveur derrière une IP
 # publique NAT 1:1, ex. AWS EC2 : coturn annonce l'IP publique) ; --ses-region eu-west-3 (e-mails via Amazon SES
 # avec le rôle IAM du serveur, aucun mot de passe) ; --no-payments (aucun opérateur de paiement contractualisé) ;
-# --email-from 'Nom <adresse@vérifiée>' (expéditeur des e-mails, défaut : no-reply@<domaine>).
+# --email-from 'Nom <adresse@vérifiée>' (expéditeur des e-mails, défaut : no-reply@<domaine>) ;
+# --smtp-host smtp.hostinger.com --smtp-port 465 --smtp-user contact@<domaine> (messagerie professionnelle : le mot de
+# passe se saisit ensuite, masqué, avec ./infra/scripts/set-secret.sh SMTP_PASSWORD) ;
+# --registry ghcr.io/<compte> (déploiement continu : images globus-api / globus-web tirées du registre).
 #
 # Reste à renseigner ensuite (console d'administration > Paramètres > Intégrations, ou api.env) : SMTP / SendGrid /
 # Mailgun, fournisseurs de paiement (CinetPay, Flutterwave, Stripe), WhatsApp Meta, Twilio, APS, Anthropic.
 set -euo pipefail
 
 DOMAIN="" WWW="" PUBLIC_IP="" PRIVATE_IP="" ACME_EMAIL="" SES_REGION="" EMAIL_FROM="" NO_WWW=0 NO_PAYMENTS=0 FORCE=0 VERSION="4.0.0"
+SMTP_HOST="" SMTP_PORT="587" SMTP_USER="" REGISTRY=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="$2"; shift 2 ;;
@@ -23,6 +27,10 @@ while [[ $# -gt 0 ]]; do
     --private-ip) PRIVATE_IP="$2"; shift 2 ;;
     --ses-region) SES_REGION="$2"; shift 2 ;;
     --email-from) EMAIL_FROM="$2"; shift 2 ;;
+    --smtp-host) SMTP_HOST="$2"; shift 2 ;;
+    --smtp-port) SMTP_PORT="$2"; shift 2 ;;
+    --smtp-user) SMTP_USER="$2"; shift 2 ;;
+    --registry) REGISTRY="${2%/}"; shift 2 ;;
     --no-www) NO_WWW=1; shift ;;
     --no-payments) NO_PAYMENTS=1; shift ;;
     --acme-email) ACME_EMAIL="$2"; shift 2 ;;
@@ -42,10 +50,13 @@ if [[ -n "$SES_REGION" ]]; then
 SES_REGION=$SES_REGION"
 else
   EMAIL_BLOCK="EMAIL_PROVIDER=smtp
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER="
+SMTP_HOST=$SMTP_HOST
+SMTP_PORT=$SMTP_PORT
+SMTP_USER=$SMTP_USER"
 fi
+REGISTRY_BLOCK=""
+[[ -n "$REGISTRY" ]] && REGISTRY_BLOCK="GLOBUS_API_IMAGE=$REGISTRY/globus-api
+GLOBUS_WEB_IMAGE=$REGISTRY/globus-web"
 EMAIL_FROM="${EMAIL_FROM:-GLOBUS ENGINEERING <no-reply@$DOMAIN>}"
 PAYMENTS="mtn_momo,orange_money"
 [[ $NO_PAYMENTS -eq 1 ]] && PAYMENTS=""
@@ -75,6 +86,7 @@ GLOBUS_DOMAIN=$DOMAIN
 GLOBUS_WWW_DOMAIN=$WWW
 ACME_EMAIL=$ACME_EMAIL
 TURN_PUBLIC_IP=$PUBLIC_IP
+$REGISTRY_BLOCK
 EOF
 
 cat >"$ENV_DIR/postgres.env" <<EOF

@@ -4,13 +4,16 @@
 #   ./scripts/init-env.sh --domain <domaine> --public-ip <ip> --acme-email <email>   # une seule fois
 #   ./scripts/deploy.sh                                                               # construction + mise en ligne
 #
+# Images : construites sur le serveur (globus/api, globus/web) ou, en déploiement continu, tirées d'un registre
+# (GLOBUS_API_IMAGE / GLOBUS_WEB_IMAGE dans env/compose.env, étiquette = commit déployé : GLOBUS_VERSION).
+#
 # Réseaux : « backend » interne (PostgreSQL, Redis : jamais exposés), « edge » (nginx, web, API, worker).
 # Profils optionnels : calls (coturn), antivirus (ClamAV), tls (renouvellement Let's Encrypt).
 
 name: globus
 
 x-api-image: &api-image
-  image: globus/api:${GLOBUS_VERSION:-4.0.0}
+  image: ${GLOBUS_API_IMAGE:-globus/api}:${GLOBUS_VERSION:-4.0.0}
   env_file: ./env/api.env
   restart: unless-stopped
   logging: &logging
@@ -86,7 +89,7 @@ services:
     networks: [backend, edge]
 
   web:
-    image: globus/web:${GLOBUS_VERSION:-4.0.0}
+    image: ${GLOBUS_WEB_IMAGE:-globus/web}:${GLOBUS_VERSION:-4.0.0}
     build:
       context: ..
       dockerfile: infra/docker/web.Dockerfile

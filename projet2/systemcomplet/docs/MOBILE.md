@@ -63,12 +63,13 @@ cd apps/mobile-client
 flutter pub get
 flutter analyze
 flutter test
-flutter build apk --release --dart-define-from-file=config/test-aws.json
+flutter build apk --release --dart-define-from-file=config/production.json
 ```
 
 - `config/dev.json` : API locale (`http://localhost:8010`) — émulateur : `adb reverse tcp:8010 tcp:8010` et
   `adb reverse tcp:3010 tcp:3010` (pages embarquées).
-- `config/test-aws.json` : serveur de test AWS. Créer `config/production.json` pour le VPS final.
+- `config/production.json` : production (`https://globus-engineering-sarl.com`, VPS Hostinger) — configuration des
+  APK publiés par la CI ; `config/test-aws.json` : ancien serveur de test AWS.
 - Push FCM (facultatif) : ajouter `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_PROJECT_ID`
   (et `FIREBASE_IOS_BUNDLE_ID`) au fichier de configuration, et `FCM_SERVICE_ACCOUNT_JSON` côté serveur. Sans eux,
   les notifications restent reçues dans l'application, par e-mail et WhatsApp.
