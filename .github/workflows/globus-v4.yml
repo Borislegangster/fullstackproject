@@ -309,9 +309,17 @@ jobs:
         env:
           VPS_HOST: ${{ vars.VPS_HOST }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Coupure réseau passagère (code 255) : nouvel essai ; le déploiement côté serveur est idempotent et verrouillé.
         run: |
-          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o ServerAliveInterval=30 "deploy@${VPS_HOST}" "deploy ${GITHUB_SHA} ${GITHUB_ACTOR}"
+          for attempt in 1 2 3; do
+            status=0
+            printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=30 -o ServerAliveInterval=30 "deploy@${VPS_HOST}" "deploy ${GITHUB_SHA} ${GITHUB_ACTOR}" || status=$?
+            [[ $status -ne 255 ]] && exit $status
+            echo "Connexion SSH impossible (essai ${attempt}/3), nouvel essai dans 30 s"
+            sleep 30
+          done
+          exit 255
       - name: Vérification publique (site, API, TLS)
         env:
           SITE: ${{ vars.GLOBUS_SITE_URL }}
