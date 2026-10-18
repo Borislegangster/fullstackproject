@@ -69,6 +69,8 @@ Chaque envoi, filtrable par canal et par statut (envoyé, échoué, en attente) 
 ::: perm integrations:manage
 ## Onglet « Intégrations »
 
+En haut, une carte par service indique son état (coche verte : configuré ; croix : à configurer) : e-mail, WhatsApp, SMS, paiements, **Notifications push web** (navigateur, clés VAPID), **Notifications push mobile** (applications, compte de service Firebase), Autodesk APS, IA (Claude), reconnaissance vocale, antivirus, temps réel et relais d'appels. Certaines cartes exigent aussi une activation par l'hébergeur (ex. IA, paiements) en plus de la clé enregistrée ici.
+
 ### Prestataires de paiement
 
 État des prestataires de paiement mobile et carte. Paiements réels uniquement : un prestataire est activé par la configuration du serveur, puis ses clés sont renseignées ici. Les environnements de test des opérateurs sont refusés en production.
