@@ -44,7 +44,7 @@ def transcribe(audio: bytes, filename: str, mime: str) -> Transcript:
             files={"file": (filename, audio, mime)},
             data={"model": settings.STT_MODEL, "language": settings.STT_LANGUAGE, "response_format": "json"},
             headers=headers,
-            timeout=300,
+            timeout=600,  # rapports longs : transcription Whisper sur processeur (nginx : 600 s)
         )
     except httpx.HTTPError as exc:
         raise ProviderError(f"Transcription : {exc}", provider="stt") from exc

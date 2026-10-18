@@ -8,7 +8,7 @@
 # (GLOBUS_API_IMAGE / GLOBUS_WEB_IMAGE dans env/compose.env, étiquette = commit déployé : GLOBUS_VERSION).
 #
 # Réseaux : « backend » interne (PostgreSQL, Redis : jamais exposés), « edge » (nginx, web, API, worker).
-# Profils optionnels : calls (coturn), antivirus (ClamAV), tls (renouvellement Let's Encrypt).
+# Profils optionnels : calls (coturn), antivirus (ClamAV), stt (transcription Whisper), tls (renouvellement Let's Encrypt).
 
 name: globus
 
@@ -164,6 +164,22 @@ services:
       retries: 5
       start_period: 300s
     networks: [backend, edge]
+    logging: *logging
+
+  # Transcription des rapports vocaux (Whisper auto-hébergé) : réseau interne seulement, processeur plafonné pour
+  # laisser la main au site pendant une transcription. API : STT_PROVIDER=http, STT_HTTP_URL=http://stt:9000/v1/audio/transcriptions
+  stt:
+    image: ${GLOBUS_STT_IMAGE:-globus/stt}:${GLOBUS_VERSION:-4.0.0}
+    build:
+      context: ..
+      dockerfile: infra/docker/stt.Dockerfile
+    profiles: ["stt"]
+    restart: unless-stopped
+    cpus: 1.5
+    mem_limit: 3g
+    environment:
+      WHISPER_THREADS: "2"
+    networks: [backend]
     logging: *logging
 
 volumes:

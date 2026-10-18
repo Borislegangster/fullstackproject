@@ -1,0 +1,9 @@
+# Service de transcription GLOBUS (Whisper auto-hébergé, CPU).
+faster-whisper==1.2.1
+# faster-whisper 1.2.1 appelle av.open(metadata_errors=...), retiré de PyAV 16+.
+av>=14,<16
+ctranslate2>=4.6,<5
+fastapi>=0.143,<0.144
+starlette>=1.7,<2
+uvicorn>=0.32,<0.36
+python-multipart>=0.0.18

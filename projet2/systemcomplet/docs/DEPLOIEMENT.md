@@ -89,6 +89,7 @@ comptes internes, paramétrer l'entreprise (Paramètres), les intégrations, pui
 | Code | `/opt/globus/repo` (utilisateur `deploy`, extraction partielle de `projet2/systemcomplet`) |
 | Images | `ghcr.io/borislegangster/globus-api` et `globus-web`, étiquette = commit |
 | Antivirus | ClamAV (profil `antivirus`, `WITH_ANTIVIRUS=1` dans `infra/env/compose.env`, `CLAMAV_HOST=clamav` dans `api.env`) : chaque fichier déposé est analysé, les fichiers infectés sont refusés |
+| Transcription | service `stt` (profil `stt`, [`services/stt`](../services/stt), image `globus-stt`) : Whisper *small* (faster-whisper, int8) embarqué, réseau interne sans Internet, 1,5 processeur max, une transcription à la fois (~3× plus rapide que le temps réel sur le KVM 2) ; `WITH_STT=1` et `GLOBUS_STT_IMAGE` dans `compose.env`, `STT_PROVIDER=http`, `STT_HTTP_URL=http://stt:9000/v1/audio/transcriptions` dans `api.env` |
 | Stockage objet | AWS S3 `globus-engineering-storage-<compte>` (eu-west-3, pile CloudFormation `globus-storage`, [`infra/aws/globus-storage.yaml`](../infra/aws/globus-storage.yaml)) : fichiers privés + copies hors site des sauvegardes chiffrées ; versionné, chiffré, TLS obligatoire, journaux d'accès 90 j ; utilisateur IAM `globus-vps-storage` limité à ce bucket (clé secrète dans le coffre de l'API) |
 
 Préparation (une fois, en root) puis environnement (en `deploy`) :

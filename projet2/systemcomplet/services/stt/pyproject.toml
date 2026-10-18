@@ -1,0 +1,19 @@
+[project]
+name = "globus-stt"
+version = "4.0.0"
+description = "Service de transcription GLOBUS (Whisper auto-hébergé, faster-whisper)"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "N", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003", "BLE001"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B", "N", "E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

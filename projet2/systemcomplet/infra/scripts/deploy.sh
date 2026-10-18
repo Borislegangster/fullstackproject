@@ -5,6 +5,8 @@
 #   GLOBUS_RELEASE=<commit> ./infra/scripts/deploy.sh     version précise (déploiement continu, retour arrière)
 #   WITH_CALLS=0      sans relais TURN (appels limités aux réseaux permissifs)
 #   WITH_ANTIVIRUS=1  avec ClamAV (renseigner CLAMAV_HOST=clamav dans env/api.env)
+#   WITH_STT=1        avec la transcription Whisper auto-hébergée (STT_PROVIDER=http dans env/api.env)
+# Ces options peuvent être fixées dans env/compose.env (prises en compte par le déploiement continu).
 #
 # Mode registre (GLOBUS_API_IMAGE et GLOBUS_WEB_IMAGE dans env/compose.env) : les images construites et testées par
 # la CI sont tirées du registre (connexion : infra/scripts/ci-deploy.sh). La version en service est mémorisée dans
@@ -34,22 +36,32 @@ if [[ -n "${GLOBUS_RELEASE:-}" ]]; then
 fi
 API_IMAGE="${GLOBUS_API_IMAGE:-globus/api}"
 WEB_IMAGE="${GLOBUS_WEB_IMAGE:-globus/web}"
+STT_IMAGE="${GLOBUS_STT_IMAGE:-globus/stt}"
+WITH_STT="${WITH_STT:-0}"
 
 COMPOSE=(docker compose --env-file env/compose.env -f docker-compose.yml)
 PROFILES=(--profile tls)
 [[ "${WITH_CALLS:-1}" == "1" ]] && PROFILES+=(--profile calls)
 [[ "${WITH_ANTIVIRUS:-0}" == "1" ]] && PROFILES+=(--profile antivirus)
+[[ "$WITH_STT" == "1" ]] && PROFILES+=(--profile stt)
+IMAGES=("$API_IMAGE" "$WEB_IMAGE")
+[[ "$WITH_STT" == "1" ]] && IMAGES+=("$STT_IMAGE")
 
 if [[ $REGISTRY -eq 1 ]]; then
-  for img in "$API_IMAGE:$GLOBUS_VERSION" "$WEB_IMAGE:$GLOBUS_VERSION"; do
+  for repo in "${IMAGES[@]}"; do
+    img="$repo:$GLOBUS_VERSION"
     if ! docker image inspect "$img" >/dev/null 2>&1; then
       echo "▶ Téléchargement de $img"
       docker pull --quiet "$img" || { echo "Image $img introuvable : déployer une version publiée par la CI (GLOBUS_RELEASE=<commit>)." >&2; exit 1; }
     fi
   done
 else
-  echo "▶ Construction des images $API_IMAGE et $WEB_IMAGE ${GLOBUS_VERSION}"
-  "${COMPOSE[@]}" build migrate web
+  echo "▶ Construction des images ${IMAGES[*]} (${GLOBUS_VERSION})"
+  if [[ "$WITH_STT" == "1" ]]; then
+    "${COMPOSE[@]}" --profile stt build migrate web stt
+  else
+    "${COMPOSE[@]}" build migrate web
+  fi
 fi
 
 DOMAINS=(-d "${GLOBUS_DOMAIN}")
@@ -67,7 +79,9 @@ echo "▶ Migrations puis démarrage (version ${GLOBUS_VERSION})"
 # Compose ne recrée pas toujours un conteneur quand son image vient d'être reconstruite (api / worker utilisent
 # l'image construite par « migrate »). On compare l'image en service à l'image attendue : sinon l'ancien code
 # continuerait de tourner après des migrations appliquées.
-for pair in "api:$API_IMAGE" "worker:$API_IMAGE" "web:$WEB_IMAGE"; do
+PAIRS=("api:$API_IMAGE" "worker:$API_IMAGE" "web:$WEB_IMAGE")
+[[ "$WITH_STT" == "1" ]] && PAIRS+=("stt:$STT_IMAGE")
+for pair in "${PAIRS[@]}"; do
   svc="${pair%%:*}"
   NEW_IMAGE="$(docker image inspect --format '{{.Id}}' "${pair#*:}:${GLOBUS_VERSION}")"
   cid="$("${COMPOSE[@]}" ps -q "$svc")"
@@ -78,13 +92,23 @@ for pair in "api:$API_IMAGE" "worker:$API_IMAGE" "web:$WEB_IMAGE"; do
 done
 # nginx résout « api » / « web » au chargement de sa configuration : après la recréation d'un conteneur (nouvelle
 # adresse IP sur le réseau Docker), il faut recharger nginx, sinon il vise l'ancienne adresse (erreurs 502).
+# Le gabarit nginx n'est rendu qu'au démarrage du conteneur : configuration modifiée → redémarrage (1 à 2 s).
+NGINX_SUM="$(cat nginx/globus.conf.template nginx/snippets/*.conf | sha256sum | cut -d' ' -f1)"
 if [[ -n "$("${COMPOSE[@]}" ps -q nginx)" ]]; then
-  echo "▶ Rechargement de nginx (nouvelles adresses des services)"
-  "${COMPOSE[@]}" exec -T nginx nginx -s reload || "${COMPOSE[@]}" restart nginx
+  if [[ "$(cat env/.nginx.sha256 2>/dev/null || true)" != "$NGINX_SUM" ]]; then
+    echo "▶ Configuration nginx modifiée : redémarrage de nginx"
+    "${COMPOSE[@]}" restart nginx
+  else
+    echo "▶ Rechargement de nginx (nouvelles adresses des services)"
+    "${COMPOSE[@]}" exec -T nginx nginx -s reload || "${COMPOSE[@]}" restart nginx
+  fi
+  printf '%s\n' "$NGINX_SUM" >env/.nginx.sha256
 fi
 
 echo "▶ Vérification de l'état des services"
-for svc in api web nginx; do
+CHECKED=(api web nginx)
+[[ "$WITH_STT" == "1" ]] && CHECKED+=(stt)
+for svc in "${CHECKED[@]}"; do
   status="absent"
   for _ in $(seq 1 60); do
     cid="$("${COMPOSE[@]}" ps -q "$svc")"
@@ -103,7 +127,7 @@ if [[ $REGISTRY -eq 1 ]]; then
   sed -i "s/^GLOBUS_VERSION=.*/GLOBUS_VERSION=${GLOBUS_VERSION}/" env/compose.env
   printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$GLOBUS_VERSION" >>env/releases.log
   # Purge : version en service + deux précédentes conservées.
-  for repo in "$API_IMAGE" "$WEB_IMAGE"; do
+  for repo in "${IMAGES[@]}"; do
     { docker image ls "$repo" --format '{{.Tag}}' | grep -vx "$GLOBUS_VERSION" || true; } | tail -n +3 \
       | while read -r tag; do docker image rm "$repo:$tag" >/dev/null 2>&1 || true; done
   done

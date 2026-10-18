@@ -20,3 +20,5 @@ apps/web/public/wasm
 infra/env
 docs
 *.log
+services/stt/tests
+services/stt/.pytest_cache
