@@ -16,6 +16,7 @@ echo
 
 PY='
 import sys
+import app.models_registry  # noqa: F401 — tous les modèles (clés étrangères du coffre vers users)
 from app.core.database import SessionLocal
 from app.core.secrets import MANAGED_SECRETS, set_secret
 name = sys.argv[1]
