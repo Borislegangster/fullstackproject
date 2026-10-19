@@ -542,6 +542,13 @@ packages:
       relative: true
     source: path
     version: "1.0.0"
+  globus_e2e:
+    dependency: "direct dev"
+    description:
+      path: "../../packages/globus_e2e"
+      relative: true
+    source: path
+    version: "1.0.0"
   go_router:
     dependency: "direct main"
     description:

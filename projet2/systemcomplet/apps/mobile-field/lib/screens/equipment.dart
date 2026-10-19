@@ -205,7 +205,7 @@ class EquipmentDetailScreen extends StatelessWidget {
                     children: [
                       for (final a in e.list('assignments').take(5))
                         InfoRow(
-                          'du ${date(a['start_date'])}${a.has('end_date') ? ' au ${date(a['end_date'])}' : ''}',
+                          'Du ${date(a['start_date'])}${a.has('end_date') ? ' au ${date(a['end_date'])}' : ''}',
                           a.str('notes') ?? statusLabel(a.str('status') ?? 'active'),
                         ),
                     ],

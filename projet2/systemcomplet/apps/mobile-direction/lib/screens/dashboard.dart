@@ -455,7 +455,12 @@ class _Partners extends StatelessWidget {
       loading: const SizedBox.shrink(),
       builder: (context, data, _) {
         final rows = listOf(data);
-        if (rows.isEmpty) return const SizedBox.shrink();
+        if (rows.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Text('$title : aucune évaluation pour le moment.', style: Theme.of(context).textTheme.bodySmall),
+          );
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

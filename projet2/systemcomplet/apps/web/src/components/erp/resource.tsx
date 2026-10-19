@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/toast";
 import { api, download } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useList, type UseList } from "@/lib/hooks";
-import { fieldLabel } from "@/lib/labels";
+import { fieldLabel, isHiddenField } from "@/lib/labels";
 import { BODIES } from "@/generated/schemas";
 
 export type Row = Record<string, any>;
@@ -81,17 +81,15 @@ function paramName(endpoint: string): string | null {
   return m ? m[1] : null;
 }
 
-const HIDDEN_DETAIL = new Set(["id", "deleted_at", "version", "password_hash", "token_hash", "portal_token_hash", "public_token_hash", "secret", "ciphertext"]);
-
 export function RecordFields({ row, fields }: { row: Row; fields?: DetailField[] }) {
-  const base: DetailField[] = fields ?? Object.keys(row).filter((k) => !HIDDEN_DETAIL.has(k) && typeof row[k] !== "object").map((k) => ({ key: k }));
+  const base: DetailField[] = fields ?? Object.keys(row).filter((k) => !isHiddenField(k) && k !== "secret" && typeof row[k] !== "object").map((k) => ({ key: k }));
   const items = base
     .filter((f) => f.render || (row[f.key] !== null && row[f.key] !== undefined && row[f.key] !== ""))
     .map((f) => {
       const value = row[f.key];
       const fmt: CellFormat | undefined =
         f.format ??
-        (/_at$/.test(f.key) ? "datetime" : /(date|_on)$/.test(f.key) || /^(start|end)_/.test(f.key) ? "date" : /^(status|state)$/.test(f.key) ? "status" : typeof value === "boolean" ? "bool" : /(amount|total|price|cost|budget|balance|ceiling|salary)/.test(f.key) ? "money" : undefined);
+        (/_at$/.test(f.key) ? "datetime" : /(date|_on)$/.test(f.key) || /^(start|end)_/.test(f.key) ? "date" : /^(status|state)$/.test(f.key) ? "status" : typeof value === "boolean" ? "bool" : /(amount|total|price|cost|budget|balance|ceiling|salary)/.test(f.key) ? "money" : /(_pct|_rate|percent|probability)$/.test(f.key) ? "percent" : undefined);
       return { label: f.label ?? fieldLabel(f.key), value: f.render ? f.render(row) : formatCell(value, fmt ?? "option", row) };
     });
   return <DescriptionList items={items} />;

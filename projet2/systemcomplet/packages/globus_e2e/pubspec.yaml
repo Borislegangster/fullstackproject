@@ -1,0 +1,22 @@
+name: globus_e2e
+description: "GLOBUS ENGINEERING — robot de parcours des applications mobiles (tests de bout en bout contre l'API de développement)."
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+  flutter: ">=3.47.0"
+
+dependencies:
+  dio: ^5.11.1
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  globus_core:
+    path: ../globus_core
+  go_router: ^18.1.0
+  provider: ^6.1.5+1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0

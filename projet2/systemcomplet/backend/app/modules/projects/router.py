@@ -748,6 +748,18 @@ def _task(db: Session, access: Access, task_id: uuid.UUID, *perms: str) -> Task:
     return task
 
 
+@router.get("/tasks/{task_id}")
+def get_task(task_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)) -> dict[str, Any]:
+    """Fiche d'une tâche (application terrain : avancement, checklist, zone) ; mêmes règles que la liste."""
+    task = _task(db, access, task_id, "planning:read")
+    lots = access.allowed_lots(task.project_id)
+    if (lots is not None and task.lot_id is not None and task.lot_id not in lots) or (
+        access.p.is_client and not task.client_visible
+    ):
+        raise NotFound("Tâche introuvable")
+    return _task_out(task)
+
+
 @router.patch("/tasks/{task_id}")
 def update_task(
     task_id: uuid.UUID,

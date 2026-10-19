@@ -126,4 +126,14 @@ Identifiant : `com.globusengineering.direction`. Gestion du site web (CMS, SEO, 
   `test_driver/integration_test.dart`. Émulateur lent : construire d'abord en profil x64
   (`flutter build apk --profile --target=integration_test/… --target-platform android-x64`) puis
   `flutter drive --use-application-binary=…`.
+- **Robot de parcours** (`packages/globus_e2e`, `apps/*/test/e2e/crawl_test.dart`) : contre l'API de développement
+  (`python backend/scripts/dev_server_isolated.py --seed --port 8010`), ouvre chaque rubrique du menu, la première fiche
+  de chaque liste, chaque formulaire et chaque bouton (refermés sans validation) et relève erreurs, formulaires ou pages
+  indisponibles, libellés anglais ou techniques, valeurs brutes (codes, décimales, dates ISO), statuts non traduits,
+  exceptions et débordements. Sans appareil : requêtes synchrones (curl), captures `build/parcours/<appli>/` et
+  `rapport.txt`. Lancement : `flutter test test/e2e/crawl_test.dart --dart-define=GLOBUS_E2E_API=http://127.0.0.1:8010`
+  (ignoré sans cette variable). Les fonctions natives (caméra, micro, fichiers, vue 3D) restent à tester sur téléphone.
+- Contrôles statiques : `python packages/globus_core/tool/check_mobile_api.py` (chaque chemin appelé existe dans
+  l'API, en CI) ; `backend/tests/test_labels_coverage.py` (libellé français pour chaque champ et chaque valeur
+  d'énumération, web et mobile).
 - Backend : `backend/tests/test_mobile_apps.py` (jetons mobiles, passerelle web, push FCM, photos d'incident hors ligne).

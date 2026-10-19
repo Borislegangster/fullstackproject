@@ -341,11 +341,33 @@ class _Field extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 420,
-          child: ResourceListScreen(
-            config: incidents.copyWith(query: {'project_id': projectId}, filters: const []),
-          ),
+        // Incidents du chantier : liste simple dans la page (pas de liste défilante imbriquée).
+        ApiView(
+          path: '/qhse/incidents',
+          query: {'project_id': projectId, 'page_size': 10},
+          refreshable: false,
+          loading: const SizedBox.shrink(),
+          builder: (context, data, _) {
+            final rows = listOf(data);
+            return SectionCard(
+              title: 'Incidents QHSE',
+              padding: EdgeInsets.zero,
+              child: rows.isEmpty
+                  ? const Padding(padding: EdgeInsets.all(16), child: Text('Aucun incident déclaré.'))
+                  : Column(
+                      children: [
+                        for (final r in rows)
+                          ListTile(
+                            leading: Icon(incidents.icon, color: GlobusColors.primary),
+                            title: Text(incidents.itemTitle(r), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            subtitle: (incidents.itemSubtitle?.call(r) ?? '').isEmpty ? null : Text(incidents.itemSubtitle!(r)!),
+                            trailing: r.has('status') ? StatusBadge(r.s('status')) : null,
+                            onTap: () => openResource(context, incidents, r),
+                          ),
+                      ],
+                    ),
+            );
+          },
         ),
       ],
     );

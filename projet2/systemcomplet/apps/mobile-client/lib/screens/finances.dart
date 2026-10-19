@@ -423,10 +423,17 @@ class PaySheet extends StatefulWidget {
 class _PaySheetState extends State<PaySheet> {
   int _choice = 0;
   final _amount = TextEditingController();
-  late final _phone = TextEditingController(text: context.auth.user?.phone ?? '');
+  // Initialisé à l'ouverture (et non à la première lecture) : la fermeture sans saisie ne relit jamais le contexte.
+  late final TextEditingController _phone;
   final _key = newKey();
   bool _busy = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _phone = TextEditingController(text: context.auth.user?.phone ?? '');
+  }
 
   @override
   void dispose() {

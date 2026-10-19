@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.access import Access, get_access
+from app.core.config import settings
 from app.core.crud import make_crud_router, serialize
 from app.core.database import get_db
 from app.core.downloads import file_response
@@ -364,10 +365,14 @@ def create_funds_call(
     return jsonable(serialize(call))
 
 
+class FundsCallIssueIn(BaseModel):
+    tax_rate: Decimal | None = Field(default=None, ge=0, le=100, description="Taux de TVA (%) ; défaut : taux légal")
+
+
 @router.post("/funds-calls/{call_id}/issue")
 def issue_funds_call(
     call_id: uuid.UUID,
-    data: dict[str, Any] | None = None,
+    data: FundsCallIssueIn,
     db: Session = Depends(get_db),
     access: Access = Depends(get_access),
 ) -> dict[str, Any]:
@@ -376,7 +381,10 @@ def issue_funds_call(
         raise NotFound("Appel de fonds introuvable")
     _require_project_finance(access, call.project_id, "billing:write")
     service.issue_funds_call(
-        db, call, user_id=access.p.id, tax_rate=Decimal(str((data or {}).get("tax_rate", "19.25")))
+        db,
+        call,
+        user_id=access.p.id,
+        tax_rate=data.tax_rate if data.tax_rate is not None else Decimal(str(settings.VAT_RATE)),
     )
     db.commit()
     return jsonable(serialize(call))

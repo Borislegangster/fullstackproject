@@ -68,6 +68,8 @@ jobs:
           python scripts/export_openapi.py
           node ../apps/web/scripts/gen-schemas.mjs
           git diff --exit-code -- ../apps/web/src/generated/schemas.ts
+      - name: Applications mobiles — chemins appelés présents dans l'API
+        run: python ../packages/globus_core/tool/check_mobile_api.py
 
   web:
     name: Web — types, lint, anti-mock, liens, build

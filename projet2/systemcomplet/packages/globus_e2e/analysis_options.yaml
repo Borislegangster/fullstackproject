@@ -1,0 +1,21 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-raw-types: true
+  exclude:
+    - build/**
+    - lib/src/generated/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - cancel_subscriptions
+    - directives_ordering
+    - prefer_final_locals
+    - prefer_single_quotes
+    - unawaited_futures
+
+formatter:
+  page_width: 160
+  trailing_commas: preserve

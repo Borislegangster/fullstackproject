@@ -176,7 +176,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   GProgress(value: t.d('progress_pct'), tone: Tone.accent, height: 10),
                   const SizedBox(height: 10),
                   InfoRow('Prévu', t.has('start_planned') ? '${date(t['start_planned'])} → ${date(t['end_planned'])}' : 'Non planifiée'),
-                  InfoRow('Réel', t.has('start_actual') ? '${date(t['start_actual'])} → ${date(t['end_actual'])}' : 'Non démarrée'),
+                  InfoRow('Réel', _actual(t)),
                   const SizedBox(height: 10),
                   if (context.can('site:report') || context.can('planning:write'))
                     FilledButton.icon(
@@ -358,4 +358,14 @@ class FieldPlanningScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Dates réelles d'une tâche, cohérentes avec son avancement (tâche terminée sans dates saisies : « Terminée »).
+String _actual(J t) {
+  final progress = toDouble(t['progress_pct']);
+  if (t.has('start_actual')) {
+    return '${date(t['start_actual'])} → ${t.has('end_actual') ? date(t['end_actual']) : 'en cours'}';
+  }
+  if (t.s('status') == 'done' || progress >= 100) return 'Terminée';
+  return progress > 0 ? 'En cours' : 'Non démarrée';
 }

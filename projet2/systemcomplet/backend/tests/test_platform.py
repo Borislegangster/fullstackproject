@@ -255,6 +255,10 @@ def test_offline_sync_conflicts_and_idempotence(client: Any, db: Any) -> None:
     tasks = client.get(f"{API}/projects/{project['id']}/tasks", headers=ah).json()
     current = next(t for t in (tasks["items"] if isinstance(tasks, dict) else tasks) if t["id"] == task["id"])
     assert current["progress_pct"] == "40.00", "le serveur n'a pas été écrasé"
+    # Fiche de la tâche (application terrain) : même contenu que la ligne de liste.
+    detail = client.get(f"{API}/tasks/{task['id']}", headers=cch)
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["id"] == task["id"] and detail.json()["progress_pct"] == "40.00"
     conflicts = client.get(f"{API}/sync/conflicts", headers=cch).json()
     resolved = client.post(
         f"{API}/sync/conflicts/{conflicts[0]['id']}/resolve",

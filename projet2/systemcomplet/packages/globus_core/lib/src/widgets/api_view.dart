@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../api/api_exception.dart' show reportUnexpected;
 import '../context.dart';
 import 'states.dart';
 
@@ -115,7 +116,8 @@ class _ApiViewState extends State<ApiView> {
         _error = null;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      reportUnexpected(e, st, 'chargement de $path');
       if (!mounted || seq != _seq) return;
       setState(() {
         // Rechargement silencieux en échec : on garde les données affichées.

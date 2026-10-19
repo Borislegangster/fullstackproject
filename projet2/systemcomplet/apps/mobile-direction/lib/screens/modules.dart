@@ -189,8 +189,17 @@ final subcontractors = ResourceConfig(
     ResourceFilter('status', 'Statut', _opts(['prospect', 'qualified', 'approved', 'suspended', 'blacklisted'])),
   ],
   detailPath: (r) => '/subcontractors/${r.s('id')}',
-  create: const ResourceCreate(endpoint: 'POST /subcontractors', label: 'Nouveau sous-traitant', perms: ['subcontracting:write']),
-  update: const ResourceCreate(endpoint: 'PATCH /subcontractors/{subcontractor_id}', perms: ['subcontracting:write']),
+  create: ResourceCreate(
+    endpoint: 'POST /subcontractors',
+    label: 'Nouveau sous-traitant',
+    perms: const ['subcontracting:write'],
+    fields: {'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions())},
+  ),
+  update: ResourceCreate(
+    endpoint: 'PATCH /subcontractors/{subcontractor_id}',
+    perms: const ['subcontracting:write'],
+    fields: {'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions())},
+  ),
   actions: [
     ResourceAction(label: 'Changer le statut', endpoint: 'POST /subcontractors/{subcontractor_id}/status', perms: const ['subcontracting:write']),
     ResourceAction(
@@ -476,7 +485,6 @@ final paymentPlans = ResourceConfig(
   filters: [
     ResourceFilter('status', 'Statut', _opts(['requested', 'proposed', 'active', 'completed', 'defaulted', 'rejected', 'cancelled'])),
   ],
-  detailPath: (r) => '/payment-plans/${r.s('id')}',
   actions: [
     ResourceAction(
       label: 'Proposer au client',
@@ -519,7 +527,23 @@ final leads = ResourceConfig(
     const ResourceFilter('temperature', 'Chaleur', [('hot', 'Chaud'), ('warm', 'Tiède'), ('cold', 'Froid')]),
   ],
   detailPath: (r) => '/crm/leads/${r.s('id')}',
-  create: const ResourceCreate(endpoint: 'POST /crm/leads', label: 'Nouveau lead', perms: ['crm:write']),
+  create: ResourceCreate(
+    endpoint: 'POST /crm/leads',
+    label: 'Nouveau lead',
+    perms: const ['crm:write'],
+    order: const ['first_name', 'last_name', 'company', 'phone', 'email', 'whatsapp', 'source', 'universe', 'city', 'country'],
+    fields: {
+      'source': FieldConfig(
+        label: 'Source',
+        options: _opts(const ['phone', 'whatsapp', 'email', 'salon', 'referral', 'walk_in', 'social', 'website', 'other']),
+      ),
+      'universe': FieldConfig(label: 'Univers', options: _opts(const ['HOME', 'BUSINESS', 'PREMIUM', 'DIASPORA', 'ENGINEERING'])),
+      'timeline': FieldConfig(label: 'Échéance du projet', options: _opts(const ['immediate', '3_months', '6_months', '12_months', 'undetermined'])),
+      'urgency': FieldConfig(label: 'Urgence', options: _opts(const ['normal', 'urgent'])),
+      'preferred_channel': FieldConfig(label: 'Canal préféré', options: _opts(const ['phone', 'whatsapp', 'email'])),
+      'message': const FieldConfig(label: 'Besoin exprimé', multiline: true),
+    },
+  ),
   update: const ResourceCreate(endpoint: 'PATCH /crm/leads/{lead_id}', perms: ['crm:write']),
   actions: [
     ResourceAction(
@@ -546,10 +570,25 @@ final opportunities = ResourceConfig(
   itemSubtitle: (r) => [optionLabel(r.str('stage')), if (r.has('expected_close_date')) 'signature ${date(r['expected_close_date'])}'].join(' · '),
   itemTrailing: (r) => r.has('amount') ? money(r['amount']) : null,
   itemBadge: (r) => r.str('stage'),
+  detailPath: (r) => '/crm/opportunities/${r.s('id')}',
   create: const ResourceCreate(endpoint: 'POST /crm/opportunities', label: 'Nouvelle opportunité', perms: ['crm:write']),
   update: const ResourceCreate(endpoint: 'PATCH /crm/opportunities/{item_id}', perms: ['crm:write']),
   actions: [
-    ResourceAction(label: 'Changer d\'étape', endpoint: 'POST /crm/opportunities/{opp_id}/stage', perms: const ['crm:write']),
+    ResourceAction(
+      label: 'Changer d\'étape',
+      endpoint: 'POST /crm/opportunities/{opp_id}/stage',
+      perms: const ['crm:write'],
+      initial: (r) => {'stage': r.str('stage')},
+      fields: {
+        'stage': FieldConfig(label: 'Étape', options: _opts(const ['qualification', 'discovery', 'proposal', 'negotiation', 'won', 'lost'])),
+        'lost_reason': FieldConfig(
+          label: 'Motif de perte',
+          multiline: true,
+          visibleIf: (v) => v['stage'] == 'lost',
+          requiredIf: (v) => v['stage'] == 'lost',
+        ),
+      },
+    ),
   ],
 );
 
@@ -624,6 +663,7 @@ final contacts = ResourceConfig(
   itemTitle: (r) => [r.str('first_name'), r.str('last_name')].whereType<String>().join(' ').ifEmpty(r.s('email', '—')),
   itemSubtitle: (r) => [?r.str('company'), ?r.str('phone'), ?r.str('email')].join(' · '),
   itemBadge: (_) => null,
+  detailPath: (r) => '/crm/contacts/${r.s('id')}',
   create: const ResourceCreate(endpoint: 'POST /crm/contacts', label: 'Nouveau contact', perms: ['crm:write']),
   update: const ResourceCreate(endpoint: 'PATCH /crm/contacts/{item_id}', perms: ['crm:write']),
 );
@@ -651,8 +691,17 @@ final employees = ResourceConfig(
     ResourceFilter('status', 'Statut', _opts(['active', 'suspended', 'left'])),
   ],
   detailPath: (r) => '/hr/employees/${r.s('id')}',
-  create: const ResourceCreate(endpoint: 'POST /hr/employees', label: 'Nouvel employé', perms: ['hr:write']),
-  update: const ResourceCreate(endpoint: 'PATCH /hr/employees/{employee_id}', perms: ['hr:write']),
+  create: ResourceCreate(
+    endpoint: 'POST /hr/employees',
+    label: 'Nouvel employé',
+    perms: const ['hr:write'],
+    fields: {'trade': FieldConfig(label: 'Métier', options: tradeOptions())},
+  ),
+  update: ResourceCreate(
+    endpoint: 'PATCH /hr/employees/{employee_id}',
+    perms: const ['hr:write'],
+    fields: {'trade': FieldConfig(label: 'Métier', options: tradeOptions())},
+  ),
   actions: [
     ResourceAction(
       label: 'Fin de contrat',
@@ -855,7 +904,8 @@ final documents = ResourceConfig(
   path: '/documents',
   icon: Icons.folder_open_outlined,
   itemTitle: rowTitle,
-  itemSubtitle: (r) => [optionLabel(r.str('doc_type')), if (r.objOrNull('current_version') != null) 'v${r.obj('current_version').s('label')}'].join(' · '),
+  itemSubtitle: (r) =>
+      [optionLabel(r.str('doc_type')), if (r.objOrNull('current_version') != null) versionLabel(r.obj('current_version').s('label'))].join(' · '),
   itemBadge: (r) => r.objOrNull('current_version')?.str('status'),
   filters: [
     ResourceFilter('status', 'Version', _opts(['draft', 'in_review', 'validated', 'published', 'obsolete'])),

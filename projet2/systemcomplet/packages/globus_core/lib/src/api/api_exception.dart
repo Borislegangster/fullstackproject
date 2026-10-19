@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../format/labels.dart';
 
 /// Erreur normalisée de l'API GLOBUS (`{"error": {code, message, details, correlation_id}}`).
@@ -92,4 +94,13 @@ String errorMessage(Object? error) {
   if (error is StateError) return error.message;
   if (error is FormatException) return 'Réponse du serveur illisible.';
   return 'Une erreur est survenue';
+}
+
+/// Signale une erreur inattendue côté application (hors erreur de l'API : donnée mal typée, bogue d'affichage) :
+/// journal de l'application et tests ; l'utilisateur voit un message générique.
+void reportUnexpected(Object error, StackTrace stack, String context) {
+  if (error is ApiException) return;
+  FlutterError.reportError(
+    FlutterErrorDetails(exception: error, stack: stack, library: 'globus_core', context: ErrorDescription(context)),
+  );
 }

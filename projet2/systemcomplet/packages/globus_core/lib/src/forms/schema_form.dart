@@ -11,6 +11,7 @@ import '../features/agenda/agenda.dart' show pickDateTime;
 import '../files/files.dart';
 import '../format/format.dart';
 import '../format/labels.dart';
+import '../generated/labels.g.dart' show kOptionLabels, kStatusLabels;
 import '../widgets/dialogs.dart';
 import '../widgets/primitives.dart';
 import '../widgets/ref_picker.dart';
@@ -29,6 +30,8 @@ class FieldConfig {
     this.multiline,
     this.password = false,
     this.fields = const {},
+    this.visibleIf,
+    this.requiredIf,
   });
 
   final String? label;
@@ -46,7 +49,16 @@ class FieldConfig {
 
   /// Réglages des sous-champs (lignes d'une liste d'objets).
   final Map<String, FieldConfig> fields;
+
+  /// Champ conditionnel (ex. motif de perte seulement pour l'étape « Perdu ») : masqué, non validé et non envoyé tant
+  /// que la condition est fausse.
+  final bool Function(Values values)? visibleIf;
+
+  /// Obligatoire selon les autres valeurs (en plus des champs obligatoires du schéma).
+  final bool Function(Values values)? requiredIf;
 }
+
+bool _shown(FieldConfig? cfg, Values values) => cfg?.visibleIf?.call(values) ?? true;
 
 typedef Values = Map<String, dynamic>;
 
@@ -152,10 +164,11 @@ Map<String, String> validateValues(String schema, Values values, Map<String, Fie
   for (final def in schemaOf(schema) ?? const <FieldDef>[]) {
     final cfg = configs[def.name];
     if ((cfg?.hidden ?? false) || !values.containsKey(def.name) || def.kind == 'boolean') continue;
-    if (_technical(def, cfg)) continue;
+    if (_technical(def, cfg) || !_shown(cfg, values)) continue;
     final v = values[def.name];
     final key = '$prefix${def.name}';
-    if (def.required && _isEmpty(v) && def.kind != 'objects') {
+    final required = def.required || (cfg?.requiredIf?.call(values) ?? false);
+    if (required && _isEmpty(v) && def.kind != 'objects') {
       errors[key] = 'Champ obligatoire';
       continue;
     }
@@ -256,6 +269,7 @@ class _SchemaFormState extends State<SchemaForm> {
       if (cfg?.hidden ?? false) return false;
       if (widget.only != null && !widget.only!.contains(d.name)) return false;
       if (widget.exclude.contains(d.name)) return false;
+      if (!_shown(cfg, {..._values, ...widget.fixed})) return false;
       return !_technical(d, cfg);
     }).toList();
     final order = widget.order;
@@ -270,6 +284,10 @@ class _SchemaFormState extends State<SchemaForm> {
 
   Future<void> _submit() async {
     final values = {..._values, ...widget.fixed};
+    // Champs conditionnels masqués : ni validés ni envoyés.
+    for (final def in schemaOf(_schema) ?? const <FieldDef>[]) {
+      if (!_shown(_configs[def.name], values)) values.remove(def.name);
+    }
     final errors = validateValues(_schema, values, _configs);
     setState(() {
       _errors = errors;
@@ -390,7 +408,8 @@ class SchemaControl extends StatelessWidget {
   final Map<String, String> errors;
   final String errorPrefix;
 
-  String get _label => '${cfg?.label ?? fieldLabel(def.name)}${def.required && def.kind != 'boolean' ? ' *' : ''}';
+  String get _label =>
+      '${cfg?.label ?? fieldLabel(def.name)}${(def.required || (cfg?.requiredIf?.call(values) ?? false)) && def.kind != 'boolean' ? ' *' : ''}';
 
   InputDecoration _decoration(BuildContext context, {Widget? suffix}) =>
       InputDecoration(labelText: _label, helperText: cfg?.help ?? def.help, helperMaxLines: 3, errorText: error, suffixIcon: suffix);
@@ -645,7 +664,7 @@ class _ListControlState extends State<_ListControl> {
               children: [
                 for (final (i, item) in _items.indexed)
                   InputChip(
-                    label: Text('$item'),
+                    label: Text(RegExp(r'^[a-z][a-z0-9_]*$').hasMatch('$item') ? optionLabel('$item') : '$item'),
                     onDeleted: widget.readOnly ? null : () => c.onChanged([..._items]..removeAt(i)),
                   ),
               ],
@@ -879,13 +898,106 @@ String displayValue(String key, Object? v) {
   }
   if (v is Map) return J.of(v).str('name') ?? J.of(v).str('title') ?? J.of(v).str('legal_name') ?? J.of(v).str('full_name') ?? '…';
   final s = v.toString();
-  if (RegExp(r'(_at|_on)$').hasMatch(key) && parseDate(s) != null && s.contains('T')) return dateTime(s);
-  if (RegExp(r'(date|_on|_until|_from|_to)$').hasMatch(key) && parseDate(s) != null) return date(s);
-  if (RegExp(r'(amount|price|cost|total|budget|value|salary|revenue|margin|paid|due|balance)(_ttc|_ht|_xaf)?$').hasMatch(key) && num.tryParse(s) != null) {
-    return money(s);
+  // Dates et horodatages ISO, quel que soit le nom du champ (échéance, arrivée estimée, date limite…).
+  if (RegExp(r'^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}').hasMatch(s) && parseDate(s) != null) return dateTime(s);
+  if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(s) && parseDate(s) != null) return date(s);
+  if (num.tryParse(s) != null) {
+    final tokens = key.split('_');
+    if (tokens.any(_percentTokens.contains)) return percent(s, 1);
+    if (tokens.any(_moneyTokens.contains) && !tokens.any(_notMoneyTokens.contains)) return money(s);
+    if (s.contains('.')) return number(s, 2);
+    return s;
   }
-  if (RegExp(r'(_pct|_rate|percent)$').hasMatch(key) && num.tryParse(s) != null) return percent(s, 1);
   if (key == 'status' || key.endsWith('_status')) return statusLabel(s);
-  if (RegExp(r'^[a-z_]+$').hasMatch(s) && s.contains('_')) return optionLabel(s);
+  // Codes d'énumération (étape, source, chaleur…) : libellé français dès qu'il existe, même sans « _ ».
+  if (RegExp(r'^[a-z][a-z0-9_\-]*$').hasMatch(s) && (s.contains('_') || kOptionLabels.containsKey(s) || kStatusLabels.containsKey(s))) {
+    return kStatusLabels[s] ?? optionLabel(s);
+  }
   return s;
 }
+
+const _percentTokens = {'pct', 'percent', 'probability', 'rate'};
+const _moneyTokens = {
+  'amount',
+  'price',
+  'cost',
+  'total',
+  'subtotal',
+  'budget',
+  'salary',
+  'revenue',
+  'margin',
+  'paid',
+  'due',
+  'balance',
+  'penalty',
+  'penalties',
+  'advance',
+  'retention',
+  'retained',
+  'deposit',
+  'fee',
+  'fees',
+  'capital',
+  'income',
+  'debt',
+  'debts',
+  'value',
+  'ceiling',
+  'gross',
+  'net',
+  'credited',
+  'frozen',
+  'released',
+  'refunded',
+  'held',
+  'charges',
+  'recovered',
+  'payment',
+  'loan',
+  'turnover',
+  'cash',
+  'receivable',
+  'payable',
+  'collected',
+  'invoiced',
+  'overdue',
+};
+const _notMoneyTokens = {
+  'score',
+  'count',
+  'days',
+  'hours',
+  'qty',
+  'quantity',
+  'number',
+  'weight',
+  'year',
+  'years',
+  'month',
+  'months',
+  'index',
+  'rank',
+  'level',
+  'version',
+  'size',
+  'bytes',
+  'views',
+  'clicks',
+  'mm',
+  'kwh',
+  'm2',
+  'height',
+  'width',
+  'length',
+  'seconds',
+  'ms',
+  's',
+  'dimension',
+  'step',
+  'order',
+  'seq',
+  'duration',
+  'delay',
+  'lag',
+};

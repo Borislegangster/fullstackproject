@@ -91,7 +91,8 @@ class _AgendaScreenState extends State<AgendaScreen> {
         _cachedAt = res.cachedAt;
         _error = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      reportUnexpected(e, st, 'agenda');
       if (mounted) setState(() => _error = e);
     }
   }
@@ -365,7 +366,8 @@ class _EventSheetState extends State<EventSheet> {
     try {
       final res = await context.api.get('/agenda/events/${widget.eventId}');
       if (mounted) setState(() => _e = J.of(res));
-    } catch (e) {
+    } catch (e, st) {
+      reportUnexpected(e, st, "événement de l'agenda");
       if (mounted) setState(() => _error = e);
     }
   }

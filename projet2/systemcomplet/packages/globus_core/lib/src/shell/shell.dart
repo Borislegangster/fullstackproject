@@ -134,13 +134,27 @@ GoRouter buildGlobusRouter({
     if (link == null) return;
     services.push.openLink.value = null;
     final target = AppLinks(base: base, isKnown: (_) => true).resolve(link, services.config.origin);
-    if (target != null) unawaited(router.push(target));
+    // Écran absent de l'application (fiche non disponible sur mobile) : rubrique parente la plus proche.
+    final route = target == null ? null : closestRoute(pages, target, base);
+    if (route != null) unawaited(router.push(route));
   });
   services.api.mfaRequired.addListener(() {
     mfaLock = true;
     router.go('$base/compte?mfa=obligatoire');
   });
   return router;
+}
+
+/// Route de l'application la plus proche d'un lien : le lien lui-même s'il est connu, sinon la rubrique parente
+/// (« /erp/crm/opportunites/123 » → « /erp/crm/opportunites »), sinon aucune.
+String? closestRoute(List<AppPage> pages, String target, String base) {
+  if (matchPage(pages, target) != null) return target;
+  var path = target.split('?').first;
+  while (path.contains('/') && path.length > base.length) {
+    path = path.substring(0, path.lastIndexOf('/'));
+    if (path.length >= base.length && matchPage(pages, path) != null) return path;
+  }
+  return null;
 }
 
 /// Correspondance chemin courant → page déclarée (motifs go_router `:param`).

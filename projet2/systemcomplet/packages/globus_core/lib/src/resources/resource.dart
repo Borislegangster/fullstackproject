@@ -374,11 +374,8 @@ Future<void> openResource(BuildContext context, ResourceConfig config, J row) as
   );
 }
 
-const _hiddenKeys = {'id', 'version', 'deleted_at', 'portal_token_hash', 'qr_token', 'badge_token', 'password_hash', 'settings', 'metadata', 'extra'};
-
 bool _readable(String key, Object? v) {
-  if (_hiddenKeys.contains(key)) return false;
-  if (key.endsWith('_id') || key.endsWith('_ids') || key.endsWith('_hash') || key.endsWith('_token')) return false;
+  if (isHiddenField(key)) return false;
   if (v is Map) return J.of(v).has('name') || J.of(v).has('title') || J.of(v).has('legal_name') || J.of(v).has('full_name');
   if (v is List) return v.every((x) => x is! Map) || v.isEmpty;
   return true;

@@ -48,6 +48,9 @@ try {
     "",
     `const Map<String, String> kFieldWords = ${dartMap(extractWords(readFileSync(join(web, "lib/labels.ts"), "utf8")))};`,
     "",
+    "/// Champs techniques jamais affichés dans une fiche (miroir de HIDDEN_FIELDS du web).",
+    `const Set<String> kHiddenFields = {${l.HIDDEN_FIELDS.map(dartString).join(", ")}};`,
+    "",
     "/// Corps de métier par famille (miroir de backend/app/modules/subcontracting/trades.py).",
     `const List<({String family, List<String> codes})> kPersonTrades = [${l.PERSON_TRADES.map(
       (g) => `(family: ${dartString(g.family)}, codes: [${g.codes.map(dartString).join(", ")}])`,

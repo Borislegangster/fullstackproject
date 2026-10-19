@@ -576,21 +576,50 @@ def update_lead(
     return _lead_out(lead)
 
 
+class LeadManualIn(BaseModel):
+    """Saisie manuelle d'un lead (téléphone, salon, recommandation) : un e-mail ou un téléphone est requis."""
+
+    source: str = Field(
+        default="phone",
+        pattern="^(website|describe_project|estimator|phone|whatsapp|email|salon|referral|walk_in|chatbot|social|other)$",
+    )
+    first_name: str = Field(min_length=1, max_length=120)
+    last_name: str | None = Field(default=None, max_length=120)
+    company: str | None = Field(default=None, max_length=200)
+    email: str | None = Field(default=None, max_length=254)
+    phone: str | None = Field(default=None, max_length=40)
+    whatsapp: str | None = Field(default=None, max_length=40)
+    country: str | None = Field(default=None, max_length=80)
+    city: str | None = Field(default=None, max_length=120)
+    universe: str | None = Field(default=None, pattern="^(HOME|BUSINESS|PREMIUM|DIASPORA|ENGINEERING)$")
+    project_type: str | None = Field(default=None, max_length=120)
+    project_location: str | None = Field(default=None, max_length=200)
+    budget_min: Decimal | None = Field(default=None, ge=0)
+    budget_max: Decimal | None = Field(default=None, ge=0)
+    timeline: str | None = Field(default=None, pattern="^(immediate|3_months|6_months|12_months|undetermined)$")
+    urgency: str = Field(default="normal", pattern="^(normal|urgent)$")
+    preferred_channel: str | None = Field(default=None, pattern="^(email|phone|whatsapp)$")
+    message: str | None = Field(default=None, max_length=5000)
+    marketing_consent: bool = False
+    whatsapp_consent: bool = False
+
+
 @router.post("/leads", status_code=201)
 def create_lead_manual(
-    data: dict[str, Any], principal: Principal = Depends(require("crm:write")), db: Session = Depends(get_db)
+    data: LeadManualIn, principal: Principal = Depends(require("crm:write")), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     """Saisie manuelle (téléphone, salon, recommandation) — consentement de contact attesté par le commercial."""
-    source = data.pop("source", "phone")
+    values = data.model_dump(exclude_none=True)
+    source = values.pop("source", "phone")
     lead = service.create_lead(
         db,
-        data=data,
+        data=values,
         source=source,
         form_key=None,
         consents={
             "contact": True,
-            "marketing": bool(data.get("marketing_consent")),
-            "whatsapp": bool(data.get("whatsapp_consent")),
+            "marketing": data.marketing_consent,
+            "whatsapp": data.whatsapp_consent,
         },
         ip=None,
         user_agent=None,
@@ -814,11 +843,10 @@ def opportunity_stage(
     opp.probability = {"qualification": 20, "discovery": 35, "proposal": 50, "negotiation": 75, "won": 100, "lost": 0}[
         data.stage
     ]
-    if data.stage == "won":
-        opp.won_at = utcnow()
-    if data.stage == "lost":
-        opp.lost_at = utcnow()
-        opp.lost_reason = data.lost_reason
+    # Retour à une étape en cours : les dates de gain / perte et le motif de perte ne s'appliquent plus.
+    opp.won_at = utcnow() if data.stage == "won" else None
+    opp.lost_at = utcnow() if data.stage == "lost" else None
+    opp.lost_reason = data.lost_reason if data.stage == "lost" else None
     audit.record(
         db,
         family="business",
@@ -992,10 +1020,14 @@ def revise_quote(
     return _quote_out(new)
 
 
+class QuoteRejectIn(BaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
 @router.post("/quotes/{quote_id}/reject")
 def reject_quote(
     quote_id: uuid.UUID,
-    data: dict[str, str],
+    data: QuoteRejectIn,
     principal: Principal = Depends(require("crm:write")),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
@@ -1004,7 +1036,7 @@ def reject_quote(
         raise BusinessRuleError("Statut incompatible")
     quote.status = "rejected"
     quote.rejected_at = utcnow()
-    quote.rejected_reason = data.get("reason")
+    quote.rejected_reason = data.reason
     audit.record(
         db,
         family="business",

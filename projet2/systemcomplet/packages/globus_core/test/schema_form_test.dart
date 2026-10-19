@@ -84,4 +84,54 @@ void main() {
     expect(sent?['start_date'], '2026-11-02');
     expect(result, isNotNull);
   });
+
+  testWidgets('champ conditionnel : motif de perte seulement pour l\'étape « Perdu », alors obligatoire', (tester) async {
+    final fake = FakeApi();
+    Map<String, dynamic>? sent;
+    fake.on('POST', '/crm/opportunities/o1/stage', (r) {
+      sent = (r.body! as Map).cast<String, dynamic>();
+      return (200, {'id': 'o1'});
+    });
+    Future<void> pumpForm(String stage) async {
+      await tester.pumpWidget(
+        Provider<ApiClient>.value(
+          value: fakeClient(fake),
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: SchemaForm(
+                  key: ValueKey(stage),
+                  endpoint: 'POST /crm/opportunities/{opp_id}/stage',
+                  params: const {'opp_id': 'o1'},
+                  initial: {'stage': stage},
+                  fields: {
+                    'lost_reason': FieldConfig(
+                      label: 'Motif de perte',
+                      visibleIf: (v) => v['stage'] == 'lost',
+                      requiredIf: (v) => v['stage'] == 'lost',
+                    ),
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await pumpForm('won');
+    expect(find.textContaining('Motif de perte'), findsNothing, reason: 'masqué pour « Gagné »');
+    await tester.tap(find.text('Enregistrer'));
+    await tester.pumpAndSettle();
+    expect(sent, {'stage': 'won'}, reason: 'motif masqué jamais envoyé');
+
+    sent = null;
+    await pumpForm('lost');
+    expect(find.text('Motif de perte *'), findsOneWidget, reason: 'affiché et obligatoire pour « Perdu »');
+    await tester.tap(find.text('Enregistrer'));
+    await tester.pumpAndSettle();
+    expect(sent, isNull);
+    expect(find.text('Champ obligatoire'), findsOneWidget);
+  });
 }

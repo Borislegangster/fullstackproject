@@ -1,6 +1,10 @@
 import '../generated/labels.g.dart';
 
-export '../generated/labels.g.dart' show kPersonTrades;
+export '../generated/labels.g.dart' show kHiddenFields, kPersonTrades;
+
+/// Champ affichable dans une fiche générique (miroir de isHiddenField du web) : ni identifiant, ni empreinte, ni
+/// jeton, ni donnée technique.
+bool isHiddenField(String name) => kHiddenFields.contains(name) || RegExp(r'(_id|_ids|_hash|_token)$').hasMatch(name);
 
 /// Libellé français d'un champ de l'API (miroir de `fieldLabel` du web).
 String fieldLabel(String name) {
@@ -44,3 +48,20 @@ List<({String value, String label})> personTradeOptions() => [
   for (final g in kPersonTrades)
     for (final code in g.codes) (value: code, label: optionLabel(code)),
 ];
+
+/// Corps de métier de la sous-traitance (sans les métiers de chantier du personnel), en options (valeur, libellé).
+List<(String, String)> subcontractingTradeOptions() => [
+  for (final g in kPersonTrades)
+    if (g.family != 'Métiers de chantier')
+      for (final code in g.codes) (code, optionLabel(code)),
+];
+
+/// Tous les métiers (personnel et sous-traitance), en options (valeur, libellé).
+List<(String, String)> tradeOptions() => [for (final o in personTradeOptions()) (o.value, o.label)];
+
+/// Version d'un document (« V1.0 », « 2 » → « v2 ») sans doublon de préfixe.
+String versionLabel(String? label) {
+  final l = (label ?? '').trim();
+  if (l.isEmpty) return '';
+  return RegExp(r'^[vV]').hasMatch(l) ? l : 'v$l';
+}

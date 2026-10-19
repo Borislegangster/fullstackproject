@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../api/api_exception.dart' show reportUnexpected;
 import '../api/json.dart';
 import '../context.dart';
 import 'states.dart';
@@ -127,7 +128,8 @@ class _PagedListViewState extends State<PagedListView> {
         _cachedAt = res.cachedAt;
         _error = null;
       });
-    } catch (e) {
+    } catch (e, st) {
+      reportUnexpected(e, st, 'liste ${widget.path}');
       if (!mounted || seq != _seq) return;
       setState(() => _error = e);
     } finally {
