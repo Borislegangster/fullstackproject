@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import Response
@@ -390,6 +390,120 @@ def issue_funds_call(
     return jsonable(serialize(call))
 
 
+@router.get("/funds-calls/{call_id}")
+def get_funds_call(
+    call_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    call = db.get(FundsCall, call_id)
+    if call is None:
+        raise NotFound("Appel de fonds introuvable")
+    _require_project_finance(access, call.project_id, "finance:read")
+    return jsonable(
+        {
+            **serialize(call),
+            "balance_due": payments.outstanding(call),
+            "pending_receipts": payments.pending_receipts(db, "funds_call", call.id),
+            "payments": service.allocated_payments(db, "funds_call", call.id),
+        }
+    )
+
+
+# ---------------------------------------------------------------------------- encaissements hors ligne
+OfflineMethod = Literal["bank_transfer", "cheque", "cash", "mobile_money"]
+
+
+async def _record_receipt(
+    db: Session,
+    access: Access,
+    target_type: str,
+    target_id: uuid.UUID,
+    *,
+    amount: Decimal | None,
+    method: str,
+    value_date: date,
+    reference: str | None,
+    notes: str | None,
+    proof: UploadFile,
+) -> dict[str, Any]:
+    _, obj = payments.receivable_target(db, target_type, target_id)
+    if not access.p.has_any("finance:write", "billing:write"):
+        access.require("finance:write")
+    if obj.project_id:
+        access.require_project(obj.project_id)
+    upload = validate_upload(proof.filename or "preuve", await proof.read(), category="media")
+    proof_id = store_private(
+        db, upload, purpose="payment_proofs", classification="confidential", uploaded_by_id=access.p.id
+    ).id
+    payment = payments.record_offline_receipt(
+        db,
+        user_id=access.p.id,
+        target_type=target_type,
+        target_id=target_id,
+        amount=amount,
+        method=method,
+        value_date=value_date,
+        reference=reference,
+        proof_file_id=proof_id,
+        notes=notes,
+    )
+    db.commit()
+    return jsonable({**serialize(payment), "allocations": [serialize(a) for a in payment.allocations]})
+
+
+@router.post("/funds-calls/{call_id}/payments", status_code=201)
+async def record_funds_call_receipt(
+    call_id: uuid.UUID,
+    amount: Decimal | None = Form(None, gt=0, description="Laisser vide pour solder le reste dû"),
+    method: OfflineMethod = Form(...),
+    value_date: date = Form(..., description="Date de valeur (crédit du compte, remise du chèque ou des espèces)"),
+    reference: str | None = Form(None, max_length=200, description="N° de virement, de chèque ou de transaction"),
+    proof: UploadFile = File(..., description="Avis de crédit, bordereau, copie du chèque ou reçu Mobile Money"),
+    notes: str | None = Form(None, max_length=2000),
+    db: Session = Depends(get_db),
+    access: Access = Depends(get_access),
+) -> dict[str, Any]:
+    """Encaissement d'un appel de fonds reçu hors plateforme : saisi avec preuve, approuvé par une autre personne."""
+    return await _record_receipt(
+        db,
+        access,
+        "funds_call",
+        call_id,
+        amount=amount,
+        method=method,
+        value_date=value_date,
+        reference=reference,
+        notes=notes,
+        proof=proof,
+    )
+
+
+@router.post("/client-invoices/{invoice_id}/payments", status_code=201)
+async def record_invoice_receipt(
+    invoice_id: uuid.UUID,
+    amount: Decimal | None = Form(None, gt=0, description="Laisser vide pour solder le reste dû"),
+    method: OfflineMethod = Form(...),
+    value_date: date = Form(..., description="Date de valeur (crédit du compte, remise du chèque ou des espèces)"),
+    reference: str | None = Form(None, max_length=200, description="N° de virement, de chèque ou de transaction"),
+    proof: UploadFile = File(..., description="Avis de crédit, bordereau, copie du chèque ou reçu Mobile Money"),
+    notes: str | None = Form(None, max_length=2000),
+    db: Session = Depends(get_db),
+    access: Access = Depends(get_access),
+) -> dict[str, Any]:
+    """Encaissement d'une facture client reçu hors plateforme (facture d'appel de fonds : imputé sur l'appel)."""
+    return await _record_receipt(
+        db,
+        access,
+        "client_invoice",
+        invoice_id,
+        amount=amount,
+        method=method,
+        value_date=value_date,
+        reference=reference,
+        notes=notes,
+        proof=proof,
+    )
+
+
 # ---------------------------------------------------------------------------- paiements
 @router.get("/payments")
 def list_payments(
@@ -451,6 +565,13 @@ def _allocation_label(db: Session, target_type: str, target_id: uuid.UUID) -> di
     }
 
 
+def _user_label(db: Session, user_id: uuid.UUID | None) -> str | None:
+    from app.modules.identity.models import User
+
+    user = db.get(User, user_id) if user_id else None
+    return user.full_name if user else None
+
+
 @router.get("/payments/{payment_id}")
 def get_payment(
     payment_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
@@ -484,6 +605,8 @@ def get_payment(
                 for t in transactions
             ],
             "bank_matches": [serialize(b) for b in bank_rows],
+            "initiated_by_label": _user_label(db, payment.initiated_by_id),
+            "approved_by_label": _user_label(db, payment.approved_by_id),
             "approval_role": payments.required_approval_role(db, Decimal(payment.amount))
             if payment.status == "awaiting_approval"
             else None,
@@ -537,6 +660,12 @@ def approve_payment(
     if payment is None:
         raise NotFound("Paiement introuvable")
     access.require("finance:approve")
+    if payment.direction == "in":
+        if payment.project_id:
+            access.require_project(payment.project_id)
+        payments.approve_offline_receipt(db, payment, principal=access.p)
+        db.commit()
+        return jsonable(serialize(payment))
     try:
         payments.approve_outgoing(
             db, payment, principal=access.p, override_reason=data.override_reason if data else None
@@ -544,6 +673,27 @@ def approve_payment(
     except BusinessRuleError:
         db.commit()  # les anomalies détectées au filtrage restent enregistrées même si l'approbation est refusée
         raise
+    db.commit()
+    return jsonable(serialize(payment))
+
+
+class ReceiptRejectIn(BaseModel):
+    reason: str = Field(min_length=5, max_length=2000)
+
+
+@router.post("/payments/{payment_id}/reject")
+def reject_payment(
+    payment_id: uuid.UUID, data: ReceiptRejectIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Refus d'un encaissement hors ligne (approbateur) ou retrait de sa propre saisie : la pièce reste due."""
+    payment = db.get(Payment, payment_id)
+    if payment is None:
+        raise NotFound("Paiement introuvable")
+    if payment.initiated_by_id != access.p.id:
+        access.require("finance:approve")
+    if payment.project_id:
+        access.require_project(payment.project_id)
+    payments.reject_offline_receipt(db, payment, reason=data.reason)
     db.commit()
     return jsonable(serialize(payment))
 

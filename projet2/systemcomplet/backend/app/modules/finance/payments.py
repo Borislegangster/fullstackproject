@@ -10,11 +10,11 @@ import hashlib
 import hmac
 import logging
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -209,6 +209,240 @@ def start_client_checkout(
         "amount": str(pay_amount),
         "currency": obj.currency,
     }
+
+
+# ---------------------------------------------------------------------------- encaissement client hors ligne
+OFFLINE_METHODS = ("bank_transfer", "cash", "cheque", "mobile_money")
+RECEIVABLE_STATUSES = {
+    "funds_call": ("issued", "partially_paid", "overdue"),
+    "client_invoice": ("validated", "sent", "partially_paid", "overdue"),
+}
+
+
+def pending_receipts(db: Session, target_type: str, target_id: uuid.UUID) -> Decimal:
+    """Encaissements hors ligne saisis sur la pièce et encore en attente d'approbation."""
+    total = db.execute(
+        select(func.coalesce(func.sum(PaymentAllocation.amount), 0))
+        .join(Payment, Payment.id == PaymentAllocation.payment_id)
+        .where(
+            PaymentAllocation.target_type == target_type,
+            PaymentAllocation.target_id == target_id,
+            Payment.direction == "in",
+            Payment.status == "awaiting_approval",
+        )
+    ).scalar_one()
+    return money(Decimal(total))
+
+
+def receivable_target(db: Session, target_type: str, target_id: uuid.UUID) -> tuple[str, Any]:
+    """Pièce client à encaisser ; la facture générée par un appel de fonds est réglée via l'appel (qui la solde)."""
+    from app.modules.billing.models import ClientInvoice
+
+    if target_type not in RECEIVABLE_STATUSES:
+        raise BusinessRuleError("Encaissement : appel de fonds ou facture client attendu")
+    obj = _target(db, target_type, target_id)
+    if isinstance(obj, ClientInvoice):
+        if obj.deleted_at is not None:
+            raise NotFound("Facture introuvable")
+        call = db.execute(select(FundsCall).where(FundsCall.client_invoice_id == obj.id)).scalars().first()
+        if call is not None:
+            return "funds_call", call
+    return target_type, obj
+
+
+def record_offline_receipt(
+    db: Session,
+    *,
+    user_id: uuid.UUID,
+    target_type: str,
+    target_id: uuid.UUID,
+    amount: Decimal | None,
+    method: str,
+    value_date: date,
+    reference: str | None,
+    proof_file_id: uuid.UUID | None,
+    notes: str | None,
+) -> Payment:
+    """Règlement client reçu hors plateforme (virement, espèces, chèque, Mobile Money direct) : saisi avec preuve,
+    il reste « à approuver » jusqu'à la validation par une autre personne (double regard)."""
+    from app.core.pdf import fmt_money
+    from app.modules.identity.models import Organization
+    from app.modules.projects.models import Project
+
+    target_type, obj = receivable_target(db, target_type, target_id)
+    if obj.status not in RECEIVABLE_STATUSES[target_type]:
+        raise BusinessRuleError(
+            "Pièce non encaissable : appel de fonds émis ou facture validée attendus, non soldés", code="NOT_RECEIVABLE"
+        )
+    if method not in OFFLINE_METHODS:
+        raise BusinessRuleError("Mode de règlement invalide")
+    if not proof_file_id:
+        raise BusinessRuleError(
+            "Preuve de l'encaissement (avis de crédit, bordereau, copie du chèque, reçu Mobile Money) obligatoire",
+            code="PROOF_REQUIRED",
+        )
+    reference = (reference or "").strip() or None
+    if method != "cash" and not reference:
+        raise BusinessRuleError(
+            "Référence obligatoire : n° de virement, de chèque ou de transaction Mobile Money",
+            code="REFERENCE_REQUIRED",
+        )
+    if value_date > date.today():
+        raise BusinessRuleError("La date de valeur ne peut pas être dans le futur", code="INVALID_VALUE_DATE")
+    pending = pending_receipts(db, target_type, obj.id)
+    due = money(outstanding(obj) - pending)
+    if due <= 0:
+        raise Conflict("Rien à encaisser : pièce soldée ou encaissements en attente d'approbation", code="NOTHING_DUE")
+    pay_amount = money(amount) if amount else due
+    if pay_amount <= 0 or pay_amount > due:
+        waiting = f", hors {fmt_money(pending, obj.currency)} déjà saisis en attente d'approbation" if pending else ""
+        raise BusinessRuleError(
+            f"Montant supérieur au reste dû ({fmt_money(due, obj.currency)}{waiting})", code="INVALID_AMOUNT"
+        )
+    if reference:
+        twin = (
+            db.execute(
+                select(Payment.number).where(
+                    Payment.direction == "in",
+                    Payment.method == method,
+                    func.lower(Payment.provider_reference) == reference.lower(),
+                    Payment.status.in_(("awaiting_approval", "pending", "processing", "succeeded")),
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if twin:
+            raise Conflict(f"Référence déjà enregistrée sur l'encaissement {twin}", code="DUPLICATE_REFERENCE")
+    project = db.get(Project, obj.project_id) if obj.project_id else None
+    org_id = getattr(obj, "organization_id", None) or (project.client_organization_id if project else None)
+    org = db.get(Organization, org_id) if org_id else None
+    payment = Payment(
+        number=next_number(db, "payment"),
+        direction="in",
+        counterparty_type="client",
+        counterparty_id=org_id,
+        counterparty_label=org.name if org else (project.name if project else None),
+        project_id=obj.project_id,
+        amount=pay_amount,
+        currency=obj.currency,
+        method=method,
+        provider="manual",
+        provider_reference=reference,
+        status="awaiting_approval",
+        initiated_by_id=user_id,
+        proof_file_id=proof_file_id,
+        value_date=value_date,
+        notes=notes,
+    )
+    payment.allocations.append(PaymentAllocation(target_type=target_type, target_id=obj.id, amount=pay_amount))
+    db.add(payment)
+    db.flush()
+    emit(
+        db,
+        "payment.awaiting_approval",
+        {
+            "id": payment.id,
+            "number": payment.number,
+            "amount": payment.amount,
+            "counterparty": payment.counterparty_label,
+        },
+        aggregate_type="payment",
+        aggregate_id=payment.id,
+        project_id=payment.project_id,
+    )
+    audit.record(
+        db,
+        family="business",
+        module="payments",
+        action="RECORD_RECEIPT",
+        resource_type="payment",
+        resource_id=payment.id,
+        project_id=payment.project_id,
+        diff={
+            "amount": str(pay_amount),
+            "method": method,
+            "reference": reference,
+            "value_date": value_date.isoformat(),
+            "target": f"{target_type}:{obj.id}",
+        },
+        criticality="MEDIUM",
+    )
+    return payment
+
+
+def _offline_receipt(payment: Payment) -> None:
+    if payment.direction != "in" or payment.provider != "manual" or payment.status != "awaiting_approval":
+        raise BusinessRuleError("Encaissement non en attente d'approbation")
+
+
+def approve_offline_receipt(db: Session, payment: Payment, *, principal: Any) -> Payment:
+    """Double regard : une autre personne que l'auteur de la saisie confirme l'encaissement ; mêmes effets qu'un
+    paiement en ligne confirmé (pièce réglée, séquestre, reçu PDF, notification client, événements)."""
+    from app.core.pdf import fmt_money
+
+    _offline_receipt(payment)
+    if payment.initiated_by_id == principal.id:
+        raise BusinessRuleError(
+            "Double regard : l'encaissement doit être approuvé par une autre personne que celle qui l'a saisi",
+            code="SEGREGATION_OF_DUTIES",
+        )
+    for allocation in payment.allocations:
+        obj = _target(db, allocation.target_type, allocation.target_id)
+        if obj.status in ("cancelled", "credited"):
+            raise BusinessRuleError("Pièce annulée depuis la saisie : refusez l'encaissement", code="NOT_RECEIVABLE")
+        remaining = outstanding(obj)
+        if Decimal(allocation.amount) > remaining:
+            raise BusinessRuleError(
+                f"Montant supérieur au reste dû ({fmt_money(remaining, payment.currency)}) : la pièce a été réglée "
+                "entre-temps",
+                code="INVALID_AMOUNT",
+            )
+    payment.approved_by_id = principal.id
+    payment.approved_at = utcnow()
+    tx = PaymentTransaction(
+        payment_id=payment.id,
+        kind="collection",
+        provider="manual",
+        amount=payment.amount,
+        currency=payment.currency,
+        status="pending",
+    )
+    db.add(tx)
+    db.flush()
+    audit.record(
+        db,
+        family="business",
+        module="payments",
+        action="APPROVE",
+        resource_type="payment",
+        resource_id=payment.id,
+        project_id=payment.project_id,
+        criticality="HIGH",
+    )
+    apply_transaction_status(
+        db, tx, "succeeded", provider_transaction_id=payment.provider_reference, reason=None, confirmed_by="manual"
+    )
+    return payment
+
+
+def reject_offline_receipt(db: Session, payment: Payment, *, reason: str) -> Payment:
+    """Refus (preuve illisible, fonds non reçus…) ou retrait d'une saisie erronée : la pièce reste due."""
+    _offline_receipt(payment)
+    payment.status = "cancelled"
+    payment.failure_reason = reason.strip()
+    audit.record(
+        db,
+        family="business",
+        module="payments",
+        action="REJECT",
+        resource_type="payment",
+        resource_id=payment.id,
+        project_id=payment.project_id,
+        reason=payment.failure_reason,
+        criticality="MEDIUM",
+    )
+    return payment
 
 
 def _resolve_transaction(db: Session, event: Any) -> PaymentTransaction | None:
@@ -545,19 +779,23 @@ def _allocation_text(db: Session, allocation: PaymentAllocation) -> str:
 
 def _receipt(db: Session, payment: Payment) -> None:
     from app.core.files import store_generated
-    from app.core.pdf import PdfDocument, fmt_money, render
+    from app.core.pdf import PdfDocument, fmt_date, fmt_money, render
 
+    offline = payment.direction == "in" and payment.provider == "manual"
+    meta = [
+        ("Montant", fmt_money(payment.amount, payment.currency)),
+        ("Moyen", METHOD_LABELS.get(payment.method, payment.method)),
+        ("Prestataire", "Encaissement vérifié par GLOBUS" if offline else _provider_label(payment.provider)),
+        ("Référence", payment.provider_reference or "—"),
+    ]
+    if payment.value_date:
+        meta.append(("Date de valeur", fmt_date(payment.value_date)))
     doc = PdfDocument(
         title="REÇU DE PAIEMENT",
         number=payment.number,
         issued_on=(payment.paid_at or utcnow()).date(),
         parties=[("Payeur" if payment.direction == "in" else "Bénéficiaire", [payment.counterparty_label or ""])],
-        meta=[
-            ("Montant", fmt_money(payment.amount, payment.currency)),
-            ("Moyen", METHOD_LABELS.get(payment.method, payment.method)),
-            ("Prestataire", _provider_label(payment.provider)),
-            ("Référence", payment.provider_reference or "—"),
-        ],
+        meta=meta,
         columns=["Pièce réglée", "Montant"],
         rows=[[_allocation_text(db, a), fmt_money(a.amount, payment.currency)] for a in payment.allocations],
         footer_note="Reçu émis automatiquement après confirmation du paiement.",

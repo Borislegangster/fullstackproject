@@ -19,7 +19,7 @@ interface Finances {
   summary: { contract_amount?: string | null; approved_changes: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
   funds_calls: { id: string; number: string; label: string; amount: string; amount_paid: string; due_date?: string | null; status: string; invoice_id?: string | null }[];
   invoices: { id: string; number: string; title?: string | null; total: string; amount_paid: string; status: string; issue_date?: string | null; due_date?: string | null; pdf_url?: string | null }[];
-  payments: { id: string; number: string; amount: string; status: string; method?: string | null; provider?: string | null; paid_at?: string | null; receipt_url?: string | null }[];
+  payments: { id: string; number: string; amount: string; status: string; method?: string | null; provider?: string | null; paid_at?: string | null; value_date?: string | null; receipt_url?: string | null }[];
   payment_methods: { provider: string; method: string; label: string; flow: "redirect" | "push"; requires_phone: boolean }[];
 }
 
@@ -258,7 +258,7 @@ function FinancesContent({ projectId }: { projectId: string }) {
                   <span>
                     <span className="font-medium">{p.number}</span>
                     <span className="block text-xs text-muted">
-                      {money(p.amount, cur)} · {optionLabel(p.method)} · {date(p.paid_at)}
+                      {money(p.amount, cur)} · {optionLabel(p.method)} · {date(p.value_date ?? p.paid_at)}
                     </span>
                   </span>
                 </span>

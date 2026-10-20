@@ -194,6 +194,7 @@ class Payment(UUIDPk, Timestamps, Base):
     approved_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)
     approved_at: Mapped[datetime | None] = dt_col()
     paid_at: Mapped[datetime | None] = dt_col()
+    value_date: Mapped[date | None] = mapped_column(Date, nullable=True)  # encaissement hors ligne : date de valeur
     confirmed_by: Mapped[str | None] = str_col(20)  # webhook / reconciliation / manual
     proof_file_id: Mapped[uuid.UUID | None] = fk("stored_files.id")
     receipt_file_id: Mapped[uuid.UUID | None] = fk("stored_files.id")

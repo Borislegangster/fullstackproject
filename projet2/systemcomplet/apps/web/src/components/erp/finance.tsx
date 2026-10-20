@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Download, FileUp, Plus, ShieldCheck, Wallet } from "lucide-react";
+import { Banknote, Download, FileUp, Plus, ShieldCheck, Wallet, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -295,7 +295,8 @@ export function PaymentsList({ projectId }: { projectId?: string }) {
         embedded
         config={{
           title: "Paiements",
-          subtitle: "Encaissements clients (carte, Mobile Money via webhooks signés) et décaissements avec approbation à double regard.",
+          subtitle:
+            "Encaissements clients (en ligne, ou hors ligne saisis depuis la facture / l'appel de fonds avec preuve) et décaissements, approuvés à double regard.",
           path: "/payments",
           query: { project_id: projectId },
           href: (r) => `/erp/finances/paiements/${r.id}`,
@@ -341,6 +342,8 @@ export function PaymentDetail({ id }: { id: string }) {
   const payment = useApi<Row>(`/payments/${id}`);
   const [executing, setExecuting] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [blocked, setBlocked] = useState<{ id: string; kind: string; description: string }[] | null>(null);
   const [override, setOverride] = useState("");
   const [proof, setProof] = useState<File[]>([]);
@@ -354,6 +357,9 @@ export function PaymentDetail({ id }: { id: string }) {
   const p = payment.data;
   const cur = p.currency === "XAF" ? "FCFA" : p.currency;
   const selfInitiated = !!user && p.initiated_by_id === user.id;
+  // Encaissement hors ligne (virement, espèces, chèque, Mobile Money direct) saisi avec preuve : double regard strict.
+  const offline = p.direction === "in" && p.provider === "manual";
+  const awaitingOffline = offline && p.status === "awaiting_approval";
   return (
     <div className="space-y-5">
       <PageTitle
@@ -370,12 +376,17 @@ export function PaymentDetail({ id }: { id: string }) {
             ) : null}
             {p.proof_file_id ? (
               <a href={apiUrl(`/payments/${id}/proof`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-white px-3 text-xs font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50">
-                <Download className="h-3.5 w-3.5" /> Preuve d'exécution
+                <Download className="h-3.5 w-3.5" /> {offline ? "Preuve de l'encaissement" : "Preuve d'exécution"}
               </a>
             ) : null}
             {p.status === "awaiting_approval" && can("finance:approve") ? (
-              <Button size="sm" onClick={() => setApproving(true)} disabled={selfInitiated && !hasRole("ADMIN")}>
+              <Button size="sm" onClick={() => setApproving(true)} disabled={selfInitiated && (offline || !hasRole("ADMIN"))}>
                 <ShieldCheck className="h-4 w-4" /> Approuver
+              </Button>
+            ) : null}
+            {awaitingOffline && (can("finance:approve") || selfInitiated) ? (
+              <Button size="sm" variant="danger" onClick={() => setRejecting(true)}>
+                <XCircle className="h-4 w-4" /> {selfInitiated ? "Retirer la saisie" : "Refuser"}
               </Button>
             ) : null}
             {p.status === "pending" && p.direction === "out" && can("finance:pay") ? (
@@ -406,17 +417,30 @@ export function PaymentDetail({ id }: { id: string }) {
           </div>
         }
       />
-      {p.status === "awaiting_approval" ? (
+      {awaitingOffline ? (
+        <Alert tone="warning" title="Encaissement à vérifier">
+          Contrôlez la preuve (montant, référence, date de valeur) avec le relevé ou la caisse, puis approuvez : la pièce est alors réglée, le reçu émis et le client notifié. La personne qui a
+          saisi l&apos;encaissement ne peut pas l&apos;approuver (double regard).
+        </Alert>
+      ) : p.status === "awaiting_approval" ? (
         <Alert tone="warning" title="Approbation requise">
           {p.approval_role ? `Seuil atteint : approbation réservée au rôle ${optionLabel(p.approval_role)}. ` : ""}
           L'initiateur du paiement ne peut pas l'approuver (séparation des tâches).
         </Alert>
       ) : null}
-      {p.failure_reason ? <Alert tone="danger" title="Échec">{p.failure_reason}</Alert> : null}
+      {p.failure_reason ? (
+        <Alert tone="danger" title={offline && p.status === "cancelled" ? "Encaissement refusé" : "Échec"}>
+          {p.failure_reason}
+        </Alert>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Montant" value={money(p.amount, cur)} tone="info" />
         <Stat label="Mode" value={optionLabel(p.method)} hint={`Canal ${optionLabel(p.provider)}${p.provider_reference ? ` · réf. ${p.provider_reference}` : ""}`} />
-        <Stat label="Payé le" value={p.paid_at ? dateTime(p.paid_at) : "—"} hint={p.confirmed_by ? `Confirmé par ${optionLabel(p.confirmed_by)}` : undefined} />
+        {offline ? (
+          <Stat label="Date de valeur" value={p.value_date ? date(p.value_date) : "—"} hint={p.paid_at ? `Confirmé le ${dateTime(p.paid_at)}` : "Non confirmé"} />
+        ) : (
+          <Stat label="Payé le" value={p.paid_at ? dateTime(p.paid_at) : "—"} hint={p.confirmed_by ? `Confirmé par ${optionLabel(p.confirmed_by)}` : undefined} />
+        )}
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -440,8 +464,8 @@ export function PaymentDetail({ id }: { id: string }) {
             <DescriptionList
               columns={1}
               items={[
-                { label: "Créé le", value: dateTime(p.created_at) },
-                { label: "Approuvé le", value: p.approved_at ? dateTime(p.approved_at) : "—" },
+                { label: "Créé le", value: `${dateTime(p.created_at)}${p.initiated_by_label ? ` par ${p.initiated_by_label}` : ""}` },
+                { label: "Approuvé le", value: p.approved_at ? `${dateTime(p.approved_at)}${p.approved_by_label ? ` par ${p.approved_by_label}` : ""}` : "—" },
                 { label: "Notes", value: p.notes ?? "—" },
               ]}
             />
@@ -477,8 +501,12 @@ export function PaymentDetail({ id }: { id: string }) {
       <ConfirmDialog
         open={approving}
         onClose={() => setApproving(false)}
-        title="Approuver le paiement"
-        text={`Vous approuvez le décaissement de ${money(p.amount, cur)} au profit de ${p.counterparty_label ?? "—"}.`}
+        title={offline ? "Approuver l'encaissement" : "Approuver le paiement"}
+        text={
+          offline
+            ? `Vous confirmez avoir vérifié la réception de ${money(p.amount, cur)} de ${p.counterparty_label ?? "—"} (${optionLabel(p.method)}${p.provider_reference ? `, réf. ${p.provider_reference}` : ""}). La pièce sera réglée, le reçu émis et le client notifié.`
+            : `Vous approuvez le décaissement de ${money(p.amount, cur)} au profit de ${p.counterparty_label ?? "—"}.`
+        }
         onConfirm={async () => {
           try {
             payment.setData(await api(`/payments/${id}/approve`, { method: "POST" }));
@@ -491,9 +519,38 @@ export function PaymentDetail({ id }: { id: string }) {
             throw err;
           }
           void payment.reload();
-          toast.success("Paiement approuvé");
+          toast.success(offline ? "Encaissement approuvé" : "Paiement approuvé", offline ? "Reçu émis et client notifié." : undefined);
         }}
       />
+      <Modal
+        open={rejecting}
+        onClose={() => setRejecting(false)}
+        title={selfInitiated ? "Retirer la saisie" : "Refuser l'encaissement"}
+        description="La pièce reste due ; le motif est conservé dans le journal d'audit."
+        footer={
+          <Button
+            variant="danger"
+            disabled={rejectReason.trim().length < 5}
+            onClick={async () => {
+              try {
+                payment.setData(await api(`/payments/${id}/reject`, { method: "POST", body: { reason: rejectReason.trim() } }));
+                setRejecting(false);
+                setRejectReason("");
+                void payment.reload();
+                toast.success(selfInitiated ? "Saisie retirée" : "Encaissement refusé");
+              } catch (err) {
+                toast.error("Refus impossible", errorMessage(err));
+              }
+            }}
+          >
+            {selfInitiated ? "Retirer" : "Refuser"}
+          </Button>
+        }
+      >
+        <Field label="Motif" required help="5 caractères minimum — ex. « Virement absent du relevé BICEC du 14/10 »">
+          <Textarea rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+        </Field>
+      </Modal>
       <Modal
         open={blocked !== null}
         onClose={() => setBlocked(null)}

@@ -35,6 +35,7 @@ from app.modules.billing.models import (
     PaymentReminder,
     SupplierInvoice,
 )
+from app.modules.finance.models import FundsCall
 from app.modules.finance.service import allocated_payments
 from app.modules.procurement.models import PurchaseOrder
 from app.modules.suppliers.models import Supplier
@@ -253,7 +254,11 @@ def get_client_invoice(
             select(CreditNote).where(CreditNote.client_invoice_id == invoice.id).order_by(CreditNote.created_at)
         ).scalars()
     ]
-    out["payments"] = jsonable(allocated_payments(db, "client_invoice", invoice.id))
+    calls = db.execute(select(FundsCall.id).where(FundsCall.client_invoice_id == invoice.id)).scalars().all()
+    out["payments"] = jsonable(
+        allocated_payments(db, "client_invoice", invoice.id)
+        + [p for call_id in calls for p in allocated_payments(db, "funds_call", call_id)]  # facture d'appel de fonds
+    )
     out["reminders"] = [
         jsonable(serialize(r))
         for r in db.execute(

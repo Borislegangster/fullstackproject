@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.access import Access, get_access
@@ -559,7 +559,12 @@ def finances(
     payments = (
         db.execute(
             select(Payment)
-            .where(Payment.project_id == project.id, Payment.direction == "in")
+            .where(
+                Payment.project_id == project.id,
+                Payment.direction == "in",
+                # encaissement hors ligne : visible du client une fois approuvé (double regard)
+                or_(Payment.provider != "manual", Payment.status == "succeeded"),
+            )
             .order_by(Payment.created_at.desc())
         )
         .scalars()
@@ -606,6 +611,7 @@ def finances(
                     "method": p.method,
                     "provider": p.provider,
                     "paid_at": p.paid_at,
+                    "value_date": p.value_date,
                     "receipt_url": signed_url(p.receipt_file_id, user_id=access.p.id, ttl=900)
                     if p.receipt_file_id
                     else None,

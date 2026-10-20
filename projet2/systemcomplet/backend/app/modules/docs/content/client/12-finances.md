@@ -18,7 +18,7 @@ Menu **Finances** : budget, appels de fonds, factures, paiements et reçus.
 - Indicateurs : **Contrat + avenants**, **Appelé** (et reste à appeler), **Payé**, **À régler** (et appels en retard), barre **Part du contrat réglée**.
 - **Appels de fonds** : numéro, **Objet**, **Échéance**, **Montant**, **Payé**, **Statut**.
 - **Factures** : numéro, montant, échéance, statut ; l'icône de téléchargement ouvre le PDF.
-- **Paiements et reçus** : chaque paiement avec son moyen, sa date, son statut ; **Reçu** télécharge le reçu.
+- **Paiements et reçus** : chaque paiement avec son moyen, sa date, son statut ; **Reçu** télécharge le reçu. Un règlement fait hors ligne (virement, chèque, espèces, dépôt Mobile Money direct) y apparaît, avec son reçu, dès que GLOBUS l'a vérifié ; l'appel de fonds ou la facture passe alors « Payé » (ou « Partiellement payé »).
 
 ::: perm client:pay
 ## Payer en ligne

@@ -7,7 +7,7 @@ order: 10
 route: /erp/finances
 routes: [/erp/finances/paiements, /erp/finances/paiements/*]
 perms: [finance:read]
-summary: Pilotage de la trésorerie et des marges, paiements à double regard (approbation puis exécution manuelle ou Mobile Money), engagements, prévisions, rapprochement bancaire et petites caisses de chantier.
+summary: Pilotage de la trésorerie et des marges, paiements à double regard (approbation puis exécution manuelle ou Mobile Money, encaissements clients hors ligne), engagements, prévisions, rapprochement bancaire et petites caisses de chantier.
 keywords: [finance, trésorerie, paiement, décaissement, encaissement, double validation, Mobile Money, MTN, Orange, banque, rapprochement, caisse, engagement, prévision, marge]
 related: [erp-facturation, erp-echeanciers, erp-sequestre]
 ---
@@ -24,7 +24,7 @@ Menu **Finance › Finances** : budgets, engagements, trésorerie, paiements à 
 
 ## Onglet « Paiements »
 
-Les **Paiements** : encaissements clients (carte, Mobile Money confirmés par webhooks signés) et décaissements avec approbation à double regard. Filtres **Sens** et **Statut** ; **Exporter** selon vos droits. La fiche **Paiement …** montre les **Pièces réglées**, l'**Historique**, le **Reçu** et la **Preuve d'exécution**.
+Les **Paiements** : encaissements clients (en ligne par carte ou Mobile Money confirmés par webhooks signés, ou hors ligne saisis depuis la [Facturation](doc:erp-facturation) avec preuve) et décaissements, approuvés à double regard. Filtres **Sens** (**Encaissements** / **Décaissements**) et **Statut** ; **Exporter** selon vos droits. La fiche **Paiement …** montre les **Pièces réglées**, l'**Historique** (créé et approuvé par qui), le **Reçu** et la **Preuve d'exécution** ou la **Preuve de l'encaissement**.
 
 ::: perm finance:pay
 ### Créer un ordre de paiement
@@ -36,6 +36,18 @@ Les **Paiements** : encaissements clients (carte, Mobile Money confirmés par we
 ### Approuver (double regard)
 
 Ouvrez le paiement « à approuver » puis **Approuver** (fenêtre **Approuver le paiement**). Vous ne pouvez pas approuver un ordre que vous avez créé vous-même : une seconde personne est requise.
+:::
+
+::: perm finance:approve
+### Approuver un encaissement hors ligne
+
+Filtrez **Sens** : **Encaissements** et **Statut** : « À approuver », puis ouvrez l'encaissement (bandeau **Encaissement à vérifier**).
+
+1. Ouvrez la **Preuve de l'encaissement** et comparez montant, **Référence** et **Date de valeur** avec le relevé bancaire, le relevé Mobile Money ou la caisse.
+2. **Approuver** ouvre **Approuver l'encaissement** : à la confirmation, l'appel de fonds ou la facture passe « Partiellement payé » ou « Payé », le **Reçu** PDF est émis, le client est notifié et le voit dans son espace (**Paiements et reçus**).
+3. Sinon **Refuser** ouvre **Refuser l'encaissement** : **Motif** obligatoire ; la pièce reste due.
+
+La personne qui a saisi l'encaissement ne peut jamais l'approuver, quel que soit son rôle ; elle peut seulement **Retirer la saisie** (fenêtre **Retirer la saisie**, motif obligatoire).
 :::
 
 ::: role DIRECTION, ADMIN
@@ -66,7 +78,7 @@ Les **Prévisions de trésorerie** : encaissements et décaissements attendus ho
 
 ## Onglet « Banque »
 
-Les **Comptes bancaires et Mobile Money** : import des relevés, rapprochement automatique (référence + montant) puis manuel.
+Les **Comptes bancaires et Mobile Money** : import des relevés, rapprochement automatique (référence + montant) puis manuel. Un encaissement hors ligne approuvé est reconnu par la référence saisie (n° de virement, de chèque, de transaction).
 
 ::: perm finance:reconcile
 - **Nouveau compte** : nom obligatoire, banque, numéro, devise, type (banque, Mobile Money).

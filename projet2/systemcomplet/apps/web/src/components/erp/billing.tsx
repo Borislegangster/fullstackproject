@@ -9,7 +9,7 @@ import { OutgoingPaymentForm } from "@/components/erp/finance";
 import { CellLink, ResourceView, type Row } from "@/components/erp/resource";
 import { DisputeCreate, SubcontractorInvoices } from "@/components/erp/subcontracting";
 import { RefSelect } from "@/components/forms/ref-select";
-import { SchemaForm } from "@/components/forms/schema-form";
+import { SchemaForm, type FieldConfig } from "@/components/forms/schema-form";
 import { Checkbox, Field, FileDrop, Input, Select } from "@/components/ui/form";
 import { Modal, Tabs } from "@/components/ui/overlay";
 import { Alert, Badge, Button, Card, CardHeader, DescriptionList, PageTitle, Skeleton, Stat, StatusBadge } from "@/components/ui/primitives";
@@ -48,6 +48,31 @@ function PaymentsMini({ payments }: { payments?: Row[] }) {
       ))}
     </ul>
   );
+}
+
+/* ----------------------------------------------------------------------------- encaissements hors ligne */
+
+/** Règlement reçu hors plateforme : saisi avec preuve, approuvé par une autre personne (Finances › Paiements). */
+const RECEIPT_FIELDS: Record<string, FieldConfig> = {
+  amount: { label: "Montant encaissé", help: "Paiement partiel possible, au plus le reste dû." },
+  method: {
+    label: "Mode de règlement",
+    options: [
+      { value: "bank_transfer", label: "Virement bancaire" },
+      { value: "cheque", label: "Chèque" },
+      { value: "cash", label: "Espèces" },
+      { value: "mobile_money", label: "Mobile Money (dépôt direct, hors plateforme)" },
+    ],
+  },
+  value_date: { label: "Date de valeur", help: "Crédit du compte, remise du chèque ou des espèces." },
+  reference: { label: "Référence", help: "N° de virement, de chèque ou de transaction Mobile Money (facultatif pour les espèces) ; sert au rapprochement bancaire." },
+  proof: { label: "Preuve de l'encaissement", help: "Avis de crédit, bordereau de remise, copie du chèque ou reçu Mobile Money (PDF ou image)." },
+  notes: { label: "Notes" },
+};
+const RECEIPT_SUCCESS = "Encaissement enregistré : à approuver par une autre personne (Finances › Paiements)";
+
+function receiptInitial(due: number): Row {
+  return { method: "bank_transfer", value_date: new Date().toISOString().slice(0, 10), amount: due > 0 ? due : "" };
 }
 
 /* ----------------------------------------------------------------------------- factures clients */
@@ -208,6 +233,17 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
             perms: ["billing:write"],
             run: (r) => payLink("client_invoice", String(r.id)),
           },
+          {
+            key: "receipt",
+            label: "Enregistrer un encaissement",
+            endpoint: "POST /client-invoices/{invoice_id}/payments",
+            when: (r) => ["validated", "sent", "partially_paid", "overdue"].includes(r.status) && toNumber(r.balance_due) > 0,
+            perms: ["finance:write", "billing:write"],
+            tone: "accent",
+            initial: (r) => receiptInitial(toNumber(r.balance_due)),
+            fields: RECEIPT_FIELDS,
+            success: RECEIPT_SUCCESS,
+          },
           { key: "credit", label: "Émettre un avoir", endpoint: "POST /client-invoices/{invoice_id}/credit-notes", when: (r) => ["validated", "sent", "partially_paid", "overdue", "paid"].includes(r.status), perms: ["billing:validate"], tone: "danger", success: "Avoir émis" },
           { key: "cancel", label: "Annuler la facture", endpoint: "POST /client-invoices/{invoice_id}/cancel", when: (r) => ["draft", "validated"].includes(r.status), perms: ["billing:validate"], tone: "danger", fields: { reason: { widget: "textarea", label: "Motif de l'annulation" } }, success: "Facture annulée" },
         ],
@@ -224,7 +260,7 @@ export function FundsCallsList({ projectId }: { projectId?: string }) {
       embedded
       config={{
         title: "Appels de fonds",
-        subtitle: "Échéancier client lié aux jalons ; l'émission génère la facture et la notification de paiement.",
+        subtitle: "Échéancier client lié aux jalons ; l'émission génère la facture et la notification de paiement. Règlement en ligne par le client ou encaissement hors ligne saisi ici.",
         path: "/funds-calls",
         query: { project_id: projectId },
         columns: [
@@ -237,6 +273,26 @@ export function FundsCallsList({ projectId }: { projectId?: string }) {
         ],
         filters: [{ key: "status", label: "Statut", options: FUNDS_CALL_STATUSES.map((v) => ({ value: v, label: optionLabel(v) })) }],
         create: { endpoint: "POST /funds-calls", label: "Nouvel appel de fonds", perms: ["billing:write"], fixed: projectId ? { project_id: projectId } : undefined },
+        detailPath: (r) => `/funds-calls/${r.id}`,
+        detail: (r) => (
+          <div className="space-y-4">
+            <DescriptionList
+              items={[
+                { label: "Libellé", value: r.label },
+                { label: "Échéance", value: date(r.due_date) },
+                { label: "Montant appelé", value: money(r.amount) },
+                { label: "Encaissé", value: money(r.amount_paid) },
+                { label: "Reste dû", value: money(r.balance_due ?? toNumber(r.amount) - toNumber(r.amount_paid)) },
+                ...(toNumber(r.pending_receipts) > 0 ? [{ label: "Encaissements à approuver", value: money(r.pending_receipts) }] : []),
+                { label: "Statut", value: <StatusBadge status={r.status} /> },
+              ]}
+            />
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase text-muted">Règlements</p>
+              <PaymentsMini payments={r.payments} />
+            </div>
+          </div>
+        ),
         actions: [
           {
             key: "issue",
@@ -247,6 +303,17 @@ export function FundsCallsList({ projectId }: { projectId?: string }) {
             confirm: "Émettre l'appel de fonds ? Une facture d'acompte (TVA 19,25 %) est générée et le client est notifié.",
             body: () => ({ tax_rate: 19.25 }),
             success: "Appel de fonds émis",
+          },
+          {
+            key: "receipt",
+            label: "Enregistrer un encaissement",
+            endpoint: "POST /funds-calls/{call_id}/payments",
+            when: (r) => ["issued", "partially_paid", "overdue"].includes(r.status) && toNumber(r.amount) > toNumber(r.amount_paid),
+            perms: ["finance:write", "billing:write"],
+            tone: "accent",
+            initial: (r) => receiptInitial(toNumber(r.amount) - toNumber(r.amount_paid) - toNumber(r.pending_receipts)),
+            fields: RECEIPT_FIELDS,
+            success: RECEIPT_SUCCESS,
           },
         ],
       }}
