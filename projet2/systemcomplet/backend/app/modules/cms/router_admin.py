@@ -783,6 +783,30 @@ router.include_router(
         before_update=_check_schema_markup,
     )
 )
+SOCIAL_NETWORKS = {"facebook", "instagram", "linkedin", "tiktok", "youtube", "x", "whatsapp"}
+_BARE_DOMAIN = re.compile(r"^[\w-]+(\.[\w-]+)+(/\S*)?$")
+
+
+def _check_social(db: Session, obj: Any, access: Access, values: dict[str, Any]) -> None:
+    """Réseau social : réseau connu, adresse de profil absolue (« facebook.com/x » → « https://facebook.com/x »)."""
+    network = values.get("network", obj.network)
+    if network not in SOCIAL_NETWORKS:
+        raise AppError("Réseau social inconnu", code="INVALID_SOCIAL_LINK")
+    if "url" not in values and obj.id is not None:
+        return
+    url = str(values.get("url") or "").strip()
+    if not re.match(r"^https?://", url, re.IGNORECASE):
+        if not _BARE_DOMAIN.match(url):
+            raise AppError(
+                "Adresse du profil : commencez par https:// (ex. https://www.facebook.com/globus).",
+                code="INVALID_SOCIAL_LINK",
+            )
+        url = f"https://{url}"
+    values["url"] = url
+    if obj.id is None:
+        obj.url = url
+
+
 router.include_router(
     make_crud_router(
         m.SocialLink,
@@ -794,6 +818,8 @@ router.include_router(
         label="Réseau social",
         sort=["sort_order", "network"],
         default_sort="sort_order",
+        before_create=_check_social,
+        before_update=_check_social,
     )
 )
 router.include_router(

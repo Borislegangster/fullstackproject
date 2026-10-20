@@ -241,3 +241,15 @@ def test_manual_redirects_are_safe(client: Any, db: Any) -> None:
     assert create("/promo", "www.exemple.com").json()["error"]["code"] == "INVALID_REDIRECT"
     assert create("/retire", None, 410).status_code == 201
     assert create("/vers-site", "https://exemple.com/page").status_code == 201
+
+
+def test_social_links_are_absolute(client: Any, db: Any) -> None:
+    _editor, eh = as_role(client, db, "MARKETING")
+    bare = client.post(
+        f"{API}/cms/social-links", json={"network": "facebook", "url": "facebook.com/globus"}, headers=eh
+    )
+    assert bare.status_code == 201 and bare.json()["url"] == "https://facebook.com/globus"
+    junk = client.post(f"{API}/cms/social-links", json={"network": "x", "url": "javascript:alert(1)"}, headers=eh)
+    assert junk.status_code == 400
+    unknown = client.post(f"{API}/cms/social-links", json={"network": "myspace", "url": "https://a.b"}, headers=eh)
+    assert unknown.status_code == 400

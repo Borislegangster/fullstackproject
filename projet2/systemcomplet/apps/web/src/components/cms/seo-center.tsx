@@ -125,6 +125,7 @@ const SCHEMA_FIELDS: Record<string, FieldConfig> = {
   data: { span: 2, label: "Propriétés", help: "Informations ajoutées au code de la page pour les moteurs de recherche (schema.org).", render: ({ value, onChange, values }) => <SchemaPropsEditor schemaType={values.schema_type} value={value} onChange={onChange} /> },
 };
 const NETWORKS = ["facebook", "instagram", "linkedin", "tiktok", "youtube", "x", "whatsapp"];
+const NETWORK_LABELS: Record<string, string> = { facebook: "Facebook", instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok", youtube: "YouTube", x: "X (Twitter)", whatsapp: "WhatsApp" };
 
 // Types de contenus référencés (les codes « universe », « offer »… ont un autre sens dans les libellés communs).
 const SEO_TARGETS: Record<string, string> = {
@@ -347,12 +348,12 @@ export function SocialLinksView() {
         path: "/cms/social-links",
         columns: [
           { key: "sort_order", label: "Ordre" },
-          { key: "network", label: "Réseau", format: "option" },
+          { key: "network", label: "Réseau", render: (r: Row) => NETWORK_LABELS[r.network] ?? r.network },
           { key: "url", label: "Adresse" },
           { key: "is_active", label: "Actif", format: "bool" },
         ],
-        create: { endpoint: "POST /cms/social-links", label: "Ajouter", perms: ["cms:publish"], fields: { network: { options: NETWORKS.map((n) => ({ value: n, label: optionLabel(n) })) } } },
-        update: { endpoint: "PATCH /cms/social-links/{item_id}", perms: ["cms:publish"], fields: { network: { options: NETWORKS.map((n) => ({ value: n, label: optionLabel(n) })) } } },
+        create: { endpoint: "POST /cms/social-links", label: "Ajouter", perms: ["cms:publish"], fields: { network: { options: NETWORKS.map((n) => ({ value: n, label: NETWORK_LABELS[n] })) } } },
+        update: { endpoint: "PATCH /cms/social-links/{item_id}", perms: ["cms:publish"], fields: { network: { options: NETWORKS.map((n) => ({ value: n, label: NETWORK_LABELS[n] })) } } },
         remove: { path: (r) => `/cms/social-links/${r.id}`, perms: ["cms:publish"] },
       }}
     />
