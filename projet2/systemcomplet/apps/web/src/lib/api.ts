@@ -3,6 +3,8 @@
  * renouvellement automatique de session (refresh rotatif), clés d'idempotence, erreurs normalisées.
  */
 
+import { fieldLabel } from "./labels";
+
 export const API_PREFIX = "/api/v1";
 
 export class ApiError extends Error {
@@ -204,16 +206,42 @@ const VALIDATION_TYPES: Record<string, string> = {
   extra_forbidden: "champ non autorisé",
 };
 
+// Média non choisi (identifiant vide) : message explicite plutôt que « sélection invalide ».
+const MEDIA_FIELD = /media_ids?$/;
+const MEDIA_MISSING = new Set(["missing", "uuid_type", "uuid_parsing", "too_short"]);
+
+function validationMessage(d: any): string {
+  const field = String(d.field ?? "");
+  if (MEDIA_FIELD.test(field) && MEDIA_MISSING.has(d.type)) return field.endsWith("media_ids") ? "ajoutez au moins un média de la médiathèque" : "choisissez un média dans la médiathèque";
+  // Règle métier (validateur du serveur) : son message, déjà en français, est plus précis que le type générique.
+  if (d.type === "value_error" && d.message) return String(d.message).replace(/^Value error, /, "");
+  return (d.type && VALIDATION_TYPES[d.type]) || String(d.message ?? "valeur invalide").replace(/^Value error, /, "");
+}
+
 /** Erreurs de validation champ par champ renvoyées par l'API (422 VALIDATION_ERROR). */
 export function fieldErrors(error: unknown): FieldError[] {
   if (!(error instanceof ApiError) || !Array.isArray(error.details)) return [];
   return (error.details as any[])
     .filter((d) => d && typeof d === "object" && "field" in d)
-    .map((d) => ({
-      field: String(d.field ?? ""),
-      type: d.type,
-      message: (d.type && VALIDATION_TYPES[d.type]) || String(d.message ?? "valeur invalide").replace(/^Value error, /, ""),
-    }));
+    .map((d) => ({ field: String(d.field ?? ""), type: d.type, message: validationMessage(d) }));
+}
+
+// Listes imbriquées (pages, blocs, lignes…) : « sections.0.blocks.5.data.cta.label » → « Section 1 › Bloc 6 › Libellé ».
+const CONTAINERS: Record<string, string> = {
+  sections: "Section",
+  blocks: "Bloc",
+  body_blocks: "Bloc",
+  items: "Élément",
+  ctas: "Bouton",
+  children: "Sous-élément",
+  fields: "Champ",
+  lines: "Ligne",
+};
+
+export function fieldPlace(field: string): { name: string; where: string } {
+  const parts = field.split(".");
+  const where = parts.flatMap((p, i) => (/^\d+$/.test(p) && i > 0 && CONTAINERS[parts[i - 1]] ? [`${CONTAINERS[parts[i - 1]]} ${Number(p) + 1}`] : []));
+  return { name: parts.filter((p) => !/^\d+$/.test(p)).pop() ?? field, where: where.join(" › ") };
 }
 
 export function errorMessage(error: unknown): string {
@@ -221,8 +249,8 @@ export function errorMessage(error: unknown): string {
     const fields = fieldErrors(error);
     if (fields.length) {
       const first = fields[0];
-      const name = first.field.split(".").filter((p) => !/^\d+$/.test(p)).pop() ?? first.field;
-      return `${error.message} — ${name ? `${name} : ` : ""}${first.message}${fields.length > 1 ? ` (+${fields.length - 1})` : ""}`;
+      const { name, where } = fieldPlace(first.field);
+      return `${error.message} — ${where ? `${where} › ` : ""}${name ? `${fieldLabel(name)} : ` : ""}${first.message}${fields.length > 1 ? ` (+${fields.length - 1})` : ""}`;
     }
     if (error.status === 429) return "Trop de tentatives : patientez quelques instants avant de réessayer.";
     if (error.status === 403 && error.code === "FORBIDDEN") return error.message || "Action non autorisée pour votre profil.";

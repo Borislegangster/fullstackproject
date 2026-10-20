@@ -367,16 +367,18 @@ def media_usage(db: Session) -> dict[uuid.UUID, list[dict[str, str]]]:
 
 
 def scan_usage(db: Session) -> dict[str, Any]:
+    """Compteurs d'utilisation (badge « libre », filtre des orphelins) recalculés depuis les contenus."""
     usage = media_usage(db)
     now = utcnow()
-    orphans = 0
+    orphans = total = 0
     for asset in db.execute(select(MediaAsset).where(MediaAsset.deleted_at.is_(None))).scalars():
+        total += 1
         asset.usage_count = len(usage.get(asset.id, []))
         asset.last_usage_scan_at = now
         if asset.usage_count == 0:
             orphans += 1
     db.flush()
-    return {"orphans": orphans, "items": len(usage)}
+    return {"orphans": orphans, "used": total - orphans, "total": total}
 
 
 def archive_media(db: Session, asset: MediaAsset, *, user_id: uuid.UUID | None, force: bool = False) -> None:

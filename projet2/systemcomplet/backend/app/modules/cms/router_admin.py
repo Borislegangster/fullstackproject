@@ -6,11 +6,12 @@ import csv
 import io
 import re
 import uuid
+from datetime import timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile
 from pydantic import BaseModel, Field, TypeAdapter
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -20,7 +21,7 @@ from app.core.database import get_db
 from app.core.deps import Principal, require
 from app.core.errors import AppError, Conflict, NotFound
 from app.core.pagination import PageParams, paginate
-from app.core.utils import jsonable, utcnow
+from app.core.utils import jsonable, slugify, utcnow
 from app.modules.cms import media as media_svc
 from app.modules.cms import models as m
 from app.modules.cms import service
@@ -57,6 +58,7 @@ def _page_out(db: Session, page: m.CmsPage, *, full: bool = False) -> dict[str, 
         "updated_at": page.updated_at,
         "seo_issues": service.seo_issues(seo, page.title),
         "live": service.is_live(page),
+        "system": page.route_key in service.SYSTEM_PAGES,
     }
     if full:
         data["body"] = page.body
@@ -154,6 +156,12 @@ def delete_page(
     page_id: uuid.UUID, principal: Principal = Depends(require("cms:publish")), db: Session = Depends(get_db)
 ) -> dict[str, str]:
     page = _get_page(db, page_id)
+    if page.route_key in service.SYSTEM_PAGES:
+        raise Conflict(
+            f"« {page.title} » est une page du site à adresse fixe : elle ne peut pas être supprimée "
+            "(modifiez ou masquez ses sections).",
+            code="SYSTEM_PAGE",
+        )
     if page.status == "published":
         raise Conflict("Archivez la page avant de la supprimer", code="PAGE_PUBLISHED")
     service.add_revision(db, "page", page, principal.id, note="Suppression")
@@ -293,25 +301,101 @@ def _validate_item(db: Session, obj: Any, values: dict[str, Any]) -> None:
         obj.answer = values["answer"]
 
 
+# Identifiants techniques (adresse « slug », clé) : facultatifs à la saisie, déduits du titre et rendus uniques.
+_AUTO_IDS = ("slug", "key")
+
+
+def _unique_ident(db: Session, model: Any, attr: str, base: str, exclude_id: uuid.UUID | None = None) -> str:
+    column = getattr(model, attr)
+    length = model.__table__.columns[attr].type.length or 120
+    candidate, n = base[:length], 1
+    while True:
+        stmt = select(model.id).where(column == candidate)
+        if exclude_id is not None:
+            stmt = stmt.where(model.id != exclude_id)
+        if db.scalar(stmt.limit(1)) is None:
+            return candidate
+        n += 1
+        suffix = f"_{n}" if base.isupper() else f"-{n}"
+        candidate = base[: length - len(suffix)] + suffix
+
+
+def _ident_from(model: Any, attr: str, text: str) -> str:
+    length = model.__table__.columns[attr].type.length or 120
+    value = slugify(text, max_length=length)
+    # Clé d'univers : code en majuscules (HOME, BUSINESS…), comme les univers d'origine.
+    return value.upper().replace("-", "_") if model is m.Universe and attr == "key" else value
+
+
+def _fill_identifiers(db: Session, model: Any, obj: Any, title_attr: str, values: dict[str, Any]) -> None:
+    """Création / modification : identifiant vide → déduit du titre ; saisi → normalisé ; doublon saisi → refusé."""
+    cols = model.__table__.columns
+    for attr in _AUTO_IDS:
+        if attr not in cols:
+            continue
+        creating = obj.id is None
+        raw = values.get(attr) if attr in values else (None if creating else getattr(obj, attr))
+        if not creating and attr in values and not (raw or "").strip():
+            values.pop(attr)  # effacé dans le formulaire : on garde l'adresse actuelle (liens existants)
+            continue
+        if not creating and attr not in values:
+            continue
+        typed = bool((raw or "").strip())
+        base = _ident_from(
+            model, attr, str(raw) if typed else str(getattr(obj, title_attr, None) or values.get(title_attr) or "")
+        )
+        if typed:
+            clash = select(model.id).where(getattr(model, attr) == base)
+            if obj.id is not None:
+                clash = clash.where(model.id != obj.id)
+            if db.scalar(clash.limit(1)) is not None:
+                label = "Cette adresse (slug)" if attr == "slug" else "Cette clé"
+                raise Conflict(f"{label} « {base} » est déjà utilisée par un autre élément.")
+            value = base
+        else:
+            value = _unique_ident(db, model, attr, base, obj.id)
+        values[attr] = value
+        if creating:
+            setattr(obj, attr, value)  # modification : appliqué ensuite (redirection automatique de l'ancienne adresse)
+
+
 def _collection_hooks(key: str) -> dict[str, Any]:
+    definition = service.COLLECTIONS[key]
+
     def before_create(db: Session, obj: Any, access: Access, values: dict[str, Any]) -> None:
         access.require("cms:write")
         obj.status = "draft"
         obj.created_by_id = access.p.id
+        _fill_identifiers(db, definition.model, obj, definition.title_attr, values)
         _validate_item(db, obj, values)
+
+    # Adresses publiques avant modification (élément publié et, pour un univers, ses offres publiées) : une adresse
+    # qui change (slug, univers d'une offre) reçoit une redirection 301 après enregistrement.
+    previous: dict[uuid.UUID, list[tuple[str, Any, Any]]] = {}
+
+    def _published_paths(db: Session, obj: Any) -> list[tuple[str, Any, Any]]:
+        found = []
+        if obj.status == "published" and (path := service.public_path(db, key, obj)):
+            found.append((path, key, obj))
+        if key == "universes":
+            offers = db.execute(
+                select(m.Offer).where(m.Offer.universe_id == obj.id, m.Offer.status == "published")
+            ).scalars()
+            found += [(p, "offers", o) for o in offers if (p := service.public_path(db, "offers", o))]
+        return found
 
     def before_update(db: Session, obj: Any, access: Access, values: dict[str, Any]) -> None:
         service._guard_published_edit(access.p, obj)
-        old_path = service.public_path(db, key, obj) if obj.status == "published" else None
+        _fill_identifiers(db, definition.model, obj, definition.title_attr, values)
         _validate_item(db, obj, values)
         obj.updated_by_id = access.p.id
-        if old_path and "slug" in values and values["slug"] != obj.slug:
-            obj.slug = values["slug"]
-            new_path = service.public_path(db, key, obj)
-            if new_path:
-                service._auto_redirect(db, old_path, new_path, access.p.id)
+        previous[obj.id] = _published_paths(db, obj)
 
     def after_change(db: Session, obj: Any, access: Access, action: str) -> None:
+        for old_path, entity, item in previous.pop(obj.id, []):
+            new_path = service.public_path(db, entity, item)
+            if new_path and new_path != old_path:
+                service._auto_redirect(db, old_path, new_path, access.p.id)
         if action != "delete":
             service.add_revision(db, key, obj, access.p.id)
 
@@ -360,9 +444,18 @@ for _key, _def in service.COLLECTIONS.items():
                 "helpful_yes",
                 "helpful_no",
             },
+            optional_in={"slug", "key"},
             **_collection_hooks(_key),
         )
     )
+
+
+def _taxonomy_hooks(model: Any) -> dict[str, Any]:
+    def before_save(db: Session, obj: Any, access: Access, values: dict[str, Any]) -> None:
+        _fill_identifiers(db, model, obj, "name", values)
+
+    return {"before_create": before_save, "before_update": before_save}
+
 
 for _key, _model in service.TAXONOMIES.items():
     router.include_router(
@@ -377,6 +470,8 @@ for _key, _model in service.TAXONOMIES.items():
             search=["name"],
             sort=["name", "sort_order"],
             default_sort="name",
+            optional_in={"slug"},
+            **_taxonomy_hooks(_model),
         )
     )
 
@@ -528,18 +623,82 @@ router.include_router(
 )
 
 
+# Adresses jamais traitées par les redirections du site (espaces connectés, API, fichiers) : règle sans effet.
+_NOT_REDIRECTABLE = (
+    "/api",
+    "/_next",
+    "/erp",
+    "/espace-client",
+    "/extranet",
+    "/embarque",
+    "/connexion",
+    "/inscription",
+    "/activation",
+    "/brand",
+    "/fonts",
+    "/uploads",
+)
+
+
+def _clean_path(path: str) -> str:
+    path = path.strip()
+    return "/" + path.strip("/") if path not in ("", "/") else "/"
+
+
 def _check_redirect(db: Session, obj: m.Redirect, values: dict[str, Any] | None = None) -> None:
-    source = (values or {}).get("source_path", obj.source_path)
-    target = (values or {}).get("target_path", obj.target_path)
-    code = (values or {}).get("status_code", obj.status_code)
+    """Redirection : adresses normalisées, source unique et redirigeable, cible valide, jamais de boucle."""
+    data = values if values is not None else {}
+    source = _clean_path(data.get("source_path", obj.source_path) or "")
+    target = data.get("target_path", obj.target_path)
+    target = (target or "").strip() or None
+    code = data.get("status_code", obj.status_code)
     if code not in (301, 302, 410):
         raise AppError("Code de redirection autorisé : 301, 302 ou 410")
-    if not source.startswith("/"):
+    if not (data.get("source_path", obj.source_path) or "").strip().startswith("/"):
         raise AppError("Le chemin source doit commencer par /")
+    if source == "/":
+        raise AppError("La page d'accueil ne peut pas être redirigée.", code="INVALID_REDIRECT")
+    if any(source == p or source.startswith(p + "/") for p in _NOT_REDIRECTABLE):
+        raise AppError(
+            f"« {source} » appartient aux espaces de la plateforme (ERP, espace client, API…) : non redirigeable.",
+            code="INVALID_REDIRECT",
+        )
     if code != 410 and not target:
         raise AppError("Cible requise pour une redirection 301/302")
+    if target and not target.startswith(("/", "https://", "http://")):
+        raise AppError("La cible commence par « / » (page du site) ou « https:// ».", code="INVALID_REDIRECT")
+    if target and target.startswith("/"):
+        target = _clean_path(target)
     if target and target == source:
         raise AppError("Redirection circulaire")
+    clash = select(m.Redirect.id).where(m.Redirect.source_path == source)
+    if obj.id is not None:
+        clash = clash.where(m.Redirect.id != obj.id)
+    if db.scalar(clash.limit(1)) is not None:
+        raise Conflict(f"Une redirection existe déjà depuis « {source} » : modifiez-la.", code="REDIRECT_EXISTS")
+    # Chaîne de redirections : la cible ne doit pas, de proche en proche, ramener à la source.
+    current, seen = target, {source}
+    for _ in range(20):
+        if not current or not current.startswith("/"):
+            break
+        if current in seen:
+            raise AppError(
+                f"Boucle de redirection : « {current} » ramène déjà vers « {source} ».", code="REDIRECT_LOOP"
+            )
+        seen.add(current)
+        stmt = select(m.Redirect.target_path).where(
+            m.Redirect.source_path == current, m.Redirect.is_active.is_(True), m.Redirect.status_code != 410
+        )
+        if obj.id is not None:
+            stmt = stmt.where(m.Redirect.id != obj.id)
+        current = db.scalar(stmt.limit(1))
+    if values is None:
+        obj.source_path, obj.target_path = source, target
+    else:
+        if "source_path" in values:
+            values["source_path"] = source
+        if "target_path" in values:
+            values["target_path"] = target
 
 
 @router.post("/redirects/import")
@@ -729,8 +888,9 @@ def put_navigation(
         db.add(menu)
         db.flush()
     menu.title = data.title
-    menu.items.clear()
-    db.flush()
+    # Suppression en bloc : les sous-éléments partent par la cascade de la base (évite les suppressions en double).
+    db.execute(delete(m.NavigationItem).where(m.NavigationItem.menu_id == menu.id))
+    db.expire(menu, ["items"])
 
     def add(items: list[Any], parent: uuid.UUID | None) -> None:
         for index, item in enumerate(items):
@@ -939,6 +1099,11 @@ def list_media(
     principal: Principal = Depends(require("cms:read")),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
+    # Compteurs d'utilisation tenus à jour (un média ajouté à une page ne doit pas rester marqué « libre »).
+    last_scan = db.scalar(select(func.max(m.MediaAsset.last_usage_scan_at)))
+    if last_scan is None or utcnow() - last_scan > timedelta(minutes=2):
+        media_svc.scan_usage(db)
+        db.commit()
     stmt = select(m.MediaAsset).where(m.MediaAsset.deleted_at.is_(None), m.MediaAsset.status == status)
     if kind:
         stmt = stmt.where(m.MediaAsset.kind == kind)
@@ -1034,9 +1199,15 @@ def get_media(
         .scalars()
         .all()
     )
+    # Pages désignées par leur titre (l'index des usages les repère par clé technique).
+    titles = dict(db.execute(select(m.CmsPage.route_key, m.CmsPage.title)).tuples().all())
+    usages = [
+        {**u, "ref": titles.get(u["ref"], u["ref"])} if u["type"] == "page" else u
+        for u in media_svc.media_usage(db).get(media_id, [])
+    ]
     return {
         **_media_out(asset),
-        "usages": media_svc.media_usage(db).get(media_id, []),
+        "usages": usages,
         "revisions": jsonable(
             [
                 {"action": r.action, "changes": r.changes, "user_id": r.user_id, "created_at": r.created_at}
@@ -1194,6 +1365,18 @@ def reply_comment(
     parent = db.get(m.BlogComment, comment_id)
     if parent is None:
         raise NotFound("Commentaire introuvable")
+    # Le site n'affiche que les fils publiés : répondre à un commentaire en attente le publie (droit de relecture).
+    if parent.status in ("rejected", "spam"):
+        raise AppError("Ce commentaire est refusé : publiez-le avant d'y répondre.", code="COMMENT_NOT_PUBLISHED")
+    if parent.status == "pending":
+        if not principal.has("cms:review"):
+            raise AppError(
+                "Ce commentaire attend la modération : un relecteur doit le publier avant la réponse.",
+                code="COMMENT_NOT_PUBLISHED",
+            )
+        parent.status = "approved"
+        parent.moderated_by_id = principal.id
+        parent.moderated_at = utcnow()
     reply = m.BlogComment(
         post_id=parent.post_id,
         parent_id=parent.id,

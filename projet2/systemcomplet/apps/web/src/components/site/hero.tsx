@@ -164,7 +164,7 @@ export function CinematicHero({ block: b, first, pullUp = false }: { block: Bloc
             {b.subtitle ? <p className="fade-up mt-6 max-w-xl text-lg text-muted" style={{ "--delay": "500ms" } as CSSProperties}>{b.subtitle}</p> : null}
             {ctas.length ? (
               <div className="mt-9 flex flex-wrap gap-3">
-                {ctas.map((c, i) => (i === 0 ? <HeroCta key={c.label} cta={c} index={0} /> : <Link key={c.label} href={c.href} className="btn-outline-brand">{c.label}</Link>))}
+                {ctas.map((c, i) => (i === 0 ? <HeroCta key={`${c.label}-${i}`} cta={c} index={0} /> : <Link key={`${c.label}-${i}`} href={c.href} className="btn-outline-brand">{c.label}</Link>))}
               </div>
             ) : null}
           </div>
@@ -228,7 +228,7 @@ export function CinematicHero({ block: b, first, pullUp = false }: { block: Bloc
           {heroCtas.length ? (
             <div className="fade-up mt-10 flex flex-wrap gap-3" style={{ "--delay": "750ms" } as CSSProperties}>
               {heroCtas.map((c, i) => (
-                <HeroCta key={c.label} cta={c} index={i} />
+                <HeroCta key={`${c.label}-${i}`} cta={c} index={i} />
               ))}
             </div>
           ) : null}

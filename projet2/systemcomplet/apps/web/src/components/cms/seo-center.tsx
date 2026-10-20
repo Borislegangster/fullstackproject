@@ -126,6 +126,18 @@ const SCHEMA_FIELDS: Record<string, FieldConfig> = {
 };
 const NETWORKS = ["facebook", "instagram", "linkedin", "tiktok", "youtube", "x", "whatsapp"];
 
+// Types de contenus référencés (les codes « universe », « offer »… ont un autre sens dans les libellés communs).
+const SEO_TARGETS: Record<string, string> = {
+  page: "Page du site",
+  universe: "Univers",
+  offer: "Offre",
+  expertise: "Expertise",
+  service: "Service",
+  project: "Réalisation",
+  blog_post: "Article de blog",
+  help_article: "Article d'aide",
+};
+
 export function SeoOverview() {
   const { can } = useAuth();
   const toast = useToast();
@@ -163,7 +175,7 @@ export function SeoOverview() {
             {filtered.map((r) => (
               <li key={`${r.target_type}:${r.target_key}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
                 <span className="min-w-0">
-                  <span className="font-medium">{r.title}</span> <span className="text-xs text-muted">· {optionLabel(r.target_type)}</span>
+                  <span className="font-medium">{r.title}</span> <span className="text-xs text-muted">· {SEO_TARGETS[r.target_type] ?? optionLabel(r.target_type)}</span>
                   <span className="block font-mono text-xs text-muted">{r.path ?? "—"}</span>
                   {(r.issues ?? []).length ? (
                     <span className="mt-1 flex flex-wrap gap-1">

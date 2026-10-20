@@ -29,6 +29,7 @@ Les **Redirections** 301 / 302 / 410 ; elles sont créées automatiquement lors 
 
 ::: perm seo:write
 - **Nouvelle redirection** : **Chemin source** obligatoire, chemin cible, code HTTP, actif, note. Modifier ou supprimer depuis la fiche.
+- Contrôles automatiques : une seule redirection par chemin source ; cible commençant par « / » (page du site) ou « https:// » ; l'accueil et les espaces de la plateforme (ERP, espace client…) ne se redirigent pas ; une boucle (A → B → A) est refusée. Quand un contenu est publié à une adresse, la redirection qui en partait est levée.
 - **Importer un CSV** ouvre **Importer des redirections** (colonnes source, cible, code) puis **Importer**.
 :::
 

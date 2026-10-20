@@ -63,6 +63,12 @@ const beforeAfter: FieldConfig = {
 };
 
 /** Liste d'éléments structurés éditée en lignes (sans JSON) ; les anciennes valeurs texte sont reprises. */
+// Identifiants techniques : facultatifs, le serveur les déduit du titre (et les rend uniques) quand ils sont vides.
+const AUTO_IDS: Record<string, FieldConfig> = {
+  slug: { placeholder: "Automatique", help: "Fin de l'adresse de la page, ex. « villa-moderne-douala ». Laissez vide : déduite du titre." },
+  key: { placeholder: "Automatique", help: "Identifiant interne. Laissez vide : déduit du titre." },
+};
+
 const itemsField = (label: string, itemLabel: string, fields: { key: string; label: string; type: "text" | "textarea" }[], help?: string): FieldConfig => ({
   span: 2,
   label,
@@ -206,8 +212,8 @@ export function CollectionView({ def }: { def: CollectionDef }) {
             { key: "status", label: "Statut", render: (r: Row) => <StatusBadge status={r.status} /> },
           ],
           filters: def.filters ?? [STATUS_FILTER],
-          create: { endpoint: `POST ${def.path}`, label: `Nouveau — ${def.label}`, perms: ["cms:write"], fields: def.fields },
-          update: { endpoint: `PATCH ${def.path}/{item_id}`, perms: ["cms:write"], fields: def.fields },
+          create: { endpoint: `POST ${def.path}`, label: `Nouveau — ${def.label}`, perms: ["cms:write"], fields: { ...AUTO_IDS, ...def.fields } },
+          update: { endpoint: `PATCH ${def.path}/{item_id}`, perms: ["cms:write"], fields: { ...AUTO_IDS, ...def.fields } },
           remove: { path: (r) => `${def.path}/${r.id}`, perms: ["cms:publish"], confirm: "Supprimer définitivement cet élément ? (préférez l'archivage pour un contenu publié)" },
           actions: [
             ...transitions,
@@ -255,8 +261,8 @@ export function TaxonomyView({ path, label }: { path: string; label: string }) {
           { key: "slug", label: "Slug" },
           { key: "sort_order", label: "Ordre" },
         ],
-        create: { endpoint: `POST ${path}`, label: "Ajouter", perms: ["cms:write"], fields: { photo_media_id: media("image") } },
-        update: { endpoint: `PATCH ${path}/{item_id}`, perms: ["cms:write"], fields: { photo_media_id: media("image") } },
+        create: { endpoint: `POST ${path}`, label: "Ajouter", perms: ["cms:write"], fields: { ...AUTO_IDS, photo_media_id: media("image") } },
+        update: { endpoint: `PATCH ${path}/{item_id}`, perms: ["cms:write"], fields: { ...AUTO_IDS, photo_media_id: media("image") } },
         remove: { path: (r) => `${path}/${r.id}`, perms: ["cms:write"] },
       }}
     />

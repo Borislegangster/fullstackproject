@@ -120,14 +120,24 @@ def test_publication_workflow_and_seo(client, db):
     _, editor = as_role(client, db, "CHEF_PROJET")
     resp = client.put(f"/api/v1/cms/pages/{page['id']}", headers=editor, json=_page_payload(media_id))
     assert resp.status_code == 403
-    # Changement d'URL d'une page publiée → redirection 301 automatique.
+    # L'accueil est servi par une route fixe du site : son adresse ne change pas.
     moved = _page_payload(media_id, path="/accueil")
     resp = client.put(f"/api/v1/cms/pages/{page['id']}", headers=headers, json=moved)
-    assert resp.status_code == 200
-    redirects = client.get("/api/v1/public/redirects").json()
-    assert {"source": "/", "target": "/accueil", "status": 301} in redirects
+    assert resp.status_code == 400 and resp.json()["error"]["code"] == "SYSTEM_PAGE"
     revisions = client.get(f"/api/v1/cms/revisions/page/{page['id']}", headers=headers).json()
     assert len(revisions) >= 4
+    # Changement d'URL d'une page libre publiée → redirection 301 automatique.
+    about = client.post(
+        "/api/v1/cms/pages", headers=headers, json=_page_payload(media_id, path="/a-propos", route_key="about")
+    ).json()
+    for target in ("in_review", "validated", "published"):
+        r = client.post(f"/api/v1/cms/pages/{about['id']}/transition", headers=headers, json={"target": target})
+        assert r.status_code == 200, r.text
+    moved = _page_payload(media_id, path="/qui-sommes-nous", route_key="about")
+    resp = client.put(f"/api/v1/cms/pages/{about['id']}", headers=headers, json=moved)
+    assert resp.status_code == 200
+    redirects = client.get("/api/v1/public/redirects").json()
+    assert {"source": "/a-propos", "target": "/qui-sommes-nous", "status": 301} in redirects
 
 
 def test_collections_offers_and_universe(client, db):

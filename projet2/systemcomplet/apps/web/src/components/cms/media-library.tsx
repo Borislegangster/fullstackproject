@@ -119,7 +119,8 @@ function MediaDetail({ id, onChanged, onClose }: { id: string; onChanged: () => 
           <ul className="space-y-1 text-sm">
             {(m.usages as Row[]).map((u, i) => (
               <li key={i}>
-                {optionLabel(u.entity_type ?? u.type)} · {u.title ?? u.label ?? u.entity_id ?? ""}
+                {USAGE_TYPES[u.type] ?? optionLabel(u.type)}
+                {u.ref && !["media_poster", "seo", "site_settings"].includes(u.type) ? ` · ${u.ref}` : ""}
               </li>
             ))}
           </ul>
@@ -188,6 +189,28 @@ function MediaDetail({ id, onChanged, onClose }: { id: string; onChanged: () => 
   );
 }
 
+// Contenus qui référencent un média (index du serveur : type + page / adresse / nom).
+const USAGE_TYPES: Record<string, string> = {
+  page: "Page",
+  universe: "Univers",
+  offer: "Offre",
+  expertise: "Expertise",
+  service: "Service",
+  project: "Réalisation",
+  blog_post: "Article de blog",
+  help_article: "Article d'aide",
+  faq: "FAQ",
+  testimonial: "Témoignage",
+  team: "Équipe",
+  partner: "Partenaire",
+  certification: "Certification",
+  video: "Vidéothèque",
+  banner: "Bannière",
+  blog_author: "Auteur du blog",
+  site_settings: "Réglages du site",
+  seo: "Référencement (image de partage)",
+  media_poster: "Affiche d'une vidéo",
+};
 export function MediaLibraryPage() {
   const { can } = useAuth();
   const toast = useToast();
@@ -250,7 +273,7 @@ export function MediaLibraryPage() {
             onClick={async () => {
               try {
                 const res = await api<Row>("/cms/media-scan", { method: "POST" });
-                toast.success("Analyse des utilisations terminée", Object.entries(res).map(([k, v]) => `${optionLabel(k)} : ${v}`).join(" · "));
+                toast.success("Analyse des utilisations terminée", `${res.used} média(s) utilisé(s) · ${res.orphans} inutilisé(s) sur ${res.total}`);
                 reload();
               } catch (err) {
                 toast.error("Analyse impossible", errorMessage(err));

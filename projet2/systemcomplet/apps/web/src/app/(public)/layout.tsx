@@ -37,7 +37,11 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       )}
       <ScrollProgress />
       <JsonLd data={organizationLd(site)} />
-      <SiteHeader items={site?.menus?.header?.items ?? []} logo={site?.logo} companyName={site?.company_name ?? "GLOBUS ENGINEERING"} phone={site?.contacts?.phone} />
+      <SiteHeader
+        items={site?.menus?.header?.items ?? []}
+        mobileItems={site?.menus?.mobile?.items ?? []}
+        actionItems={site?.menus?.cta?.items ?? []}
+        logo={site?.logo} companyName={site?.company_name ?? "GLOBUS ENGINEERING"} phone={site?.contacts?.phone} />
       <main id="contenu" className="min-h-[60vh]">
         {children}
       </main>

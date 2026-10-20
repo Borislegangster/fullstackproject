@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { ArrowRight, ArrowUpRight, Facebook, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -22,9 +23,9 @@ function FooterLinks({ title, items }: { title: string; items: NavItem[] }) {
     <div>
       <p className="eyebrow text-accent-400 [letter-spacing:0.16em]">{title}</p>
       <ul className="mt-5 space-y-3">
-        {items.map((item) => (
-          <li key={item.label}>
-            {/^https?:/.test(item.href) ? (
+        {items.map((item, ki) => (
+          <li key={`${item.label}-${ki}`}>
+            {/^https?:/.test(item.href) || item.open_new_tab ? (
               <a href={item.href} className="group inline-flex items-center gap-1 text-sm text-brand-100 transition hover:text-white" target="_blank" rel="noopener noreferrer">
                 {item.label}
                 <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />
@@ -47,7 +48,8 @@ export function SiteFooter({ site }: { site: SitePayload | null }) {
   const contacts = site?.contacts ?? {};
   const name = site?.company_name ?? "GLOBUS ENGINEERING";
   const whatsapp = contacts.whatsapp?.replace(/\D/g, "");
-  const cta = (site?.menus?.header?.items ?? []).find((i) => i.highlight);
+  const cta = (site?.menus?.cta?.items ?? [])[0] ?? (site?.menus?.header?.items ?? []).find((i) => i.highlight);
+  const services = site?.menus?.footer_services?.items ?? [];
   const verbs = (site?.slogan ?? "").split(/\.\s*/).filter(Boolean);
   return (
     <footer className="relative isolate overflow-hidden bg-night text-brand-100">
@@ -84,7 +86,7 @@ export function SiteFooter({ site }: { site: SitePayload | null }) {
       ) : null}
 
       <div className="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-12 [&>*]:min-w-0">
-        <div className="space-y-5 lg:col-span-4">
+        <div className={clsx("space-y-5", services.length ? "lg:col-span-3" : "lg:col-span-4")}>
           <span className="inline-flex rounded-2xl bg-white/95 px-3 py-2 shadow-lg">
             <img src={site?.logo_dark?.variants?.thumb?.url ?? site?.logo?.variants?.thumb?.url ?? site?.logo?.url ?? "/brand/logo-globus.png"} alt={name} className="h-10 w-auto" />
           </span>
@@ -120,7 +122,12 @@ export function SiteFooter({ site }: { site: SitePayload | null }) {
         <div className="lg:col-span-2">
           <FooterLinks title={site?.menus?.footer_main?.title ?? "Navigation"} items={site?.menus?.footer_main?.items ?? []} />
         </div>
-        <div className="lg:col-span-3">
+        {services.length ? (
+          <div className="lg:col-span-2">
+            <FooterLinks title={site?.menus?.footer_services?.title ?? "Services"} items={services} />
+          </div>
+        ) : null}
+        <div className={services.length ? "lg:col-span-2" : "lg:col-span-3"}>
           <p className="eyebrow text-accent-400 [letter-spacing:0.16em]">Contact</p>
           <ul className="mt-5 space-y-4 text-sm">
             {contacts.address || contacts.city ? (
@@ -185,8 +192,8 @@ export function SiteFooter({ site }: { site: SitePayload | null }) {
             © {new Date().getFullYear()} {name}
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
-            {(site?.menus?.footer_legal?.items ?? []).map((item) => (
-              <li key={item.label}>
+            {(site?.menus?.footer_legal?.items ?? []).map((item, ki) => (
+              <li key={`${item.label}-${ki}`}>
                 <Link href={item.href} className="hover:text-white">
                   {item.label}
                 </Link>

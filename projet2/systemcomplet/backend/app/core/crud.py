@@ -52,9 +52,13 @@ def model_schema(
     include: set[str] | None = None,
     partial: bool = False,
     output: bool = False,
+    optional: set[str] | None = None,
 ) -> type[BaseModel]:
-    """Crée un schéma Pydantic depuis les colonnes d'un modèle SQLAlchemy."""
-    key = (model, name, frozenset(exclude or ()), frozenset(include or ()), partial, output)
+    """Crée un schéma Pydantic depuis les colonnes d'un modèle SQLAlchemy.
+
+    ``optional`` : colonnes obligatoires en base mais facultatives à la saisie (complétées par le serveur, ex. slug).
+    """
+    key = (model, name, frozenset(exclude or ()), frozenset(include or ()), partial, output, frozenset(optional or ()))
     if key in _schema_cache:
         return _schema_cache[key]
     exclude = set(exclude or set())
@@ -66,7 +70,7 @@ def model_schema(
         if cname in exclude or (not output and cname in _SYSTEM_FIELDS):
             continue
         py = _python_type(column)
-        if output or partial:
+        if output or partial or (optional and cname in optional):
             fields[cname] = (py | None, None)
             continue
         has_default = column.default is not None or column.server_default is not None
@@ -145,6 +149,7 @@ def make_crud_router(
     sort: list[str] | None = None,
     default_sort: str | None = None,
     exclude_in: set[str] | None = None,
+    optional_in: set[str] | None = None,
     exclude_out: set[str] | None = None,
     readonly_fields: set[str] | None = None,
     before_create: Callable[[Session, Any, Access, dict[str, Any]], None] | None = None,
@@ -156,7 +161,7 @@ def make_crud_router(
 ) -> APIRouter:
     name = model.__name__
     exclude_in = set(exclude_in or set()) | ({creator_attr} if creator_attr else set())
-    create_schema = model_schema(model, name=f"{name}Create", exclude=exclude_in)
+    create_schema = model_schema(model, name=f"{name}Create", exclude=exclude_in, optional=optional_in)
     update_schema = model_schema(model, name=f"{name}Update", exclude=exclude_in, partial=True)
     out_schema = model_schema(model, name=f"{name}Out", exclude=exclude_out, output=True)
     router = APIRouter(prefix=prefix, tags=tags)

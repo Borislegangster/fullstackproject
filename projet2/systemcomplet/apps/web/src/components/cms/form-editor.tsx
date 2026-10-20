@@ -285,11 +285,13 @@ export function FormDefinitionEditor({ initial, onClose, onSaved }: { initial: R
     success_message: draft.success_message,
     min_fill_seconds: draft.min_fill_seconds,
   } as FormDefinitionPayload;
+  // « Décrire mon projet » : questions de l'assistant guidé gérées par la plateforme (aucun champ à saisir ici).
+  const guided = draft.key === "describe_project";
   const problems = [
     !draft.title.trim() ? "Donnez un titre au formulaire." : null,
-    !draft.fields.length ? "Ajoutez au moins un champ." : null,
+    !guided && !draft.fields.length ? "Ajoutez au moins un champ." : null,
     draft.fields.some((f: FormFieldDef) => !f.label.trim()) ? "Chaque champ doit avoir une question affichée." : null,
-    draft.destination === "crm_lead" && !draft.fields.some((f: FormFieldDef) => ["email", "phone", "whatsapp"].includes(f.name))
+    !guided && draft.destination === "crm_lead" && !draft.fields.some((f: FormFieldDef) => ["email", "phone", "whatsapp"].includes(f.name))
       ? "Pour créer un prospect, prévoyez au moins un champ E-mail, Téléphone ou WhatsApp."
       : null,
     draft.destination === "newsletter" && !draft.fields.some((f: FormFieldDef) => f.name === "email") ? "L'inscription à la newsletter nécessite le champ E-mail." : null,
@@ -351,7 +353,13 @@ export function FormDefinitionEditor({ initial, onClose, onSaved }: { initial: R
           </Section>
 
           <Section step={2} title="Questions posées" text="Ajoutez les champs, réglez leur ordre et indiquez ceux qui sont obligatoires.">
-            <FieldsBuilder value={draft.fields} onChange={(fields) => set({ fields })} />
+            {guided ? (
+              <Alert tone="info" title="Assistant guidé">
+                Les questions de « Décrire mon projet » (type de projet, terrain, budget, délais, coordonnées…) sont posées par l&apos;assistant en plusieurs étapes et gérées par la plateforme. Réglez ici le titre, les notifications, la réponse automatique et le message de confirmation.
+              </Alert>
+            ) : (
+              <FieldsBuilder value={draft.fields} onChange={(fields) => set({ fields })} />
+            )}
           </Section>
 
           <Section step={3} title="Consentements (RGPD)" text="Cases à cocher affichées sous le formulaire ; chaque accord est horodaté et conservé.">
@@ -519,7 +527,7 @@ export function AutoReplyEditor({ initial, onClose, onSaved }: { initial: Row | 
     <Modal
       open
       onClose={onClose}
-      title={editing ? `Modifier la réponse « ${initial?.code ?? ""} »` : "Nouvelle réponse automatique"}
+      title={editing ? `Modifier la réponse « ${(initial?.code ?? "").replace(/[-_]+/g, " ")} »` : "Nouvelle réponse automatique"}
       size="xl"
       footer={
         <div className="flex w-full flex-wrap items-center justify-between gap-3">

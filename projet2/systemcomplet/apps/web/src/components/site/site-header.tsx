@@ -29,11 +29,17 @@ function NavLink({ item, onNavigate, className, children }: { item: NavItem; onN
  * illustrés (icône + description issues du CMS), menu mobile plein écran. */
 export function SiteHeader({
   items,
+  mobileItems = [],
+  actionItems = [],
   logo,
   companyName,
   phone,
 }: {
   items: NavItem[];
+  /** Menu « Menu mobile » du CMS (sinon : celui de l'en-tête). */
+  mobileItems?: NavItem[];
+  /** Menu « Boutons d'action de l'en-tête » du CMS (sinon : éléments « mis en avant » de l'en-tête). */
+  actionItems?: NavItem[];
   logo?: Media | null;
   companyName: string;
   phone?: string | null;
@@ -61,7 +67,8 @@ export function SiteHeader({
   }, [open]);
 
   const regular = items.filter((i) => !i.highlight);
-  const highlighted = items.filter((i) => i.highlight);
+  const highlighted = actionItems.length ? actionItems : items.filter((i) => i.highlight);
+  const mobile = (mobileItems.length ? mobileItems : items).filter((i) => !i.highlight);
   const active = (href: string) => (href === "/" ? pathname === "/" : !!pathname?.startsWith(href));
   const tel = phone?.replace(/\s/g, "");
 
@@ -73,17 +80,17 @@ export function SiteHeader({
             <img src={logo?.variants?.thumb?.url ?? logo?.url ?? "/brand/logo-globus.png"} alt={logo?.alt ?? companyName} className="h-9 w-auto lg:h-11" />
           </Link>
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Navigation principale">
-            {regular.map((item) =>
+            {regular.map((item, ki) =>
               item.children.length ? (
-                <div key={item.label} className="group relative">
+                <div key={`${item.label}-${ki}`} className="group relative">
                   <button type="button" className={clsx("hdr-link flex items-center gap-1", item.children.some((c) => active(c.href)) && "is-active")}>
                     {item.label}
                     <ChevronDown className="h-4 w-4 transition group-hover:rotate-180" />
                   </button>
                   <div className="invisible absolute left-1/2 top-full w-[36rem] -translate-x-1/2 translate-y-3 pt-3 opacity-0 transition duration-300 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
                     <div className="glass grid grid-cols-2 gap-1 rounded-3xl p-3">
-                      {item.children.map((child) => (
-                        <NavLink key={child.label} item={child} className="group/item flex items-start gap-3 rounded-2xl p-3 transition hover:bg-brand-50/80">
+                      {item.children.map((child, ki) => (
+                        <NavLink key={`${child.label}-${ki}`} item={child} className="group/item flex items-start gap-3 rounded-2xl p-3 transition hover:bg-brand-50/80">
                           <span className="mt-0.5 inline-flex rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 p-2 text-white shadow-md transition group-hover/item:from-accent-400 group-hover/item:to-accent-600">
                             <DynIcon name={child.icon} className="h-4 w-4" />
                           </span>
@@ -97,7 +104,7 @@ export function SiteHeader({
                   </div>
                 </div>
               ) : (
-                <NavLink key={item.label} item={item} className={clsx("hdr-link", active(item.href) && "is-active")} />
+                <NavLink key={`${item.label}-${ki}`} item={item} className={clsx("hdr-link", active(item.href) && "is-active")} />
               ),
             )}
           </nav>
@@ -113,8 +120,8 @@ export function SiteHeader({
             <Link href="/connexion" className="hdr-ghost hidden items-center gap-1.5 md:inline-flex">
               <UserRound className="h-4 w-4" /> Espace client
             </Link>
-            {highlighted.map((item) => (
-              <NavLink key={item.label} item={item} className="btn-glow hidden !rounded-xl !px-4 !py-2.5 text-sm sm:inline-flex">
+            {highlighted.map((item, ki) => (
+              <NavLink key={`${item.label}-${ki}`} item={item} className="btn-glow hidden !rounded-xl !px-4 !py-2.5 text-sm sm:inline-flex">
                 {item.label}
                 <ArrowRight className="h-4 w-4" />
               </NavLink>
@@ -147,15 +154,13 @@ export function SiteHeader({
           </div>
           {open ? (
             <nav className="container-page flex flex-1 flex-col gap-1 py-6" aria-label="Navigation mobile">
-              {items
-                .filter((i) => !i.highlight)
-                .map((item, i) => (
-                  <div key={item.label} className="fade-up border-b border-white/10 py-2" style={{ "--delay": `${80 + i * 55}ms` } as CSSProperties}>
+              {mobile.map((item, i) => (
+                  <div key={`${item.label}-${i}`} className="fade-up border-b border-white/10 py-2" style={{ "--delay": `${80 + i * 55}ms` } as CSSProperties}>
                     <NavLink item={item} onNavigate={() => setOpen(false)} className={clsx("block py-2 font-title text-2xl font-bold", active(item.href) ? "text-accent-400" : "text-white")} />
                     {item.children.length ? (
                       <div className="grid grid-cols-2 gap-1 pb-2">
-                        {item.children.map((child) => (
-                          <NavLink key={child.label} item={child} onNavigate={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-brand-100 hover:bg-white/10">
+                        {item.children.map((child, ki) => (
+                          <NavLink key={`${child.label}-${ki}`} item={child} onNavigate={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-brand-100 hover:bg-white/10">
                             <DynIcon name={child.icon} className="h-4 w-4 text-accent-400" />
                             {child.label}
                           </NavLink>
@@ -165,8 +170,8 @@ export function SiteHeader({
                   </div>
                 ))}
               <div className="fade-up mt-auto grid gap-3 pt-8" style={{ "--delay": "450ms" } as CSSProperties}>
-                {highlighted.map((item) => (
-                  <NavLink key={item.label} item={item} onNavigate={() => setOpen(false)} className="btn-glow w-full">
+                {highlighted.map((item, ki) => (
+                  <NavLink key={`${item.label}-${ki}`} item={item} onNavigate={() => setOpen(false)} className="btn-glow w-full">
                     {item.label} <ArrowRight className="h-4 w-4" />
                   </NavLink>
                 ))}

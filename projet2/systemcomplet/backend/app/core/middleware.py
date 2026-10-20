@@ -218,3 +218,37 @@ def _is_admin_request(scope: Scope) -> bool:
     except Exception:  # noqa: BLE001
         return False
     return "ADMIN" in (payload.get("roles") or [])
+
+
+class SiteRefreshMiddleware:
+    """Écriture réussie dans le CMS (menus, réglages, SEO, collections, médias, commentaires…) : le site public
+    recharge ses contenus en cache sans attendre l'expiration (révalidation Next.js en tâche de fond)."""
+
+    _READ_ONLY_SUFFIXES = ("/html/preview", "/media-scan", "/preview")
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        path: str = scope.get("path", "")
+        if (
+            scope["type"] != "http"
+            or scope.get("method") in ("GET", "HEAD", "OPTIONS")
+            or not path.startswith(f"{settings.API_PREFIX}/cms/")
+            or path.endswith(self._READ_ONLY_SUFFIXES)
+        ):
+            await self.app(scope, receive, send)
+            return
+        status = 500
+
+        async def capture(message: Message) -> None:
+            nonlocal status
+            if message["type"] == "http.response.start":
+                status = message["status"]
+            await send(message)
+
+        await self.app(scope, receive, capture)
+        if status < 400:
+            from app.modules.cms.service import refresh_site  # import tardif (évite les cycles)
+
+            refresh_site()

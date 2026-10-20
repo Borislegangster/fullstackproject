@@ -66,7 +66,18 @@ interface PageDraft {
   seo: Row;
 }
 
-const emptyPage = (): PageDraft => ({ route_key: "", path: "/", title: "", template: "default", summary: "", body: "", sort_order: 0, publish_at: "", unpublish_at: "", sections: [], seo: { ...EMPTY_SEO } });
+const emptyPage = (): PageDraft => ({ route_key: "", path: "", title: "", template: "default", summary: "", body: "", sort_order: 0, publish_at: "", unpublish_at: "", sections: [], seo: { ...EMPTY_SEO } });
+
+/** « Nos engagements » → « nos-engagements » (clé et chemin d'une nouvelle page, déduits du titre). */
+function slugify(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
 
 function fromApi(p: Row): PageDraft {
   return {
@@ -208,6 +219,8 @@ export function PageEditor({ pageId }: { pageId: string | null }) {
   const [schedule, setSchedule] = useState({ publish_at: "", unpublish_at: "" });
   const [preview, setPreview] = useState<Row | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Nouvelle page : clé et chemin suivent le titre tant qu'ils n'ont pas été saisis à la main.
+  const [autoAddress, setAutoAddress] = useState(!pageId);
 
   useEffect(() => {
     if (page.data && !dirty) setDraft(fromApi(page.data));
@@ -228,7 +241,19 @@ export function PageEditor({ pageId }: { pageId: string | null }) {
     setDirty(true);
   };
   const status = page.data?.status ?? "draft";
+  const system = !!page.data?.system;
+  const setTitle = (title: string) => {
+    if (!autoAddress) return update({ title });
+    const slug = slugify(title);
+    update({ title, route_key: slug, path: slug ? `/${slug}` : "" });
+  };
   const save = async () => {
+    const missing = !draft.title.trim() ? "Saisissez le titre de la page." : !draft.route_key.trim() || !draft.path.trim() ? "Indiquez la clé et le chemin public de la page." : null;
+    if (missing) {
+      setTab("proprietes");
+      setError(missing);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -349,16 +374,31 @@ export function PageEditor({ pageId }: { pageId: string | null }) {
         {tab === "proprietes" ? (
           <Card className="grid gap-4 p-5 sm:grid-cols-2">
             <Field label="Titre" required>
-              <Input value={draft.title} onChange={(e) => update({ title: e.target.value })} />
+              <Input value={draft.title} onChange={(e) => setTitle(e.target.value)} />
             </Field>
             <Field label="Modèle">
               <Select value={draft.template} onChange={(e) => update({ template: e.target.value })} options={[{ value: "default", label: "Standard" }, { value: "landing", label: "Page d'atterrissage" }, { value: "legal", label: "Mentions / juridique" }, { value: "listing", label: "Liste" }]} />
             </Field>
-            <Field label="Clé de route" required help="Identifiant stable (ex. accueil, a-propos) utilisé par la navigation.">
-              <Input value={draft.route_key} onChange={(e) => update({ route_key: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} disabled={!!pageId && status === "published"} />
+            <Field label="Clé de route" required help={system ? "Page du site à adresse fixe : clé non modifiable." : "Identifiant stable utilisé par les menus. Déduite du titre pour une nouvelle page."}>
+              <Input
+                value={draft.route_key}
+                onChange={(e) => {
+                  setAutoAddress(false);
+                  update({ route_key: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") });
+                }}
+                disabled={system || (!!pageId && status === "published")}
+              />
             </Field>
-            <Field label="Chemin public" required help="Commence par /, sans espace. Un changement crée une redirection 301.">
-              <Input value={draft.path} onChange={(e) => update({ path: e.target.value })} />
+            <Field label="Chemin public" required help={system ? "Page du site à adresse fixe : chemin non modifiable." : "Adresse de la page (ex. /nos-engagements). Un changement sur une page en ligne crée une redirection 301."}>
+              <Input
+                value={draft.path}
+                placeholder="/nos-engagements"
+                onChange={(e) => {
+                  setAutoAddress(false);
+                  update({ path: e.target.value.replace(/\s+/g, "-") });
+                }}
+                disabled={system}
+              />
             </Field>
             <Field label="Résumé" className="sm:col-span-2">
               <Textarea value={draft.summary} onChange={(e) => update({ summary: e.target.value })} rows={2} />
@@ -392,7 +432,7 @@ export function PageEditor({ pageId }: { pageId: string | null }) {
             }}
           />
         ) : null}
-        {pageId && can("cms:publish") && status !== "published" ? (
+        {pageId && can("cms:publish") && status !== "published" && !system ? (
           <div className="flex justify-end">
             <Button variant="ghost" onClick={() => setDeleting(true)}>
               <Trash2 className="h-4 w-4" /> Supprimer la page

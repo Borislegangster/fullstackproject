@@ -539,6 +539,8 @@ class TransitionIn(Strict):
 
 
 class NavItemIn(Strict):
+    # Identifiant renvoyé par la lecture du menu : accepté puis ignoré (le menu est réécrit à chaque publication).
+    id: uuid.UUID | None = None
     label: str = Field(min_length=1, max_length=120)
     link_type: Literal["page", "path", "url", "anchor"] = "page"
     page_route_key: str | None = Field(default=None, max_length=80)
@@ -553,9 +555,12 @@ class NavItemIn(Strict):
     @model_validator(mode="after")
     def _target(self) -> NavItemIn:
         if self.link_type == "page" and not self.page_route_key:
-            raise ValueError("page_route_key requis pour un lien de page")
+            raise ValueError(f"choisissez la page vers laquelle pointe « {self.label} »")
         if self.link_type != "page" and (not self.url or not _HREF_RE.match(self.url)):
-            raise ValueError("URL de navigation invalide")
+            raise ValueError(
+                f"lien « {self.label} » : indiquez un chemin commençant par « / », une ancre « # » "
+                "ou une adresse « https:// » (ou mailto: / tel:)"
+            )
         return self
 
 

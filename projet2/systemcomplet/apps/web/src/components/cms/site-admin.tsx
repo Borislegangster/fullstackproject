@@ -360,8 +360,39 @@ function NavItemsEditor({ items, onChange, pages, depth = 0 }: { items: NavItem[
   );
 }
 
+const HREF = /^(\/(?!uploads)\S*|#[\w-]+|https:\/\/\S+|mailto:\S+|tel:[+\d\s]+)$/;
+
+/** Premier élément incomplet du menu (même règles que l'API), message en clair pour l'éditeur. */
+function navProblem(items: NavItem[], parent?: string): string | null {
+  for (const [index, i] of items.entries()) {
+    const name = i.label.trim() ? `« ${i.label.trim()} »` : `l'élément n° ${index + 1}${parent ? ` de ${parent}` : ""}`;
+    if (!i.label.trim()) return `Saisissez le libellé de ${name}.`;
+    if (i.link_type === "page" && !i.page_route_key) return `Choisissez la page vers laquelle pointe ${name}.`;
+    if (i.link_type !== "page") {
+      const url = (i.url ?? "").trim();
+      const hint = i.link_type === "path" ? "un chemin commençant par « / »" : i.link_type === "anchor" ? "une ancre commençant par « # »" : "une adresse commençant par « https:// »";
+      if (!url || !HREF.test(url)) return `Indiquez pour ${name} ${hint}.`;
+    }
+    const child = navProblem(i.children ?? [], name);
+    if (child) return child;
+  }
+  return null;
+}
+
+/** Charge utile de publication : sans identifiant (le menu est réécrit), cible cohérente avec le type de lien. */
 function clean(items: NavItem[]): Row[] {
-  return items.map((i) => ({ ...i, url: i.link_type === "page" ? null : i.url, page_route_key: i.link_type === "page" ? i.page_route_key : null, children: clean(i.children) }));
+  return items.map((i) => ({
+    label: i.label,
+    link_type: i.link_type,
+    page_route_key: i.link_type === "page" ? i.page_route_key : null,
+    url: i.link_type === "page" ? null : i.url,
+    description: i.description || null,
+    icon: i.icon || null,
+    open_new_tab: !!i.open_new_tab,
+    highlight: !!i.highlight,
+    visible: i.visible !== false,
+    children: clean(i.children ?? []),
+  }));
 }
 
 export function NavigationEditor() {
@@ -400,6 +431,11 @@ export function NavigationEditor() {
               <Button
                 loading={busy}
                 onClick={async () => {
+                  const problem = navProblem(draft.items);
+                  if (problem) {
+                    toast.error("Menu incomplet", problem);
+                    return;
+                  }
                   setBusy(true);
                   try {
                     await api(`/cms/navigation/${key}`, { method: "PUT", body: { title: draft.title, items: clean(draft.items) } });
@@ -560,26 +596,29 @@ export function CommentsModeration() {
                 {dateTime(c.created_at)} · sur « {c.post_title} » · <strong>{c.author_name}</strong> {c.is_staff ? <Badge tone="info">GLOBUS</Badge> : null} <StatusBadge status={c.status} />
               </p>
               <p className="whitespace-pre-line">{c.content}</p>
-              {can("cms:write") ? (
+              {can("cms:write") || can("cms:review") ? (
                 <div className="flex flex-wrap gap-2">
-                  {c.status !== "approved" ? (
+                  {/* Modération : droit de relecture (comme le serveur) ; réponse : droit d'écriture. */}
+                  {can("cms:review") && c.status !== "approved" ? (
                     <Button size="sm" onClick={() => void moderate(c, "approved")}>
                       Publier
                     </Button>
                   ) : null}
-                  {c.status !== "rejected" ? (
+                  {can("cms:review") && c.status !== "rejected" ? (
                     <Button size="sm" variant="secondary" onClick={() => void moderate(c, "rejected")}>
                       Refuser
                     </Button>
                   ) : null}
-                  {c.status !== "spam" ? (
+                  {can("cms:review") && c.status !== "spam" ? (
                     <Button size="sm" variant="ghost" onClick={() => void moderate(c, "spam")}>
                       Indésirable
                     </Button>
                   ) : null}
-                  <Button size="sm" variant="ghost" onClick={() => setReplyTo(c)}>
-                    <Reply className="h-4 w-4" /> Répondre
-                  </Button>
+                  {can("cms:write") && (c.status === "approved" || (c.status === "pending" && can("cms:review"))) ? (
+                    <Button size="sm" variant="ghost" onClick={() => setReplyTo(c)} title={c.status === "pending" ? "Répondre publie aussi ce commentaire" : undefined}>
+                      <Reply className="h-4 w-4" /> {c.status === "pending" ? "Publier et répondre" : "Répondre"}
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </li>

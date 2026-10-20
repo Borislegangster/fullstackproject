@@ -291,19 +291,19 @@ export function FloatingWidgets({ contacts, privacyPath, iconUrl }: { contacts?:
                 </div>
                 {m.actions?.length ? (
                   <div className="mt-2 flex max-w-[88%] flex-wrap gap-2">
-                    {m.actions.map((a) =>
+                    {m.actions.map((a, ki) =>
                       a.type === "link" ? (
                         /^https?:/.test(a.href) ? (
-                          <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#25D366] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm">
+                          <a key={`${a.label}-${ki}`} href={a.href} target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#25D366] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm">
                             {a.label}
                           </a>
                         ) : (
-                          <Link key={a.label} href={a.href} onClick={() => setOpen(false)} className="rounded-full bg-accent-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-600">
+                          <Link key={`${a.label}-${ki}`} href={a.href} onClick={() => setOpen(false)} className="rounded-full bg-accent-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-accent-600">
                             {a.label} →
                           </Link>
                         )
                       ) : (
-                        <button key={a.label} type="button" onClick={() => setLeadFor(i)} className="rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700">
+                        <button key={`${a.label}-${ki}`} type="button" onClick={() => setLeadFor(i)} className="rounded-full bg-brand-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-700">
                           <UserRound className="mr-1 inline h-3.5 w-3.5" />
                           {a.label}
                         </button>
@@ -331,8 +331,8 @@ export function FloatingWidgets({ contacts, privacyPath, iconUrl }: { contacts?:
 
           {suggestions.length && !busy ? (
             <div className="flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
-              {suggestions.map((s) => (
-                <button key={s} type="button" onClick={() => void send(s)} className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-brand-700 shadow-sm ring-1 ring-brand-100 transition hover:bg-brand-50 hover:ring-brand-300">
+              {suggestions.map((s, ki) => (
+                <button key={`${s}-${ki}`} type="button" onClick={() => void send(s)} className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-brand-700 shadow-sm ring-1 ring-brand-100 transition hover:bg-brand-50 hover:ring-brand-300">
                   {s}
                 </button>
               ))}

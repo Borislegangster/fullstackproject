@@ -21,7 +21,12 @@ from app import __version__
 from app.core.config import settings
 from app.core.errors import register_error_handlers
 from app.core.logging import setup_logging
-from app.core.middleware import MaintenanceMiddleware, RequestContextMiddleware, SecurityHeadersMiddleware
+from app.core.middleware import (
+    MaintenanceMiddleware,
+    RequestContextMiddleware,
+    SecurityHeadersMiddleware,
+    SiteRefreshMiddleware,
+)
 
 log = logging.getLogger("globus.app")
 
@@ -72,6 +77,7 @@ def create_app() -> FastAPI:
     register_error_handlers(app)
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.add_middleware(MaintenanceMiddleware)
+    app.add_middleware(SiteRefreshMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware,

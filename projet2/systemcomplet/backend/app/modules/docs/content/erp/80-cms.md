@@ -31,7 +31,7 @@ La liste des pages (filtre par statut). Cliquez une page pour ouvrir l'éditeur,
 ::: perm cms:write
 ### Créer et composer une page
 
-1. **Nouvelle page** : titre et adresse (chemin).
+1. **Nouvelle page** : le **Titre** suffit — la **Clé de route** et le **Chemin public** (ex. « Nos engagements » → /nos-engagements) se remplissent tout seuls, modifiables avant le premier enregistrement. Les adresses déjà utilisées par le site (offres, blog, espace client…) sont refusées avec un message clair.
 2. Onglet **Contenu** : **Ajouter une section**, puis dans chaque section **Ajouter le bloc** (héros, texte, chiffres clés, offres, réalisations, témoignages, appel à l'action, galerie, FAQ, formulaire…). Pour un bloc avec boutons : **Ajouter un bouton** (libellé, lien) ; **Bouton** ajoute un bouton supplémentaire. Glissez pour réordonner ; masquez une section sans la supprimer.
 3. Onglet **Propriétés** : modèle, univers, visibilité ; onglet **SEO** : titre, description, image de partage.
 4. **Enregistrer** ; **Aperçu** ouvre la fenêtre **Aperçu — …** ; **Voir en ligne** ouvre la page publiée.
@@ -47,6 +47,10 @@ La barre d'outils met en forme le texte (gras, titres, listes, citation, lien) e
 - **Insérer du code HTML** : collez ou saisissez du HTML (colonnes, tableau, encadré, vidéo YouTube ou Vimeo, carte Google Maps ou OpenStreetMap…) ; **Aperçu** montre exactement ce qui sera affiché sur le site et ce qui a été retiré ; **Insérer le code** l'ajoute à l'endroit du curseur. Le HTML est affiché tel quel après contrôle de sécurité : les scripts, formulaires et attributs d'événement sont retirés, les images doivent venir de la médiathèque, les styles de mise en page (couleurs, marges, grilles, bordures…) sont conservés.
 - **Code source HTML** (à droite de la barre) : édite tout le contenu en HTML ; un second clic revient à l'édition visuelle après le même contrôle.
 :::
+
+**Pages à adresse fixe** : l'accueil et les pages de liste (offres, expertises, services, réalisations, blog, FAQ, centre d'aide, décrire mon projet) sont servies par des écrans du site. Leur contenu se modifie librement, mais pas leur clé ni leur chemin, et elles ne peuvent pas être supprimées. Pour une autre page, changer le chemin d'une page en ligne crée une redirection 301 (revenir plus tard à l'ancienne adresse retire cette redirection), et changer la clé met à jour les liens des menus.
+
+Une erreur de saisie indique l'endroit exact : par exemple « Section 1 › Bloc 6 › Bouton 1 › Libellé : valeur trop courte ».
 
 ### Faire évoluer une page
 
@@ -71,6 +75,7 @@ Les contenus structurés : **Univers**, **Offres**, **Expertises**, **Services**
 
 ::: perm cms:write
 - **Nouveau — …** crée un élément de la collection choisie ; ouvrez un élément pour le modifier et le faire évoluer dans le même circuit que les pages. Les listes simples (catégories, auteurs) utilisent **Ajouter**.
+- **Slug (URL)** (fin de l'adresse, ex. villa-moderne-douala) et **Clé** (bannières, univers) sont facultatifs : laissés vides, ils sont déduits du titre et rendus uniques. Un slug saisi est mis au bon format ; s'il est déjà pris, le message l'indique. Changer le slug d'un élément en ligne (ou l'univers d'une offre) crée une redirection 301 ; changer le slug d'un univers redirige aussi ses offres.
 :::
 
 - **Aperçu** ouvre **Aperçu — …** : le rendu réel, même pour un brouillon (visible uniquement par vous) :
@@ -86,11 +91,20 @@ Les listes structurées se remplissent sans code : **Parcours client** des unive
 
 ## Onglet « Navigation »
 
-Menus de l'en-tête et du pied de page.
+Six menus, chacun affiché à un endroit précis du site :
 
-::: perm cms:publish
-- **Élément** ajoute une entrée (page, collection ou lien), **Sous-élément** un sous-menu ; mettez en avant un bouton (appel à l'action).
-- **Enregistrer** puis **Publier le menu**.
+| Menu | Affichage |
+| --- | --- |
+| **En-tête** | barre de navigation (ordinateur) ; les éléments **Mis en avant** deviennent des boutons |
+| **Menu mobile** | menu plein écran du téléphone (vide : celui de l'en-tête) |
+| **Boutons d'action de l'en-tête** | boutons à droite de l'en-tête et du menu mobile, premier bouton du bandeau final du pied de page (vide : éléments mis en avant de l'en-tête) |
+| **Pied de page — principal** | colonne de liens du pied de page (son **Titre du menu** sert de titre de colonne) |
+| **Pied de page — services** | seconde colonne de liens (titre = **Titre du menu**) |
+| **Pied de page — légal** | liens du bas de page (mentions, confidentialité…) |
+
+::: perm cms:write
+- **Élément** ajoute une entrée : **Page CMS** (choisie dans la liste ; masquée tant que la page n'est pas publiée), chemin du site (/…), ancre (#…) ou adresse externe (https://, mailto:, tel:). **Sous-élément** ajoute un sous-menu (méga-menu de l'en-tête).
+- **Publier le menu** : les éléments incomplets sont signalés avant l'envoi (libellé, page ou adresse manquants). Le site est mis à jour en quelques secondes.
 :::
 
 ## Onglet « Formulaires »
@@ -125,9 +139,12 @@ Accusés de réception envoyés au visiteur après un formulaire. **Nouvelle ré
 
 **Commentaires du blog** en attente de modération.
 
-::: perm cms:write
+::: perm cms:review
 - **Publier**, **Refuser** ou classer **Indésirable**.
-- **Répondre** ouvre **Réponse publique de GLOBUS** puis **Publier la réponse**.
+:::
+
+::: perm cms:write
+- **Répondre** ouvre **Réponse publique de GLOBUS** puis **Publier la réponse**. Sur un commentaire en attente, **Publier et répondre** publie aussi le commentaire (droit de relecture), sinon la réponse resterait invisible.
 :::
 
 ## Onglet « Réglages du site »

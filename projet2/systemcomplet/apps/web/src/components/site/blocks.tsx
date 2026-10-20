@@ -186,7 +186,7 @@ export function FeatureGrid({ items, columns = 3, onDark, style = "cards" }: { i
     return (
       <div className="grid auto-rows-[14rem] gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item, i) => (
-          <Reveal key={item.title} variant="zoom" delay={i * 80} className={clsx("h-full", i === 0 && "sm:col-span-2 sm:row-span-2", i === 3 && "lg:col-span-2")}>
+          <Reveal key={`${item.title}-${i}`} variant="zoom" delay={i * 80} className={clsx("h-full", i === 0 && "sm:col-span-2 sm:row-span-2", i === 3 && "lg:col-span-2")}>
             <BentoTile item={item} large={i === 0} />
           </Reveal>
         ))}
@@ -196,8 +196,8 @@ export function FeatureGrid({ items, columns = 3, onDark, style = "cards" }: { i
   if (style === "minimal") {
     return (
       <Stagger className={clsx("grid gap-x-10 gap-y-12", { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" }[columns as 2 | 3 | 4] ?? "sm:grid-cols-3")}>
-        {items.map((item) => (
-          <div key={item.title} className="group flex gap-5">
+        {items.map((item, ki) => (
+          <div key={`${item.title}-${ki}`} className="group flex gap-5">
             <span className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-lg shadow-brand-500/30 transition duration-500 group-hover:rotate-6 group-hover:from-accent-400 group-hover:to-accent-600">
               <DynIcon name={item.icon} className="h-6 w-6" />
             </span>
@@ -212,8 +212,8 @@ export function FeatureGrid({ items, columns = 3, onDark, style = "cards" }: { i
   }
   return (
     <Stagger className={clsx("grid gap-6", { 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" }[columns as 2 | 3 | 4] ?? "sm:grid-cols-3")} itemClassName="h-full">
-      {items.map((item) => (
-        <FeatureCard key={item.title} item={item} onDark={onDark} />
+      {items.map((item, ki) => (
+        <FeatureCard key={`${item.title}-${ki}`} item={item} onDark={onDark} />
       ))}
     </Stagger>
   );
@@ -224,8 +224,8 @@ function Trust({ b, onDark }: { b: Block; onDark?: boolean }) {
   const items: FeatureItem[] = b.items ?? [];
   const list = (
     <Stagger className={clsx("grid gap-4", b.media ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4")} itemClassName="h-full">
-      {items.map((item) => (
-        <div key={item.title} className={clsx("card-lift group relative h-full overflow-hidden rounded-3xl p-6", onDark ? "glass-dark" : "bg-white shadow-[var(--shadow-card)] ring-1 ring-line")}>
+      {items.map((item, ki) => (
+        <div key={`${item.title}-${ki}`} className={clsx("card-lift group relative h-full overflow-hidden rounded-3xl p-6", onDark ? "glass-dark" : "bg-white shadow-[var(--shadow-card)] ring-1 ring-line")}>
           <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent-400/15 blur-2xl transition duration-500 group-hover:bg-accent-400/35" />
           <span className="relative inline-flex rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 p-3 text-white shadow-lg shadow-accent-500/30">
             <DynIcon name={item.icon ?? "shield-check"} className="h-5 w-5" />
@@ -295,7 +295,7 @@ function Stats({ b }: { b: Block }) {
         {items.map((s, i) => {
           const { n, decimals } = statNumber(s.value);
           return (
-            <Reveal key={s.label} delay={i * 110} className="glass-dark group flex flex-col rounded-3xl p-6 text-center transition hover:bg-white/10">
+            <Reveal key={`${s.label}-${i}`} delay={i * 110} className="glass-dark group flex flex-col rounded-3xl p-6 text-center transition hover:bg-white/10">
               <dt className="order-2 mt-3 text-sm font-medium text-brand-100">{s.label}</dt>
               <dd className="order-1 font-title text-4xl font-bold sm:text-5xl">
                 <span className="text-gradient-light">
@@ -323,7 +323,7 @@ function Steps({ b, onDark }: { b: Block; onDark?: boolean }) {
         {head}
         <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" itemClassName="h-full">
           {items.map((s, i) => (
-            <div key={s.title} className="card-lift group relative h-full overflow-hidden rounded-[1.75rem] bg-white shadow-[var(--shadow-card)] ring-1 ring-line">
+            <div key={`${s.title}-${i}`} className="card-lift group relative h-full overflow-hidden rounded-[1.75rem] bg-white shadow-[var(--shadow-card)] ring-1 ring-line">
               <div className="img-zoom relative aspect-[4/3] overflow-hidden">
                 <Visual media={s.media} icon={s.icon} className="h-full w-full" sizes="(min-width: 1024px) 25vw, 50vw" />
                 <div className="absolute inset-0 bg-gradient-to-t from-night-950/70 via-transparent to-transparent" />
@@ -349,7 +349,7 @@ function Steps({ b, onDark }: { b: Block; onDark?: boolean }) {
           {items.map((s, i) => (
             <Reveal
               as="li"
-              key={s.title}
+              key={`${s.title}-${i}`}
               delay={i * 90}
               className="flex items-center gap-4 rounded-2xl p-4 text-white shadow-lg"
               style={{ marginInline: `${i * 3}%`, background: `linear-gradient(100deg, color-mix(in oklab, var(--color-brand-600) ${Math.max(20, 100 - i * 16)}%, var(--color-accent-500)), var(--color-brand-900))` }}
@@ -368,7 +368,7 @@ function Steps({ b, onDark }: { b: Block; onDark?: boolean }) {
     <ol className={clsx("relative", !b.media && "mx-auto max-w-3xl")}>
       <span className="absolute bottom-6 left-[1.35rem] top-6 w-px bg-gradient-to-b from-accent-500 via-brand-400 to-transparent" aria-hidden="true" />
       {items.map((s, i) => (
-        <Reveal as="li" key={s.title} delay={i * 90} variant="left" className="relative pb-8 pl-16 last:pb-0">
+        <Reveal as="li" key={`${s.title}-${i}`} delay={i * 90} variant="left" className="relative pb-8 pl-16 last:pb-0">
           <span className="absolute left-0 top-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 font-title text-sm font-bold text-white shadow-lg shadow-accent-500/30 ring-4 ring-white">{pad(i + 1)}</span>
           <div className={clsx("card-lift rounded-3xl p-6", onDark ? "glass-dark" : "bg-white shadow-[var(--shadow-card)] ring-1 ring-line")}>
             {s.media ? <MediaImage media={s.media} className="mb-4 aspect-[16/7] w-full rounded-2xl" sizes="(min-width: 1024px) 40vw, 100vw" /> : null}
@@ -444,8 +444,8 @@ function CtaBand({ b }: { b: Block }) {
         </h2>
         {b.text ? <p className={clsx("mx-auto mt-5 max-w-2xl text-lg", light ? "text-muted" : "text-white/85")}>{b.text}</p> : null}
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          {(b.ctas ?? []).map((c: Cta) => (
-            <CtaButton key={c.label} cta={theme === "accent" && c.style === "accent" ? { ...c, style: "light" } : c} onDark={!light} />
+          {(b.ctas ?? []).map((c: Cta, ki: number) => (
+            <CtaButton key={`${c.label}-${ki}`} cta={theme === "accent" && c.style === "accent" ? { ...c, style: "light" } : c} onDark={!light} />
           ))}
         </div>
       </div>
@@ -829,8 +829,8 @@ function ContactInfo({ b }: { b: Block }) {
       <div className={clsx("grid gap-6", b.media && "lg:grid-cols-[1.15fr_1fr]")}>
         <div className="space-y-4">
           <Stagger className={clsx("grid gap-4 sm:grid-cols-2", !b.media && "lg:grid-cols-4")} itemClassName="h-full">
-            {rows.map((r) => (
-              <div key={r.label} className="card-lift h-full rounded-3xl bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-line">
+            {rows.map((r, ki) => (
+              <div key={`${r.label}-${ki}`} className="card-lift h-full rounded-3xl bg-white p-6 shadow-[var(--shadow-card)] ring-1 ring-line">
                 <span className="inline-flex rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 p-3 text-white shadow-lg shadow-brand-500/30">{r.icon}</span>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted">{r.label}</p>
                 <p className="mt-1 break-words font-semibold text-brand-900 [&_a]:transition [&_a:hover]:text-accent-600">{r.value}</p>
@@ -923,7 +923,7 @@ function Comparison({ b }: { b: Block }) {
             <tr>
               <th className="bg-surface px-5 py-4" />
               {(b.columns ?? []).map((c: string, i: number) => (
-                <th key={c} className={clsx("px-5 py-4 text-left font-title text-base font-bold", i === hl ? "bg-gradient-to-b from-brand-600 to-brand-800 text-white" : "bg-surface text-brand-900")}>
+                <th key={`${c}-${i}`} className={clsx("px-5 py-4 text-left font-title text-base font-bold", i === hl ? "bg-gradient-to-b from-brand-600 to-brand-800 text-white" : "bg-surface text-brand-900")}>
                   {i === hl ? (
                     <span className="inline-flex items-center gap-2">
                       <BadgeCheck className="h-4 w-4 text-accent-300" /> {c}
@@ -936,8 +936,8 @@ function Comparison({ b }: { b: Block }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {(b.rows ?? []).map((r: { label: string; values: string[] }) => (
-              <tr key={r.label} className="transition hover:bg-brand-50/40">
+            {(b.rows ?? []).map((r: { label: string; values: string[] }, ki: number) => (
+              <tr key={`${r.label}-${ki}`} className="transition hover:bg-brand-50/40">
                 <th className="px-5 py-4 text-left font-semibold text-ink">{r.label}</th>
                 {r.values.map((v, i) => (
                   <td key={i} className={clsx("px-5 py-4", i === hl ? "bg-brand-50/70 font-semibold text-brand-800" : "text-muted")}>

@@ -5,13 +5,14 @@ et des collections), sitemap/robots dynamiques, publication planifiée."""
 from __future__ import annotations
 
 import logging
+import threading
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 import httpx
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -264,23 +265,92 @@ def add_revision(
 
 
 # ---------------------------------------------------------------------------- pages
+# Pages servies par une route fixe du site (accueil, pages de liste) : clé et chemin imposés par le code du site.
+SYSTEM_PAGES: dict[str, str] = {
+    "home": "/",
+    "offers": "/offres",
+    "expertises": "/expertises",
+    "services": "/services",
+    "projects": "/projets",
+    "blog": "/blog",
+    "describe-project": "/decrire-mon-projet",
+    "faq": "/faq",
+    "help": "/aide",
+}
+
+# Premiers segments d'adresse occupés par les écrans du site et des espaces : une page CMS y serait masquée.
+RESERVED_SEGMENTS = frozenset(
+    {
+        *("aide", "avis", "blog", "chantiers", "decrire-mon-projet", "devis", "energie-confort"),
+        *("estimation-instantanee", "expertises", "faq", "financement", "fournisseur", "offres", "paiement"),
+        *("parrainage", "payer", "projets", "recherche", "services", "verification", "visite"),
+        *("activation", "connexion", "inscription", "mot-de-passe-oublie", "reset"),
+        *("agenda", "appels", "messagerie", "notifications"),
+        *("erp", "espace-client", "extranet", "embarque", "api", "uploads", "_next"),
+        *("robots.txt", "sitemap.xml", "manifest.webmanifest", "favicon.ico", "apple-touch-icon.png"),
+    }
+)
+
+
+def _check_page_address(db: Session, data: PageIn, page: m.CmsPage | None) -> None:
+    """Adresse d'une page : clé et chemin uniques, pages système figées, chemins des écrans du site interdits."""
+    if page is not None and page.route_key in SYSTEM_PAGES:
+        if data.route_key != page.route_key or data.path != page.path:
+            raise AppError(
+                f"« {page.title} » est une page du site à adresse fixe ({page.path}) : "
+                "son contenu se modifie, pas son adresse ni sa clé.",
+                code="SYSTEM_PAGE",
+            )
+    elif data.route_key in SYSTEM_PAGES:
+        if data.path != SYSTEM_PAGES[data.route_key]:
+            raise AppError(
+                f"La clé « {data.route_key} » est réservée à la page {SYSTEM_PAGES[data.route_key]}.",
+                code="SYSTEM_PAGE",
+            )
+    else:
+        first = data.path.strip("/").split("/")[0]
+        if data.path == "/" or first in RESERVED_SEGMENTS:
+            raise AppError(
+                f"Le chemin « {data.path} » est déjà utilisé par le site. Choisissez une autre adresse"
+                f"{f' (ex. « /{first}-infos »)' if first else ''}.",
+                code="PATH_RESERVED",
+            )
+    for column, value, label in (
+        (m.CmsPage.route_key, data.route_key, "La clé"),
+        (m.CmsPage.path, data.path, "Le chemin"),
+    ):
+        stmt = select(m.CmsPage.title).where(column == value)
+        if page is not None:
+            stmt = stmt.where(m.CmsPage.id != page.id)
+        other = db.scalar(stmt.limit(1))
+        if other is not None:
+            raise Conflict(f"{label} « {value} » est déjà utilisé par la page « {other} ».", code="PAGE_EXISTS")
+
+
+def _rename_page_key(db: Session, old: str, new: str) -> None:
+    """Changement de clé : les liens de menu et le référencement de la page suivent."""
+    db.execute(update(m.NavigationItem).where(m.NavigationItem.page_route_key == old).values(page_route_key=new))
+    for model in (m.SeoMetadata, m.SchemaMarkup):
+        db.execute(update(model).where(model.target_type == "page", model.target_key == old).values(target_key=new))
+
+
 def save_page(db: Session, principal: Principal, data: PageIn, page: m.CmsPage | None = None) -> m.CmsPage:
     payload = data.model_dump(mode="json")
     validate_media_refs(db, {"sections": payload["sections"], "body": payload.get("body")})
-    for section in data.sections:
-        for block in section.blocks:
-            if (
-                block.data.kind == "form"
-                and not db.execute(
-                    select(m.FormDefinition.id).where(m.FormDefinition.key == block.data.form_key)
-                ).first()
-            ):
-                raise AppError(f"Formulaire inconnu : {block.data.form_key}", code="UNKNOWN_FORM")
+    for s_index, section in enumerate(data.sections, start=1):
+        for b_index, block in enumerate(section.blocks, start=1):
+            if block.data.kind != "form":
+                continue
+            where = f"Section {s_index} › Bloc {b_index} (formulaire)"
+            if not block.data.form_key:
+                raise AppError(f"{where} : choisissez le formulaire à afficher.", code="UNKNOWN_FORM")
+            if not db.execute(select(m.FormDefinition.id).where(m.FormDefinition.key == block.data.form_key)).first():
+                raise AppError(
+                    f"{where} : le formulaire « {block.data.form_key} » n'existe plus, choisissez-en un autre.",
+                    code="UNKNOWN_FORM",
+                )
+    _check_page_address(db, data, page)
     if page is None:
-        if db.execute(
-            select(m.CmsPage.id).where(or_(m.CmsPage.route_key == data.route_key, m.CmsPage.path == data.path))
-        ).first():
-            raise Conflict("Une page existe déjà pour cette route ou ce chemin", code="PAGE_EXISTS")
         page = m.CmsPage(
             route_key=data.route_key, path=data.path, title=data.title, created_by_id=principal.id, status="draft"
         )
@@ -291,6 +361,8 @@ def save_page(db: Session, principal: Principal, data: PageIn, page: m.CmsPage |
         _guard_published_edit(principal, page)
         if data.path != page.path and page.status == "published":
             _auto_redirect(db, page.path, data.path, principal.id)
+        if data.route_key != page.route_key:
+            _rename_page_key(db, page.route_key, data.route_key)
         action = "UPDATE"
     page.route_key = data.route_key
     page.path = data.path
@@ -343,9 +415,20 @@ def _guard_published_edit(principal: Principal, obj: Any) -> None:
         )
 
 
+def release_path(db: Session, path: str) -> None:
+    """Un contenu reprend cette adresse : les redirections qui en partaient la masqueraient (ou boucleraient)."""
+    for stale in db.execute(select(m.Redirect).where(m.Redirect.source_path == path)).scalars():
+        if stale.auto_generated:
+            db.delete(stale)
+        else:
+            stale.is_active = False
+    db.flush()
+
+
 def _auto_redirect(db: Session, old_path: str, new_path: str, user_id: uuid.UUID | None) -> None:
     if old_path == new_path:
         return
+    release_path(db, new_path)
     existing = db.execute(select(m.Redirect).where(m.Redirect.source_path == old_path)).scalar_one_or_none()
     if existing is None:
         db.add(
@@ -364,7 +447,8 @@ def _auto_redirect(db: Session, old_path: str, new_path: str, user_id: uuid.UUID
         existing.is_active = True
     # Évite les chaînes : les redirections qui pointaient vers l'ancien chemin visent le nouveau.
     for chained in db.execute(select(m.Redirect).where(m.Redirect.target_path == old_path)).scalars():
-        chained.target_path = new_path
+        if chained.source_path != new_path:
+            chained.target_path = new_path
 
 
 def transition(
@@ -393,6 +477,9 @@ def transition(
             obj.unpublish_at = unpublish_at
         obj.approved_by_id = principal.id
         obj.published_at = utcnow()
+        live_path = public_path(db, entity_type, obj)
+        if live_path:
+            release_path(db, live_path)
     if target == "validated":
         obj.reviewed_by_id = principal.id
     if target == "archived":
@@ -445,6 +532,12 @@ def public_path(db: Session, entity_type: str, obj: Any) -> str | None:
         universe = db.get(m.Universe, obj.universe_id)
         values["universe_slug"] = universe.slug if universe else ""
     return definition.path_template.format(**values)
+
+
+def refresh_site(paths: list[str] | None = None) -> None:
+    """Révalidation du site public sans bloquer la requête d'édition (appel HTTP en tâche de fond)."""
+    if settings.WEB_INTERNAL_URL and settings.REVALIDATE_SECRET:
+        threading.Thread(target=_maybe_revalidate, args=(paths or ["/"],), daemon=True).start()
 
 
 def _maybe_revalidate(paths: list[str]) -> None:
@@ -954,11 +1047,10 @@ def site_payload(db: Session) -> dict[str, Any]:
         .all()
     )
     banners = db.execute(select(m.Banner).where(*live_filter(m.Banner)).order_by(m.Banner.sort_order)).scalars().all()
-    media_ids = {
-        x
-        for x in [site.logo_media_id, site.logo_dark_media_id, site.favicon_media_id, site.default_og_media_id]
-        if site and x
-    } | {b.media_id for b in banners if b.media_id}
+    site_media = (
+        [site.logo_media_id, site.logo_dark_media_id, site.favicon_media_id, site.default_og_media_id] if site else []
+    )
+    media_ids = {x for x in site_media if x} | {b.media_id for b in banners if b.media_id}
     media = load_media_map(db, media_ids)
     tracking = (site.tracking if site else {}) or {}
     return {
