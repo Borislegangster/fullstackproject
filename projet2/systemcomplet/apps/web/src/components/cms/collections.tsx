@@ -10,7 +10,7 @@ import { RichTextEditor } from "@/components/cms/rich-text";
 import { ResourceView, type Row, type RowAction } from "@/components/erp/resource";
 import type { FieldConfig } from "@/components/forms/schema-form";
 import { MultiRefSelect } from "@/components/forms/ref-select";
-import { Select, TagInput } from "@/components/ui/form";
+import { Checkbox, Select, TagInput } from "@/components/ui/form";
 import { Modal } from "@/components/ui/overlay";
 import { Alert, Badge, StatusBadge } from "@/components/ui/primitives";
 import type { Column } from "@/components/ui/data-table";
@@ -63,6 +63,30 @@ const beforeAfter: FieldConfig = {
 };
 
 /** Liste d'éléments structurés éditée en lignes (sans JSON) ; les anciennes valeurs texte sont reprises. */
+/** Pages ciblées (bannières) : cases à cocher par titre ; enregistre les clés de route attendues par le site. */
+function PageKeysPicker({ value, onChange }: { value: unknown; onChange: (v: string[]) => void }) {
+  const pages = useApi<Row[]>("/cms/pages");
+  let list: string[] = [];
+  try {
+    list = Array.isArray(value) ? value : typeof value === "string" && value.trim() ? JSON.parse(value) : [];
+  } catch {
+    list = [];
+  }
+  const selected = new Set(list);
+  return (
+    <div className="grid max-h-56 gap-1 overflow-y-auto rounded-xl border border-line p-2 sm:grid-cols-2">
+      {(pages.data ?? []).map((p) => (
+        <Checkbox
+          key={p.route_key}
+          label={`${p.title} (${p.path})`}
+          checked={selected.has(p.route_key)}
+          onChange={(checked) => onChange(checked ? [...list, p.route_key] : list.filter((k) => k !== p.route_key))}
+        />
+      ))}
+    </div>
+  );
+}
+
 // Identifiants techniques : facultatifs, le serveur les déduit du titre (et les rend uniques) quand ils sont vides.
 const AUTO_IDS: Record<string, FieldConfig> = {
   slug: { placeholder: "Automatique", help: "Fin de l'adresse de la page, ex. « villa-moderne-douala ». Laissez vide : déduite du titre." },
@@ -155,7 +179,7 @@ export const CMS_COLLECTIONS: CollectionDef[] = [
     label: "Bannières / popups",
     path: "/cms/banners",
     title: "title",
-    fields: { media_id: media("image"), kind: { options: opts([["banner", "Bannière"], ["popup", "Fenêtre (popup)"]]) }, position: { options: opts([["top", "Haut"], ["bottom", "Bas"], ["center", "Centre"]]) }, frequency: { options: opts([["once", "Une fois"], ["session", "Une fois par visite"], ["always", "À chaque page"]]) }, route_keys: { widget: "tags", help: "Clés de pages ciblées (vide = toutes)." } },
+    fields: { media_id: media("image"), kind: { options: opts([["banner", "Bannière"], ["popup", "Fenêtre (popup)"]]) }, position: { options: opts([["top", "Haut"], ["bottom", "Bas"], ["center", "Centre"]]) }, frequency: { options: opts([["once", "Une fois"], ["session", "Une fois par visite"], ["always", "À chaque page"]]) }, route_keys: { label: "Pages où l'afficher", span: 2, help: "Aucune case cochée : toutes les pages.", render: ({ value, onChange }) => <PageKeysPicker value={value} onChange={onChange} /> } },
   },
 ];
 
