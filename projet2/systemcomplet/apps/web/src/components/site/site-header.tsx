@@ -112,11 +112,6 @@ export function SiteHeader({
             <Link href="/recherche" className="hdr-icon hidden sm:inline-flex" aria-label="Rechercher">
               <Search className="h-5 w-5" />
             </Link>
-            {phone ? (
-              <a href={`tel:${tel}`} className="hdr-icon hidden items-center gap-1.5 !px-3 text-sm font-medium xl:inline-flex" data-track="call-header">
-                <Phone className="h-4 w-4" /> {phone}
-              </a>
-            ) : null}
             <Link href="/connexion" className="hdr-ghost hidden items-center gap-1.5 md:inline-flex">
               <UserRound className="h-4 w-4" /> Espace client
             </Link>
