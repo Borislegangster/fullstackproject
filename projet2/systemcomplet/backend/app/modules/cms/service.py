@@ -286,7 +286,7 @@ RESERVED_SEGMENTS = frozenset(
         *("parrainage", "payer", "projets", "recherche", "services", "verification", "visite"),
         *("activation", "connexion", "inscription", "mot-de-passe-oublie", "reset"),
         *("agenda", "appels", "messagerie", "notifications"),
-        *("erp", "espace-client", "extranet", "embarque", "api", "uploads", "_next"),
+        *("erp", "espace-client", "extranet", "embarque", "api", "uploads", "_next", "icons"),
         *("robots.txt", "sitemap.xml", "manifest.webmanifest", "favicon.ico", "apple-touch-icon.png"),
     }
 )

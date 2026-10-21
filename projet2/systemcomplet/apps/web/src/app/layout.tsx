@@ -21,14 +21,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(siteUrl),
     applicationName: brand?.name ?? "GLOBUS ENGINEERING",
+    // Adresses à la racine du site (relais de l'API) : Google et Bing ne lisent pas /api/ (robots.txt) ; Google exige
+    // une icône de 48 px ou d'un multiple de 48 px.
     icons: brand
       ? {
           icon: [
-            { url: brand.favicon, sizes: "any" },
-            { url: brand.favicon_png, sizes: "32x32", type: "image/png" },
-            { url: brand.sizes["192"], sizes: "192x192", type: "image/png" },
+            { url: `/favicon.ico?v=${brand.version}`, sizes: "any" },
+            { url: `/icons/icon-48.png?v=${brand.version}`, sizes: "48x48", type: "image/png" },
+            { url: `/icons/icon-96.png?v=${brand.version}`, sizes: "96x96", type: "image/png" },
+            { url: `/icons/icon-192.png?v=${brand.version}`, sizes: "192x192", type: "image/png" },
           ],
-          apple: [{ url: brand.apple_touch_icon, sizes: "180x180", type: "image/png" }],
+          apple: [{ url: `/apple-touch-icon.png?v=${brand.version}`, sizes: "180x180", type: "image/png" }],
         }
       : { icon: "/favicon.ico", apple: "/apple-touch-icon.png" },
     manifest: "/manifest.webmanifest",

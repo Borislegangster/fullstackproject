@@ -17,7 +17,9 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     .map((l) => l.slice(9).trim())
     .filter(Boolean);
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: [...data.disallow, ...extraDisallow] }],
+    // /api/ reste fermé, sauf les fichiers publics que les moteurs doivent pouvoir lire : icône du site (résultats de
+    // recherche) et images des pages (Google Images, aperçus de partage).
+    rules: [{ userAgent: "*", allow: ["/", "/api/v1/public/brand/", "/api/v1/public/media/"], disallow: [...data.disallow, ...extraDisallow] }],
     sitemap: siteUrl("/sitemap.xml"),
     host: siteUrl(),
   };
