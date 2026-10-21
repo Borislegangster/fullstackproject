@@ -249,6 +249,8 @@ class UserOut(ORM):
     last_login_at: datetime | None
     locked_until: datetime | None
     created_at: datetime
+    # Faux tant que la personne n'a pas choisi son mot de passe (invitation non utilisée).
+    activated: bool = False
 
 
 class UserBrief(ORM):
@@ -400,3 +402,12 @@ class InvitationOut(ORM):
     accepted_at: datetime | None
     revoked_at: datetime | None
     created_at: datetime
+    # Dernière invitation d'une adresse dont le compte n'est pas encore activé : un nouveau lien peut être envoyé.
+    resendable: bool = False
+
+
+class InvitationResendIn(BaseModel):
+    """Nouveau lien d'activation (lien expiré, perdu ou révoqué par erreur) : les liens encore valides sont annulés."""
+
+    channels: list[Literal["email", "whatsapp"]] = Field(default_factory=lambda: ["email"], min_length=1)
+    message: str | None = Field(default=None, max_length=1000)

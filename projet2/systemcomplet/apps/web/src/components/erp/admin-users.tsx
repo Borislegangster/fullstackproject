@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, Lock, LogOut, Plus, ShieldOff, Trash2, Unlock } from "lucide-react";
+import { KeyRound, Lock, LogOut, Plus, Send, ShieldOff, Trash2, Unlock } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ResourceView, type Row } from "@/components/erp/resource";
@@ -57,12 +57,66 @@ const disciplinesField: FieldConfig = {
 
 /* ----------------------------------------------------------------------------- utilisateurs */
 
+/** Nouveau lien d'activation (lien expiré, perdu ou révoqué par erreur) : les liens encore valides sont annulés. */
+function ResendInvitationDialog({ open, onClose, path, email, phone, onDone }: { open: boolean; onClose: () => void; path: string; email: string; phone?: string | null; onDone: () => void }) {
+  const toast = useToast();
+  const [channels, setChannels] = useState<string[]>(["email"]);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const toggle = (key: string) => setChannels((list) => (list.includes(key) ? list.filter((c) => c !== key) : [...list, key]));
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Renvoyer l'invitation"
+      footer={
+        <Button
+          variant="accent"
+          loading={busy}
+          disabled={!channels.length}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await api(path, { method: "POST", body: { channels, message: message.trim() || null } });
+              toast.success("Invitation renvoyée", `Nouveau lien envoyé à ${email}, valable 7 jours. L'ancien lien ne fonctionne plus.`);
+              setMessage("");
+              onClose();
+              onDone();
+            } catch (err) {
+              toast.error("Renvoi impossible", errorMessage(err));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Send className="h-4 w-4" /> Renvoyer
+        </Button>
+      }
+    >
+      <div className="space-y-3">
+        <p className="text-sm">
+          Un nouveau lien d&apos;activation personnel est envoyé à <strong>{email}</strong>. Les liens précédents encore valides sont annulés ; les rôles et projets prévus sont conservés.
+        </p>
+        <Field label="Envoyer le lien par">
+          <div className="flex flex-wrap gap-4 pt-1">
+            <Checkbox label="E-mail" checked={channels.includes("email")} onChange={() => toggle("email")} />
+            {phone ? <Checkbox label="WhatsApp" checked={channels.includes("whatsapp")} onChange={() => toggle("whatsapp")} /> : null}
+          </div>
+        </Field>
+        <Field label="Message (facultatif)">
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} placeholder="Votre premier lien a expiré : voici un nouveau lien." />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
 function UserPanel({ user, reload }: { user: Row; reload: () => void }) {
   const { can, user: me } = useAuth();
   const toast = useToast();
   const [roles, setRoles] = useState<string[] | null>(null);
   const disciplines = useApi<Discipline[]>("/bim/disciplines");
-  const [dialog, setDialog] = useState<null | "revoke" | "mfa" | "disable">(null);
+  const [dialog, setDialog] = useState<null | "revoke" | "mfa" | "disable" | "resend">(null);
   const [breakGlass, setBreakGlass] = useState({ justification: "", code: "" });
   const locked = user.locked_until && new Date(user.locked_until).getTime() > Date.now();
   const act = async (path: string, body?: unknown, message?: string) => {
@@ -86,7 +140,7 @@ function UserPanel({ user, reload }: { user: Row; reload: () => void }) {
           { label: "Téléphone", value: [user.phone, user.whatsapp].filter(Boolean).join(" · ") || "—" },
           { label: "Dernière connexion", value: user.last_login_at ? `${dateTime(user.last_login_at)} (${relative(user.last_login_at)})` : "Jamais" },
           { label: "Double authentification", value: user.mfa_enabled ? <Badge tone="success">Activée</Badge> : user.mfa_required ? <Badge tone="danger">Exigée, non activée</Badge> : <Badge>Non activée</Badge> },
-          { label: "Statut", value: user.is_active ? (locked ? <Badge tone="danger">Verrouillé jusqu'au {dateTime(user.locked_until)}</Badge> : <Badge tone="success">Actif</Badge>) : <Badge>Désactivé</Badge> },
+          { label: "Statut", value: !user.is_active ? <Badge>Désactivé</Badge> : locked ? <Badge tone="danger">Verrouillé jusqu'au {dateTime(user.locked_until)}</Badge> : user.activated === false ? <Badge tone="warning">Invité — compte pas encore activé</Badge> : <Badge tone="success">Actif</Badge> },
         ]}
       />
       {can("users:write") ? (
@@ -106,6 +160,11 @@ function UserPanel({ user, reload }: { user: Row; reload: () => void }) {
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
+        {can("users:write") && user.is_active && user.activated === false ? (
+          <Button size="sm" variant="secondary" onClick={() => setDialog("resend")}>
+            <Send className="h-4 w-4" /> Renvoyer l&apos;invitation
+          </Button>
+        ) : null}
         {can("users:write") && locked ? (
           <Button size="sm" variant="secondary" onClick={() => void act(`/users/${user.id}/unlock`, undefined, "Compte déverrouillé")}>
             <Unlock className="h-4 w-4" /> Déverrouiller
@@ -132,6 +191,7 @@ function UserPanel({ user, reload }: { user: Row; reload: () => void }) {
           </Button>
         ) : null}
       </div>
+      <ResendInvitationDialog open={dialog === "resend"} onClose={() => setDialog(null)} path={`/users/${user.id}/invitation`} email={user.email} phone={user.whatsapp || user.phone} onDone={reload} />
       <ConfirmDialog
         open={dialog === "revoke"}
         onClose={() => setDialog(null)}
@@ -213,7 +273,7 @@ export function UsersList() {
           { key: "role_codes", label: "Rôles", render: (r) => <span className="flex flex-wrap gap-1">{(r.role_codes ?? []).map((c: string) => <Badge key={c}>{roles.data?.find((x) => x.code === c)?.name ?? c}</Badge>)}</span> },
           { key: "mfa_enabled", label: "MFA", render: (r) => (r.mfa_enabled ? <Badge tone="success">Oui</Badge> : r.mfa_required ? <Badge tone="danger">Exigée</Badge> : <Badge>Non</Badge>) },
           { key: "last_login_at", label: "Dernière connexion", sortable: true, render: (r) => (r.last_login_at ? relative(r.last_login_at) : "Jamais"), hideOnMobile: true },
-          { key: "is_active", label: "Statut", render: (r) => (r.is_active ? (r.locked_until && new Date(r.locked_until).getTime() > Date.now() ? <Badge tone="danger">Verrouillé</Badge> : <Badge tone="success">Actif</Badge>) : <Badge>Désactivé</Badge>) },
+          { key: "is_active", label: "Statut", render: (r) => (!r.is_active ? <Badge>Désactivé</Badge> : r.locked_until && new Date(r.locked_until).getTime() > Date.now() ? <Badge tone="danger">Verrouillé</Badge> : r.activated === false ? <Badge tone="warning">Invité</Badge> : <Badge tone="success">Actif</Badge>) },
         ],
         filters: [
           { key: "role", label: "Rôle", options: (roles.data ?? []).map((r) => ({ value: r.code, label: r.name })) },
@@ -276,10 +336,11 @@ export function InvitationsList() {
   const toast = useToast();
   const invitations = useApi<Row[]>("/invitations");
   const roles = useApi<Row[]>("/roles");
+  const [resend, setResend] = useState<Row | null>(null);
   const roleName = (code: string) => roles.data?.find((r) => r.code === code)?.name ?? optionLabel(code);
   return (
     <Card>
-      <CardHeader title="Invitations" subtitle="Liens à usage unique, expirants ; révocables avant acceptation." />
+      <CardHeader title="Invitations" subtitle="Liens à usage unique, valables 7 jours ; révocables avant acceptation, renvoyables tant que le compte n'est pas activé." />
       <ul className="divide-y divide-line text-sm">
         {(invitations.data ?? []).map((i) => {
           const status = i.accepted_at ? "accepted" : i.revoked_at ? "cancelled" : new Date(i.expires_at).getTime() < Date.now() ? "expired" : "pending";
@@ -309,12 +370,18 @@ export function InvitationsList() {
                     <Trash2 className="h-4 w-4" /> Révoquer
                   </Button>
                 ) : null}
+                {i.resendable && can("users:write") ? (
+                  <Button size="sm" variant="ghost" onClick={() => setResend(i)}>
+                    <Send className="h-4 w-4" /> Renvoyer
+                  </Button>
+                ) : null}
               </span>
             </li>
           );
         })}
         {!invitations.loading && !invitations.data?.length ? <li className="px-5 py-4 text-muted">Aucune invitation.</li> : null}
       </ul>
+      <ResendInvitationDialog open={!!resend} onClose={() => setResend(null)} path={`/invitations/${resend?.id}/resend`} email={resend?.email ?? ""} onDone={() => void invitations.reload()} />
     </Card>
   );
 }

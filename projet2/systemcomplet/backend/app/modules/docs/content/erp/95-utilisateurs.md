@@ -30,8 +30,9 @@ Les **Utilisateurs** : comptes internes, clients et partenaires ; rôles cumulab
 
 ### Gérer un compte
 
-Ouvrez l'utilisateur : la fiche affiche notamment son métier et ses disciplines.
+Ouvrez l'utilisateur : la fiche affiche notamment son métier et ses disciplines. Le statut **Invité** signale un compte dont la personne n'a pas encore utilisé son lien d'activation (elle n'a pas choisi son mot de passe).
 
+- **Renvoyer l'invitation** (compte invité, non activé) ouvre la fenêtre **Renvoyer l'invitation** : choisissez le canal (**E-mail**, ou **WhatsApp** si un numéro est renseigné) et un message facultatif, puis **Renvoyer**. Un nouveau lien, valable 7 jours, est envoyé ; les liens précédents encore valides sont annulés ; les rôles, l'organisation et les projets prévus sont conservés. Impossible pour un compte déjà activé (la personne se connecte, ou utilise **Mot de passe oublié ?**) ou désactivé (réactivez-le d'abord).
 - **Modifier** : prénom, nom, téléphone, WhatsApp, fonction, **Métier** (liste fermée, « Non précisé » pour le retirer), **Disciplines** (cases à cocher) et organisation ; seuls les champs changés sont enregistrés. L'e-mail, les rôles, la double authentification et l'activation se gèrent par leurs commandes dédiées.
 - **Enregistrer les rôles** après avoir coché ou décoché des rôles.
 - **Déverrouiller** un compte bloqué après des échecs de connexion.
@@ -47,11 +48,12 @@ Ouvrez l'utilisateur : la fiche affiche notamment son métier et ses disciplines
 ::: perm users:read
 ## Onglet « Invitations »
 
-Les **Invitations** : liens à usage unique et expirants, révocables avant acceptation (statut en attente, acceptée, expirée, révoquée), avec les rôles prévus pour la personne.
+Les **Invitations** : liens à usage unique, valables 7 jours, révocables avant acceptation (statut en attente, acceptée, expirée, révoquée), avec les rôles prévus pour la personne.
 :::
 
 ::: perm users:write
 - **Révoquer** une invitation en attente (envoyée par erreur ou à la mauvaise adresse).
+- **Renvoyer** la dernière invitation d'une adresse dont le compte n'est pas encore activé (lien expiré, e-mail perdu, invitation révoquée par erreur) : même fenêtre **Renvoyer l'invitation**. C'est aussi le moyen de relancer un **client** invité automatiquement à la création de son projet, qui n'a pas encore de fiche dans l'onglet Utilisateurs.
 :::
 
 ## Onglet « Rôles et permissions »

@@ -953,6 +953,23 @@ final users = ResourceConfig(
   create: const ResourceCreate(endpoint: 'POST /users', label: 'Nouvel utilisateur', perms: ['users:write']),
   update: const ResourceCreate(endpoint: 'PATCH /users/{user_id}', perms: ['users:write']),
   actions: [
+    // Compte jamais activé (lien expiré ou perdu) : nouveau lien, les anciens liens sont annulés.
+    ResourceAction(
+      label: "Renvoyer l'invitation",
+      icon: Icons.send_outlined,
+      perms: const ['users:write'],
+      when: (r) => r.b('is_active', true) && r['activated'] == false,
+      run: (context, r) async {
+        final res = await showSchemaForm(
+          context,
+          title: "Renvoyer l'invitation",
+          endpoint: 'POST /users/{user_id}/invitation',
+          params: {'user_id': r.s('id')},
+          submitLabel: 'Renvoyer',
+        );
+        if (res != null && context.mounted) context.toast('Invitation renvoyée : nouveau lien valable 7 jours', success: true);
+      },
+    ),
     ResourceAction(
       label: 'Déverrouiller',
       path: (r) => '/users/${r.s('id')}/unlock',

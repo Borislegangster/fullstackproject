@@ -59,6 +59,7 @@ from app.modules.identity.schemas import (
     EmailVerifyIn,
     InvitationAcceptIn,
     InvitationOut,
+    InvitationResendIn,
     LoginIn,
     MeOut,
     MeUpdate,
@@ -687,7 +688,12 @@ def web_session_open(token: str, db: Session = Depends(get_db)) -> Response:
 
 # ============================================================================ administration
 def _user_out(user: User) -> dict[str, Any]:
-    return {**UserOut.model_validate(user).model_dump(), "role_codes": user.role_codes, "full_name": user.full_name}
+    return {
+        **UserOut.model_validate(user).model_dump(),
+        "role_codes": user.role_codes,
+        "full_name": user.full_name,
+        "activated": user.password_hash is not None,
+    }
 
 
 @admin.get("/users")
@@ -964,8 +970,70 @@ def admin_reset_mfa(
 @admin.get("/invitations", response_model=list[InvitationOut])
 def list_invitations(
     principal: Principal = Depends(require("users:read")), db: Session = Depends(get_db)
-) -> list[Invitation]:
-    return list(db.execute(select(Invitation).order_by(Invitation.created_at.desc()).limit(200)).scalars())
+) -> list[dict[str, Any]]:
+    rows = list(db.execute(select(Invitation).order_by(Invitation.created_at.desc()).limit(200)).scalars())
+    emails = {r.email for r in rows}
+    activated = set(
+        db.execute(select(User.email).where(User.email.in_(emails), User.password_hash.is_not(None))).scalars()
+    )
+    seen: set[str] = set()
+    out = []
+    for row in rows:  # du plus récent au plus ancien : seule la dernière invitation d'une adresse est renvoyable
+        latest = row.email not in seen
+        seen.add(row.email)
+        item = InvitationOut.model_validate(row).model_dump()
+        item["resendable"] = latest and row.accepted_at is None and row.email not in activated
+        out.append(item)
+    return out
+
+
+def _resend(db: Session, principal: Principal, email: str, data: InvitationResendIn) -> dict[str, Any]:
+    inviter = db.get(User, principal.id)
+    assert inviter is not None
+    invitation, _token = service.resend_invitation(
+        db, inviter=inviter, email=email, channels=list(data.channels), message=data.message
+    )
+    db.commit()
+    return {"invitation_id": invitation.id, "email": invitation.email, "expires_at": invitation.expires_at}
+
+
+@admin.post(
+    "/users/{user_id}/invitation",
+    status_code=201,
+    dependencies=[Depends(rate_limit("invitation_resend", settings.RATE_LIMIT_PUBLIC_FORMS))],
+)
+def resend_user_invitation(
+    user_id: uuid.UUID,
+    data: InvitationResendIn,
+    principal: Principal = Depends(require("users:write")),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Nouveau lien d'activation pour un compte qui n'a pas encore choisi son mot de passe."""
+    user = db.get(User, user_id)
+    if user is None or user.deleted_at:
+        raise NotFound("Utilisateur introuvable")
+    return _resend(db, principal, user.email, data)
+
+
+@admin.post(
+    "/invitations/{invitation_id}/resend",
+    status_code=201,
+    dependencies=[Depends(rate_limit("invitation_resend", settings.RATE_LIMIT_PUBLIC_FORMS))],
+)
+def resend_invitation(
+    invitation_id: uuid.UUID,
+    data: InvitationResendIn,
+    principal: Principal = Depends(require("users:write")),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Renvoi depuis la liste des invitations (y compris un client invité à la création de son projet, qui n'a pas
+    encore de compte)."""
+    inv = db.get(Invitation, invitation_id)
+    if inv is None:
+        raise NotFound("Invitation introuvable")
+    if inv.accepted_at:
+        raise Conflict("Invitation déjà acceptée : le compte est activé.", code="ALREADY_ACTIVATED")
+    return _resend(db, principal, inv.email, data)
 
 
 @admin.delete("/invitations/{invitation_id}")

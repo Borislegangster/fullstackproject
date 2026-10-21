@@ -1022,6 +1022,66 @@ def invite_user(
     return invitation, token
 
 
+def resend_invitation(
+    db: Session,
+    *,
+    inviter: User,
+    email: str,
+    channels: list[str],
+    message: str | None,
+) -> tuple[Invitation, str]:
+    """Nouveau lien d'activation pour une adresse dont le compte n'est pas encore activé (lien expiré, e-mail perdu,
+    invitation révoquée par erreur). Les liens encore valides sont annulés ; rôles, organisation et projets prévus
+    sont repris (ceux du compte s'il existe déjà, sinon ceux de la dernière invitation)."""
+    email = normalize_email(email)
+    user = user_by_email(db, email)
+    if user is not None and user.password_hash:
+        raise Conflict(
+            "Ce compte est déjà activé : la personne peut se connecter (ou utiliser « Mot de passe oublié ? »).",
+            code="ALREADY_ACTIVATED",
+        )
+    if user is not None and not user.is_active:
+        raise BusinessRuleError(
+            "Ce compte est désactivé : réactivez-le avant de renvoyer l'invitation.", code="ACCOUNT_DISABLED"
+        )
+    previous = db.execute(
+        select(Invitation).where(Invitation.email == email).order_by(Invitation.created_at.desc()).limit(1)
+    ).scalar_one_or_none()
+    role_codes = (user.role_codes if user is not None else []) or list(previous.role_codes if previous else [])
+    if not role_codes:
+        raise BusinessRuleError("Aucun rôle à attribuer : complétez d'abord les rôles du compte.", code="NO_ROLE")
+    for pending in db.execute(
+        select(Invitation).where(
+            Invitation.email == email, Invitation.accepted_at.is_(None), Invitation.revoked_at.is_(None)
+        )
+    ).scalars():
+        pending.revoked_at = utcnow()
+    invitation, token = invite_user(
+        db,
+        inviter=inviter,
+        email=email,
+        first_name=user.first_name if user is not None else (previous.first_name if previous else None),
+        last_name=user.last_name if user is not None else (previous.last_name if previous else None),
+        role_codes=role_codes,
+        organization_id=user.organization_id if user is not None else (previous.organization_id if previous else None),
+        project_ids=[uuid.UUID(str(p)) for p in (previous.project_ids if previous else []) or []],
+        message=message,
+        channels=channels,
+        phone=(user.whatsapp or user.phone) if user is not None else None,
+    )
+    audit.record(
+        db,
+        family="security",
+        module="users",
+        action="INVITATION_RESEND",
+        resource_type="invitation",
+        resource_id=invitation.id,
+        diff={"email": email, "previous": str(previous.id) if previous else None},
+        criticality="MEDIUM",
+    )
+    return invitation, token
+
+
 def accept_invitation(
     db: Session, *, token: str, password: str, first_name: str | None, last_name: str | None, phone: str | None
 ) -> User:
