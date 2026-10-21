@@ -247,11 +247,15 @@ vous archivez le projet et vous désactivez les comptes (chapitre 18). L'inconv�
 (code du projet, numéros de factures) sont consommés, et vos vrais premiers clients commenceront un peu plus loin dans la
 numérotation.
 
-**Second chemin : effacer l'essai comme on efface un tableau.** Vous faites une sauvegarde complète juste avant de
-commencer (section 2.3), puis, à la fin, vous restaurez cette sauvegarde (chapitre 18). La plateforme revient alors
-exactement à son état d'avant. Mais attention : **tout ce qui aura été saisi entre-temps disparaîtra aussi**, y compris
-les textes et images que vous ajoutez peut-être en ce moment sur le site vitrine. Si vous choisissez ce chemin, terminez
-ou mettez en pause le travail sur le site avant de commencer.
+**Second chemin : effacer l'essai comme on efface un tableau.** À la fin, le Gardien utilise la **remise à zéro des
+données d'exploitation** (*Administration › Paramètres › Système et sauvegardes*, scène Z3). Elle supprime tous les
+comptes, projets et données métier, mais **conserve le site vitrine, le CMS, la médiathèque, les paramètres et les
+intégrations** : le travail fait sur le site pendant l'essai n'est pas perdu. La numérotation repart à zéro et un
+nouvel administrateur est invité par e-mail. C'est le chemin recommandé avant la mise en service.
+
+> **Partir d'une base propre.** Si la plateforme contient déjà des données d'essais précédents, faites cette même
+> remise à zéro **avant** de commencer : vos personnages seront les seuls comptes, et le projet de Paul portera le
+> premier numéro.
 
 - [ ] J'ai choisi mon chemin (premier ou second) et je m'y tiens.
 
@@ -3594,22 +3598,28 @@ ranger le chantier et de signer le procès-verbal.*
 
 - [ ] **Z2** — Le chantier d'essai est rangé (ou je suis le second chemin).
 
-### Scène Z3 — Effacer le tableau (second chemin : revenir à la sauvegarde)
+### Scène Z3 — Effacer le tableau (second chemin : la remise à zéro)
 
-*Si vous avez choisi le second chemin au tout début, c'est le moment de remonter le temps.*
+*Si vous avez choisi le second chemin au tout début, c'est le moment de faire place nette, sans toucher au site.*
 
 **Ce que vous faites**
 
-1. *Administration › Paramètres*, bouton **Système et sauvegardes** : faites d'abord une nouvelle sauvegarde **Complète**
-   de l'état actuel, par précaution.
-2. Sur la sauvegarde de la scène P3 (celle dont vous avez noté la date), cliquez sur **Restaurer**.
-3. Écrivez une justification d'au moins vingt caractères, tapez votre code de double authentification, puis tapez le mot
-   `RESTAURER` en majuscules et validez.
+1. *Administration › Paramètres*, bouton **Système et sauvegardes**, carte **Remise à zéro des données
+   d'exploitation** : cliquez sur **Préparer la remise à zéro**.
+2. Lisez les deux colonnes **Sera supprimé** et **Sera conservé**.
+3. **E-mail du nouvel administrateur** : l'adresse de l'entreprise (par exemple `contact@globus-engineering-sarl.com`).
+4. Écrivez une justification d'au moins vingt caractères, tapez votre code de double authentification, puis la phrase
+   `REMETTRE A ZERO` en majuscules, et cliquez sur **Remettre à zéro**.
+5. Cliquez sur **Aller à la connexion** : votre compte a été supprimé avec les autres.
+6. Ouvrez la boîte de l'adresse choisie, cliquez sur le lien d'invitation et activez le nouvel administrateur (mot de
+   passe, puis double authentification).
 
-**Ce que vous devez constater** : après le redémarrage, la plateforme est revenue à son état d'avant l'essai ; les comptes
-et les données TEST ont disparu. Les e-mails envoyés pendant l'essai, eux, ne peuvent évidemment pas être rappelés.
+**Ce que vous devez constater** : le site vitrine est intact (pages, menus, images, réglages) ; dans l'ERP, il n'y a plus
+qu'un seul compte, aucun projet ni client ; les intégrations restent configurées ; *Paramètres › Système et
+sauvegardes* montre la « Sauvegarde de sécurité (avant opération irréversible) » faite juste avant. Les e-mails envoyés
+pendant l'essai, eux, ne peuvent évidemment pas être rappelés.
 
-- [ ] **Z3** — La plateforme est revenue à son état initial (ou je suis le premier chemin).
+- [ ] **Z3** — La remise à zéro a laissé le site intact et une base propre (ou je suis le premier chemin).
 
 ### Scène Z4 — Le procès-verbal
 
@@ -3877,7 +3887,7 @@ problème dans les journaux du serveur.
 | X12 | Désactivation d'un compte | |
 | Z1 | Bilan | |
 | Z2 | Rangement (premier chemin) | |
-| Z3 | Restauration (second chemin) | |
+| Z3 | Remise à zéro (second chemin) | |
 | Z4 | Procès-verbal | |
 
 ## Annexe F — Que faire si…

@@ -1693,6 +1693,8 @@ export const OPTION_LABELS: Record<string, string> = {
   // Paiements : statuts et canaux
   refunded: "Remboursé",
   manual: "Saisie manuelle",
+  pre_destructive: "Sauvegarde de sécurité (avant opération irréversible)",
+  reset: "Remise à zéro",
   mtn_momo: "MTN Mobile Money",
   orange_money: "Orange Money",
   stripe: "Stripe",

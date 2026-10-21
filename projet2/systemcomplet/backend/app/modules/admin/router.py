@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -24,6 +24,7 @@ from app.core.pagination import PageParams, paginate
 from app.core.secrets import MANAGED_SECRETS, secret_status, set_secret
 from app.core.utils import jsonable, utcnow
 from app.modules.admin import backups
+from app.modules.admin import reset as data_reset
 from app.modules.admin.state import invalidate
 from app.modules.system.models import (
     AuditEvent,
@@ -522,6 +523,52 @@ def restore(
     )
     db.commit()
     return {"status": "queued", "source": str(source.id)}
+
+
+# ---------------------------------------------------------------------------- remise à zéro des données
+def _require_reset_rights(access: Access) -> None:
+    access.require("backups:restore")
+    if "ADMIN" not in access.p.roles:
+        raise Forbidden("Réservé à l'administrateur de la plateforme", code="ADMIN_ONLY")
+
+
+@router.get("/reset/preview")
+def reset_preview(db: Session = Depends(get_db), access: Access = Depends(get_access)) -> dict[str, Any]:
+    """Données qui seront supprimées et conservées par la remise à zéro (nombres de lignes)."""
+    _require_reset_rights(access)
+    return data_reset.preview(db)
+
+
+class ResetIn(BaseModel):
+    break_glass_id: uuid.UUID
+    confirmation: str = Field(pattern=f"^{data_reset.CONFIRMATION}$")
+    admin_email: EmailStr
+    admin_first_name: str = Field(default="GLOBUS", min_length=1, max_length=120)
+    admin_last_name: str = Field(default="ENGINEERING", min_length=1, max_length=120)
+
+
+@router.post("/reset")
+def reset_platform(
+    data: ResetIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Remise à zéro des données d'exploitation : sauvegarde complète préalable, suppression des comptes, projets et
+    données métier (site, CMS, médiathèque, paramètres et intégrations conservés), invitation du nouvel administrateur.
+    Accès d'urgence « purge » obligatoire (MFA + justification)."""
+    from app.modules.identity.service import require_break_glass
+
+    _require_reset_rights(access)
+    grant = require_break_glass(db, access.p.id, "purge", data.break_glass_id)
+    db.commit()
+    result = data_reset.run(
+        db,
+        actor_id=access.p.id,
+        actor_email=access.p.user.email,
+        admin_email=str(data.admin_email),
+        admin_first_name=data.admin_first_name.strip(),
+        admin_last_name=data.admin_last_name.strip(),
+        break_glass_id=grant.id,
+    )
+    return jsonable(result)
 
 
 # ============================================================================ audit & jobs

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Database, KeyRound, Play, Plus, RotateCcw, Send, ShieldAlert, XCircle } from "lucide-react";
+import { CheckCircle2, Database, Eraser, KeyRound, Play, Plus, RotateCcw, Send, ShieldAlert, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -903,8 +903,130 @@ export function SettingsHub() {
 
 /* ----------------------------------------------------------------------------- système et sauvegardes */
 
+// Libellés propres aux sauvegardes (« full » signifie ailleurs « Pleine largeur »).
+const BACKUP_KINDS: Record<string, string> = { full: "Complète", database: "Base de données", files: "Fichiers", pre_destructive: "Sauvegarde de sécurité" };
+const BACKUP_TRIGGERS: Record<string, string> = { manual: "Manuelle", schedule: "Planifiée", pre_destructive: "Avant restauration", reset: "Avant remise à zéro" };
+
+/** Remise à zéro des données d'exploitation (avant la mise en service ou après une recette) : sauvegarde complète
+ * préalable, comptes / projets / données métier supprimés, site, CMS, médiathèque, paramètres et intégrations conservés. */
+function ResetPlatformCard() {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const preview = useApi<Row>(open ? "/admin/reset/preview" : null);
+  const [form, setForm] = useState({ email: "contact@globus-engineering-sarl.com", justification: "", code: "", confirmation: "" });
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<Row | null>(null);
+  const expected = preview.data?.confirmation ?? "REMETTRE A ZERO";
+  const ready = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.justification.trim().length >= 20 && form.code.length >= 6 && form.confirmation === expected;
+  return (
+    <Card className="border-red-200">
+      <CardHeader
+        title="Remise à zéro des données d'exploitation"
+        subtitle="Avant la mise en service ou après une recette : supprime tous les comptes, projets et données métier ; conserve le site, le CMS, la médiathèque, les paramètres et les intégrations. Une sauvegarde complète est faite juste avant."
+        actions={
+          <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+            <Eraser className="h-4 w-4" /> Préparer la remise à zéro
+          </Button>
+        }
+      />
+      <Modal
+        open={open}
+        onClose={() => (busy ? undefined : setOpen(false))}
+        title="Remise à zéro des données d'exploitation"
+        size="lg"
+        footer={
+          done ? (
+            <Button
+              onClick={() => {
+                window.location.href = "/connexion";
+              }}
+            >
+              Aller à la connexion
+            </Button>
+          ) : (
+            <Button
+              variant="accent"
+              loading={busy}
+              disabled={!ready}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const grant = await api<Row>("/admin/break-glass", { method: "POST", body: { scope: "purge", justification: form.justification.trim(), code: form.code } });
+                  const res = await api<Row>("/admin/reset", { method: "POST", body: { break_glass_id: grant.id, confirmation: form.confirmation, admin_email: form.email.trim() } });
+                  setDone(res);
+                } catch (err) {
+                  toast.error("Remise à zéro refusée", errorMessage(err));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <Eraser className="h-4 w-4" /> Remettre à zéro
+            </Button>
+          )
+        }
+      >
+        {done ? (
+          <div className="space-y-3">
+            <Alert tone="success" title="Remise à zéro effectuée">
+              {number(done.deleted_rows)} enregistrements supprimés. Une sauvegarde complète de l&apos;état précédent a été faite juste avant. Une invitation a été envoyée à <strong>{done.admin_email}</strong> : ouvrez-la pour choisir le mot de passe du nouvel administrateur, puis activez sa double authentification.
+            </Alert>
+            <p className="text-sm text-muted">Votre compte a été supprimé avec les autres : vous allez être déconnecté.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Alert tone="danger" title="Opération irréversible sur la production">
+              Tous les comptes (y compris le vôtre), projets, clients, devis, factures, paiements, achats, stocks, sous-traitants, données RH et QHSE, documents, messages et notifications sont définitivement supprimés, ainsi que les envois de formulaires, commentaires, abonnés et statistiques du site. Le journal d&apos;audit et la numérotation repartent de zéro.
+            </Alert>
+            {preview.loading && !preview.data ? (
+              <Skeleton className="h-32" />
+            ) : preview.data ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase text-red-700">Sera supprimé</p>
+                  <ul className="space-y-0.5 text-sm">
+                    {(preview.data.deleted as Row[]).map((g) => (
+                      <li key={g.label} className="flex justify-between gap-2">
+                        <span>{g.label}</span>
+                        <span className="font-semibold">{number(g.count)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase text-emerald-700">Sera conservé</p>
+                  <ul className="space-y-0.5 text-sm">
+                    {(preview.data.kept as Row[]).map((g) => (
+                      <li key={g.label} className="flex justify-between gap-2">
+                        <span>{g.label}</span>
+                        <span className="font-semibold">{number(g.count)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
+            <Field label="E-mail du nouvel administrateur" help="Il recevra une invitation pour choisir son mot de passe ; la double authentification lui sera demandée.">
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </Field>
+            <Field label="Justification (20 caractères minimum)">
+              <Textarea value={form.justification} onChange={(e) => setForm({ ...form, justification: e.target.value })} rows={2} placeholder="Base propre avant la recette / avant la mise en service" />
+            </Field>
+            <Field label="Votre code MFA">
+              <Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.trim() })} inputMode="numeric" autoComplete="one-time-code" />
+            </Field>
+            <Field label={`Tapez ${expected} pour confirmer`}>
+              <Input value={form.confirmation} onChange={(e) => setForm({ ...form, confirmation: e.target.value })} />
+            </Field>
+          </div>
+        )}
+      </Modal>
+    </Card>
+  );
+}
+
 export function SystemAdmin() {
-  const { can, canAny } = useAuth();
+  const { can, canAny, hasRole } = useAuth();
   const toast = useToast();
   const system = useApi<Row>("/admin/system");
   const jobs = useApi<Row[]>("/admin/jobs");
@@ -923,7 +1045,7 @@ export function SystemAdmin() {
           <Stat label="Base de données" value={fileSize(s.database_size_bytes)} />
           <Stat label="Événements en attente" value={number(s.outbox_pending)} tone={s.outbox_pending > 100 ? "warning" : "neutral"} />
           <Stat label="Événements en échec" value={number(s.outbox_failed)} tone={s.outbox_failed ? "danger" : "success"} />
-          <Stat label="Dernière sauvegarde" value={s.last_backup ? relative(s.last_backup.at) : "Aucune"} hint={s.last_backup ? `${optionLabel(s.last_backup.kind)} · ${fileSize(s.last_backup.size)}` : undefined} tone={s.last_backup ? "success" : "danger"} />
+          <Stat label="Dernière sauvegarde" value={s.last_backup ? relative(s.last_backup.at) : "Aucune"} hint={s.last_backup ? `${BACKUP_KINDS[s.last_backup.kind] ?? optionLabel(s.last_backup.kind)} · ${fileSize(s.last_backup.size)}` : undefined} tone={s.last_backup ? "success" : "danger"} />
         </div>
       ) : (
         <Skeleton className="h-24" />
@@ -995,7 +1117,7 @@ export function SystemAdmin() {
             {backups.items.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5">
                 <span>
-                  {optionLabel(b.kind)} · {dateTime(b.created_at)} · {optionLabel(b.trigger)}
+                  {BACKUP_KINDS[b.kind] ?? optionLabel(b.kind)} · {dateTime(b.created_at)} · {BACKUP_TRIGGERS[b.trigger] ?? optionLabel(b.trigger)}
                   <span className="block text-xs text-muted">
                     {b.size_bytes ? fileSize(b.size_bytes) : ""} {b.encrypted ? "· chiffrée" : ""} {b.remote_copy_status ? `· copie distante ${optionLabel(b.remote_copy_status)}` : ""} {b.checksum ? `· ${String(b.checksum).slice(0, 12)}…` : ""}
                   </span>
@@ -1003,7 +1125,7 @@ export function SystemAdmin() {
                 </span>
                 <span className="flex flex-wrap items-center gap-2">
                   <StatusBadge status={b.status} />
-                  {b.status === "success" && ["database", "full", "files"].includes(b.kind) ? (
+                  {b.status === "success" && ["database", "full", "files", "pre_destructive"].includes(b.kind) ? (
                     <>
                       <Button
                         size="sm"
@@ -1051,6 +1173,7 @@ export function SystemAdmin() {
           </ul>
         </Card>
       ) : null}
+      {can("backups:restore") && hasRole("ADMIN") ? <ResetPlatformCard /> : null}
       {conflicts.data?.length ? (
         <Card>
           <CardHeader title="Mes conflits de synchronisation (hors ligne)" />

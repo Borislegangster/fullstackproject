@@ -137,6 +137,35 @@ Sauvegardes chiffrées, signées, copiées hors site.
 > Toutes les données saisies depuis la sauvegarde sont perdues. Faites d'abord un **Test de restauration** et une sauvegarde complète de l'état actuel. L'opération est tracée dans le [journal d'audit](doc:erp-audit).
 :::
 
+::: role ADMIN
+### Remise à zéro des données d'exploitation
+
+Avant la mise en service, ou après une recette, pour repartir d'une base propre. **Préparer la remise à zéro** ouvre la
+fenêtre **Remise à zéro des données d'exploitation**, qui liste ce qui **sera supprimé** et ce qui **sera conservé**
+(avec le nombre d'enregistrements) :
+
+- **Supprimé** : tous les comptes (y compris le vôtre), projets, clients, devis, contrats, factures, paiements, achats,
+  stocks, fournisseurs, sous-traitants, données RH et QHSE, matériel, SAV, documents, maquettes, messages et
+  notifications ; les envois de formulaires, commentaires, abonnés et statistiques du site ; le journal d'audit et la
+  numérotation repartent de zéro.
+- **Conservé** : site vitrine et CMS (pages, collections, menus, formulaires, réglages du site, SEO), médiathèque,
+  paramètres, clés des intégrations, règles et modèles de notification, rôles, référentiels de configuration
+  (circuits d'approbation, délais garantis, grilles QHSE, catalogue EPI, horaires, partenaires de financement, catalogue
+  de matériaux, modèles de newsletter), sauvegardes et organisation de l'entreprise.
+
+1. **E-mail du nouvel administrateur** : il recevra une invitation pour choisir son mot de passe ; sa double
+   authentification sera exigée.
+2. **Justification (20 caractères minimum)**, **Votre code MFA** (accès d'urgence tracé) et la phrase de confirmation à
+   taper (**REMETTRE A ZERO**).
+3. **Remettre à zéro** : une sauvegarde complète est faite d'abord (si elle échoue, rien n'est supprimé), puis les
+   données sont effacées et l'invitation envoyée. Votre compte étant supprimé, **Aller à la connexion** vous ramène à la
+   page de connexion ; le nouvel administrateur active son accès depuis l'e-mail reçu.
+
+> [!WARNING]
+> Opération définitive. En cas d'erreur, seule la restauration de la sauvegarde faite juste avant permet de revenir en
+> arrière.
+:::
+
 ## Mes conflits de synchronisation (hors ligne)
 
 Si vous avez modifié une donnée hors ligne (application mobile ou bureau) pendant qu'un collègue la modifiait aussi, le conflit apparaît sur la page **Système** avec les champs en conflit : **Garder la version serveur** ou **Garder ma version**.
