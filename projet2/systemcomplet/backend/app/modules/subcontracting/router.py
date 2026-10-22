@@ -26,6 +26,7 @@ from app.core.files import store_private, validate_upload
 from app.core.pagination import PageParams, paginate
 from app.core.utils import clean_phone, jsonable, money, utcnow
 from app.modules.documents.models import Document, DocumentVersion
+from app.modules.identity import service as identity
 from app.modules.projects.models import Lot, Project
 from app.modules.subcontracting import service
 from app.modules.subcontracting.models import (
@@ -216,6 +217,8 @@ def create_subcontractor(
     if not values.get("code"):
         count = db.execute(select(func.count()).select_from(Subcontractor)).scalar_one()
         values["code"] = f"ST-{count + 1:05d}"
+    if values.get("organization_id"):
+        identity.check_linked_organization(db, values["organization_id"], kind="subcontractor", model=Subcontractor)
     sub = Subcontractor(**values, status="prospect")
     db.add(sub)
     try:
@@ -256,6 +259,10 @@ def update_subcontractor(
     if "trades" in values:
         values["trades"] = list(dict.fromkeys(values["trades"] or []))
         ensure_known_trades(values["trades"], tolerated=sub.trades)
+    if values.get("organization_id"):
+        identity.check_linked_organization(
+            db, values["organization_id"], kind="subcontractor", model=Subcontractor, current_id=sub.id
+        )
     diff = {}
     for key, value in values.items():
         previous = getattr(sub, key)
@@ -548,9 +555,24 @@ def _tender_out(db: Session, tender: Tender, access: Access | None = None) -> di
     bids_count = db.execute(
         select(func.count()).select_from(Bid).where(Bid.tender_id == tender.id, Bid.status != "withdrawn")
     ).scalar_one()
+    documents = []  # pièces du DCE (versions exactes)
+    for vid in tender.document_version_ids or []:
+        version = db.get(DocumentVersion, uuid.UUID(str(vid)))
+        document = db.get(Document, version.document_id) if version else None
+        if version is not None and document is not None:
+            documents.append(
+                {
+                    "version_id": version.id,
+                    "document_id": document.id,
+                    "code": document.code,
+                    "title": document.title,
+                    "version": f"{version.version_major}.{version.version_minor}",
+                }
+            )
     return jsonable(
         {
             **serialize(tender),
+            "documents": documents,
             "sealed": not _bids_open(tender),
             "lots": [{**serialize(lot), "items": [serialize(i) for i in lot.items]} for lot in tender.lots],
             "invitations": [{**serialize(inv), "subcontractor": name} for inv, name in invitations],
@@ -928,6 +950,7 @@ class ContractIn(BaseModel):
     advance_amount: Decimal = Field(default=Decimal("0"), ge=0)
     advance_recovery_pct: Decimal = Field(default=Decimal("0"), ge=0, le=100)
     penalty_per_day: Decimal = Field(default=Decimal("0"), ge=0)
+    penalty_cap_pct: Decimal = Field(default=Decimal("10"), ge=0, le=100)  # plafond des pénalités (% du marché)
     tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
     start_date: date | None = None
     end_date: date | None = None

@@ -275,9 +275,9 @@ export function ConfiguratorView({ modelId, validationsHref }: { modelId: string
               if (z) setZoneId(z.id);
             }} />
           ) : (
-            <div className="flex h-64 items-center justify-center rounded-2xl bg-brand-50 text-sm text-muted">Aperçu 3D indisponible pour cette maquette.</div>
+            <div className="flex h-64 items-center justify-center rounded-2xl bg-brand-50 px-6 text-center text-sm text-muted">Choisissez vos finitions zone par zone dans la liste : le prix se met à jour à chaque choix.</div>
           )}
-          <p className="mt-2 text-xs text-muted">Touchez une surface de la maquette pour sélectionner la zone correspondante.</p>
+          {model.file_url ? <p className="mt-2 text-xs text-muted">Touchez une surface de la maquette pour sélectionner la zone correspondante.</p> : null}
         </div>
         <Card className="lg:col-span-2">
           <CardHeader title="Zones et matériaux" />

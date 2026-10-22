@@ -70,8 +70,17 @@ export function TicketsList() {
           endpoint: "POST /support/tickets",
           label: "Ticket (appel client)",
           perms: ["support:write"],
-          initial: { priority: "normal", category: "autre" },
-          fields: { category: { options: opts(CATEGORIES) }, priority: { options: opts(["low", "normal", "high", "urgent"]) }, description: { widget: "textarea" } },
+          initial: { priority: "normal", category: "autre", channel: "phone" },
+          fields: {
+            category: { options: opts(CATEGORIES) },
+            priority: { options: opts(["low", "normal", "high", "urgent"]) },
+            description: { widget: "textarea" },
+            channel: { label: "Reçu par", options: opts(["phone", "email", "whatsapp", "website"]) },
+            organization_id: { ref: "clientOrganizations", label: "Client (organisation)", help: "Laisser vide : client du projet choisi. Le ticket apparaît dans son espace client." },
+            requester_name: { label: "Nom du demandeur", help: "Personne qui signale le problème (laisser vide pour un ticket interne)." },
+            requester_email: { label: "E-mail du demandeur" },
+            requester_phone: { label: "Téléphone du demandeur" },
+          },
         },
       }}
     />

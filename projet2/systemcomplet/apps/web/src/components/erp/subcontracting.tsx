@@ -96,6 +96,7 @@ function TradeSelect({ value, onChange, invalid, known = [] }: { value: unknown;
 
 const SUBCONTRACTOR_FIELDS: Record<string, FieldConfig> = {
   trades: { span: 2, help: "Cochez les corps de métier exercés ; une qualification approuvée ajoute aussi son corps de métier.", render: ({ value, onChange }) => <TradesPicker value={value} onChange={onChange} /> },
+  organization_id: { ref: "subcontractorOrganizations", label: "Organisation (accès extranet)", help: "Organisation de type « sous-traitant » créée dans Administration › Utilisateurs et rôles › Organisations : ses comptes ouvriront l'extranet sous-traitant de cette fiche." },
 };
 
 export function SubcontractorsList() {
@@ -443,9 +444,44 @@ interface LotDraft {
 const emptyItem = (): ItemDraft => ({ code: "", designation: "", unit: "u", quantity: "" });
 const emptyLot = (n: number): LotDraft => ({ lot_id: null, code: `L${n}`, name: "", description: "", estimated_amount: "", items: [emptyItem()] });
 
+const TENDER_CRITERIA = [
+  { key: "prix", label: "Prix", weight: 50 },
+  { key: "delai", label: "Délai", weight: 20 },
+  { key: "technique", label: "Valeur technique", weight: 20 },
+  { key: "historique", label: "Historique avec GLOBUS", weight: 10 },
+];
+
+/** Pièces du dossier de consultation (DCE) : plans et documents GED du projet, dans leur version en vigueur. Les
+ * sous-traitants consultés les téléchargent depuis leur extranet. */
+function TenderDocsPicker({ projectId, value, onChange }: { projectId: string; value: string[]; onChange: (ids: string[]) => void }) {
+  const docs = useApi<{ items: Row[] }>("/documents", { project_id: projectId, page_size: 100 });
+  const rows = (docs.data?.items ?? []).filter((d) => d.current_version?.id);
+  if (docs.loading && !docs.data) return <Skeleton className="h-16" />;
+  if (!rows.length) return <p className="text-sm text-muted">Aucun document dans la GED de ce projet : déposez d&apos;abord les plans et le CCTP (GED › Déposer un document).</p>;
+  return (
+    <ul className="grid max-h-56 gap-1 overflow-y-auto rounded-xl border border-line p-2 sm:grid-cols-2">
+      {rows.map((d) => {
+        const id = String(d.current_version.id);
+        return (
+          <li key={id}>
+            <Checkbox
+              label={[d.code ? `${d.code} — ${d.title}` : d.title, d.current_version.label].filter(Boolean).join(" · ")}
+              checked={value.includes(id)}
+              onChange={(checked) => onChange(checked ? [...value, id] : value.filter((x) => x !== id))}
+            />
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /** Création d'une consultation multi-lots avec bordereaux de prix (DPGF). */
 export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => void; onCancel: () => void }) {
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [docIds, setDocIds] = useState<string[]>([]);
+  const [weights, setWeights] = useState<Record<string, string>>(Object.fromEntries(TENDER_CRITERIA.map((c) => [c.key, String(c.weight)])));
+  const weightTotal = TENDER_CRITERIA.reduce((sum, c) => sum + toNumber(weights[c.key]), 0);
   const [form, setForm] = useState({ title: "", description: "", technical_spec: "", deadline: "", start_date_target: "", duration_days_target: "", variants_allowed: false, exclusions: "" });
   const [lots, setLots] = useState<LotDraft[]>([emptyLot(1)]);
   const [busy, setBusy] = useState(false);
@@ -463,6 +499,8 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
           title: form.title,
           description: form.description || null,
           technical_spec: form.technical_spec || null,
+          document_version_ids: docIds,
+          quality_criteria: TENDER_CRITERIA.map((c) => ({ key: c.key, weight: Math.round(toNumber(weights[c.key])) })),
           deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
           start_date_target: form.start_date_target || null,
           duration_days_target: form.duration_days_target ? Number(form.duration_days_target) : null,
@@ -489,7 +527,14 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Projet" required>
-          <RefSelect source={REFS.projects} value={projectId} onChange={setProjectId} />
+          <RefSelect
+            source={REFS.projects}
+            value={projectId}
+            onChange={(id) => {
+              setProjectId(id);
+              setDocIds([]);
+            }}
+          />
         </Field>
         <Field label="Date limite de remise des offres" required>
           <Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
@@ -514,6 +559,20 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
         </Field>
         <Checkbox label="Variantes autorisées" checked={form.variants_allowed} onChange={(v) => setForm({ ...form, variants_allowed: v })} />
       </div>
+      <Field label="Pièces du dossier de consultation (DCE)" help="Plans, CCTP, notes techniques : version en vigueur, téléchargeable par les sous-traitants consultés.">
+        {projectId ? <TenderDocsPicker projectId={projectId} value={docIds} onChange={setDocIds} /> : <p className="text-sm text-muted">Choisissez d&apos;abord le projet.</p>}
+      </Field>
+      <Field label="Critères de notation des offres (pondération en %)" help="Le comparatif des offres applique ces poids ; le total doit faire 100 %.">
+        <div className="grid gap-3 sm:grid-cols-4">
+          {TENDER_CRITERIA.map((c) => (
+            <label key={c.key} className="block text-sm">
+              <span className="text-xs text-muted">{c.label}</span>
+              <Input type="number" min={0} max={100} value={weights[c.key]} onChange={(e) => setWeights({ ...weights, [c.key]: e.target.value })} />
+            </label>
+          ))}
+        </div>
+        {weightTotal !== 100 ? <p className="mt-1 text-xs text-red-600">Total actuel : {weightTotal} % (100 % attendu).</p> : null}
+      </Field>
       {lots.map((lot, i) => (
         <Card key={i} className="space-y-3 p-4">
           <div className="flex items-center justify-between gap-2">
@@ -587,7 +646,7 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
         <Button variant="secondary" onClick={onCancel}>
           Annuler
         </Button>
-        <Button onClick={submit} loading={busy} disabled={!projectId || !form.title || !form.deadline || lots.some((l) => !l.name || !l.items.some((it) => it.designation && it.quantity))}>
+        <Button onClick={submit} loading={busy} disabled={!projectId || !form.title || !form.deadline || weightTotal !== 100 || lots.some((l) => !l.name || !l.items.some((it) => it.designation && it.quantity))}>
           Créer la consultation
         </Button>
       </div>
@@ -631,6 +690,82 @@ export function TendersList() {
   );
 }
 
+/** Modification des pièces du DCE et des critères d'une consultation encore en brouillon (PUT complet). */
+function TenderDceDialog({ tender, open, onClose, onSaved }: { tender: Row; open: boolean; onClose: () => void; onSaved: (t: Row) => void }) {
+  const toast = useToast();
+  const [docIds, setDocIds] = useState<string[]>(((tender.documents ?? []) as Row[]).map((d) => String(d.version_id)));
+  const current = Object.fromEntries(((tender.quality_criteria ?? []) as Row[]).map((c) => [c.key, String(c.weight)]));
+  const [weights, setWeights] = useState<Record<string, string>>(Object.fromEntries(TENDER_CRITERIA.map((c) => [c.key, current[c.key] ?? String(c.weight)])));
+  const total = TENDER_CRITERIA.reduce((sum, c) => sum + toNumber(weights[c.key]), 0);
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      const t = tender;
+      const saved = await api<Row>(`/tenders/${t.id}`, {
+        method: "PUT",
+        body: {
+          project_id: t.project_id,
+          title: t.title,
+          description: t.description ?? null,
+          technical_spec: t.technical_spec ?? null,
+          document_version_ids: docIds,
+          deadline: t.deadline,
+          start_date_target: t.start_date_target ?? null,
+          duration_days_target: t.duration_days_target ?? null,
+          quality_criteria: TENDER_CRITERIA.map((c) => ({ key: c.key, weight: Math.round(toNumber(weights[c.key])) })),
+          variants_allowed: !!t.variants_allowed,
+          exclusions: t.exclusions ?? null,
+          lots: ((t.lots ?? []) as Row[]).map((l) => ({
+            lot_id: l.lot_id ?? null,
+            code: l.code,
+            name: l.name,
+            description: l.description ?? null,
+            estimated_amount: toNumber(l.estimated_amount),
+            items: ((l.items ?? []) as Row[]).map((it) => ({ code: it.code ?? null, designation: it.designation, unit: it.unit || "u", quantity: toNumber(it.quantity) })),
+          })),
+        },
+      });
+      toast.success("Dossier de consultation mis à jour");
+      onSaved(saved);
+    } catch (err) {
+      toast.error("Enregistrement impossible", errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Pièces du DCE et critères"
+      size="lg"
+      footer={
+        <Button loading={busy} disabled={total !== 100} onClick={save}>
+          Enregistrer
+        </Button>
+      }
+    >
+      <div className="space-y-4">
+        <Field label="Pièces du dossier de consultation (DCE)">
+          <TenderDocsPicker projectId={String(tender.project_id)} value={docIds} onChange={setDocIds} />
+        </Field>
+        <Field label="Critères de notation (pondération en %)">
+          <div className="grid gap-3 sm:grid-cols-4">
+            {TENDER_CRITERIA.map((c) => (
+              <label key={c.key} className="block text-sm">
+                <span className="text-xs text-muted">{c.label}</span>
+                <Input type="number" min={0} max={100} value={weights[c.key]} onChange={(e) => setWeights({ ...weights, [c.key]: e.target.value })} />
+              </label>
+            ))}
+          </div>
+          {total !== 100 ? <p className="mt-1 text-xs text-red-600">Total actuel : {total} % (100 % attendu).</p> : null}
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
 interface Comparison {
   lot: { id: string; code: string; name: string; estimated_amount: string };
   criteria: { key: string; label?: string; weight: number }[] | Record<string, number>;
@@ -646,7 +781,7 @@ export function TenderDetail({ id }: { id: string }) {
   const [lotId, setLotId] = useState<string | null>(null);
   const activeLot: string | null = lotId ?? tender.data?.lots?.[0]?.id ?? null;
   const comparison = useApi<Comparison>(activeLot && bids.data && !bids.data.sealed ? `/tenders/${id}/lots/${activeLot}/comparison` : null);
-  const [dialog, setDialog] = useState<null | "invite" | "evaluate" | "negotiate" | "award" | "cancel" | "close">(null);
+  const [dialog, setDialog] = useState<null | "invite" | "evaluate" | "negotiate" | "award" | "cancel" | "close" | "dce">(null);
   const [inviteIds, setInviteIds] = useState<string[]>([]);
   const [inviteTrade, setInviteTrade] = useState("");
   const [target, setTarget] = useState<Row | null>(null);
@@ -738,6 +873,36 @@ export function TenderDetail({ id }: { id: string }) {
               <p className="mt-2 whitespace-pre-line">{t.technical_spec}</p>
             </details>
           ) : null}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-1 flex items-center justify-between gap-2 text-xs font-semibold uppercase text-muted">
+                Pièces du DCE
+                {write && t.status === "draft" ? (
+                  <button type="button" className="font-medium normal-case text-brand-600 hover:underline" onClick={() => setDialog("dce")}>
+                    Modifier
+                  </button>
+                ) : null}
+              </p>
+              {((t.documents ?? []) as Row[]).length ? (
+                <ul className="space-y-0.5 text-sm">
+                  {((t.documents ?? []) as Row[]).map((d) => (
+                    <li key={d.version_id}>
+                      <Link href={`/erp/ged/documents/${d.document_id}`} className="text-brand-600 hover:underline">
+                        {d.code} — {d.title}
+                      </Link>{" "}
+                      <span className="text-xs text-muted">v{d.version}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted">Aucune pièce jointe.</p>
+              )}
+            </div>
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase text-muted">Critères de notation</p>
+              <p className="text-sm">{((t.quality_criteria ?? []) as Row[]).map((c) => `${optionLabel(c.key)} ${c.weight} %`).join(" · ") || "Prix 50 % · Délai 20 % · Technique 20 % · Historique 10 %"}</p>
+            </div>
+          </div>
         </Card>
         <Card>
           <CardHeader title="Invitations" subtitle={`${(t.invitations ?? []).length} entreprise(s)`} />
@@ -999,6 +1164,17 @@ export function TenderDetail({ id }: { id: string }) {
           tender.setData(await api(`/tenders/${id}/cancel`, { method: "POST", body: { reason } }));
         }}
       />
+      {dialog === "dce" ? (
+        <TenderDceDialog
+          tender={t}
+          open
+          onClose={() => setDialog(null)}
+          onSaved={(saved) => {
+            tender.setData(saved);
+            setDialog(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

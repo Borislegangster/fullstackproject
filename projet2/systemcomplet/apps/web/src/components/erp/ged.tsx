@@ -65,9 +65,9 @@ function ConfidentialityBadge({ level }: { level?: string }) {
 
 /* ----------------------------------------------------------------------------- dépôt */
 
-export function DocumentUpload({ projectId, folderId, onDone, onCancel }: { projectId?: string | null; folderId?: string | null; onDone: (doc: Row) => void; onCancel: () => void }) {
+export function DocumentUpload({ projectId, folderId, defaultConfidentiality, onDone, onCancel }: { projectId?: string | null; folderId?: string | null; defaultConfidentiality?: string | null; onDone: (doc: Row) => void; onCancel: () => void }) {
   const [files, setFiles] = useState<File[]>([]);
-  const [v, setV] = useState({ title: "", doc_type: "plan", discipline: "", confidentiality: "internal", description: "", code: "", project_id: projectId ?? null, folder_id: folderId ?? null, site_id: null as string | null, lot_id: null as string | null });
+  const [v, setV] = useState({ title: "", doc_type: "plan", discipline: "", confidentiality: defaultConfidentiality || "internal", description: "", code: "", project_id: projectId ?? null, folder_id: folderId ?? null, site_id: null as string | null, lot_id: null as string | null });
   const [tags, setTags] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +242,7 @@ export function GedExplorer() {
   const [folderId, setFolderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [newFolder, setNewFolder] = useState<string | null>(null);
+  const [folderLevel, setFolderLevel] = useState("internal");
   const folders = useApi<{ items: Row[] }>("/document-folders", { project_id: projectId ?? undefined, page_size: 500 });
   const tree = useMemo(() => buildTree((folders.data?.items ?? []).filter((f) => (projectId ? f.project_id === projectId : !f.project_id))), [folders.data, projectId]);
   const current = folders.data?.items?.find((f) => f.id === folderId);
@@ -275,7 +276,7 @@ export function GedExplorer() {
           </button>
           {folders.loading && !folders.data ? <Skeleton className="h-24" /> : <FolderTree nodes={tree} selected={folderId} onSelect={setFolderId} />}
           {can("documents:write") ? (
-            <Button size="sm" variant="ghost" onClick={() => setNewFolder("")}>
+            <Button size="sm" variant="ghost" onClick={() => { setNewFolder(""); setFolderLevel(current?.default_confidentiality ?? "internal"); }}>
               <FolderPlus className="h-4 w-4" /> {current ? `Sous-dossier de « ${current.name} »` : "Nouveau dossier"}
             </Button>
           ) : null}
@@ -307,7 +308,7 @@ export function GedExplorer() {
         />
       </div>
       <Modal open={uploading} onClose={() => setUploading(false)} title="Déposer un document" size="lg">
-        <DocumentUpload projectId={projectId} folderId={folderId} onCancel={() => setUploading(false)} onDone={(doc) => router.push(`/erp/ged/documents/${doc.id}`)} />
+        <DocumentUpload projectId={projectId} folderId={folderId} defaultConfidentiality={current?.default_confidentiality} onCancel={() => setUploading(false)} onDone={(doc) => router.push(`/erp/ged/documents/${doc.id}`)} />
       </Modal>
       <Modal
         open={newFolder !== null}
@@ -318,7 +319,7 @@ export function GedExplorer() {
             disabled={!newFolder?.trim()}
             onClick={async () => {
               try {
-                await api("/document-folders", { method: "POST", body: { name: newFolder?.trim(), parent_id: folderId, project_id: projectId } });
+                await api("/document-folders", { method: "POST", body: { name: newFolder?.trim(), parent_id: folderId, project_id: projectId, default_confidentiality: folderLevel } });
                 setNewFolder(null);
                 void folders.reload();
               } catch (err) {
@@ -332,6 +333,9 @@ export function GedExplorer() {
       >
         <Field label="Nom du dossier">
           <Input value={newFolder ?? ""} onChange={(e) => setNewFolder(e.target.value)} autoFocus />
+        </Field>
+        <Field label="Confidentialité par défaut" help="Niveau proposé pour les documents déposés dans ce dossier (modifiable à chaque dépôt)." className="mt-3">
+          <Select value={folderLevel} onChange={(e) => setFolderLevel(e.target.value)} options={opts(CONFIDENTIALITY)} />
         </Field>
         {current ? <p className="mt-2 text-xs text-muted">Dans {current.path}</p> : null}
       </Modal>

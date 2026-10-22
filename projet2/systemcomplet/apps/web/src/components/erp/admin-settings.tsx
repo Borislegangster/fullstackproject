@@ -913,11 +913,11 @@ function ResetPlatformCard() {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const preview = useApi<Row>(open ? "/admin/reset/preview" : null);
-  const [form, setForm] = useState({ email: "contact@globus-engineering-sarl.com", justification: "", code: "", confirmation: "" });
+  const [form, setForm] = useState({ email: "contact@globus-engineering-sarl.com", first_name: "GLOBUS", last_name: "ENGINEERING", justification: "", code: "", confirmation: "" });
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Row | null>(null);
   const expected = preview.data?.confirmation ?? "REMETTRE A ZERO";
-  const ready = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.justification.trim().length >= 20 && form.code.length >= 6 && form.confirmation === expected;
+  const ready = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && !!form.first_name.trim() && !!form.last_name.trim() && form.justification.trim().length >= 20 && form.code.length >= 6 && form.confirmation === expected;
   return (
     <Card className="border-red-200">
       <CardHeader
@@ -952,7 +952,7 @@ function ResetPlatformCard() {
                 setBusy(true);
                 try {
                   const grant = await api<Row>("/admin/break-glass", { method: "POST", body: { scope: "purge", justification: form.justification.trim(), code: form.code } });
-                  const res = await api<Row>("/admin/reset", { method: "POST", body: { break_glass_id: grant.id, confirmation: form.confirmation, admin_email: form.email.trim() } });
+                  const res = await api<Row>("/admin/reset", { method: "POST", body: { break_glass_id: grant.id, confirmation: form.confirmation, admin_email: form.email.trim(), admin_first_name: form.first_name.trim(), admin_last_name: form.last_name.trim() } });
                   setDone(res);
                 } catch (err) {
                   toast.error("Remise à zéro refusée", errorMessage(err));
@@ -1009,6 +1009,14 @@ function ResetPlatformCard() {
             <Field label="E-mail du nouvel administrateur" help="Il recevra une invitation pour choisir son mot de passe ; la double authentification lui sera demandée.">
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Prénom de l'administrateur" required>
+                <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} autoComplete="off" />
+              </Field>
+              <Field label="Nom de l'administrateur" required>
+                <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} autoComplete="off" />
+              </Field>
+            </div>
             <Field label="Justification (20 caractères minimum)">
               <Textarea value={form.justification} onChange={(e) => setForm({ ...form, justification: e.target.value })} rows={2} placeholder="Base propre avant la recette / avant la mise en service" />
             </Field>

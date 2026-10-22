@@ -29,7 +29,7 @@ from app.core.numbering import next_number
 from app.core.pagination import PageParams, paginate
 from app.core.ratelimit import rate_limit
 from app.core.security import generate_numeric_code, random_token, sha256_hex
-from app.core.utils import jsonable, utcnow
+from app.core.utils import clean_phone, jsonable, utcnow
 from app.modules.crm import service
 from app.modules.crm.models import (
     AssignmentRule,
@@ -43,7 +43,7 @@ from app.modules.crm.models import (
     QuoteLine,
     SlaPolicy,
 )
-from app.modules.identity.models import UserToken
+from app.modules.identity.models import User, UserToken
 from app.modules.system.models import StoredFile
 
 public = APIRouter(prefix="/public", tags=["CRM (public)"])
@@ -516,6 +516,20 @@ def get_lead(
 class LeadUpdate(BaseModel):
     status: str | None = Field(default=None, pattern="^(new|contacted|qualified|nurturing|unqualified|lost)$")
     lost_reason: str | None = Field(default=None, max_length=1000)
+    # Coordonnées (correction d'une saisie, numéro WhatsApp communiqué plus tard…)
+    first_name: str | None = Field(default=None, min_length=1, max_length=120)
+    last_name: str | None = Field(default=None, max_length=120)
+    company: str | None = Field(default=None, max_length=200)
+    email: EmailStr | None = None
+    phone: str | None = Field(default=None, max_length=40)
+    whatsapp: str | None = Field(default=None, max_length=40)
+    country: str | None = Field(default=None, max_length=80)
+    city: str | None = Field(default=None, max_length=120)
+    preferred_channel: str | None = Field(default=None, pattern="^(email|phone|whatsapp)$")
+    project_type: str | None = Field(default=None, max_length=120)
+    project_location: str | None = Field(default=None, max_length=200)
+    has_land: bool | None = None
+    land_status: str | None = Field(default=None, pattern="^(titre_foncier|en_cours|acte_vente|coutumier|a_verifier)$")
     universe: str | None = None
     offer_slug: str | None = None
     budget_min: Decimal | None = None
@@ -535,6 +549,16 @@ def update_lead(
 ) -> dict[str, Any]:
     lead = service.get_lead(db, lead_id)
     values = data.model_dump(exclude_unset=True)
+    if values.get("email"):
+        values["email"] = str(values["email"]).strip().lower()
+    for key in ("phone", "whatsapp"):
+        if values.get(key):
+            values[key] = clean_phone(values[key])
+    if "first_name" in values and not values["first_name"]:
+        raise BusinessRuleError("Prénom requis")
+    if "country" in values:
+        country = str(values["country"] or "").strip().lower()
+        values["is_diaspora"] = bool(country) and country not in ("cameroun", "cameroon", "cm")
     if "assigned_to_id" in values:
         principal.require("crm:assign")
     if values.get("status") == "lost" and not values.get("lost_reason") and not lead.lost_reason:
@@ -592,6 +616,7 @@ class LeadManualIn(BaseModel):
     country: str | None = Field(default=None, max_length=80)
     city: str | None = Field(default=None, max_length=120)
     universe: str | None = Field(default=None, pattern="^(HOME|BUSINESS|PREMIUM|DIASPORA|ENGINEERING)$")
+    offer_slug: str | None = Field(default=None, max_length=160)
     project_type: str | None = Field(default=None, max_length=120)
     project_location: str | None = Field(default=None, max_length=200)
     budget_min: Decimal | None = Field(default=None, ge=0)
@@ -600,6 +625,9 @@ class LeadManualIn(BaseModel):
     urgency: str = Field(default="normal", pattern="^(normal|urgent)$")
     preferred_channel: str | None = Field(default=None, pattern="^(email|phone|whatsapp)$")
     message: str | None = Field(default=None, max_length=5000)
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    # Commercial choisi à la saisie (droit crm:assign) ; sinon règles d'affectation automatiques.
+    assigned_to_id: uuid.UUID | None = None
     marketing_consent: bool = False
     whatsapp_consent: bool = False
 
@@ -611,6 +639,11 @@ def create_lead_manual(
     """Saisie manuelle (téléphone, salon, recommandation) — consentement de contact attesté par le commercial."""
     values = data.model_dump(exclude_none=True)
     source = values.pop("source", "phone")
+    if data.assigned_to_id:
+        principal.require("crm:assign")
+        assignee = db.get(User, data.assigned_to_id)
+        if assignee is None or not assignee.is_active or assignee.deleted_at is not None:
+            raise BusinessRuleError("Commercial introuvable ou inactif", code="ASSIGNEE_INVALID")
     lead = service.create_lead(
         db,
         data=values,
@@ -632,6 +665,8 @@ def create_lead_manual(
 class ConvertIn(BaseModel):
     title: str | None = Field(default=None, max_length=250)
     amount: Decimal | None = Field(default=None, ge=0)
+    stage: str = Field(default="qualification", pattern="^(qualification|discovery|proposal|negotiation)$")
+    expected_close_date: date | None = None  # date de décision attendue du client
     create_organization: bool = True
 
 
@@ -649,6 +684,8 @@ def convert(
         user_id=principal.id,
         title=data.title,
         amount=data.amount,
+        stage=data.stage,
+        expected_close_date=data.expected_close_date,
         create_organization=data.create_organization,
     )
     db.commit()

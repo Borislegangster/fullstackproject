@@ -21,7 +21,7 @@ Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). Les do
 
 1. **Déposer un document** : projet, dossier, type (plan, note de calcul, contrat, PV…), discipline, code et titre, confidentialité, puis le fichier ; **Déposer**.
 2. Le document est créé en brouillon (version 1).
-3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet ; **Créer**.
+3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet : nom et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier, reprise du dossier parent) ; **Créer**.
 :::
 
 ## La fiche document

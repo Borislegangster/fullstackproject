@@ -1285,3 +1285,33 @@ def require_break_glass(db: Session, user_id: uuid.UUID, scope: str, grant_id: u
         raise Forbidden("Accès break-glass invalide ou expiré", code="BREAK_GLASS_INVALID")
     grant.used_at = utcnow()
     return grant
+
+
+ORG_KIND_LABELS = {
+    "supplier": "fournisseur",
+    "subcontractor": "sous-traitant",
+    "client": "client",
+    "partner": "partenaire",
+}
+
+
+def check_linked_organization(
+    db: Session, organization_id: uuid.UUID, *, kind: str, model: Any, current_id: uuid.UUID | None = None
+) -> None:
+    """Organisation reliée à une fiche fournisseur / sous-traitant : existante, du bon type, pas déjà prise.
+
+    L'extranet retrouve la fiche à partir de l'organisation du compte connecté : deux fiches sur la même organisation
+    rendraient l'espace inaccessible.
+    """
+    org = db.get(Organization, organization_id)
+    if org is None or org.deleted_at is not None:
+        raise BusinessRuleError("Organisation introuvable", code="ORGANIZATION_NOT_FOUND")
+    if org.kind != kind:
+        raise BusinessRuleError(
+            f"Choisissez une organisation de type « {ORG_KIND_LABELS.get(kind, kind)} »", code="ORGANIZATION_KIND"
+        )
+    stmt = select(model.id).where(model.organization_id == organization_id, model.deleted_at.is_(None))
+    if current_id is not None:
+        stmt = stmt.where(model.id != current_id)
+    if db.execute(stmt).first():
+        raise Conflict("Cette organisation est déjà reliée à une autre fiche", code="ORGANIZATION_TAKEN")

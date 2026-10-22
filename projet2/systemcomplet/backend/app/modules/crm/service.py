@@ -345,6 +345,8 @@ def create_lead(
         )
         if previous is not None:
             lead.tags = ["relance_prospect_existant"]
+    if data.get("tags"):
+        lead.tags = list(dict.fromkeys([*(lead.tags or []), *(str(t).strip() for t in data["tags"] if str(t).strip())]))
     db.add(lead)
     db.flush()
     consent = record_consent(
@@ -379,7 +381,11 @@ def create_lead(
     lead.temperature = temperature_for(lead.score)
     if lead.temperature == "hot":
         lead.urgency = "urgent"
-    assign_lead(db, lead)
+    if data.get("assigned_to_id"):  # saisie manuelle : commercial choisi (droit vérifié par l'appelant)
+        lead.assigned_to_id = data["assigned_to_id"]
+        lead.assigned_at = utcnow()
+    else:
+        assign_lead(db, lead)
     apply_sla(db, lead)
     db.flush()
     if data.get("referral_code"):
@@ -593,6 +599,8 @@ def convert_lead(
     title: str | None,
     amount: Decimal | None,
     create_organization: bool = True,
+    stage: str = "qualification",
+    expected_close_date: date | None = None,
 ) -> Opportunity:
     if lead.status == "converted" and lead.opportunity_id:
         raise Conflict("Lead déjà converti", code="LEAD_CONVERTED")
@@ -635,7 +643,8 @@ def convert_lead(
         amount_estimated=amount or lead.budget_max or Decimal("0"),
         currency=lead.budget_currency or "XAF",
         owner_id=lead.assigned_to_id or user_id,
-        stage="qualification",
+        stage=stage,
+        expected_close_date=expected_close_date,
         probability=30 if lead.temperature == "hot" else 20,
     )
     db.add(opp)

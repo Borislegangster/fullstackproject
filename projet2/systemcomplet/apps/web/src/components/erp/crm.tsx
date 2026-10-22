@@ -3,7 +3,7 @@
 import { Check, Copy, Download, FileSignature, Mail, MessageCircle, Phone, Plus, Send, Trash2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { InstantEstimatePanel } from "@/components/erp/instant-estimate-panel";
 import { CellLink, ResourceView, type Row } from "@/components/erp/resource";
@@ -114,8 +114,37 @@ export function CrmDashboard() {
 
 /* ----------------------------------------------------------------------------- leads */
 
+/** Offre du site (page « offre » d'un univers) : liste lue sur les pages publiques, donc accessible aux commerciaux
+ * sans droit sur le CMS. La valeur est l'adresse courte (slug) de l'offre ; filtrée par univers quand il est choisi. */
+function OfferSelect({ universe, value, onChange }: { universe?: string | null; value: unknown; onChange: (slug: string | null) => void }) {
+  const universes = useApi<Row[]>("/public/universes");
+  const keys = (universes.data ?? []).filter((u) => !universe || u.key === universe).map((u) => String(u.slug));
+  const [offers, setOffers] = useState<{ value: string; label: string }[]>([]);
+  const signature = keys.join("|");
+  useEffect(() => {
+    if (!signature) return;
+    let cancelled = false;
+    Promise.all(signature.split("|").map((slug) => api<Row>(`/public/universes/${slug}`).then((u) => ((u.offers ?? []) as Row[]).map((o) => ({ value: String(o.slug), label: universe ? o.name : `${u.name} · ${o.name}` })))))
+      .then((all) => !cancelled && setOffers(all.flat()))
+      .catch(() => !cancelled && setOffers([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [signature, universe]);
+  const current = value ? String(value) : "";
+  const known = offers.some((o) => o.value === current);
+  return (
+    <Select
+      value={current}
+      onChange={(e) => onChange(e.target.value || null)}
+      options={[{ value: "", label: "Non précisée" }, ...(current && !known ? [{ value: current, label: current }] : []), ...offers]}
+    />
+  );
+}
+
 function LeadCreate({ onDone, onCancel }: { onDone: (lead: Row) => void; onCancel: () => void }) {
-  const [v, setV] = useState<Record<string, any>>({ source: "phone", urgency: "normal", universe: "", country: "Cameroun", marketing_consent: false, whatsapp_consent: false });
+  const { can } = useAuth();
+  const [v, setV] = useState<Record<string, any>>({ source: "phone", urgency: "normal", universe: "", country: "Cameroun", marketing_consent: false, whatsapp_consent: false, tags: [] });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: string, value: unknown) => setV((all) => ({ ...all, [k]: value }));
@@ -152,6 +181,12 @@ function LeadCreate({ onDone, onCancel }: { onDone: (lead: Row) => void; onCance
         <Field label="Univers">
           <Select value={v.universe} onChange={(e) => set("universe", e.target.value)} options={[{ value: "", label: "Non précisé" }, ...opts(UNIVERSES)]} />
         </Field>
+        <Field label="Offre visée" help="Offre du site qui intéresse le prospect (facultatif).">
+          <OfferSelect universe={v.universe || null} value={v.offer_slug} onChange={(slug) => set("offer_slug", slug ?? "")} />
+        </Field>
+        <Field label="Canal de contact préféré">
+          <Select value={v.preferred_channel ?? ""} onChange={(e) => set("preferred_channel", e.target.value)} options={[{ value: "", label: "Selon ses consentements" }, ...opts(["phone", "whatsapp", "email"])]} />
+        </Field>
         <Field label="Type de projet">
           <Input value={v.project_type ?? ""} onChange={(e) => set("project_type", e.target.value)} placeholder="Villa, immeuble R+4, rénovation…" />
         </Field>
@@ -173,6 +208,14 @@ function LeadCreate({ onDone, onCancel }: { onDone: (lead: Row) => void; onCance
         <Field label="Besoin exprimé" className="sm:col-span-2">
           <Textarea value={v.message ?? ""} onChange={(e) => set("message", e.target.value)} rows={3} />
         </Field>
+        <Field label="Étiquettes" help="Mots-clés libres (salon, recommandation, terrain titré…).">
+          <TagInput value={v.tags ?? []} onChange={(tags) => set("tags", tags)} />
+        </Field>
+        {can("crm:assign") ? (
+          <Field label="Commercial affecté" help="Laisser vide : affectation automatique selon les règles.">
+            <RefSelect source={REFS.users} value={v.assigned_to_id ?? null} onChange={(id) => set("assigned_to_id", id ?? "")} />
+          </Field>
+        ) : null}
       </div>
       <div className="space-y-2 rounded-xl bg-surface p-3 text-sm">
         <p className="text-xs text-muted">Le consentement au recontact est attesté par le commercial (saisie manuelle tracée).</p>
@@ -191,7 +234,7 @@ function LeadCreate({ onDone, onCancel }: { onDone: (lead: Row) => void; onCance
             setBusy(true);
             setError(null);
             try {
-              const body = Object.fromEntries(Object.entries(v).filter(([, x]) => x !== "" && x !== undefined));
+              const body = Object.fromEntries(Object.entries(v).filter(([, x]) => x !== "" && x !== undefined && x !== null));
               onDone(await api<Row>("/crm/leads", { method: "POST", body }));
             } catch (err) {
               setError(errorMessage(err));
@@ -506,7 +549,7 @@ export function LeadDetail({ id }: { id: string }) {
           initial={l}
           partial
           exclude={["status", "lost_reason", "assigned_to_id"]}
-          fields={{ universe: { options: opts(UNIVERSES) }, timeline: { options: opts(["immediate", "3_months", "6_months", "12_months", "undetermined"]) }, urgency: { options: opts(["normal", "urgent"]) } }}
+          fields={{ universe: { options: opts(UNIVERSES) }, offer_slug: { label: "Offre visée", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> }, timeline: { options: opts(["immediate", "3_months", "6_months", "12_months", "undetermined"]) }, urgency: { options: opts(["normal", "urgent"]) } }}
           onCancel={() => setDialog(null)}
           onSuccess={() => {
             setDialog(null);
@@ -549,7 +592,8 @@ export function LeadDetail({ id }: { id: string }) {
         <SchemaForm
           endpoint="POST /crm/leads/{lead_id}/convert"
           params={{ lead_id: id }}
-          initial={{ title: `${l.project_type ?? "Projet"} — ${l.name}`, amount: l.budget_max ?? l.budget_min ?? undefined, create_organization: !!l.company }}
+          initial={{ title: `${l.project_type ?? "Projet"} — ${l.name}`, amount: l.budget_max ?? l.budget_min ?? undefined, stage: "qualification", create_organization: !!l.company }}
+          fields={{ amount: { label: "Montant estimé" }, stage: { label: "Étape" }, expected_close_date: { label: "Date de décision attendue" } }}
           onCancel={() => setDialog(null)}
           onSuccess={(res: Row) => {
             setDialog(null);

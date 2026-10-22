@@ -16,7 +16,8 @@
     "check:mocks": "node scripts/check-no-mocks.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:docs": "node scripts/check-docs.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:mocks && npm run check:links && npm run check:docs && npm run build"
+    "check:forms": "node scripts/check-forms.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run check:mocks && npm run check:links && npm run check:docs && npm run check:forms && npm run build"
   },
   "dependencies": {
     "@fontsource/poppins": "5.3.0",

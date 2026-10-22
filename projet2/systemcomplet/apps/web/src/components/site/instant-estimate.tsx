@@ -34,7 +34,7 @@ export function InstantEstimate() {
   const [transcript, setTranscript] = useState("");
   const recorder = useRef<MediaRecorder | null>(null);
   const speech = useRef<SpeechRecognitionLike | null>(null);
-  const [values, setValues] = useState({ universe: "HOME", surface_m2: "", levels: "", standing: "standard", location: "", description: "", first_name: "", email: "", phone: "" });
+  const [values, setValues] = useState({ universe: "HOME", surface_m2: "", levels: "", standing: "standard", location: "", description: "", first_name: "", last_name: "", email: "", phone: "", city: "", country: "" });
   const [consent, setConsent] = useState(false);
   const [whatsapp, setWhatsapp] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -94,6 +94,9 @@ export function InstantEstimate() {
     setError(null);
     const form = new FormData();
     form.set("first_name", values.first_name.trim());
+    if (values.last_name.trim()) form.set("last_name", values.last_name.trim());
+    if (values.city.trim()) form.set("city", values.city.trim());
+    if (values.country.trim()) form.set("country", values.country.trim());
     if (values.email) form.set("email", values.email);
     if (values.phone) form.set("phone", values.phone);
     if (whatsapp && values.phone) form.set("whatsapp", values.phone);
@@ -255,6 +258,15 @@ export function InstantEstimate() {
       <div className="grid gap-4 md:grid-cols-3">
         <Field label="Prénom" required>
           <Input value={values.first_name} autoComplete="given-name" onChange={(e) => set("first_name", e.target.value)} />
+        </Field>
+        <Field label="Nom">
+          <Input value={values.last_name} autoComplete="family-name" onChange={(e) => set("last_name", e.target.value)} />
+        </Field>
+        <Field label="Ville de résidence">
+          <Input value={values.city} autoComplete="address-level2" onChange={(e) => set("city", e.target.value)} />
+        </Field>
+        <Field label="Pays de résidence" help="Vous vivez hors du Cameroun ? Indiquez votre pays.">
+          <Input value={values.country} autoComplete="country-name" onChange={(e) => set("country", e.target.value)} />
         </Field>
         <Field label="E-mail">
           <Input type="email" value={values.email} autoComplete="email" onChange={(e) => set("email", e.target.value)} />

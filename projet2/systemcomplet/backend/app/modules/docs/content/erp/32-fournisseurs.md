@@ -19,7 +19,7 @@ Menu **Achats et logistique › Fournisseurs** : référentiel, catalogue et tar
 ::: perm suppliers:write
 ### Créer un fournisseur
 
-**Nouveau fournisseur** : **Raison sociale** obligatoire ; nom commercial, forme juridique, NIU, RCCM, adresse, catégories, zones de livraison, conditions et délai de paiement, commande minimum, délai de livraison, coordonnées, **Numéro WhatsApp** et **Accepte WhatsApp**, **Canal préféré**, coordonnées bancaires et Mobile Money, contacts. Le fournisseur peut ensuite être invité sur l'extranet.
+**Nouveau fournisseur** : **Raison sociale** obligatoire ; nom commercial, forme juridique, NIU, RCCM, adresse, catégories, zones de livraison, conditions et délai de paiement, commande minimum, délai de livraison, coordonnées, **Numéro WhatsApp** et **Accepte WhatsApp**, **Canal préféré**, coordonnées bancaires et Mobile Money, **Organisation (accès extranet)** (organisation de type « fournisseur » créée dans Administration › Utilisateurs et rôles › Organisations ; une organisation ne peut être reliée qu'à une seule fiche), contacts. Les comptes de cette organisation ouvrent ensuite l'extranet fournisseur.
 :::
 
 ## La fiche fournisseur
@@ -46,7 +46,7 @@ Le **Catalogue** alimente le classement automatique des fournisseurs et l'indice
 ### Incidents et contacts
 
 ::: perm procurement:order, suppliers:write
-- **Déclarer un incident** : fournisseur et type obligatoires (retard, non-conformité, casse, erreur de facturation…), commande ou réception liée, description, **Impact financier**.
+- **Déclarer un incident** : type obligatoire (retard, non-conformité, casse, erreur de facturation…), **Bon de commande concerné** (commandes de ce fournisseur) et **Réception concernée** (ses réceptions) choisis dans des listes, description, **Impact financier**. L'incident est ouvert ; **Résoudre** le clôt avec sa résolution.
 :::
 
 ::: perm procurement:order

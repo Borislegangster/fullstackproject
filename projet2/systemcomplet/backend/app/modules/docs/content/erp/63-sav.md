@@ -21,7 +21,7 @@ Réception → affectation → diagnostic (garantie) → intervention planifiée
 Les **Tickets SAV** créés par les clients depuis leur espace, par l'assistant, par le carnet d'entretien ou par l'équipe. Filtres **Statut**, **Catégorie**, **Priorité** ; **Exporter** selon vos droits. Chaque ticket a un délai de réponse et de résolution (politique SLA) : les dépassements sont signalés et escaladés.
 
 ::: perm support:write
-- **Ticket (appel client)** : enregistrez une demande reçue par téléphone — **Objet** obligatoire ; projet, catégorie (étanchéité, plomberie, électricité, fissure, menuiserie, peinture, équipement, autre), priorité, description, localisation, zone.
+- **Ticket (appel client)** : enregistrez une demande reçue par téléphone, e-mail ou WhatsApp — **Objet** obligatoire ; projet, catégorie (étanchéité, plomberie, électricité, fissure, menuiserie, peinture, équipement, autre), priorité, description, localisation, zone, **Reçu par**, **Client (organisation)** (par défaut le client du projet : le ticket apparaît dans son espace client) et le demandeur (**Nom**, **E-mail**, **Téléphone du demandeur**). Sans demandeur ni client, le ticket est enregistré comme ticket interne.
 :::
 
 ## Traiter un ticket

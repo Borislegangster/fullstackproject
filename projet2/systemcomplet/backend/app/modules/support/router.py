@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,8 @@ from app.core.downloads import file_response
 from app.core.errors import BusinessRuleError, Forbidden, NotFound
 from app.core.files import store_private, validate_upload
 from app.core.pagination import PageParams, paginate
-from app.core.utils import jsonable, utcnow
+from app.core.utils import clean_phone, jsonable, utcnow
+from app.modules.projects.models import Project
 from app.modules.support import service
 from app.modules.support.models import Intervention, Ticket, TicketAttachment, TicketMessage, WarrantyClaim
 from app.modules.system.models import StoredFile
@@ -104,6 +105,15 @@ class TicketIn(BaseModel):
     description: str | None = Field(default=None, max_length=8000)
     location: str | None = Field(default=None, max_length=250)
     zone_id: uuid.UUID | None = None
+    # Saisie par le SAV pour le compte d'un client (appel, e-mail, WhatsApp) — ignoré pour un client connecté.
+    channel: str | None = Field(default=None, pattern="^(phone|email|whatsapp|website)$")
+    organization_id: uuid.UUID | None = None
+    requester_name: str | None = Field(default=None, max_length=200)
+    requester_email: EmailStr | None = None
+    requester_phone: str | None = Field(default=None, max_length=40)
+
+
+_ON_BEHALF = ("channel", "organization_id", "requester_name", "requester_email", "requester_phone")
 
 
 @router.post("/support/tickets", status_code=201)
@@ -114,9 +124,25 @@ def create_ticket(
         raise Forbidden("Création de ticket non autorisée", code="PERMISSION_DENIED")
     if data.project_id:
         access.require_project(data.project_id)
-    ticket = service.create_ticket(
-        db, data=data.model_dump(), requester=access.p.user, channel="portal" if access.p.is_client else "phone"
-    )
+    values = data.model_dump()
+    extra = {k: values.pop(k) for k in _ON_BEHALF}
+    requester, organization_id = access.p.user, None
+    if not access.p.is_client and (extra["requester_name"] or extra["organization_id"]):
+        # Ticket ouvert pour un client : c'est lui le demandeur (et son organisation voit le ticket dans son espace).
+        requester = None
+        values.update(
+            requester_name=extra["requester_name"],
+            requester_email=str(extra["requester_email"]).lower() if extra["requester_email"] else None,
+            requester_phone=clean_phone(extra["requester_phone"]) if extra["requester_phone"] else None,
+        )
+        organization_id = extra["organization_id"]
+        if organization_id is None and data.project_id:
+            project = db.get(Project, data.project_id)
+            organization_id = project.client_organization_id if project else None
+    channel = "portal" if access.p.is_client else (extra["channel"] or "phone")
+    ticket = service.create_ticket(db, data=values, requester=requester, channel=channel)
+    if organization_id is not None:
+        ticket.organization_id = organization_id
     db.commit()
     return _ticket_out(db, ticket, access, detail=True)
 

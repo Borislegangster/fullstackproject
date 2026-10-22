@@ -28,6 +28,7 @@ from app.core.pagination import PageParams, paginate
 from app.core.utils import clean_phone, jsonable, utcnow
 from app.modules.billing import service as billing
 from app.modules.billing.models import SupplierInvoice
+from app.modules.identity import service as identity
 from app.modules.procurement import service as procurement
 from app.modules.procurement.models import Delivery, PurchaseOrder
 from app.modules.suppliers.models import (
@@ -121,6 +122,7 @@ class SupplierIn(BaseModel):
     bank_account: str | None = Field(default=None, max_length=80)
     mobile_money_number: str | None = Field(default=None, max_length=40)
     notes: str | None = Field(default=None, max_length=4000)
+    organization_id: uuid.UUID | None = None  # organisation extranet (Administration › Organisations)
     contacts: list[ContactIn] = Field(default_factory=list, max_length=30)
 
 
@@ -212,6 +214,8 @@ def create_supplier(
     values["code"] = (values.get("code") or "").strip().upper() or _next_code(db)
     if values["whatsapp_opt_in"] and not values.get("whatsapp_number"):
         raise BusinessRuleError("Numéro WhatsApp Business requis pour l'opt-in")
+    if values.get("organization_id"):
+        identity.check_linked_organization(db, values["organization_id"], kind="supplier", model=Supplier)
     supplier = Supplier(**values, status="active")
     for contact in data.contacts:
         supplier.contacts.append(SupplierContact(**_normalize(contact.model_dump())))
@@ -253,6 +257,10 @@ def update_supplier(
     if supplier is None or supplier.deleted_at is not None:
         raise NotFound("Fournisseur introuvable")
     values = _normalize(data.model_dump(exclude_unset=True))
+    if values.get("organization_id"):
+        identity.check_linked_organization(
+            db, values["organization_id"], kind="supplier", model=Supplier, current_id=supplier.id
+        )
     changed_sensitive = [k for k in SENSITIVE if k in values]
     diff = {}
     for key, value in values.items():

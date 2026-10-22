@@ -25,7 +25,7 @@ Menu **Site web › Médiathèque**. Les images sont optimisées automatiquement
 
 Cliquez un média (fenêtre **Média**) :
 
-- Renseignez titre, dossier, **texte alternatif** (obligatoire pour l'accessibilité et le référencement ; **ALT libre** si l'image est décorative), légende, crédits ; **Enregistrer**.
+- Renseignez titre, dossier, **texte alternatif** (obligatoire pour l'accessibilité et le référencement ; **ALT libre** si l'image est décorative), légende, crédits, mots-clés et, pour une vidéo, l'**Image d'aperçu de la vidéo** (affichée avant la lecture) ; **Enregistrer**.
 - Cliquez sur l'image pour placer le point focal (cadrage des variantes).
 - **Remplacer** le fichier en conservant ses usages ; **Ouvrir le fichier** pour l'original.
 - **Archiver** ouvre **Archiver le média** ; **Restaurer** le réactive.

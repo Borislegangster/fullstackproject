@@ -280,7 +280,8 @@ def publish_model(
 ) -> dict[str, Any]:
     model = _model(db, access, model_id, manage=True)
     access.require("projects:publish_client")
-    if data.published and not (model.file_id or model.bim_version_id or model.parameters):
+    # « Sans maquette 3D » (parametric) : le client choisit sur catalogue, zone par zone.
+    if data.published and model.source != "parametric" and not (model.file_id or model.bim_version_id):
         raise BusinessRuleError("Maquette 3D requise avant publication")
     model.published_to_client = data.published
     if data.lock_date:

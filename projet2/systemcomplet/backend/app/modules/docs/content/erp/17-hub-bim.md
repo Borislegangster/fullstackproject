@@ -21,7 +21,7 @@ Menu **Projets › Hub BIM** (ou **Hub BIM du projet** depuis la fiche projet). 
 Toutes les disciplines superposées. Outils : rotation, zoom, coupe, masquage par discipline, plein écran.
 
 - Mode **Naviguer** (par défaut) ou **Placer une issue** : cliquez l'endroit concerné dans la maquette.
-- Blocs **Issues ouvertes**, **Points de vue** (vues enregistrées) et **Versions** des maquettes chargées.
+- Blocs **Issues ouvertes**, **Points de vue** (vues enregistrées : nommez la vue puis l'icône appareil photo ; cochez **Vue présentée au client (espace client)** pour la proposer au client, badge **Client**) et **Versions** des maquettes chargées.
 - **Voir dans la maquette** recentre la vue sur une issue.
 
 ::: perm bim:write

@@ -91,6 +91,8 @@ jobs:
         run: npm run check:mocks
       - name: Liens profonds → routes existantes (web + notifications API)
         run: npm run check:links
+      - name: Formulaires → aucun identifiant ni JSON à saisir à la main
+        run: npm run check:forms
       - run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: https://ci.globus.invalid

@@ -19,7 +19,7 @@ Les **Décisions client** sont soumises à la validation du client par code à u
 ### Demander une décision au client
 
 1. Cliquez **Demander une décision**.
-2. Renseignez le type (matériau, option, plan, budget, planning, autre) et le **Titre** (obligatoires), la description, les **Options proposées au client** (bouton **Option** : libellé, impact prix, impact délai, description), l'**Impact prix** et l'**Impact délai (jours)**, la référence éventuelle (version de document, version BIM, scénario du configurateur) et la **Date d'échéance**.
+2. Renseignez le type (matériau, option, plan, budget, planning, autre) et le **Titre** (obligatoires), la description, les **Options proposées au client** (bouton **Option** : libellé, impact prix, impact délai, description), l'**Impact prix** et l'**Impact délai (jours)**, la référence éventuelle (type : version de document, version BIM, scénario du configurateur, puis **Pièce concernée** choisie dans la liste du projet) et la **Date d'échéance**.
 3. Validez : le client est notifié et répond dans **Validations** de son espace. Le résultat (validée / refusée, horodatage, canal du code) s'affiche dans la liste.
 :::
 
@@ -47,7 +47,7 @@ Le bloc **Budgets (versions)** conserve chaque version (initiale, révisions) av
 
 ::: perm finance:write
 - **Nouvelle version** ouvre **Nouvelle version de budget** : lignes (lot, catégorie, libellé, montant).
-- **Nouvelle dépense** (liste **Dépenses**) : libellé, montant et **Date de la dépense** (obligatoires), lot, catégorie, fichier justificatif, **Visible par le client**.
+- **Nouvelle dépense** (liste **Dépenses**) : libellé, montant et **Date de la dépense** (obligatoires), lot, catégorie, **Justificatif (facture, ticket, reçu)** à déposer (photo ou PDF), **Visible par le client**. La colonne **Justificatif** l'ouvre (**Ouvrir**).
 :::
 
 ::: perm finance:approve

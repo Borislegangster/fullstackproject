@@ -177,7 +177,7 @@ function ModelCreate({ projectId, onDone, onCancel }: { projectId: string; onDon
           <Input value={head.name} onChange={(e) => setHead({ ...head, name: e.target.value })} placeholder="Villa R+1 — finitions" />
         </Field>
         <Field label="Source 3D">
-          <Select value={head.source} onChange={(e) => setHead({ ...head, source: e.target.value })} options={[{ value: "glb", label: "Fichier GLB / glTF (déposé ensuite)" }, { value: "bim_version", label: "Version de maquette BIM" }, { value: "parametric", label: "Modèle paramétrique" }]} />
+          <Select value={head.source} onChange={(e) => setHead({ ...head, source: e.target.value })} options={[{ value: "glb", label: "Fichier GLB / glTF (déposé ensuite)" }, { value: "bim_version", label: "Version de maquette BIM" }, { value: "parametric", label: "Sans maquette 3D (choix sur catalogue)" }]} />
         </Field>
         {head.source === "bim_version" ? (
           <Field label="Version BIM" required>

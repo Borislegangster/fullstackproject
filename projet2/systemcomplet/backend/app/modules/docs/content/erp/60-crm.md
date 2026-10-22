@@ -25,7 +25,7 @@ Lead → qualification → opportunité → devis (accepté par code OTP) → co
 Les **Leads** arrivent du site (« Décrire mon projet », estimation instantanée, formulaires, simulateurs énergie et financement, panneau de chantier, parrainage), de WhatsApp et des saisies manuelles. Affectation automatique, délai de première réponse (SLA), score et température, attribution marketing. Filtres **Statut**, **Univers**, **Source**, **Température** ; **Exporter** selon vos droits.
 
 ::: perm crm:write
-- **Nouveau lead** ouvre **Saisie d'un lead** (appel entrant, salon…) puis **Créer le lead**.
+- **Nouveau lead** ouvre **Saisie d'un lead** (appel entrant, salon…) : coordonnées, origine, univers, **Offre visée** (offres du site de l'univers), **Canal de contact préféré**, projet, budget, échéance, urgence, besoin, **Étiquettes**, et — avec le droit d'affectation — **Commercial affecté** (sinon affectation automatique) ; puis **Créer le lead**.
 :::
 
 ### La fiche lead
@@ -39,7 +39,7 @@ Les **Leads** arrivent du site (« Décrire mon projet », estimation instantan�
 - **Appeler**, **WhatsApp**, **E-mail** contactent le prospect (l'action est consignée).
 - **Activité** ouvre **Nouvelle activité** (type, date, compte rendu, relance) ; **Fait** clôt une activité planifiée.
 - **Valider l'estimation** après contrôle de l'estimation instantanée (elle devient visible du prospect dans la proposition).
-- **Qualifier** ouvre **Qualification du lead** (besoin, budget, délai, décisionnaire) ; **Statut** ouvre **Statut du lead** (contacté, qualifié, perdu…).
+- **Qualifier** ouvre **Qualification du lead** : coordonnées (correction possible : nom, entreprise, e-mail, téléphone, WhatsApp, ville, pays), canal préféré, projet et terrain, univers, **Offre visée**, budget, échéance, urgence, étiquettes ; **Statut** ouvre **Statut du lead** (contacté, qualifié, perdu…).
 - **Convertir en opportunité** ouvre **Convertir en opportunité** (montant estimé, étape, date de décision) ; **Voir le pipeline** ensuite.
 :::
 

@@ -150,6 +150,7 @@ export function CoordinationView({ projectId, focusIssue }: { projectId: string;
   const versionId = activeVersion ?? models[0]?.version_id ?? null;
   const viewpoints = useApi<Row[]>(versionId ? `/bim/versions/${versionId}/viewpoints` : null);
   const [vpName, setVpName] = useState("");
+  const [vpClient, setVpClient] = useState(false);
   const rooms = useMemo(() => models.map((m) => `bim:${m.version_id}`), [models]);
 
   useEffect(() => {
@@ -288,8 +289,9 @@ export function CoordinationView({ projectId, focusIssue }: { projectId: string;
                       const camera = viewer.current?.getCamera();
                       if (!camera) return;
                       const snapshot_file_id = await uploadSnapshot(viewer.current);
-                      await api(`/bim/versions/${versionId}/viewpoints`, { method: "POST", body: { name: vpName.trim(), camera, snapshot_file_id } });
+                      await api(`/bim/versions/${versionId}/viewpoints`, { method: "POST", body: { name: vpName.trim(), camera, snapshot_file_id, client_visible: vpClient, is_preset: vpClient } });
                       setVpName("");
+                      setVpClient(false);
                       void viewpoints.reload();
                     } catch (err) {
                       toast.error("Enregistrement impossible", errorMessage(err));
@@ -299,6 +301,9 @@ export function CoordinationView({ projectId, focusIssue }: { projectId: string;
                   <Camera className="h-4 w-4" />
                 </Button>
               </div>
+            ) : null}
+            {can("bim:write") && versionId && can("projects:publish_client") ? (
+              <Checkbox label="Vue présentée au client (espace client)" checked={vpClient} onChange={setVpClient} />
             ) : null}
           </div>
         </Card>

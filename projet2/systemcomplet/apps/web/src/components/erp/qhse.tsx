@@ -113,7 +113,7 @@ export function QhseDashboard() {
 /* ----------------------------------------------------------------------------- incidents */
 
 function IncidentDeclare({ onDone, onCancel }: { onDone: (i: Row) => void; onCancel: () => void }) {
-  const [v, setV] = useState({ project_id: null as string | null, site_id: null as string | null, kind: "securite", severity: "medium", occurred_at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), location: "", title: "", description: "", injuries: "", lost_time_days: "0", immediate_actions: "" });
+  const [v, setV] = useState({ project_id: null as string | null, site_id: null as string | null, zone_id: null as string | null, kind: "securite", severity: "medium", occurred_at: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16), location: "", title: "", description: "", injuries: "", lost_time_days: "0", immediate_actions: "" });
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -122,11 +122,16 @@ function IncidentDeclare({ onDone, onCancel }: { onDone: (i: Row) => void; onCan
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Projet" required>
-          <RefSelect source={REFS.projects} value={v.project_id} onChange={(id) => setV({ ...v, project_id: id, site_id: null })} />
+          <RefSelect source={REFS.projects} value={v.project_id} onChange={(id) => setV({ ...v, project_id: id, site_id: null, zone_id: null })} />
         </Field>
         <Field label="Site">
           <RefSelect key={v.project_id ?? "none"} source={REFS.sites} value={v.site_id} onChange={(id) => setV({ ...v, site_id: id })} context={{ project_id: v.project_id }} />
         </Field>
+        {v.project_id ? (
+          <Field label="Zone de la maquette" help="Pièce ou zone de la maquette BIM concernée (facultatif).">
+            <RefSelect key={`zone-${v.project_id}`} source={REFS.zones} value={v.zone_id} onChange={(id) => setV({ ...v, zone_id: id })} context={{ project_id: v.project_id }} />
+          </Field>
+        ) : null}
         <Field label="Nature" required>
           <Select value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })} options={opts(INCIDENT_KINDS)} />
         </Field>
@@ -190,6 +195,7 @@ function IncidentDeclare({ onDone, onCancel }: { onDone: (i: Row) => void; onCan
                 body: {
                   project_id: v.project_id,
                   site_id: v.site_id,
+                  zone_id: v.zone_id,
                   kind: v.kind,
                   severity: v.severity,
                   occurred_at: new Date(v.occurred_at).toISOString(),

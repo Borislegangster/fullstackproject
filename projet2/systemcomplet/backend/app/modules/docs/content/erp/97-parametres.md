@@ -154,7 +154,8 @@ fenêtre **Remise à zéro des données d'exploitation**, qui liste ce qui **ser
   de matériaux, modèles de newsletter), sauvegardes et organisation de l'entreprise.
 
 1. **E-mail du nouvel administrateur** : il recevra une invitation pour choisir son mot de passe ; sa double
-   authentification sera exigée.
+   authentification sera exigée. **Prénom de l'administrateur** et **Nom de l'administrateur** (préremplis « GLOBUS
+   ENGINEERING », modifiables).
 2. **Justification (20 caractères minimum)**, **Votre code MFA** (accès d'urgence tracé) et la phrase de confirmation à
    taper (**REMETTRE A ZERO**).
 3. **Remettre à zéro** : une sauvegarde complète est faite d'abord (si elle échoue, rien n'est supprimé), puis les

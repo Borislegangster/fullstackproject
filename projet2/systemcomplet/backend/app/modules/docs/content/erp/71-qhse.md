@@ -27,7 +27,7 @@ Les **Incidents** : déclaration terrain (photos géolocalisées) → enquête �
 ::: perm qhse:write, site:report
 ### Déclarer un incident
 
-**Déclarer un incident** ouvre **Déclaration d'incident** : nature, gravité, date et heure, projet et chantier, lieu (**Utiliser ma position**), description, personnes concernées, premiers secours, photos ; **Déclarer l'incident**. Un incident grave est signalé immédiatement à l'encadrement et à la direction.
+**Déclarer un incident** ouvre **Déclaration d'incident** : nature, gravité, date et heure, projet et chantier, **Zone de la maquette** (facultatif), lieu (**Utiliser ma position**), description, personnes concernées, premiers secours, photos ; **Déclarer l'incident**. Un incident grave est signalé immédiatement à l'encadrement et à la direction.
 :::
 
 ### Suivre un incident

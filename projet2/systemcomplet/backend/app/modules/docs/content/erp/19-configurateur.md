@@ -22,7 +22,7 @@ Les maquettes configurables sont propres à chaque projet : choisissez d'abord u
 ::: perm configurator:manage
 ### Créer une maquette configurable
 
-1. **Maquette configurable** ouvre **Nouvelle maquette configurable** : **Version BIM** de référence (obligatoire), **Date limite des choix client**.
+1. **Maquette configurable** ouvre **Nouvelle maquette configurable** : nom, **Source** — fichier GLB / glTF (déposé ensuite), version de maquette BIM (**Version BIM** de référence) ou **Sans maquette 3D (choix sur catalogue)** : le client choisit alors ses finitions zone par zone, sans vue 3D —, **Date limite des choix client**.
 2. Ajoutez les zones (**Zone**) : clé, **Libellé** (ex. « Sol du séjour »), pièce, **Catégorie** de matériau, **Quantité** et unité, **Matériau de base (inclus au contrat)**, **Options proposées au client**, **Maillages 3D ciblés** (noms des objets du fichier GLB). **Retirer la zone** en supprime une.
 3. **Créer la maquette configurable**, puis déposez le fichier 3D (GLB / glTF, 200 Mo maximum) et **Envoyer**.
 4. **Aperçu** ouvre la maquette telle que le client la verra (fenêtre **Aperçu**).

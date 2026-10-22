@@ -61,7 +61,7 @@ export default function ClientSupportPage() {
         <SchemaForm
           endpoint="POST /support/tickets"
           fixed={project ? { project_id: project.id } : undefined}
-          exclude={["zone_id"]}
+          exclude={["zone_id", "channel", "organization_id", "requester_name", "requester_email", "requester_phone"]}
           fields={{ project_id: { hidden: !!project } }}
           submitLabel="Envoyer la demande"
           onCancel={() => setOpen(false)}

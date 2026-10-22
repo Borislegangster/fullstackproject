@@ -156,6 +156,43 @@ router.include_router(
         exclude_in={"commitment_id"},
     )
 )
+
+
+@router.post("/finance/files", status_code=201)
+async def upload_finance_file(
+    file: UploadFile = File(...), db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Justificatif privé (facture, ticket de caisse, reçu) : renvoie l'identifiant à référencer (ex. dépense)."""
+    access.require("finance:write")
+    upload = validate_upload(file.filename or "justificatif.pdf", await file.read(), category="media")
+    stored = store_private(db, upload, purpose="finance", classification="confidential", uploaded_by_id=access.p.id)
+    audit.record(
+        db,
+        family="business",
+        module="finance",
+        action="UPLOAD",
+        resource_type="stored_file",
+        resource_id=stored.id,
+    )
+    db.commit()
+    return jsonable({"file_id": stored.id, "filename": stored.original_name})
+
+
+@router.get("/expenses/{expense_id}/file")
+def expense_file(
+    expense_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> Response:
+    """Justificatif d'une dépense."""
+    expense = db.get(Expense, expense_id)
+    if expense is None or expense.deleted_at is not None or not expense.file_id:
+        raise NotFound("Justificatif indisponible")
+    access.require_project(expense.project_id, "finance:read")
+    stored = db.get(StoredFile, expense.file_id)
+    if stored is None:
+        raise NotFound("Justificatif indisponible")
+    return file_response(stored)
+
+
 router.include_router(
     make_crud_router(
         CashForecastEntry,

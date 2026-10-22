@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { OrdersList } from "@/components/erp/procurement";
 import { CellLink, ResourceView, type Row } from "@/components/erp/resource";
-import { SchemaForm } from "@/components/forms/schema-form";
+import { SchemaForm, type FieldConfig } from "@/components/forms/schema-form";
 import { BarChartCard } from "@/components/ui/charts";
 import { Input } from "@/components/ui/form";
 import { Modal, Tabs } from "@/components/ui/overlay";
@@ -17,6 +17,11 @@ import { useAuth } from "@/lib/auth";
 import { date, money, number, toNumber } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 import { optionLabel } from "@/lib/labels";
+import { REFS } from "@/lib/refs";
+
+const SUPPLIER_FIELDS: Record<string, FieldConfig> = {
+  organization_id: { ref: "supplierOrganizations", label: "Organisation (accès extranet)", help: "Organisation de type « fournisseur » créée dans Administration › Utilisateurs et rôles › Organisations : ses comptes ouvriront l'extranet fournisseur de cette fiche." },
+};
 
 export function SuppliersList() {
   return (
@@ -37,7 +42,7 @@ export function SuppliersList() {
           { key: "status", label: "Statut", format: "status" },
         ],
         filters: [{ key: "status", label: "Statut", options: ["pending", "active", "suspended", "blacklisted"].map((v) => ({ value: v, label: optionLabel(v) })) }],
-        create: { endpoint: "POST /suppliers", label: "Nouveau fournisseur", perms: ["suppliers:write"] },
+        create: { endpoint: "POST /suppliers", label: "Nouveau fournisseur", perms: ["suppliers:write"], fields: SUPPLIER_FIELDS },
       }}
     />
   );
@@ -306,7 +311,14 @@ export function SupplierDetail({ id }: { id: string }) {
               { key: "created_at", label: "Date", format: "date" },
               { key: "status", label: "Statut", format: "status" },
             ],
-            create: { endpoint: "POST /supplier-incidents", label: "Déclarer un incident", fixed: { supplier_id: id }, perms: ["procurement:order", "suppliers:write"] },
+            create: {
+              endpoint: "POST /supplier-incidents",
+              label: "Déclarer un incident",
+              fixed: { supplier_id: id },
+              exclude: ["status", "resolution", "resolved_at"],
+              fields: { purchase_order_id: { ref: { ...REFS.purchaseOrders, query: { supplier_id: id } }, label: "Bon de commande concerné" }, goods_receipt_id: { label: "Réception concernée" } },
+              perms: ["procurement:order", "suppliers:write"],
+            },
             actions: [{ key: "resolve", label: "Résoudre", endpoint: "POST /supplier-incidents/{incident_id}/resolve", when: (r) => r.status === "open", perms: ["procurement:order"] }],
           }}
         />
@@ -334,7 +346,7 @@ export function SupplierDetail({ id }: { id: string }) {
       ) : null}
 
       <Modal open={dialog === "edit"} onClose={() => setDialog(null)} title="Modifier le fournisseur" size="xl">
-        <SchemaForm endpoint="PATCH /suppliers/{supplier_id}" params={{ supplier_id: id }} initial={s} partial onCancel={() => setDialog(null)} onSuccess={(res: Row) => { supplier.setData({ ...s, ...res }); setDialog(null); }} />
+        <SchemaForm endpoint="PATCH /suppliers/{supplier_id}" params={{ supplier_id: id }} initial={s} partial fields={SUPPLIER_FIELDS} onCancel={() => setDialog(null)} onSuccess={(res: Row) => { supplier.setData({ ...s, ...res }); setDialog(null); }} />
       </Modal>
       <Modal open={dialog === "status"} onClose={() => setDialog(null)} title="Statut du fournisseur">
         <SchemaForm endpoint="POST /suppliers/{supplier_id}/status" params={{ supplier_id: id }} initial={{ status: s.status }} onCancel={() => setDialog(null)} onSuccess={() => { void supplier.reload(); setDialog(null); }} columns={1} />

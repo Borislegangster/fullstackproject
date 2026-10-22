@@ -169,8 +169,17 @@ final suppliers = ResourceConfig(
     ResourceFilter('status', 'Statut', _opts(['active', 'pending', 'suspended', 'blacklisted'])),
   ],
   detailPath: (r) => '/suppliers/${r.s('id')}',
-  create: const ResourceCreate(endpoint: 'POST /suppliers', label: 'Nouveau fournisseur', perms: ['suppliers:write']),
-  update: const ResourceCreate(endpoint: 'PATCH /suppliers/{supplier_id}', perms: ['suppliers:write']),
+  create: const ResourceCreate(
+    endpoint: 'POST /suppliers',
+    label: 'Nouveau fournisseur',
+    perms: ['suppliers:write'],
+    fields: {'organization_id': FieldConfig(label: 'Organisation (accès extranet)', ref: 'supplierOrganizations')},
+  ),
+  update: const ResourceCreate(
+    endpoint: 'PATCH /suppliers/{supplier_id}',
+    perms: ['suppliers:write'],
+    fields: {'organization_id': FieldConfig(label: 'Organisation (accès extranet)', ref: 'supplierOrganizations')},
+  ),
   actions: [
     ResourceAction(label: 'Changer le statut', endpoint: 'POST /suppliers/{supplier_id}/status', perms: const ['suppliers:write']),
     ResourceAction(label: 'Évaluer', endpoint: 'POST /suppliers/{supplier_id}/ratings', perms: const ['suppliers:write'], icon: Icons.star_outline),
@@ -193,12 +202,18 @@ final subcontractors = ResourceConfig(
     endpoint: 'POST /subcontractors',
     label: 'Nouveau sous-traitant',
     perms: const ['subcontracting:write'],
-    fields: {'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions())},
+    fields: {
+      'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions()),
+      'organization_id': const FieldConfig(label: 'Organisation (accès extranet)', ref: 'subcontractorOrganizations'),
+    },
   ),
   update: ResourceCreate(
     endpoint: 'PATCH /subcontractors/{subcontractor_id}',
     perms: const ['subcontracting:write'],
-    fields: {'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions())},
+    fields: {
+      'trades': FieldConfig(label: 'Corps de métier', options: subcontractingTradeOptions()),
+      'organization_id': const FieldConfig(label: 'Organisation (accès extranet)', ref: 'subcontractorOrganizations'),
+    },
   ),
   actions: [
     ResourceAction(label: 'Changer le statut', endpoint: 'POST /subcontractors/{subcontractor_id}/status', perms: const ['subcontracting:write']),
@@ -542,9 +557,11 @@ final leads = ResourceConfig(
       'urgency': FieldConfig(label: 'Urgence', options: _opts(const ['normal', 'urgent'])),
       'preferred_channel': FieldConfig(label: 'Canal préféré', options: _opts(const ['phone', 'whatsapp', 'email'])),
       'message': const FieldConfig(label: 'Besoin exprimé', multiline: true),
+      // Offre du site : choisie depuis l'ERP web (liste des offres) ; jamais d'adresse courte saisie à la main.
+      'offer_slug': const FieldConfig(hidden: true),
     },
   ),
-  update: const ResourceCreate(endpoint: 'PATCH /crm/leads/{lead_id}', perms: ['crm:write']),
+  update: const ResourceCreate(endpoint: 'PATCH /crm/leads/{lead_id}', perms: ['crm:write'], fields: {'offer_slug': FieldConfig(hidden: true)}),
   actions: [
     ResourceAction(
       label: 'Convertir en opportunité',

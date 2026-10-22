@@ -598,7 +598,8 @@ confie pas l'électricité d'une maison à une entreprise sans avoir vérifié s
 7. **Organisation** : choisissez « TEST Électricité Akwa ».
 8. Enregistrez.
 
-**Ce que vous devez constater** : la fiche est créée avec le statut **en qualification**.
+**Ce que vous devez constater** : la fiche est créée avec le statut **Prospect** (en attente de qualification), reliée
+à son organisation.
 
 - [ ] **A7** — La fiche sous-traitant est créée.
 
@@ -1055,11 +1056,13 @@ terrain. Jordan note l'appel : le chronomètre s'arrête.*
 
 **Ce que vous faites**
 
-1. Cliquez sur **Qualifier**.
-2. Renseignez le besoin, le budget `25 000 000`, le délai de 3 mois, et indiquez que Paul est bien le décisionnaire.
+1. Cliquez sur **Qualifier**. La fenêtre permet aussi de corriger ses coordonnées (nom, téléphone, WhatsApp, ville…).
+2. **Budget maximum** : `25 000 000`. **Échéance** : « Sous 3 mois ». **Offre visée** : choisissez une offre de
+   l'univers. Dans **Étiquettes**, ajoutez `décisionnaire` (c'est bien Paul qui décide).
 3. Enregistrez.
+4. Cliquez sur **Statut**, choisissez « Qualifié », enregistrez.
 
-**Ce que vous devez constater** : le statut devient « qualifié ».
+**Ce que vous devez constater** : les informations sont à jour sur la fiche et le statut devient « qualifié ».
 
 - [ ] **C5** — Le prospect est qualifié.
 
@@ -1973,14 +1976,18 @@ l'essai ne dure pas des jours, la date limite de remise des offres est fixée da
 **Ce que vous faites**
 
 1. Cliquez sur **Nouvelle consultation**.
-2. **Projet** : TEST — Villa Mballa. **Titre** : `Lot électricité`. **Date limite** : dans 10 minutes. Cochez le **pli
-   scellé**. Ajoutez un document au dossier.
-3. Cliquez sur **Ajouter un lot**, puis ajoutez deux postes (bouton **Poste**) : « Tableau électrique », unité « u »,
-   quantité `1` ; « Points lumineux », unité « u », quantité `30`.
-4. Cliquez sur **Créer la consultation**, puis sur **Publier**.
-5. Cliquez sur **Inviter**, choisissez « TEST Électricité Akwa » et validez.
+2. **Projet** : TEST — Villa Mballa. **Intitulé** : `Lot électricité`. **Date limite de remise des offres** : dans
+   10 minutes. (Le pli scellé est automatique : les offres restent cachées jusqu'à la date limite.)
+3. Dans **Pièces du dossier de consultation (DCE)**, cochez un plan déposé dans la GED du projet (chapitre M). Laissez
+   les **Critères de notation** proposés (prix 50, délai 20, technique 20, historique 10 : total 100 %).
+4. Dans le **Lot 1** déjà présent : **Code** `ELEC`, **Intitulé du lot** `Électricité`. Ajoutez deux postes (bouton
+   **Poste**) : « Tableau électrique », unité « u », quantité `1` ; « Points lumineux », unité « u », quantité `30`.
+5. Cliquez sur **Créer la consultation**.
+6. Sur la fiche de la consultation, cliquez sur **Inviter**, choisissez « TEST Électricité Akwa » et validez.
+7. Cliquez enfin sur **Publier** (une consultation sans entreprise invitée ne peut pas être publiée).
 
-**Ce que vous devez constater** : Sylvie est notifiée de l'invitation.
+**Ce que vous devez constater** : la fiche affiche la pièce du DCE et les critères ; Sylvie est notifiée de
+l'invitation.
 
 - [ ] **S2** — La consultation est publiée et Sylvie est invitée.
 

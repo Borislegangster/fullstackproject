@@ -3,7 +3,7 @@
 import { Archive, CalendarRange, FolderKanban, GitBranch, Network, Pencil, Play, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ProjectPanelTab, ProjectReviewsTab, ProjectTrustTab } from "@/components/erp/innovations";
 import { ProjectBuildingTab, ProjectEnergyTab, ProjectEscrowTab, ProjectTwinTab } from "@/components/erp/innovations-lot3";
@@ -12,19 +12,58 @@ import { TimelapseAdmin } from "@/components/innovations/timelapse";
 import { ResourceView, type Row } from "@/components/erp/resource";
 import { type Discipline, disciplineNames, DisciplinesPicker } from "@/components/forms/discipline-picker";
 import { MultiRefSelect } from "@/components/forms/ref-select";
-import { SchemaForm } from "@/components/forms/schema-form";
+import { SchemaForm, type FieldConfig } from "@/components/forms/schema-form";
 import { LabelListEditor, RowsEditor } from "@/components/forms/structured-fields";
+import { UploadedFileField } from "@/components/forms/uploaded-file-field";
 import { Gantt } from "@/components/planning/gantt";
-import { controlClass, FileDrop, Switch, TagInput } from "@/components/ui/form";
+import { controlClass, FileDrop, Select, Switch, TagInput } from "@/components/ui/form";
 import { ConfirmDialog, Modal, Tabs } from "@/components/ui/overlay";
 import { Alert, Badge, Button, Card, CardHeader, DescriptionList, EmptyState, PageTitle, Progress, Skeleton, Stat, StatusBadge } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
-import { api, errorMessage } from "@/lib/api";
+import { api, apiUrl, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { date, dateTime, money, number, percent, toNumber } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 import { optionLabel } from "@/lib/labels";
 import type { RefSource } from "@/lib/refs";
+
+/** Pièce sur laquelle porte une décision client : version de document (GED), version de maquette BIM ou scénario du
+ * configurateur, selon le type de référence choisi. La valeur est l'identifiant de la version / du scénario. */
+function DecisionReferenceField({ projectId, type, value, onChange }: { projectId: string; type?: string | null; value: unknown; onChange: (v: string | null) => void }) {
+  const docs = useApi<{ items: Row[] }>(type === "document_version" ? "/documents" : null, { project_id: projectId, page_size: 100 });
+  const models = useApi<Row[]>(type === "bim_version" ? `/projects/${projectId}/bim/models` : null);
+  const configurators = useApi<Row[]>(type === "scenario" ? `/projects/${projectId}/configurator/models` : null);
+  const [scenarios, setScenarios] = useState<Row[]>([]);
+  useEffect(() => {
+    if (type !== "scenario" || !configurators.data) return;
+    let cancelled = false;
+    Promise.all(configurators.data.map((m) => api<Row[]>(`/configurator/models/${m.id}/scenarios`).then((list) => list.map((sc) => ({ ...sc, model_name: m.name })))))
+      .then((all) => !cancelled && setScenarios(all.flat()))
+      .catch(() => !cancelled && setScenarios([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [type, configurators.data]);
+  if (!type) return <p className="py-2 text-sm text-muted">Choisissez d&apos;abord le type de référence (facultatif).</p>;
+  const options =
+    type === "document_version"
+      ? (docs.data?.items ?? []).filter((d) => d.current_version?.id).map((d) => ({ value: String(d.current_version.id), label: [d.code ? `${d.code} — ${d.title}` : d.title, d.current_version.label].filter(Boolean).join(" · ") }))
+      : type === "bim_version"
+        ? (models.data ?? []).filter((m) => m.current_version?.id).map((m) => ({ value: String(m.current_version.id), label: `${m.name} · version ${m.current_version.number}` }))
+        : scenarios.map((sc) => ({ value: String(sc.id), label: `${sc.model_name} · ${sc.name}` }));
+  const loading = docs.loading || models.loading || configurators.loading;
+  return (
+    <Select
+      value={value ? String(value) : ""}
+      onChange={(e) => onChange(e.target.value || null)}
+      options={[{ value: "", label: loading ? "Chargement…" : options.length ? "Sélectionner…" : "Aucune pièce disponible pour ce projet" }, ...options]}
+    />
+  );
+}
+
+const EXPENSE_FIELDS: Record<string, FieldConfig> = {
+  file_id: { span: 2, label: "Justificatif (facture, ticket, reçu)", render: ({ value, onChange }) => <UploadedFileField endpoint="/finance/files" value={value} onChange={onChange} /> },
+};
 
 interface ProjectDetail {
   id: string;
@@ -778,7 +817,7 @@ export function ProjectWorkspace({ projectId, tab, onTab }: { projectId: string;
               { key: "due_date", label: "Échéance", format: "date" },
               { key: "status", label: "Statut", format: "status" },
             ],
-            create: { endpoint: "POST /decisions", label: "Demander une décision", fixed: pq, perms: ["projects:write"], fields: { options: { span: 2, label: "Options proposées au client", render: ({ value, onChange }) => <DecisionOptionsEditor value={value} onChange={onChange} /> } } },
+            create: { endpoint: "POST /decisions", label: "Demander une décision", fixed: pq, perms: ["projects:write"], fields: { options: { span: 2, label: "Options proposées au client", render: ({ value, onChange }) => <DecisionOptionsEditor value={value} onChange={onChange} /> }, reference_id: { label: "Pièce concernée", render: ({ value, onChange, values }) => <DecisionReferenceField projectId={projectId} type={values.reference_type} value={value} onChange={onChange} /> } } },
           }}
         />
       ) : null}
@@ -1006,9 +1045,11 @@ function ProjectBudget({ projectId, currency }: { projectId: string; currency: s
             { key: "source_type", label: "Origine", format: "option" },
             { key: "amount", label: "Montant", format: "money", align: "right" },
             { key: "client_visible", label: "Client", format: "bool" },
+            { key: "file_id", label: "Justificatif", render: (r) => (r.file_id ? <a href={apiUrl(`/expenses/${r.id}/file`)} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">Ouvrir</a> : "—"), hideOnMobile: true },
           ],
-          create: { endpoint: "POST /expenses", label: "Nouvelle dépense", fixed: { project_id: projectId }, perms: ["finance:write"] },
-          update: { endpoint: "PATCH /expenses/{item_id}", exclude: ["project_id"], perms: ["finance:write"] },
+          // Origine (facture fournisseur, paie, caisse…) renseignée par les écritures automatiques : saisie manuelle ici.
+          create: { endpoint: "POST /expenses", label: "Nouvelle dépense", fixed: { project_id: projectId }, exclude: ["source_type", "source_id"], fields: EXPENSE_FIELDS, perms: ["finance:write"] },
+          update: { endpoint: "PATCH /expenses/{item_id}", exclude: ["project_id", "source_type", "source_id"], fields: EXPENSE_FIELDS, perms: ["finance:write"] },
         }}
       />
       <Modal open={creating} onClose={() => setCreating(false)} title="Nouvelle version de budget" size="xl">

@@ -3,7 +3,7 @@
 import { Archive, Film, Link2, RefreshCw, RotateCcw, Search, Upload } from "lucide-react";
 import { useState } from "react";
 
-import { MediaThumb, thumbUrl } from "@/components/cms/media-picker";
+import { MediaPicker, MediaThumb, thumbUrl } from "@/components/cms/media-picker";
 import { Field, FileDrop, Input, Select, TagInput, Textarea } from "@/components/ui/form";
 import { ConfirmDialog, Drawer, Modal } from "@/components/ui/overlay";
 import { Alert, Badge, Button, Card, DescriptionList, EmptyState, PageTitle, Skeleton, Stat } from "@/components/ui/primitives";
@@ -27,7 +27,7 @@ function MediaDetail({ id, onChanged, onClose }: { id: string; onChanged: () => 
   if (media.loading && !media.data) return <Skeleton className="h-96" />;
   if (!media.data) return <Alert tone="danger">{media.error}</Alert>;
   const m = media.data;
-  const v = edit ?? { title: m.title ?? "", alt_text: m.alt_text ?? "", caption: m.caption ?? "", credits: m.credits ?? "", folder: m.folder ?? "general", tags: m.tags ?? [], focal_x: m.focal_x, focal_y: m.focal_y };
+  const v = edit ?? { title: m.title ?? "", alt_text: m.alt_text ?? "", caption: m.caption ?? "", credits: m.credits ?? "", folder: m.folder ?? "general", tags: m.tags ?? [], focal_x: m.focal_x, focal_y: m.focal_y, poster_media_id: m.poster_media_id ?? null };
   const big = m.preview?.variants ? Object.values(m.preview.variants as Record<string, Row>).sort((a, b) => b.width - a.width)[0]?.url : m.preview?.url;
   const save = async () => {
     setBusy(true);
@@ -92,6 +92,11 @@ function MediaDetail({ id, onChanged, onClose }: { id: string; onChanged: () => 
         <Field label="Mots-clés">
           <TagInput value={v.tags} onChange={(tags) => setEdit({ ...v, tags })} />
         </Field>
+        {m.kind === "video" || m.kind === "external_video" ? (
+          <Field label="Image d'aperçu de la vidéo" help="Affichée avant la lecture (et pendant le chargement) sur le site." className="sm:col-span-2">
+            {can("media:write") ? <MediaPicker kind="image" value={v.poster_media_id} onChange={(id) => setEdit({ ...v, poster_media_id: id })} label="Choisir l'image" /> : m.poster_url ? <img src={m.poster_url} alt="" className="h-20 rounded-xl object-cover" /> : <p className="text-sm text-muted">Aucune</p>}
+          </Field>
+        ) : null}
       </div>
       {edit && can("media:write") ? (
         <div className="flex gap-2">

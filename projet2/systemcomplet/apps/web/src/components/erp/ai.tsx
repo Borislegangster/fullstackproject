@@ -193,6 +193,7 @@ function VoiceRecorder({ projectId, onDone }: { projectId: string; onDone: () =>
   const [blob, setBlob] = useState<Blob | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [transcript, setTranscript] = useState("");
+  const [siteId, setSiteId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => () => recorder.current?.stream.getTracks().forEach((t) => t.stop()), []);
   const start = async () => {
@@ -240,6 +241,9 @@ function VoiceRecorder({ projectId, onDone }: { projectId: string; onDone: () =>
       </div>
       <p className="text-xs text-muted">ou déposez un fichier audio (dictaphone, WhatsApp) :</p>
       <FileDrop files={files} onChange={setFiles} accept="audio/*" maxSizeMb={100} />
+      <Field label="Site concerné (facultatif)">
+        <RefSelect source={REFS.sites} value={siteId} onChange={setSiteId} context={{ project_id: projectId }} />
+      </Field>
       <Field label="Transcription (facultatif — sinon transcription serveur)">
         <Textarea value={transcript} onChange={(e) => setTranscript(e.target.value)} rows={3} />
       </Field>
@@ -254,6 +258,7 @@ function VoiceRecorder({ projectId, onDone }: { projectId: string; onDone: () =>
             fd.append("project_id", projectId);
             fd.append("file", audio);
             fd.append("client_mutation_id", crypto.randomUUID());
+            if (siteId) fd.append("site_id", siteId);
             if (blob) fd.append("duration_seconds", String(Math.round((Date.now() - started.current) / 1000)));
             if (transcript.trim()) fd.append("transcript", transcript.trim());
             await api("/ai/voice-reports", { method: "POST", form: fd });
