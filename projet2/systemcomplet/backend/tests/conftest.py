@@ -117,6 +117,9 @@ def _isolated_transaction() -> Iterator[None]:
         connection.close()
         secrets.invalidate()
         state.invalidate()
+        from app.core import runtime_settings
+
+        runtime_settings.reset()
 
 
 @pytest.fixture

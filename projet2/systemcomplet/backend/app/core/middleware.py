@@ -165,8 +165,10 @@ class MaintenanceMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        from app.core import runtime_settings
         from app.modules.admin.state import maintenance_state  # import tardif (évite les cycles)
 
+        runtime_settings.refresh()  # prestataires activés depuis l'ERP (relus au plus toutes les 15 s)
         state = maintenance_state()
         path: str = scope.get("path", "")
         if (

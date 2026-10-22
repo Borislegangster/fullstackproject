@@ -17,10 +17,12 @@ log = logging.getLogger("globus.worker")
 
 
 def _loop_outbox(stop: list[bool]) -> None:
+    from app.core import runtime_settings
     from app.workers import outbox
 
     while not stop[0]:
         try:
+            runtime_settings.refresh()
             processed = outbox.run_once()
             outbox.pending_count()
         except Exception:
@@ -31,10 +33,12 @@ def _loop_outbox(stop: list[bool]) -> None:
 
 
 def _loop_scheduler(stop: list[bool]) -> None:
+    from app.core import runtime_settings
     from app.workers import scheduler
 
     while not stop[0]:
         try:
+            runtime_settings.refresh()
             scheduler.tick()
         except Exception:
             log.exception("scheduler_loop_error")
@@ -43,11 +47,13 @@ def _loop_scheduler(stop: list[bool]) -> None:
 
 async def run_inline(stop_event: asyncio.Event) -> None:
     """Boucles asynchrones (dans le processus API) : délègue le travail bloquant aux threads."""
+    from app.core import runtime_settings
     from app.workers import outbox, scheduler
 
     async def outbox_loop() -> None:
         while not stop_event.is_set():
             try:
+                await asyncio.to_thread(runtime_settings.refresh)
                 processed = await asyncio.to_thread(outbox.run_once)
             except Exception:
                 log.exception("outbox_inline_error")
@@ -77,11 +83,13 @@ def main() -> None:
     import threading
 
     setup_logging()
+    from app.core import runtime_settings
     from app.core.database import SessionLocal
     from app.modules.system.bootstrap import bootstrap
 
     with SessionLocal() as db:
         bootstrap(db)
+    runtime_settings.refresh(force=True)
     stop = [False]
 
     def _stop(*_: object) -> None:

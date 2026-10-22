@@ -41,8 +41,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from app.websocket.hub import hub
 
     def _boot() -> None:
+        from app.core import runtime_settings
+
         with SessionLocal() as db:
             bootstrap(db)
+        runtime_settings.refresh(force=True)
 
     await run_in_threadpool(_boot)
     await hub.start()

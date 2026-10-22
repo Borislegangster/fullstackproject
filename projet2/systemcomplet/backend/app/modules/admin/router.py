@@ -38,7 +38,7 @@ from app.modules.system.models import (
 )
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
-PROTECTED_SETTINGS = {"payroll_parameters", "maintenance", "__feature_flags__"}
+PROTECTED_SETTINGS = {"payroll_parameters", "maintenance", "__feature_flags__", "integrations.config"}
 
 
 def _require_mfa(access: Access) -> None:
@@ -52,7 +52,8 @@ def list_settings(
     category: str | None = None, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> list[dict[str, Any]]:
     access.require("settings:read")
-    stmt = select(Setting)
+    # Réglages gérés par leurs écrans dédiés (maintenance, fonctionnalités, intégrations) : hors liste générique.
+    stmt = select(Setting).where(Setting.key.not_in(["maintenance", "__feature_flags__", "integrations.config"]))
     if category:
         stmt = stmt.where(Setting.category == category)
     return [jsonable(serialize(s)) for s in db.execute(stmt.order_by(Setting.category, Setting.key)).scalars()]
@@ -188,6 +189,89 @@ def integrations(db: Session = Depends(get_db), access: Access = Depends(get_acc
             "turn": bool(settings.TURN_URLS and get_secret("TURN_SHARED_SECRET")),
         },
     }
+
+
+def _integration_config() -> dict[str, Any]:
+    from app.core import runtime_settings
+
+    runtime_settings.refresh(force=True)
+    api = f"{settings.API_PUBLIC_URL.rstrip('/')}{settings.API_PREFIX}"
+    fields = []
+    for name, meta in runtime_settings.OVERRIDABLE.items():
+        value = getattr(settings, name)
+        fields.append(
+            {
+                "name": name,
+                "group": meta["group"],
+                "label": meta["label"],
+                "help": meta.get("help"),
+                "choices": [{"value": v, "label": label} for v, label in meta.get("choices", [])],
+                "multiple": bool(meta.get("multiple")),
+                "value": value,
+                "server_value": runtime_settings.server_value(name),
+            }
+        )
+    return {
+        "fields": fields,
+        # Adresses à déclarer chez les prestataires (retours de paiement, messages WhatsApp reçus).
+        "callbacks": {
+            "whatsapp": f"{api}/webhooks/whatsapp",
+            "stripe": f"{api}/payments/webhooks/stripe",
+            "flutterwave": f"{api}/payments/webhooks/flutterwave",
+            # MTN, Orange Money et CinetPay reçoivent l'adresse de retour à chaque paiement ; MTN exige seulement
+            # que l'hôte soit déclaré à la création de l'utilisateur API (providerCallbackHost).
+            "mtn_callback_host": settings.API_PUBLIC_URL.split("://", 1)[-1].split("/", 1)[0],
+        },
+    }
+
+
+@router.get("/integrations/config")
+def integrations_config(access: Access = Depends(get_access)) -> dict[str, Any]:
+    """Réglages des prestataires modifiables depuis l'ERP (aucun secret : les clés restent dans le coffre)."""
+    access.require("integrations:manage")
+    return jsonable(_integration_config())
+
+
+class IntegrationConfigIn(BaseModel):
+    # Réglage → valeur ; null = revenir à la valeur du serveur.
+    values: dict[str, str | list[str] | None] = Field(max_length=60)
+
+
+@router.put("/integrations/config")
+def save_integrations_config(
+    data: IntegrationConfigIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Active / règle un prestataire (WhatsApp, SMS, paiements, IA) sans modifier le fichier du serveur."""
+    from app.core import runtime_settings
+
+    access.require("integrations:manage")
+    _require_mfa(access)
+    row = db.get(Setting, runtime_settings.SETTING_KEY)
+    current = dict(row.value or {}) if row else {}
+    merged = {**current, **data.values}
+    merged = {k: v for k, v in merged.items() if v is not None and v != ""}
+    errors = runtime_settings.validate(merged)
+    if errors:
+        raise BusinessRuleError(" ; ".join(errors), code="INVALID_INTEGRATION_CONFIG")
+    if row is None:
+        row = Setting(key=runtime_settings.SETTING_KEY, category="integrations", description="Prestataires activés")
+        db.add(row)
+    row.value = merged
+    row.updated_by_id = access.p.id
+    changed = {k: v for k, v in data.values.items() if current.get(k) != v}
+    audit.record(
+        db,
+        family="security",
+        module="integrations",
+        action="CONFIG",
+        resource_type="setting",
+        resource_id=runtime_settings.SETTING_KEY,
+        diff={k: jsonable(v) for k, v in changed.items()},
+        criticality="HIGH",
+    )
+    db.commit()
+    runtime_settings.refresh(force=True)
+    return jsonable(_integration_config())
 
 
 @router.get("/secrets")

@@ -69,17 +69,29 @@ Chaque envoi, filtrable par canal et par statut (envoyé, échoué, en attente) 
 ::: perm integrations:manage
 ## Onglet « Intégrations »
 
-En haut, une carte par service indique son état (coche verte : configuré ; croix : à configurer) : e-mail, WhatsApp, SMS, paiements, **Notifications push web** (navigateur, clés VAPID), **Notifications push mobile** (applications, compte de service Firebase), Autodesk APS, IA (Claude), reconnaissance vocale, antivirus, temps réel et relais d'appels. Certaines cartes exigent aussi une activation par l'hébergeur (ex. IA, paiements) en plus de la clé enregistrée ici.
+En haut, une carte par service indique son état (coche verte : configuré ; croix : à configurer) : e-mail, WhatsApp, SMS, paiements, **Notifications push web** (navigateur, clés VAPID), **Notifications push mobile** (applications, compte de service Firebase), Autodesk APS, IA (Claude), reconnaissance vocale, antivirus, temps réel et relais d'appels.
 
 ### Prestataires de paiement
 
-État des prestataires de paiement mobile et carte. Paiements réels uniquement : un prestataire est activé par la configuration du serveur, puis ses clés sont renseignées ici. Les environnements de test des opérateurs sont refusés en production.
+État des prestataires de paiement mobile et carte. Paiements réels uniquement : un prestataire est activé dans **Activer les services**, puis ses clés sont renseignées. Les environnements de test des opérateurs sont refusés en production.
+
+### Activer les services
+
+WhatsApp Business, SMS, paiement en ligne et assistants IA s'activent ici, sans intervention sur le serveur (effet sous 15 secondes).
+
+1. Dans le bloc du service, choisissez le prestataire (ex. **Envoi des SMS** : Twilio ; **Prestataires de paiement activés** : cochez MTN Mobile Money, Orange Money…).
+2. Renseignez les réglages qui apparaissent (identifiant du numéro WhatsApp, Account SID et expéditeur Twilio, environnement de production MTN « mtncameroon », pays Orange « cm »…).
+3. **Enregistrer — …** : les réglages sont contrôlés (environnements de test refusés en production) ; la double authentification est demandée.
+4. Les clés du service s'affichent alors dans le bloc, marquées **Requis** : **Définir** pour chacune.
+5. Déclarez chez le prestataire l'adresse de rappel affichée (**Copier**) : WhatsApp (URL de rappel Meta), Stripe et Flutterwave (webhook), MTN (hôte de rappel de l'utilisateur API).
+
+Pour désactiver un service, revenez à « Désactivé » (ou décochez le prestataire) et enregistrez.
 
 ### Clés et secrets des prestataires
 
-Les secrets sont chiffrés au repos et jamais réaffichés ; seule leur empreinte est visible.
+Les secrets sont chiffrés au repos et jamais réaffichés ; seule leur empreinte est visible. Chaque clé porte un repère : **Requis** (service activé, clé manquante), **Renseigné**, **Facultatif** ou **Non utilisé** (le service correspondant n'est pas activé : rien à faire). Les clés requises manquantes sont en tête de liste.
 
-1. **Régler** sur la ligne du secret ouvre **Définir — …** (ou **Renouveler — …** s'il existe déjà).
+1. **Définir** sur la ligne du secret ouvre **Définir — …** (ou **Renouveler — …** s'il existe déjà).
 2. Saisissez la **Valeur**, puis **Enregistrer**. Si votre session n'est pas encore confirmée par la double authentification, la fenêtre **Confirmer avec votre double authentification** demande votre code, puis l'enregistrement reprend ([Mon compte](doc:erp-compte)).
 
 ### Webhooks sortants

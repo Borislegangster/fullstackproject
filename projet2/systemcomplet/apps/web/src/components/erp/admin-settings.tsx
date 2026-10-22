@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { RolePicker } from "@/components/cms/form-editor";
+import { IntegrationsActivation, NeedBadge } from "@/components/erp/integrations-activation";
 import type { Row } from "@/components/erp/resource";
 import { RefSelect } from "@/components/forms/ref-select";
 import { CheckGroup, RowsEditor, ValueEditor } from "@/components/forms/structured-fields";
@@ -565,6 +566,13 @@ export function NotificationsAdmin() {
 
 /* ----------------------------------------------------------------------------- intégrations */
 
+/** Ordre d'affichage des clés : à renseigner d'abord, puis renseignées, facultatives, non utilisées. */
+function secretRank(x: Row): number {
+  if (!x.configured && x.need === "required") return 0;
+  if (x.configured) return 1;
+  return x.need === "optional" ? 2 : 3;
+}
+
 function StatusDot({ ok }: { ok: boolean }) {
   return ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-slate-400" />;
 }
@@ -616,7 +624,7 @@ export function IntegrationsAdmin() {
         <Card>
           <CardHeader
             title="Prestataires de paiement"
-            subtitle="Paiements réels uniquement : activez un prestataire via PAYMENT_PROVIDERS puis renseignez ses clés ci-dessous. Les environnements de test (MTN « sandbox », Orange « dev ») sont refusés en production."
+            subtitle="Paiements réels uniquement : activez un prestataire dans « Activer les services » ci-dessous puis renseignez ses clés. Les environnements de test (MTN « sandbox », Orange « dev ») sont refusés en production."
           />
           <ul className="divide-y divide-line text-sm">
             {(s.payments.details as Row[]).map((d) => (
@@ -638,17 +646,33 @@ export function IntegrationsAdmin() {
           </ul>
         </Card>
       ) : null}
+      <IntegrationsActivation
+        secrets={secrets.data ?? []}
+        onSecret={(x) => {
+          setSecret(x);
+          setSecretValue("");
+        }}
+        onSaved={() => {
+          void secrets.reload();
+          void status.reload();
+        }}
+      />
       <Card>
-        <CardHeader title="Clés et secrets des prestataires" subtitle="Chiffrés au repos (AES-256-GCM), jamais réaffichés ; seule l'empreinte est visible. Saisie protégée par la double authentification." />
+        <CardHeader
+          title="Clés et secrets des prestataires"
+          subtitle="Chiffrés au repos (AES-256-GCM), jamais réaffichés ; seule l'empreinte est visible. Saisie protégée par la double authentification. « Non utilisé » : la clé ne sert à rien tant que le service correspondant n'est pas activé — aucune action à faire."
+        />
         <ul className="divide-y divide-line text-sm">
-          {(secrets.data ?? []).map((x) => (
-            <li key={x.name} className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5">
+          {[...(secrets.data ?? [])]
+            .sort((a, b) => secretRank(a) - secretRank(b) || String(a.name).localeCompare(String(b.name)))
+            .map((x) => (
+            <li key={x.name} className={`flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 ${!x.configured && x.need === "unused" ? "opacity-70" : ""}`}>
               <span>
                 {x.label ?? x.name} <span className="font-mono text-xs text-muted">{x.name}</span>
-                <span className="block text-xs text-muted">{x.configured ? `${x.source === "vault" ? "Coffre" : "Variable d'environnement"}${x.fingerprint ? ` · empreinte ${x.fingerprint}` : ""}${x.version ? ` · v${x.version}` : ""}${x.rotated_at ? ` · renouvelé ${relative(x.rotated_at)}` : ""}` : "Non configuré"}</span>
+                <span className="block text-xs text-muted">{x.configured ? `${x.source === "vault" ? "Coffre" : "Variable d'environnement"}${x.fingerprint ? ` · empreinte ${x.fingerprint}` : ""}${x.version ? ` · v${x.version}` : ""}${x.rotated_at ? ` · renouvelé ${relative(x.rotated_at)}` : ""}` : x.need_reason || "Non configuré"}</span>
               </span>
               <span className="flex items-center gap-2">
-                <StatusDot ok={!!x.configured} />
+                <NeedBadge need={x.need} configured={x.configured} />
                 <Button
                   size="sm"
                   variant="secondary"
