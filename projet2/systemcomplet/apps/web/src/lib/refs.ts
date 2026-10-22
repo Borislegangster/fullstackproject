@@ -73,6 +73,7 @@ export const REFS: Record<string, RefSource> = {
   clashRules: { path: "/bim/clash-rules", label: name, paginated: true },
   slaPolicies: { path: "/crm/sla-policies", label: name, paginated: true },
   pettyCashFunds: { path: "/petty-cash-funds", label: name, paginated: true },
+  supplierCreditNotes: { path: "/credit-notes", query: { side: "supplier" }, label: (r) => `${r.number}${r.supplier_reference ? ` — ${r.supplier_reference}` : ""}`, sublabel: (r) => (r.amount ? `${Number(r.amount).toLocaleString("fr-FR")} ${r.currency ?? "XAF"}` : undefined), paginated: true },
   supplierInvoices: { path: "/supplier-invoices", label: (r) => `${r.number} — ${r.supplier_reference ?? ""}`, paginated: true, searchable: true },
   clientInvoices: { path: "/client-invoices", label: (r) => `${r.number} — ${r.title ?? ""}`, paginated: true, searchable: true },
   workSchedules: { path: "/hr/work-schedules", label: name, paginated: true },

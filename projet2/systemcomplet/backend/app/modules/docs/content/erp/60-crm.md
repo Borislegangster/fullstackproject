@@ -39,7 +39,7 @@ Les **Leads** arrivent du site (« Décrire mon projet », estimation instantan�
 - **Appeler**, **WhatsApp**, **E-mail** contactent le prospect (l'action est consignée).
 - **Activité** ouvre **Nouvelle activité** (type, date, compte rendu, relance) ; **Fait** clôt une activité planifiée.
 - **Valider l'estimation** après contrôle de l'estimation instantanée (elle devient visible du prospect dans la proposition).
-- **Qualifier** ouvre **Qualification du lead** : coordonnées (correction possible : nom, entreprise, e-mail, téléphone, WhatsApp, ville, pays), canal préféré, projet et terrain, univers, **Offre visée**, budget, échéance, urgence, étiquettes ; **Statut** ouvre **Statut du lead** (contacté, qualifié, perdu…).
+- **Qualifier** ouvre **Qualification du lead** : coordonnées (correction possible : nom, entreprise, e-mail, téléphone, WhatsApp, ville, pays), canal préféré, projet et terrain, univers, **Offre visée**, budget, échéance, urgence, étiquettes ; **Statut** ouvre **Statut du lead** (nouveau, contacté, qualifié, en maturation — à relancer plus tard —, non qualifié, perdu) ; le **Motif de perte** n'apparaît, obligatoire, que pour « Perdu ».
 - **Convertir en opportunité** ouvre **Convertir en opportunité** (montant estimé, étape, date de décision) ; **Voir le pipeline** ensuite.
 :::
 
@@ -62,7 +62,7 @@ Les opportunités par étape. Glissez une carte pour la faire avancer.
 Les **Devis** : envoi d'un lien sécurisé, suivi de consultation, acceptation par code OTP avec preuve, révisions. Filtre **Statut**. La fiche (**Détail estimatif**, **Échéancier**) propose **PDF**.
 
 ::: perm crm:write
-1. **Nouveau devis** ouvre **Nouveau devis** : client, lignes (**Ligne** : désignation, quantité, prix unitaire, TVA), échéancier de paiement (**Échéance**), validité.
+1. **Nouveau devis** ouvre **Nouveau devis** : intitulé, opportunité (le client et le contact en sont repris), client, contact, devise, **TVA (%)**, **Remise globale (montant)**, introduction ; lignes chiffrées (**Ligne** : section facultative de regroupement, lot, **Désignation**, unité, **Qté** et **PU HT** obligatoires, remise %) ; **Échéancier de paiement** facultatif (**Échéance** : libellé, % du total — le montant est calculé —, jalon ; total 100 %) ; conditions particulières ; **Valable jusqu'au**. Une ligne ou une échéance incomplète est signalée et bloque l'enregistrement.
 2. **Modifier** (brouillon) ouvre **Modifier le devis**.
 3. **Envoyer** (ou **Renvoyer**) : le client reçoit un lien sécurisé et accepte par code ; **Copier** copie ce lien.
 4. **Réviser** crée une nouvelle révision (l'ancienne reste consultable).

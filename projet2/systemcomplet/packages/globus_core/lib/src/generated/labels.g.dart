@@ -1783,7 +1783,7 @@ const Map<String, String> kOptionLabels = {
   'not_covered': 'Non couvert',
   'note': 'Note',
   'note_calcul': 'Note de calcul',
-  'nurturing': 'Nurturing',
+  'nurturing': 'En maturation (à relancer)',
   'observation': 'Observation',
   'obsolete': 'Obsolète',
   'off': 'Désactivé',

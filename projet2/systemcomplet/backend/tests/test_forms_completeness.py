@@ -267,3 +267,15 @@ def test_tender_lists_its_dce_pieces(client: Any, db: Any) -> None:
     out = tender.json()
     assert [d["title"] for d in out["documents"]] == ["Plan électricité RDC"]
     assert {c["key"]: c["weight"] for c in out["quality_criteria"]}["prix"] == 60
+
+
+def test_too_long_text_is_a_clear_field_error_not_a_server_error(client: Any, db: Any) -> None:
+    ah = _admin(client, db)
+    resp = client.post(
+        f"{API}/cash-forecast-entries",
+        headers=ah,
+        json={"label": "Encaissement", "direction": "entrée prévue", "amount": 1000, "expected_date": "2026-12-01"},
+    )
+    assert resp.status_code == 422, resp.text
+    fields = {f["field"] for f in resp.json()["error"]["details"]}
+    assert "direction" in fields

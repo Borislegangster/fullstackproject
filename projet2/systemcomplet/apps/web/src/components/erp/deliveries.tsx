@@ -91,7 +91,24 @@ export function SupplierReturns() {
           { key: "created_at", label: "Créé le", format: "date" },
           { key: "status", label: "Statut", format: "status" },
         ],
-        actions: [{ key: "status", label: "Mettre à jour", endpoint: "POST /supplier-returns/{return_id}/status", perms: ["deliveries:receive", "procurement:order"], fields: { credit_note_id: { ref: null, help: "Identifiant de l'avoir reçu (facturation)" } } }],
+        actions: [
+          {
+            key: "status",
+            label: "Mettre à jour",
+            endpoint: "POST /supplier-returns/{return_id}/status",
+            perms: ["deliveries:receive", "procurement:order"],
+            fields: (row) => ({
+              status: { options: ["shipped", "credited", "closed"].map((v) => ({ value: v, label: optionLabel(v) })) },
+              credit_note_id: {
+                ref: { ...REFS.supplierCreditNotes, query: { ...REFS.supplierCreditNotes.query, ...(row.supplier_id ? { supplier_id: String(row.supplier_id) } : {}) } },
+                label: "Avoir du fournisseur",
+                help: "Avoir enregistré en facturation (Finance › Facturation › Avoirs) pour ce retour.",
+                visibleIf: (v) => v.status === "credited",
+                requiredIf: (v) => v.status === "credited",
+              },
+            }),
+          },
+        ],
       }}
     />
   );

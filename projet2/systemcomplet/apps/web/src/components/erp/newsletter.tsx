@@ -595,7 +595,7 @@ export function AutomationsList() {
       embedded
       config={{
         title: "Automatisations",
-        subtitle: "Scénarios déclenchés (bienvenue, relance de lead, nurturing par univers, réactivation).",
+        subtitle: "Scénarios déclenchés (bienvenue, relance de lead, maturation des prospects par univers, réactivation).",
         path: "/newsletter/automations",
         columns: [
           { key: "name", label: "Scénario" },

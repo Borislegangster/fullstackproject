@@ -563,7 +563,7 @@ export function LeadDetail({ id }: { id: string }) {
           params={{ lead_id: id }}
           only={["status", "lost_reason"]}
           initial={{ status: l.status === "converted" ? "qualified" : l.status }}
-          fields={{ status: { options: opts(LEAD_STATUSES.filter((s) => s !== "converted")) }, lost_reason: { widget: "textarea", help: "Obligatoire si le lead est perdu." } }}
+          fields={{ status: { options: opts(LEAD_STATUSES.filter((s) => s !== "converted")) }, lost_reason: { widget: "textarea", visibleIf: (v) => v.status === "lost", requiredIf: (v) => v.status === "lost", help: "Pourquoi le prospect ne donne pas suite (prix, délai, concurrent, projet abandonné…)." } }}
           onCancel={() => setDialog(null)}
           onSuccess={() => {
             setDialog(null);
@@ -778,7 +778,7 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
   const [lines, setLines] = useState<QuoteLineDraft[]>(
     quote?.lines?.length
       ? (quote.lines as Row[]).map((l) => ({ section: l.section ?? "", lot_code: l.lot_code ?? "", designation: l.designation, description: l.description ?? "", unit: l.unit ?? "u", quantity: String(toNumber(l.quantity)), unit_price: String(toNumber(l.unit_price)), discount_pct: String(toNumber(l.discount_pct)) }))
-      : [emptyQuoteLine("Gros œuvre")],
+      : [emptyQuoteLine()],
   );
   const [schedule, setSchedule] = useState<ScheduleDraft[]>(((src.payment_schedule ?? []) as Row[]).map((s) => ({ label: s.label ?? "", pct: String(s.pct ?? ""), milestone: s.milestone ?? "" })));
   const [busy, setBusy] = useState(false);
@@ -790,7 +790,29 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
   const tax = (net * toNumber(head.tax_rate)) / 100;
   const scheduleTotal = schedule.reduce((s, x) => s + toNumber(x.pct), 0);
   const setLine = (i: number, patch: Partial<QuoteLineDraft>) => setLines((all) => all.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const [checked, setChecked] = useState(false);
+  const lineIssue = (l: QuoteLineDraft): string | null => {
+    if (!l.designation.trim()) return "désignation manquante (ce qui est vendu, ex. « Béton armé des fondations »)";
+    if (toNumber(l.quantity) <= 0) return "quantité supérieure à 0 attendue";
+    if (l.unit_price === "" || toNumber(l.unit_price) < 0) return "prix unitaire HT manquant";
+    return null;
+  };
+  const scheduleIssue = (x: ScheduleDraft): string | null => {
+    if (!x.label.trim()) return "libellé manquant (ex. « Acompte à la signature »)";
+    if (toNumber(x.pct) <= 0) return "pourcentage manquant";
+    return null;
+  };
+  const problems = [
+    ...(lines.length ? [] : ["ajoutez au moins une ligne chiffrée (bouton « Ligne »)"]),
+    ...lines.map((l, i) => (lineIssue(l) ? `ligne ${i + 1} : ${lineIssue(l)}` : null)).filter((x): x is string => !!x),
+    ...schedule.map((x, i) => (scheduleIssue(x) ? `échéance ${i + 1} : ${scheduleIssue(x)}` : null)).filter((x): x is string => !!x),
+  ];
   const save = async () => {
+    setChecked(true);
+    if (problems.length) {
+      setError(`Devis incomplet — ${problems.join(" ; ")}.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -801,10 +823,8 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
         valid_until: head.valid_until || null,
         discount_amount: toNumber(head.discount_amount),
         tax_rate: toNumber(head.tax_rate),
-        payment_schedule: schedule.filter((s) => s.label && s.pct).map((s) => ({ label: s.label, pct: toNumber(s.pct), milestone: s.milestone || null })),
-        lines: lines
-          .filter((l) => l.designation.trim())
-          .map((l) => ({ section: l.section || null, lot_code: l.lot_code || null, designation: l.designation.trim(), description: l.description || null, unit: l.unit || "u", quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price), discount_pct: toNumber(l.discount_pct) })),
+        payment_schedule: schedule.map((s) => ({ label: s.label.trim(), pct: toNumber(s.pct), milestone: s.milestone || null })),
+        lines: lines.map((l) => ({ section: l.section || null, lot_code: l.lot_code || null, designation: l.designation.trim(), description: l.description || null, unit: l.unit || "u", quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price), discount_pct: toNumber(l.discount_pct) })),
       };
       const saved = quote ? await api<Row>(`/crm/quotes/${quote.id}`, { method: "PUT", body }) : await api<Row>("/crm/quotes", { method: "POST", body });
       onSaved(saved);
@@ -824,7 +844,11 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
           <Input type="date" value={head.valid_until ?? ""} onChange={(e) => setHead({ ...head, valid_until: e.target.value })} />
         </Field>
         <Field label="Opportunité">
-          <RefSelect source={REFS.opportunities} value={head.opportunity_id} onChange={(v) => setHead({ ...head, opportunity_id: v })} />
+          <RefSelect
+            source={REFS.opportunities}
+            value={head.opportunity_id}
+            onChange={(v, row) => setHead({ ...head, opportunity_id: v, organization_id: head.organization_id ?? row?.organization_id ?? null, contact_id: head.contact_id ?? row?.contact_id ?? null })}
+          />
         </Field>
         <Field label="Client (organisation)">
           <RefSelect source={REFS.organizations} value={head.organization_id} onChange={(v) => setHead({ ...head, organization_id: v })} />
@@ -835,26 +859,31 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
         <Field label="Devise">
           <Select value={head.currency} onChange={(e) => setHead({ ...head, currency: e.target.value })} options={[{ value: "XAF", label: "FCFA (XAF)" }, { value: "EUR", label: "Euro" }, { value: "USD", label: "Dollar US" }]} />
         </Field>
-        <Field label="TVA (%)">
+        <Field label="TVA (%)" help="19,25 % au Cameroun ; 0 si exonéré.">
           <Input type="number" min={0} max={100} step="any" value={head.tax_rate} onChange={(e) => setHead({ ...head, tax_rate: e.target.value })} />
         </Field>
-        <Field label="Remise globale">
+        <Field label="Remise globale (montant)" help="Montant déduit du sous-total HT ; 0 si aucune.">
           <Input type="number" min={0} step="any" value={head.discount_amount} onChange={(e) => setHead({ ...head, discount_amount: e.target.value })} />
         </Field>
-        <Field label="Introduction" className="md:col-span-3">
+        <Field label="Introduction" help="Texte d'accueil affiché en tête du devis (contexte, objet des travaux)." className="md:col-span-3">
           <Textarea value={head.introduction} onChange={(e) => setHead({ ...head, introduction: e.target.value })} rows={2} />
         </Field>
       </div>
+      <p className="text-sm text-muted">
+        <strong className="text-ink">Lignes chiffrées.</strong> Une ligne = un poste vendu : <strong className="text-ink">Désignation</strong> (obligatoire), unité, quantité et{" "}
+        <strong className="text-ink">prix unitaire HT</strong> (obligatoires). La <strong className="text-ink">Section</strong> (facultative) sert de titre de regroupement dans le PDF (ex. « Gros œuvre »),
+        le <strong className="text-ink">Lot</strong> (facultatif) est un code court (ex. « GO »).
+      </p>
       <div className="overflow-x-auto rounded-xl border border-line">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
             <tr>
-              <th className="px-2 py-2">Section</th>
+              <th className="px-2 py-2">Section (regroupement)</th>
               <th className="px-2 py-2">Lot</th>
-              <th className="px-2 py-2">Désignation</th>
+              <th className="px-2 py-2">Désignation *</th>
               <th className="px-2 py-2">Unité</th>
-              <th className="px-2 py-2">Qté</th>
-              <th className="px-2 py-2">PU HT</th>
+              <th className="px-2 py-2">Qté *</th>
+              <th className="px-2 py-2">PU HT *</th>
               <th className="px-2 py-2">Remise %</th>
               <th className="px-2 py-2 text-right">Total HT</th>
               <th />
@@ -864,23 +893,23 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
             {lines.map((l, i) => (
               <tr key={i} className="align-top">
                 <td className="px-2 py-1">
-                  <Input className="w-32" value={l.section} onChange={(e) => setLine(i, { section: e.target.value })} />
+                  <Input className="w-32" placeholder="Gros œuvre" value={l.section} onChange={(e) => setLine(i, { section: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
-                  <Input className="w-16" value={l.lot_code} onChange={(e) => setLine(i, { lot_code: e.target.value })} />
+                  <Input className="w-16" placeholder="GO" value={l.lot_code} onChange={(e) => setLine(i, { lot_code: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
-                  <Input className="min-w-[14rem]" value={l.designation} onChange={(e) => setLine(i, { designation: e.target.value })} />
+                  <Input className="min-w-[14rem]" placeholder="Béton armé des fondations" invalid={checked && !l.designation.trim()} value={l.designation} onChange={(e) => setLine(i, { designation: e.target.value })} />
                   <Input className="mt-1 text-xs" placeholder="Description (facultatif)" value={l.description} onChange={(e) => setLine(i, { description: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
-                  <Input className="w-16" value={l.unit} onChange={(e) => setLine(i, { unit: e.target.value })} />
+                  <Input className="w-16" placeholder="m³" value={l.unit} onChange={(e) => setLine(i, { unit: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
-                  <Input type="number" min={0} step="any" className="w-20" value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} />
+                  <Input type="number" min={0} step="any" className="w-20" invalid={checked && toNumber(l.quantity) <= 0} value={l.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
-                  <Input type="number" min={0} step="any" className="w-28" value={l.unit_price} onChange={(e) => setLine(i, { unit_price: e.target.value })} />
+                  <Input type="number" min={0} step="any" className="w-28" placeholder="0" invalid={checked && l.unit_price === ""} value={l.unit_price} onChange={(e) => setLine(i, { unit_price: e.target.value })} />
                 </td>
                 <td className="px-2 py-1">
                   <Input type="number" min={0} max={100} step="any" className="w-16" value={l.discount_pct} onChange={(e) => setLine(i, { discount_pct: e.target.value })} />
@@ -924,11 +953,22 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
           <p className="text-sm font-semibold">Échéancier de paiement</p>
           <span className={`text-xs font-semibold ${schedule.length && Math.abs(scheduleTotal - 100) > 0.001 ? "text-red-600" : "text-muted"}`}>Total {number(scheduleTotal, 2)} % {schedule.length ? "(doit faire 100 %)" : ""}</span>
         </div>
+        <p className="mb-2 text-xs text-muted">Facultatif. Chaque échéance = une part du total TTC, en pourcentage (le montant est calculé). Total des pourcentages : 100 %.</p>
+        {schedule.length ? (
+          <div className="mb-1 hidden grid-cols-[1fr_6rem_8rem_1fr_auto] gap-2 text-xs font-semibold uppercase text-muted sm:grid">
+            <span>Libellé de l&apos;échéance *</span>
+            <span>% du total *</span>
+            <span>Montant</span>
+            <span>Jalon déclencheur</span>
+            <span />
+          </div>
+        ) : null}
         {schedule.map((s, i) => (
-          <div key={i} className="mb-2 grid grid-cols-[1fr_6rem_1fr_auto] gap-2">
-            <Input placeholder="Acompte à la signature" value={s.label} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
-            <Input type="number" min={0} max={100} placeholder="%" value={s.pct} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, pct: e.target.value } : x)))} />
-            <Input placeholder="Jalon (ex. fin des fondations)" value={s.milestone} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, milestone: e.target.value } : x)))} />
+          <div key={i} className="mb-2 grid grid-cols-[1fr_6rem_8rem_1fr_auto] items-center gap-2">
+            <Input placeholder="Acompte à la signature" invalid={checked && !s.label.trim()} value={s.label} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
+            <Input type="number" min={0} max={100} placeholder="30" invalid={checked && toNumber(s.pct) <= 0} value={s.pct} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, pct: e.target.value } : x)))} />
+            <span className="text-right text-sm tabular-nums text-muted">{money(((net + tax) * toNumber(s.pct)) / 100, cur)}</span>
+            <Input placeholder="Fin des fondations" value={s.milestone} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, milestone: e.target.value } : x)))} />
             <button type="button" aria-label="Retirer l'échéance" className="rounded p-1.5 text-muted hover:text-red-600" onClick={() => setSchedule((all) => all.filter((_, j) => j !== i))}>
               <Trash2 className="h-4 w-4" />
             </button>

@@ -561,7 +561,19 @@ final leads = ResourceConfig(
       'offer_slug': const FieldConfig(hidden: true),
     },
   ),
-  update: const ResourceCreate(endpoint: 'PATCH /crm/leads/{lead_id}', perms: ['crm:write'], fields: {'offer_slug': FieldConfig(hidden: true)}),
+  update: ResourceCreate(
+    endpoint: 'PATCH /crm/leads/{lead_id}',
+    perms: const ['crm:write'],
+    fields: {
+      'offer_slug': const FieldConfig(hidden: true),
+      'lost_reason': FieldConfig(
+        label: 'Motif de perte',
+        multiline: true,
+        visibleIf: (v) => v['status'] == 'lost',
+        requiredIf: (v) => v['status'] == 'lost',
+      ),
+    },
+  ),
   actions: [
     ResourceAction(
       label: 'Convertir en opportunité',

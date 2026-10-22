@@ -294,6 +294,7 @@ def credit_client_invoice(
 def list_credit_notes(
     params: PageParams = Depends(),
     side: str | None = None,
+    supplier_id: uuid.UUID | None = None,
     db: Session = Depends(get_db),
     access: Access = Depends(get_access),
 ) -> dict[str, Any]:
@@ -301,6 +302,8 @@ def list_credit_notes(
     stmt = select(CreditNote)
     if side:
         stmt = stmt.where(CreditNote.side == side)
+    if supplier_id:
+        stmt = stmt.where(CreditNote.supplier_id == supplier_id)
     return paginate(
         db, stmt, params, default_sort=CreditNote.created_at.desc(), transform=lambda n: jsonable(serialize(n))
     )

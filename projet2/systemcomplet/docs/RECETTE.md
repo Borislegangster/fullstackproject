@@ -1108,16 +1108,23 @@ et un échéancier en trois temps.*
 
 **Ce que vous faites**
 
-1. Sur la carte de l'opportunité, cliquez sur **Devis**.
-2. Ajoutez trois lignes (bouton **Ligne**) :
-   - « Études et plans » : quantité `1`, prix unitaire `3 000 000` ;
-   - « Gros œuvre » : quantité `1`, prix unitaire `15 000 000` ;
-   - « Second œuvre » : quantité `1`, prix unitaire `7 000 000`.
-3. Vérifiez la **TVA** : 19,25 %.
-4. Dans l'échéancier (bouton **Échéance**), créez trois échéances : 30 % à la signature, 40 % à mi-chantier, 30 % à la
-   réception.
-5. **Validité** : 30 jours. Enregistrez.
+1. Sur la carte de l'opportunité, cliquez sur **Devis**. L'**Intitulé du devis**, le client et le contact sont repris
+   de l'opportunité ; vérifiez-les.
+2. Remplissez le tableau des lignes chiffrées. Une ligne est déjà présente : remplissez-la, puis cliquez sur **Ligne**
+   pour ajouter chacune des suivantes. Dans chaque ligne, la colonne qui compte est **Désignation** (ce que l'on vend) ;
+   la **Section** n'est qu'un titre de regroupement facultatif.
+   - **Désignation** « Études et plans » : **Qté** `1`, **PU HT** `3 000 000` ;
+   - **Désignation** « Gros œuvre » : **Qté** `1`, **PU HT** `15 000 000` ;
+   - **Désignation** « Second œuvre » : **Qté** `1`, **PU HT** `7 000 000`.
+3. Vérifiez la **TVA (%)** : 19,25.
+4. Dans **Échéancier de paiement**, cliquez trois fois sur **Échéance** et remplissez chaque ligne : le **libellé**
+   (« Acompte à la signature », « Mi-chantier », « Réception »), le **% du total** (`30`, `40`, `30`) — le montant se
+   calcule tout seul — et, si vous voulez, le jalon déclencheur.
+5. **Valable jusqu'au** : une date dans 30 jours. Cliquez sur **Créer le devis**.
 6. Cliquez sur **PDF** pour voir le document.
+
+*Si une ligne ou une échéance est incomplète (désignation, quantité ou prix manquant), le devis n'est pas enregistré et
+un message indique laquelle compléter : rien n'est perdu en silence.*
 
 **Ce que vous devez constater** : les totaux hors taxes, TVA et toutes taxes comprises sont justes (25 000 000 HT), et le
 PDF est lisible, propre, aux couleurs de l'entreprise.

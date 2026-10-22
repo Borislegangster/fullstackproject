@@ -31,7 +31,8 @@ export interface RowAction {
   confirm?: string;
   reasonLabel?: string;
   tone?: "primary" | "danger" | "accent";
-  fields?: Record<string, FieldConfig>;
+  /** Réglages des champs ; fonction de la ligne pour filtrer une liste sur la fiche (ex. avoirs de son fournisseur). */
+  fields?: Record<string, FieldConfig> | ((row: Row) => Record<string, FieldConfig>);
   initial?: (row: Row) => Row;
   success?: string;
   idempotent?: boolean;
@@ -106,7 +107,7 @@ export function ActionRunner({ action, row, onDone, onClose }: { action: RowActi
         <SchemaForm
           endpoint={action.endpoint}
           params={param ? { [param]: String(row.id) } : {}}
-          fields={action.fields}
+          fields={typeof action.fields === "function" ? action.fields(row) : action.fields}
           initial={action.initial?.(row)}
           idempotent={action.idempotent}
           submitLabel={action.label}

@@ -223,7 +223,7 @@ export function SiteSettingsEditor() {
           <TagInput
             value={robotsPaths(v.robots_extra)}
             placeholder="/adresse-de-la-page puis Entrée"
-            onChange={(paths) => set({ robots_extra: paths.map((p) => p.trim()).filter((p) => p.startsWith("/")).map((p) => `Disallow: ${p}`).join("\n") || null })}
+            onChange={(paths) => set({ robots_extra: paths.map((p) => p.trim()).filter(Boolean).map((p) => `Disallow: ${p.startsWith("/") ? p : `/${p}`}`).join("\n") || null })}
           />
         </Field>
       </Card>

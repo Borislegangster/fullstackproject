@@ -438,6 +438,17 @@ export function SupplierInvoiceForm({ onDone, onCancel }: { onDone: (inv: Row) =
           loading={busy}
           disabled={!supplierId || !head.supplier_reference || !head.invoice_date || !lines.some((l) => l.description && toNumber(l.quantity) > 0)}
           onClick={async () => {
+            // Ligne commencée mais incomplète : signalée, jamais retirée en silence (une ligne vide est ignorée).
+            const started = lines.filter((l) => l.description.trim() || toNumber(l.quantity) > 0 || toNumber(l.unit_price) > 0);
+            const incomplete = started.findIndex((l) => !l.description.trim() || toNumber(l.quantity) <= 0);
+            if (incomplete >= 0) {
+              setError(`Ligne ${lines.indexOf(started[incomplete]) + 1} incomplète : désignation et quantité (supérieure à 0) obligatoires.`);
+              return;
+            }
+            if (!started.length) {
+              setError("Ajoutez au moins une ligne facturée (bouton « Ligne »).");
+              return;
+            }
             setBusy(true);
             setError(null);
             try {
@@ -459,7 +470,7 @@ export function SupplierInvoiceForm({ onDone, onCancel }: { onDone: (inv: Row) =
                   tax_amount: toNumber(head.tax_amount),
                   file_id: fileId,
                   auto_match: autoMatch && !!poId,
-                  lines: lines.filter((l) => l.description && toNumber(l.quantity) > 0).map((l) => ({ po_line_id: l.po_line_id, description: l.description, quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price) })),
+                  lines: started.map((l) => ({ po_line_id: l.po_line_id, description: l.description, quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price) })),
                 },
               });
               onDone(inv);

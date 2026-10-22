@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -149,6 +149,19 @@ def register_error_handlers(app: FastAPI) -> None:
             error_body("INTEGRITY_ERROR", "Contrainte d'intégrité violée (doublon ou référence invalide)."),
             status_code=409,
         )
+
+    @app.exception_handler(DataError)
+    async def _data(_: Request, exc: DataError) -> JSONResponse:
+        # Filet de sécurité : valeur refusée par la base (texte trop long, nombre hors limites…) → message lisible.
+        log.warning("data_error", extra={"error": str(exc.orig)[:500]})
+        text = str(exc.orig)
+        if "too long" in text:
+            message = "Un texte saisi est trop long pour ce champ ; raccourcissez-le."
+        elif "out of range" in text:
+            message = "Un nombre saisi est trop grand pour ce champ."
+        else:
+            message = "Une valeur saisie n'est pas acceptée ; vérifiez le formulaire."
+        return JSONResponse(error_body("INVALID_VALUE", message), status_code=422)
 
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, exc: Exception) -> JSONResponse:

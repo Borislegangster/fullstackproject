@@ -39,18 +39,28 @@ const walk = (dir) => {
 walk(join(WEB, "src"));
 
 const keysOf = (node) => {
-  if (!node) return { keys: new Set(), dynamic: false };
+  if (!node) return { keys: new Set(), dynamic: false, nodes: new Map() };
   if (ts.isObjectLiteralExpression(node)) {
     const keys = new Set();
+    const nodes = new Map();
     let dynamic = false;
     for (const p of node.properties) {
-      if ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && p.name) keys.add(p.name.getText().replace(/["']/g, ""));
-      else dynamic = true; // ...spread : clés inconnues
+      if ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) && p.name) {
+        const k = p.name.getText().replace(/["']/g, "");
+        keys.add(k);
+        if (ts.isPropertyAssignment(p)) nodes.set(k, p.initializer);
+      } else dynamic = true; // ...spread : clés inconnues
     }
-    return { keys, dynamic };
+    return { keys, dynamic, nodes };
   }
-  return { keys: new Set(), dynamic: true }; // variable : clés inconnues
+  return { keys: new Set(), dynamic: true, nodes: new Map() }; // variable : clés inconnues
 };
+// Réglage qui désactive le sélecteur d'un identifiant (`ref: null`) sans rendu ni liste de choix : saisie technique.
+const disablesRef = (node) =>
+  !!node &&
+  ts.isObjectLiteralExpression(node) &&
+  node.properties.some((p) => ts.isPropertyAssignment(p) && p.name.getText() === "ref" && p.initializer.kind === ts.SyntaxKind.NullKeyword) &&
+  !node.properties.some((p) => ts.isPropertyAssignment(p) && ["render", "options", "hidden"].includes(p.name.getText()));
 const stringsOf = (node) => (node && ts.isArrayLiteralExpression(node) ? node.elements.filter(ts.isStringLiteral).map((e) => e.text) : null);
 
 const forms = [];
@@ -114,6 +124,10 @@ for (const form of forms) {
   const only = stringsOf(form.only);
   for (const def of defs) {
     const name = def.name;
+    if ((def.kind === "uuid" || (def.kind === "list" && def.itemKind === "uuid")) && disablesRef(cfg.nodes.get(name))) {
+      problems.push(`${relative(WEB, form.file).replace(/\\/g, "/")}:${form.line}  ${form.endpoint}  ${name} — sélecteur désactivé (ref: null)`);
+      continue;
+    }
     if (form.endpoint.includes(`{${name}}`) || exclude.has(name) || fixed.keys.has(name) || cfg.keys.has(name)) continue;
     if (only && !only.includes(name)) continue;
     if (fixed.dynamic && name === "project_id") continue; // contexte de projet imposé par l'écran

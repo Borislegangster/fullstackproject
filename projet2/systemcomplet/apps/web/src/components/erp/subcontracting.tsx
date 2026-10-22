@@ -489,6 +489,14 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
   const setLot = (i: number, patch: Partial<LotDraft>) => setLots((all) => all.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const setItem = (i: number, k: number, patch: Partial<ItemDraft>) => setLots((all) => all.map((l, j) => (j === i ? { ...l, items: l.items.map((it, m) => (m === k ? { ...it, ...patch } : it)) } : l)));
   const submit = async () => {
+    // Poste commencé sans désignation (ou sans quantité) : signalé, jamais retiré en silence.
+    for (const [i, l] of lots.entries()) {
+      const k = l.items.findIndex((it) => (it.designation.trim() || toNumber(it.quantity) > 0) && (!it.designation.trim() || toNumber(it.quantity) <= 0));
+      if (k >= 0) {
+        setError(`Lot ${i + 1}, poste ${k + 1} incomplet : désignation et quantité (supérieure à 0) obligatoires.`);
+        return;
+      }
+    }
     setBusy(true);
     setError(null);
     try {

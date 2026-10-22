@@ -56,7 +56,7 @@ Les **Campagnes** et leurs statistiques : **Délivrés**, **Ouvertures uniques**
 
 ## Onglet « Automatisations »
 
-Les **Automatisations** : scénarios déclenchés (bienvenue, relance de lead, nurturing par univers, réactivation).
+Les **Automatisations** : scénarios déclenchés (bienvenue, relance de lead, maturation des prospects par univers, réactivation).
 
 ::: perm newsletter:write
 - **Nouveau scénario** : nom, type et déclencheur obligatoires, réglage du déclencheur (jours d'inactivité ou tag selon le cas), étapes (bouton **Étape** : délai en heures, modèle d'e-mail, objet facultatif), **Actif**.

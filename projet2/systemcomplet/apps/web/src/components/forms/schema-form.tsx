@@ -29,6 +29,16 @@ export interface FieldConfig {
   fields?: Record<string, FieldConfig>;
   /** Rendu personnalisé du contrôle. */
   render?: (props: { value: any; onChange: (v: any) => void; values: Record<string, any>; invalid: boolean }) => ReactNode;
+  /** Champ conditionnel (ex. motif de perte seulement pour le statut « Perdu ») : masqué, non validé et non envoyé tant
+   * que la condition est fausse. */
+  visibleIf?: (values: Record<string, any>) => boolean;
+  /** Obligatoire selon les autres valeurs (en plus des champs obligatoires du schéma). */
+  requiredIf?: (values: Record<string, any>) => boolean;
+}
+
+/** Champ masqué par sa condition d'affichage. */
+function conditionallyHidden(cfg: FieldConfig | undefined, values: Record<string, any>): boolean {
+  return !!cfg?.visibleIf && !cfg.visibleIf(values);
 }
 
 type Values = Record<string, any>;
@@ -176,11 +186,11 @@ function validate(schema: string, values: Values, configs: Record<string, FieldC
   const errors: Record<string, string> = {};
   for (const def of SCHEMAS[schema] ?? []) {
     const cfg = configs[def.name];
-    if (cfg?.hidden || !(def.name in values)) continue;
+    if (cfg?.hidden || !(def.name in values) || conditionallyHidden(cfg, values)) continue;
     const v = values[def.name];
     const key = prefix + def.name;
     if (def.kind === "boolean") continue;
-    if (def.required && isEmpty(v) && def.kind !== "objects") {
+    if ((def.required || cfg?.requiredIf?.(values)) && isEmpty(v) && def.kind !== "objects") {
       errors[key] = "Champ obligatoire";
       continue;
     }
@@ -463,6 +473,7 @@ export function FieldsGrid({
     <div className={clsx("grid gap-4", columns === 2 && "sm:grid-cols-2")}>
       {defs.map((def) => {
         const cfg = configs[def.name];
+        if (conditionallyHidden(cfg, values)) return null;
         const key = prefix + def.name;
         const span = cfg?.span ?? (WIDE.has(def.kind) ? 2 : 1);
         const error = errors[key];
@@ -470,7 +481,7 @@ export function FieldsGrid({
           <Field
             key={def.name}
             label={def.kind === "boolean" ? undefined : cfg?.label ?? fieldLabel(def.name)}
-            required={def.required && def.kind !== "boolean"}
+            required={(def.required || !!cfg?.requiredIf?.(values)) && def.kind !== "boolean"}
             help={cfg?.help ?? def.help}
             error={error}
             htmlFor={`f-${key}`}
@@ -572,6 +583,10 @@ export function SchemaForm({
   const handle = async (e: FormEvent) => {
     e.preventDefault();
     const v = { ...values, ...(fixed ?? {}) };
+    // Champs masqués par leur condition : ni validés ni envoyés.
+    Object.entries(configs).forEach(([name, cfg]) => {
+      if (conditionallyHidden(cfg, v)) delete v[name];
+    });
     const errs = validate(schema, v, configs);
     setErrors(errs);
     if (Object.keys(errs).length) {

@@ -10,10 +10,10 @@ import uuid
 from collections.abc import Callable
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
@@ -70,6 +70,10 @@ def model_schema(
         if cname in exclude or (not output and cname in _SYSTEM_FIELDS):
             continue
         py = _python_type(column)
+        length = getattr(column.type, "length", None)
+        if not output and py is str and length:
+            # Longueur de la colonne : message clair à la saisie (« 20 caractères maximum ») au lieu d'une erreur base.
+            py = Annotated[str, Field(max_length=length)]
         if output or partial or (optional and cname in optional):
             fields[cname] = (py | None, None)
             continue

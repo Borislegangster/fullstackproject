@@ -1637,7 +1637,7 @@ export const OPTION_LABELS: Record<string, string> = {
   discovery: "Découverte",
   proposal: "Proposition",
   negotiation: "Négociation",
-  nurturing: "Nurturing",
+  nurturing: "En maturation (à relancer)",
   unqualified: "Non qualifié",
   call: "Appel",
   meeting: "Réunion",

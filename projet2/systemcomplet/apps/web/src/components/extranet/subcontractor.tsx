@@ -167,6 +167,11 @@ function BidForm({ tender, lot, onDone, onCancel }: { tender: Row; lot: Row; onD
           loading={busy}
           disabled={lines.some((l) => l.unit_price === "") || (meta.is_variant && meta.variant_description.trim().length < 5)}
           onClick={async () => {
+            const bad = extra.findIndex((l) => (l.designation.trim() || l.unit_price !== "") && (!l.designation.trim() || toNumber(l.quantity) <= 0));
+            if (bad >= 0) {
+              setError(`Poste supplémentaire ${bad + 1} incomplet : désignation et quantité (supérieure à 0) obligatoires.`);
+              return;
+            }
             setBusy(true);
             setError(null);
             try {
@@ -182,7 +187,7 @@ function BidForm({ tender, lot, onDone, onCancel }: { tender: Row; lot: Row; onD
                   technical_memo_file_id: memoId,
                   lines: [
                     ...lines.map((l) => ({ tender_item_id: l.tender_item_id, unit_price: toNumber(l.unit_price) })),
-                    ...extra.filter((l) => l.designation.trim()).map((l) => ({ designation: l.designation, unit: l.unit, quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price) })),
+                    ...extra.filter((l) => l.designation.trim() || l.unit_price !== "").map((l) => ({ designation: l.designation, unit: l.unit, quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price) })),
                   ],
                 },
               });
