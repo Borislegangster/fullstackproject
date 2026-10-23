@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Callable
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field, create_model
@@ -71,7 +71,11 @@ def model_schema(
             continue
         py = _python_type(column)
         length = getattr(column.type, "length", None)
-        if not output and py is str and length:
+        choices = (column.info or {}).get("choices")
+        if not output and py is str and choices:
+            # Valeurs autorisées : liste de choix à la saisie, toute autre valeur refusée.
+            py = Literal[tuple(choices)]  # type: ignore[valid-type]
+        elif not output and py is str and length:
             # Longueur de la colonne : message clair à la saisie (« 20 caractères maximum ») au lieu d'une erreur base.
             py = Annotated[str, Field(max_length=length)]
         if output or partial or (optional and cname in optional):

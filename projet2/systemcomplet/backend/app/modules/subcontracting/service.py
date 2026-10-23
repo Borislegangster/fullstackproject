@@ -555,6 +555,8 @@ def award(
     start_date: date | None,
     end_date: date | None,
     terms: str | None,
+    penalty_cap_pct: Decimal = Decimal("10"),
+    tax_rate: Decimal = Decimal("0"),
 ) -> Subcontract:
     """Attribution (48) → contrat (49) : lignes reprises de l'offre (prix négociés au prorata)."""
     if bid.tender_id != tender.id or bid.status not in ("submitted", "shortlisted"):
@@ -582,12 +584,13 @@ def award(
         advance_amount=money(advance_amount),
         advance_recovery_pct=advance_recovery_pct,
         penalty_per_day=money(penalty_per_day),
+        penalty_cap_pct=penalty_cap_pct,
         start_date=start_date,
         end_date=end_date,
         terms=terms,
         status="draft",
         created_by_id=user_id,
-        tax_rate=Decimal("0"),
+        tax_rate=tax_rate,
     )
     total = Decimal("0")
     for index, line in enumerate(bid.lines):
@@ -1296,6 +1299,12 @@ def reject_situation(
 
 
 # ============================================================================ facturation (56 → 58)
+def expected_invoice_amount(situation: Situation, contract: Subcontract) -> Decimal:
+    """Montant attendu de la facture : net à payer de la situation + TVA du marché sur le montant brut."""
+    tax = money(Decimal(situation.gross_amount or 0) * Decimal(contract.tax_rate or 0) / 100)
+    return money(Decimal(situation.net_amount or 0) + tax)
+
+
 def submit_invoice(
     db: Session,
     situation: Situation,
@@ -1319,8 +1328,7 @@ def submit_invoice(
     ).first()
     if duplicate:
         raise Conflict("Référence de facture déjà utilisée", code="DUPLICATE_INVOICE")
-    tax = money(Decimal(situation.gross_amount) * Decimal(contract.tax_rate or 0) / 100)
-    expected = money(Decimal(situation.net_amount) + tax)
+    expected = expected_invoice_amount(situation, contract)
     if abs(money(amount) - expected) > Decimal("1"):
         raise BusinessRuleError(
             f"Montant facturé différent du net validé ({expected})",
@@ -1340,7 +1348,7 @@ def submit_invoice(
         invoice_date=invoice_date,
         due_date=invoice_date + timedelta(days=30),
         amount_ht=situation.net_amount,
-        tax_amount=tax,
+        tax_amount=money(expected - Decimal(situation.net_amount)),
         amount=expected,
         status="received",
         file_id=file_id,

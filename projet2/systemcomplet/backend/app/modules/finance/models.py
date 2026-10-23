@@ -29,6 +29,16 @@ from app.core.security import EncryptedString
 from app.core.utils import utcnow
 
 COST_CATEGORIES = ("materiaux", "main_oeuvre", "sous_traitance", "materiel", "etudes", "frais_generaux", "autre")
+# Petite caisse : rubriques de terrain, ventilées dans les catégories de coût du budget lors de la validation.
+PETTY_CASH_CATEGORIES = {
+    "materiaux": "materiaux",
+    "main_oeuvre": "main_oeuvre",
+    "transport": "frais_generaux",
+    "restauration": "frais_generaux",
+    "carburant": "frais_generaux",
+    "petit_outillage": "materiel",
+    "autre": "autre",
+}
 
 
 class Budget(UUIDPk, Timestamps, Base):
@@ -57,7 +67,7 @@ class BudgetLine(UUIDPk, Base):
 
     budget_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("budgets.id", ondelete="CASCADE"), index=True)
     lot_id: Mapped[uuid.UUID | None] = fk("lots.id")
-    category: Mapped[str] = str_col(30, nullable=False, default="materiaux")
+    category: Mapped[str] = str_col(30, nullable=False, default="materiaux", choices=COST_CATEGORIES)
     label: Mapped[str] = str_col(250, nullable=False)
     amount: Mapped[Decimal] = money_col()
 
@@ -70,7 +80,7 @@ class Commitment(UUIDPk, Timestamps, Base):
 
     project_id: Mapped[uuid.UUID] = fk("projects.id", nullable=False)
     lot_id: Mapped[uuid.UUID | None] = fk("lots.id")
-    category: Mapped[str] = str_col(30, nullable=False, default="materiaux")
+    category: Mapped[str] = str_col(30, nullable=False, default="materiaux", choices=COST_CATEGORIES)
     source_type: Mapped[str] = str_col(30, nullable=False)  # purchase_order / subcontract / other
     source_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     label: Mapped[str] = str_col(250, nullable=False)
@@ -87,7 +97,7 @@ class Expense(UUIDPk, Timestamps, SoftDelete, Base):
 
     project_id: Mapped[uuid.UUID] = fk("projects.id", nullable=False)
     lot_id: Mapped[uuid.UUID | None] = fk("lots.id")
-    category: Mapped[str] = str_col(30, nullable=False, default="materiaux")
+    category: Mapped[str] = str_col(30, nullable=False, default="materiaux", choices=COST_CATEGORIES)
     label: Mapped[str] = str_col(250, nullable=False)
     amount: Mapped[Decimal] = money_col()
     currency: Mapped[str] = str_col(3, nullable=False, default="XAF")
@@ -121,7 +131,7 @@ class PettyCashTransaction(UUIDPk, Base):
     kind: Mapped[str] = str_col(10, nullable=False)  # in / out
     amount: Mapped[Decimal] = money_col()
     purpose: Mapped[str] = str_col(300, nullable=False)
-    category: Mapped[str] = str_col(30, nullable=False, default="autre")
+    category: Mapped[str] = str_col(30, nullable=False, default="autre", choices=tuple(PETTY_CASH_CATEGORIES))
     lot_id: Mapped[uuid.UUID | None] = fk("lots.id")
     receipt_file_id: Mapped[uuid.UUID | None] = fk("stored_files.id")
     status: Mapped[str] = str_col(20, nullable=False, default="pending")  # pending / validated / rejected
@@ -160,7 +170,7 @@ class BankAccount(UUIDPk, Timestamps, Base):
     bank_name: Mapped[str | None] = str_col(150)
     account_number: Mapped[str | None] = mapped_column(EncryptedString, nullable=True)
     currency: Mapped[str] = str_col(3, nullable=False, default="XAF")
-    kind: Mapped[str] = str_col(20, nullable=False, default="bank")  # bank / mobile_money / provider
+    kind: Mapped[str] = str_col(20, nullable=False, default="bank", choices=("bank", "mobile_money", "provider"))
     is_active: Mapped[bool] = bool_col(True)
 
 
@@ -171,7 +181,7 @@ class Payment(UUIDPk, Timestamps, Base):
     __table_args__ = (Index("ix_payments_counterparty", "counterparty_type", "counterparty_id"),)
 
     number: Mapped[str] = str_col(40, nullable=False, unique=True)
-    direction: Mapped[str] = str_col(5, nullable=False)  # in / out
+    direction: Mapped[str] = str_col(5, nullable=False, choices=("in", "out"))
     counterparty_type: Mapped[str] = str_col(20, nullable=False)  # client / supplier / subcontractor / employee / other
     counterparty_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
     counterparty_label: Mapped[str | None] = str_col(250)
@@ -271,7 +281,7 @@ class CashForecastEntry(UUIDPk, Base):
 
     project_id: Mapped[uuid.UUID | None] = fk("projects.id")
     label: Mapped[str] = str_col(250, nullable=False)
-    direction: Mapped[str] = str_col(5, nullable=False)
+    direction: Mapped[str] = str_col(5, nullable=False, choices=("in", "out"))
     amount: Mapped[Decimal] = money_col()
     expected_date: Mapped[date] = mapped_column(Date, nullable=False)
     probability: Mapped[int] = int_col(100)

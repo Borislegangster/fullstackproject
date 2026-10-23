@@ -322,8 +322,9 @@ def list_supplier_invoices(
     stmt = access.filter_by_project(
         select(SupplierInvoice).where(SupplierInvoice.deleted_at.is_(None)), SupplierInvoice.project_id
     )
+    if status:  # plusieurs statuts séparés par des virgules (ex. « approved_for_payment,partially_paid »)
+        stmt = stmt.where(SupplierInvoice.status.in_([v.strip() for v in status.split(",") if v.strip()]))
     for col, value in (
-        (SupplierInvoice.status, status),
         (SupplierInvoice.supplier_id, supplier_id),
         (SupplierInvoice.project_id, project_id),
     ):

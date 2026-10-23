@@ -123,12 +123,20 @@ def _api_key_principal(db: Session, raw_key: str) -> Principal:
         roles=set(owner.role_codes),
         permissions=scopes,
         organization_id=owner.organization_id,
-        org_kind=owner.organization.kind if owner.organization else None,
+        org_kind=org_kind_of(owner),
         global_scope=global_scope,
         mfa_verified=True,
         api_key_id=cred.id,
         auth_via="api_key",
     )
+
+
+def org_kind_of(user: Any) -> str | None:
+    """Type d'organisation d'un compte ; sans organisation, un compte aux seuls rôles internes est du personnel."""
+    if user.organization is not None:
+        return user.organization.kind
+    audiences = {getattr(r, "audience", None) for r in getattr(user, "roles", [])}
+    return "internal" if audiences == {"internal"} else None
 
 
 def get_principal(request: Request, db: Session = Depends(get_db)) -> Principal:
@@ -174,7 +182,7 @@ def get_principal(request: Request, db: Session = Depends(get_db)) -> Principal:
         roles=set(user.role_codes),
         permissions=perms,
         organization_id=user.organization_id,
-        org_kind=user.organization.kind if user.organization else None,
+        org_kind=org_kind_of(user),
         global_scope=global_scope,
         mfa_verified=session.mfa_verified_at is not None,
         auth_via=via,

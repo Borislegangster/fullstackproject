@@ -12,6 +12,7 @@ import { BODIES, SCHEMAS, type FieldDef } from "@/generated/schemas";
 import { Checkbox, Field, FileDrop, Input, Select, TagInput, Textarea, type Option } from "@/components/ui/form";
 import { Alert, Button } from "@/components/ui/primitives";
 
+import { DisciplineSelect } from "./discipline-picker";
 import { MultiRefSelect, RefSelect } from "./ref-select";
 
 export interface FieldConfig {
@@ -42,6 +43,13 @@ function conditionallyHidden(cfg: FieldConfig | undefined, values: Record<string
 }
 
 type Values = Record<string, any>;
+
+/** Devises proposées pour tout champ « currency » des formulaires générés. */
+const CURRENCIES: Option[] = [
+  { value: "XAF", label: "FCFA (XAF)" },
+  { value: "EUR", label: "Euro (EUR)" },
+  { value: "USD", label: "Dollar US (USD)" },
+];
 
 function refFor(name: string, cfg?: FieldConfig): RefSource | null {
   if (cfg?.ref === null) return null;
@@ -253,6 +261,12 @@ function Control({
 }) {
   if (cfg?.render) return <>{cfg.render({ value, onChange, values, invalid })}</>;
   const disabled = cfg?.readOnly;
+  // Champs « code » reconnus à leur nom : jamais de saisie libre (devise, couleur, discipline).
+  if (def.kind === "string" && !cfg?.options && !cfg?.widget) {
+    if (def.name === "currency") cfg = { ...cfg, options: CURRENCIES };
+    else if (/(^|_)color(_hex)?$/.test(def.name)) cfg = { ...cfg, widget: "color" };
+    else if (/^discipline(_a|_b)?$/.test(def.name)) return <DisciplineSelect id={id} value={value} onChange={onChange} invalid={invalid} />;
+  }
   if (cfg?.options || def.kind === "enum") {
     const options = cfg?.options ?? (def.options ?? []).map((o) => ({ value: o, label: optionLabel(o) }));
     return (

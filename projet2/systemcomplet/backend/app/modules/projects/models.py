@@ -43,6 +43,33 @@ PROJECT_STATUSES = (
     "annule",
 )
 UNIVERSES = ("HOME", "BUSINESS", "PREMIUM", "DIASPORA", "ENGINEERING")
+# Valeurs autorisées des listes de choix (formulaires) — libellés dans apps/web/src/lib/labels.ts.
+SITE_STATUSES = ("preparation", "active", "suspendu", "clos")
+WORK_STATUSES = ("planned", "in_progress", "done")
+MILESTONE_STATUSES = ("planned", "achieved", "late", "cancelled")
+RISK_CATEGORIES = (
+    "technique",
+    "financier",
+    "planning",
+    "securite",
+    "qualite",
+    "juridique",
+    "environnement",
+    "approvisionnement",
+)
+RISK_STATUSES = ("identified", "monitored", "occurred", "closed")
+TRANQUILLITE_CATEGORIES = (
+    "foncier",
+    "titre",
+    "permis",
+    "notarie",
+    "verification",
+    "administratif",
+    "assurance",
+    "autre",
+)
+TRANQUILLITE_STATUSES = ("a_fournir", "en_cours", "en_verification", "verifie", "anomalie", "expire")
+WARRANTY_KINDS = ("parfait_achevement", "biennale", "decennale", "equipement")
 
 
 class Project(UUIDPk, Timestamps, SoftDelete, Versioned, Base):
@@ -117,7 +144,7 @@ class Site(UUIDPk, Timestamps, SoftDelete, Base):
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     geofence_radius_m: Mapped[int] = int_col(300)
     site_manager_id: Mapped[uuid.UUID | None] = fk("users.id")
-    status: Mapped[str] = str_col(20, nullable=False, default="preparation")
+    status: Mapped[str] = str_col(20, nullable=False, default="preparation", choices=SITE_STATUSES)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     access_instructions: Mapped[str | None] = text_col()
@@ -140,7 +167,7 @@ class Phase(UUIDPk, Timestamps, Base):
     progress_pct: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, default=Decimal("0"), server_default="0"
     )
-    status: Mapped[str] = str_col(20, nullable=False, default="planned")
+    status: Mapped[str] = str_col(20, nullable=False, default="planned", choices=WORK_STATUSES)
     color: Mapped[str | None] = str_col(9)
     client_visible: Mapped[bool] = bool_col(True)
 
@@ -157,7 +184,7 @@ class Lot(UUIDPk, Timestamps, Base):
     budget_amount: Mapped[Decimal] = money_col()
     sort_order: Mapped[int] = int_col(0)
     subcontractor_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
-    status: Mapped[str] = str_col(20, nullable=False, default="planned")
+    status: Mapped[str] = str_col(20, nullable=False, default="planned", choices=WORK_STATUSES)
     progress_pct: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, default=Decimal("0"), server_default="0"
     )
@@ -233,7 +260,7 @@ class Milestone(UUIDPk, Timestamps, Base):
     description: Mapped[str | None] = text_col()
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
     achieved_at: Mapped[datetime | None] = dt_col()
-    status: Mapped[str] = str_col(20, nullable=False, default="planned")  # planned / achieved / late / cancelled
+    status: Mapped[str] = str_col(20, nullable=False, default="planned", choices=MILESTONE_STATUSES)
     client_visible: Mapped[bool] = bool_col(True)
     payment_pct: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)  # déclencheur appel de fonds
     sort_order: Mapped[int] = int_col(0)
@@ -270,15 +297,15 @@ class Risk(UUIDPk, Timestamps, Base):
     project_id: Mapped[uuid.UUID] = fk("projects.id", nullable=False, ondelete="CASCADE")
     title: Mapped[str] = str_col(250, nullable=False)
     description: Mapped[str | None] = text_col()
-    category: Mapped[str] = str_col(30, nullable=False, default="technique")
+    category: Mapped[str] = str_col(30, nullable=False, default="technique", choices=RISK_CATEGORIES)
     probability: Mapped[int] = int_col(3)
     impact: Mapped[int] = int_col(3)
     owner_id: Mapped[uuid.UUID | None] = fk("users.id")
     mitigation: Mapped[str | None] = text_col()
     contingency: Mapped[str | None] = text_col()
-    status: Mapped[str] = str_col(20, nullable=False, default="identified")
+    status: Mapped[str] = str_col(20, nullable=False, default="identified", choices=RISK_STATUSES)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    source: Mapped[str] = str_col(20, nullable=False, default="manual")  # manual / prediction
+    source: Mapped[str] = str_col(20, nullable=False, default="manual", choices=("manual", "prediction"))
     cost_exposure: Mapped[Decimal] = money_col()
 
     @property
@@ -434,11 +461,11 @@ class TranquilliteItem(UUIDPk, Timestamps, Base):
     __tablename__ = "tranquillite_items"
 
     project_id: Mapped[uuid.UUID] = fk("projects.id", nullable=False, ondelete="CASCADE")
-    category: Mapped[str] = str_col(30, nullable=False)
+    category: Mapped[str] = str_col(30, nullable=False, choices=TRANQUILLITE_CATEGORIES)
     title: Mapped[str] = str_col(250, nullable=False)
     reference_number: Mapped[str | None] = mapped_column(EncryptedString, nullable=True)
     authority: Mapped[str | None] = str_col(200)
-    status: Mapped[str] = str_col(20, nullable=False, default="a_fournir")
+    status: Mapped[str] = str_col(20, nullable=False, default="a_fournir", choices=TRANQUILLITE_STATUSES)
     issued_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -471,7 +498,7 @@ class Warranty(UUIDPk, Timestamps, Base):
     __tablename__ = "warranties"
 
     project_id: Mapped[uuid.UUID] = fk("projects.id", nullable=False, ondelete="CASCADE")
-    kind: Mapped[str] = str_col(30, nullable=False)  # parfait_achevement / biennale / decennale / equipement
+    kind: Mapped[str] = str_col(30, nullable=False, choices=WARRANTY_KINDS)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     coverage: Mapped[str | None] = text_col()

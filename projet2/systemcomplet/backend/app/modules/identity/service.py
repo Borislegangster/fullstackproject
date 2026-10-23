@@ -1315,3 +1315,35 @@ def check_linked_organization(
         stmt = stmt.where(model.id != current_id)
     if db.execute(stmt).first():
         raise Conflict("Cette organisation est déjà reliée à une autre fiche", code="ORGANIZATION_TAKEN")
+
+
+# Rôles de partenaires : l'organisation détermine la fiche ouverte dans l'extranet ou l'espace client.
+_PARTNER_ROLES = {"FOURNISSEUR": "supplier", "SOUS_TRAITANT": "subcontractor"}
+
+
+def organization_for_roles(db: Session, role_codes: list[str], organization_id: uuid.UUID | None) -> uuid.UUID | None:
+    """Organisation d'un nouveau compte : celle choisie, sinon l'entreprise pour le personnel ; un fournisseur ou un
+    sous-traitant doit être rattaché à une organisation de son type (c'est elle qui ouvre sa fiche dans l'extranet)."""
+    roles = set(role_codes)
+    for role, kind in _PARTNER_ROLES.items():
+        if role in roles:
+            org = db.get(Organization, organization_id) if organization_id else None
+            if org is None:
+                raise BusinessRuleError(
+                    f"Choisissez l'organisation du compte (type « {ORG_KIND_LABELS[kind]} ») : "
+                    "c'est elle qui ouvre sa fiche dans l'extranet.",
+                    code="ORGANIZATION_REQUIRED",
+                )
+            if org.kind != kind:
+                raise BusinessRuleError(
+                    f"Le rôle choisi demande une organisation de type « {ORG_KIND_LABELS[kind]} »",
+                    code="ORGANIZATION_KIND",
+                )
+            return organization_id
+    if organization_id:
+        return organization_id
+    roles_rows = db.execute(select(Role).where(Role.code.in_(roles))).scalars().all()
+    if roles_rows and all(r.audience == "internal" for r in roles_rows):
+        internal = db.execute(select(Organization).where(Organization.kind == "internal").limit(1)).scalar_one_or_none()
+        return internal.id if internal else None
+    return None

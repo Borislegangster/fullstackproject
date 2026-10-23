@@ -22,6 +22,7 @@ from app.core.security import random_token
 from app.core.utils import money, utcnow
 from app.modules.billing.models import ClientInvoice, ClientInvoiceLine, SupplierInvoice
 from app.modules.finance.models import (
+    PETTY_CASH_CATEGORIES,
     BankTransaction,
     Budget,
     BudgetLine,
@@ -84,6 +85,11 @@ def new_budget_version(
 def approve_budget(db: Session, budget: Budget, *, user_id: uuid.UUID) -> Budget:
     if budget.status != "draft":
         raise BusinessRuleError("Seul un budget en brouillon peut être approuvé")
+    if budget.created_by_id and budget.created_by_id == user_id:
+        raise BusinessRuleError(
+            "Séparation des tâches : un budget est approuvé par une autre personne que son auteur",
+            code="SEGREGATION_OF_DUTIES",
+        )
     for previous in db.execute(
         select(Budget).where(Budget.project_id == budget.project_id, Budget.status == "approved")
     ).scalars():
@@ -221,6 +227,10 @@ def petty_cash_movement(
     amount = money(amount)
     if amount <= 0:
         raise BusinessRuleError("Montant positif requis")
+    if category not in PETTY_CASH_CATEGORIES:
+        raise BusinessRuleError(
+            "Rubrique de caisse inconnue : choisissez-la dans la liste proposée", code="INVALID_VALUE"
+        )
     if kind == "out" and amount > Decimal(fund.balance):
         raise BusinessRuleError("Solde de caisse insuffisant", code="INSUFFICIENT_CASH")
     if kind == "in" and fund.ceiling and Decimal(fund.balance) + amount > Decimal(fund.ceiling):
@@ -267,7 +277,7 @@ def validate_petty_cash(
                     db,
                     project_id=fund.project_id,
                     lot_id=tx.lot_id,
-                    category=tx.category,
+                    category=PETTY_CASH_CATEGORIES.get(tx.category, "autre"),
                     label=tx.purpose,
                     amount=Decimal(tx.amount),
                     expense_date=tx.transaction_date,

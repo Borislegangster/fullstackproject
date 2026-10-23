@@ -9,6 +9,7 @@ import { ProjectPanelTab, ProjectReviewsTab, ProjectTrustTab } from "@/component
 import { ProjectBuildingTab, ProjectEnergyTab, ProjectEscrowTab, ProjectTwinTab } from "@/components/erp/innovations-lot3";
 import { ScheduleRisksPanel } from "@/components/erp/schedule-risks";
 import { TimelapseAdmin } from "@/components/innovations/timelapse";
+import { OfferSelect } from "@/components/erp/crm";
 import { ResourceView, type Row } from "@/components/erp/resource";
 import { type Discipline, disciplineNames, DisciplinesPicker } from "@/components/forms/discipline-picker";
 import { MultiRefSelect } from "@/components/forms/ref-select";
@@ -60,6 +61,13 @@ function DecisionReferenceField({ projectId, type, value, onChange }: { projectI
     />
   );
 }
+
+// Échelle de 1 à 5 : le score du risque est le produit probabilité × impact (de 1 à 25).
+const RISK_FIELDS: Record<string, FieldConfig> = {
+  probability: { help: "De 1 (rare) à 5 (quasi certain)." },
+  impact: { help: "De 1 (faible) à 5 (critique)." },
+  cost_exposure: { help: "Coût estimé si le risque survient (FCFA)." },
+};
 
 const EXPENSE_FIELDS: Record<string, FieldConfig> = {
   file_id: { span: 2, label: "Justificatif (facture, ticket, reçu)", render: ({ value, onChange }) => <UploadedFileField endpoint="/finance/files" value={value} onChange={onChange} /> },
@@ -215,7 +223,8 @@ function Synthese({ p, reload }: { p: ProjectDetail; reload: () => void }) {
           schema="ProjectIn"
           initial={p}
           partial
-          fields={{ client_organization_id: { ref: "clientOrganizations" } }}
+          exclude={["settings"]}
+          fields={{ client_organization_id: { ref: "clientOrganizations" }, offer_code: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> } }}
           onCancel={() => setEditing(false)}
           onSubmit={(payload) => api(`/projects/${p.id}`, { method: "PATCH", body: payload })}
           onSuccess={() => {
@@ -566,7 +575,7 @@ function ChangeOrderLinesEditor({ value, onChange }: { value: unknown; onChange:
       newRow={() => ({ designation: "", quantity: 1, unit: "u", unit_price: 0, amount: 0 })}
       addLabel="Ligne chiffrée"
       empty="Aucune ligne détaillée."
-      footer={rows.length ? <p className="text-right text-sm text-muted">Total des lignes : <strong className="text-ink">{money(total)}</strong> (à reporter dans l'impact coût)</p> : null}
+      footer={rows.length ? <p className="text-right text-sm text-muted">Total des lignes : <strong className="text-ink">{money(total)}</strong> (il devient l'impact coût de l'avenant)</p> : null}
     />
   );
 }
@@ -865,8 +874,9 @@ export function ProjectWorkspace({ projectId, tab, onTab }: { projectId: string;
               { key: "due_date", label: "Échéance", format: "date" },
               { key: "status", label: "Statut", format: "status" },
             ],
-            create: { endpoint: "POST /risks", label: "Nouveau risque", fixed: pq, perms: ["projects:write"] },
-            update: { endpoint: "PATCH /risks/{item_id}", exclude: ["project_id"], perms: ["projects:write"] },
+            // Origine (saisie / détection automatique) : renseignée par la plateforme.
+            create: { endpoint: "POST /risks", label: "Nouveau risque", fixed: pq, exclude: ["source"], fields: RISK_FIELDS, perms: ["projects:write"] },
+            update: { endpoint: "PATCH /risks/{item_id}", exclude: ["project_id", "source"], fields: RISK_FIELDS, perms: ["projects:write"] },
             remove: { path: (r) => `/risks/${r.id}`, perms: ["projects:write"] },
           }}
         />

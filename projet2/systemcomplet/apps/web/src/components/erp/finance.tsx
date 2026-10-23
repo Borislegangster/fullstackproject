@@ -189,11 +189,11 @@ export function FinanceDashboard() {
 const TARGETS: Record<string, { label: string; source: RefSource }> = {
   supplier_invoice: {
     label: "Facture fournisseur",
-    source: { path: "/supplier-invoices", query: { status: "approved_for_payment" }, label: (r) => `${r.number} — ${r.supplier_reference}`, sublabel: (r) => `Reste ${money(toNumber(r.total) - toNumber(r.amount_paid) - toNumber(r.amount_credited))}`, paginated: true, searchable: true },
+    source: { path: "/supplier-invoices", query: { status: "approved_for_payment,partially_paid" }, label: (r) => `${r.number} — ${r.supplier_reference}`, sublabel: (r) => `Reste ${money(toNumber(r.total) - toNumber(r.amount_paid) - toNumber(r.amount_credited))}`, paginated: true, searchable: true },
   },
   subcontractor_invoice: {
     label: "Facture sous-traitant",
-    source: { path: "/subcontractor-invoices", query: { status: "validated" }, label: (r) => `${r.number} — ${r.reference ?? ""}`, sublabel: (r) => `Reste ${money(toNumber(r.amount) - toNumber(r.amount_paid) - toNumber(r.amount_credited))}`, paginated: true, searchable: true },
+    source: { path: "/subcontractor-invoices", query: { status: "approved_for_payment,partially_paid" }, label: (r) => `${r.number} — ${r.reference ?? ""}`, sublabel: (r) => `Reste ${money(toNumber(r.amount) - toNumber(r.amount_paid) - toNumber(r.amount_credited))}`, paginated: true, searchable: true },
   },
 };
 
@@ -757,7 +757,7 @@ function BankTransactions({ account }: { account: Row }) {
               const fd = new FormData();
               fd.append("file", file[0]);
               const res = await api<Record<string, number>>(`/bank-accounts/${account.id}/import`, { method: "POST", form: fd });
-              toast.success("Relevé importé", Object.entries(res).map(([k, v]) => `${optionLabel(k)} : ${v}`).join(" · "));
+              toast.success("Relevé importé", `${res.created ?? 0} ligne(s) importée(s) · ${res.matched ?? 0} rapprochée(s) automatiquement · ${res.duplicates ?? 0} doublon(s) ignoré(s)`);
               setFile([]);
               void rows.reload();
             } catch (err) {
@@ -949,7 +949,7 @@ function PettyCashFund({ fund, reload }: { fund: Row; reload: () => void }) {
             },
             category: { options: ["materiaux", "main_oeuvre", "transport", "restauration", "carburant", "petit_outillage", "autre"].map((v) => ({ value: v, label: optionLabel(v) })) },
             lot_id: { ref: { ...REFS.lots, query: fund.project_id ? { project_id: fund.project_id } : undefined, dependsOn: undefined } },
-            receipt: { help: "Justificatif (photo du ticket, facture)." },
+            receipt: { help: "Justificatif (photo du ticket, facture) : obligatoire pour une sortie.", requiredIf: (v) => v.kind === "out" },
           }}
           onCancel={() => setAdding(false)}
           onSuccess={() => {

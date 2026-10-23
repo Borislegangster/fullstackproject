@@ -22,7 +22,7 @@ from app.core.events import emit
 from app.core.files import store_private, validate_upload
 from app.core.numbering import next_number
 from app.core.pagination import PageParams, paginate
-from app.core.utils import jsonable, utcnow
+from app.core.utils import jsonable, money, utcnow
 from app.modules.projects import planning, service
 from app.modules.projects.models import (
     SITE_MEDIA_STAGES,
@@ -64,7 +64,10 @@ class ProjectIn(BaseModel):
     client_organization_id: uuid.UUID | None = None
     universe: str | None = Field(default=None, pattern="^(HOME|BUSINESS|PREMIUM|DIASPORA|ENGINEERING)$")
     offer_code: str | None = None
-    project_type: str = "construction_neuve"
+    project_type: str = Field(
+        default="construction_neuve",
+        pattern="^(construction_neuve|renovation|extension|rehabilitation|amenagement|etudes)$",
+    )
     status: str = Field(
         default="etude",
         pattern="^(prospect|etude|conception|permis|preparation|execution|reception|garantie|clos|suspendu|annule)$",
@@ -1054,12 +1057,25 @@ def create_change_order(
     data: ChangeOrderIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, Any]:
     _project(db, access, data.project_id, "projects:write")
+    values = data.model_dump()
+    if (
+        data.lines
+    ):  # lignes chiffrées : montant de chaque ligne et impact coût = leur total (jamais une recopie manuelle)
+        lines = []
+        for line in data.lines:
+            try:
+                amount = money(Decimal(str(line.get("quantity") or 0)) * Decimal(str(line.get("unit_price") or 0)))
+            except (ArithmeticError, ValueError) as exc:
+                raise BusinessRuleError("Ligne chiffrée invalide : quantité et prix unitaire numériques") from exc
+            lines.append({**line, "amount": str(amount)})
+        values["lines"] = lines
+        values["cost_impact"] = money(sum((Decimal(row["amount"]) for row in lines), Decimal("0")))
     co = ChangeOrder(
         number=next_number(db, "change_order"),
         status="draft",
         origin="manual",
         created_by_id=access.p.id,
-        **data.model_dump(),
+        **values,
     )
     db.add(co)
     db.flush()

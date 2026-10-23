@@ -82,7 +82,9 @@ function BidForm({ tender, lot, onDone, onCancel }: { tender: Row; lot: Row; onD
             <tr>
               <th className="px-3 py-2">Poste</th>
               <th className="px-3 py-2 text-right">Quantité</th>
-              <th className="px-3 py-2">Prix unitaire HT</th>
+              <th className="px-3 py-2">
+                Prix unitaire HT<span className="ml-0.5 text-red-600" aria-hidden="true">*</span>
+              </th>
               <th className="px-3 py-2 text-right">Total HT</th>
             </tr>
           </thead>
@@ -150,7 +152,7 @@ function BidForm({ tender, lot, onDone, onCancel }: { tender: Row; lot: Row; onD
           <>
             <Checkbox label="Il s'agit d'une variante" checked={meta.is_variant} onChange={(c) => setMeta({ ...meta, is_variant: c })} />
             {meta.is_variant ? (
-              <Field label="Description de la variante" className="sm:col-span-2">
+              <Field label="Description de la variante" required help="5 caractères minimum" className="sm:col-span-2">
                 <Textarea value={meta.variant_description} onChange={(e) => setMeta({ ...meta, variant_description: e.target.value })} rows={3} />
               </Field>
             ) : null}
@@ -268,8 +270,8 @@ export function TenderPage({ id }: { id: string }) {
                 <span>
                   {d.title} <span className="text-xs text-muted">v{d.version}</span>
                 </span>
-                <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand-600 hover:underline">
-                  <Download className="h-4 w-4" />
+                <a href={d.url} target="_blank" rel="noopener noreferrer" aria-label={`Télécharger ${d.title}`} className="inline-flex items-center gap-1 text-brand-600 hover:underline">
+                  <Download className="h-4 w-4" /> Télécharger
                 </a>
               </li>
             ))}
@@ -413,7 +415,7 @@ export function TenderPage({ id }: { id: string }) {
           </Button>
         }
       >
-        <Field label="Motif (plan de charge, hors compétences…)">
+        <Field label="Motif (plan de charge, hors compétences…)" required help="5 caractères minimum">
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} />
         </Field>
       </Modal>
@@ -439,7 +441,7 @@ export function TenderPage({ id }: { id: string }) {
         }
       >
         <div className="space-y-3">
-          <Field label="Montant HT proposé">
+          <Field label="Montant HT proposé" required>
             <Input type="number" min={0} step="any" value={offer.amount} onChange={(e) => setOffer({ ...offer, amount: e.target.value })} />
           </Field>
           <Field label="Délai (jours)">
@@ -670,7 +672,7 @@ export function ContractPage({ id }: { id: string }) {
         confirmLabel="Signer"
       >
         <div className="space-y-3">
-          <Field label="Nom et qualité du signataire">
+          <Field label="Nom et qualité du signataire" required help="3 caractères minimum ; cochez aussi l'acceptation ci-dessous.">
             <Input value={signer} onChange={(e) => setSigner(e.target.value)} placeholder="Jean Dupont, gérant" />
           </Field>
           <Checkbox label="J'ai lu le contrat et j'accepte ses conditions ; ma signature électronique engage mon entreprise." checked={accept} onChange={setAccept} />
@@ -772,7 +774,7 @@ export function SituationPage({ id }: { id: string }) {
                 size="sm"
                 variant="accent"
                 onClick={() => {
-                  setInvoice((v) => ({ ...v, amount: String(toNumber(s.net_amount)) }));
+                  setInvoice((v) => ({ ...v, amount: String(toNumber(s.invoice_amount_expected ?? s.net_amount)) }));
                   setInvoicing(true);
                 }}
               >
@@ -865,16 +867,18 @@ export function SituationPage({ id }: { id: string }) {
         }
       >
         <div className="space-y-3">
-          <Field label="N° de facture">
+          <Field label="N° de facture" required>
             <Input value={invoice.reference} onChange={(e) => setInvoice({ ...invoice, reference: e.target.value })} />
           </Field>
-          <Field label="Date">
+          <Field label="Date" required>
             <Input type="date" value={invoice.invoice_date} onChange={(e) => setInvoice({ ...invoice, invoice_date: e.target.value })} />
           </Field>
-          <Field label="Montant TTC" help={`Net à payer de la situation : ${money(s.net_amount)}`}>
+          <Field label="Montant TTC" required help={`Montant attendu : ${money(s.invoice_amount_expected ?? s.net_amount)} (net à payer, plus la TVA du marché le cas échéant)`}>
             <Input type="number" min={0} step="any" value={invoice.amount} onChange={(e) => setInvoice({ ...invoice, amount: e.target.value })} />
           </Field>
-          <FileDrop files={invoiceFile} onChange={setInvoiceFile} accept=".pdf,image/*" maxSizeMb={20} />
+          <Field label="Facture (PDF ou image)" required>
+            <FileDrop files={invoiceFile} onChange={setInvoiceFile} accept=".pdf,image/*" maxSizeMb={20} />
+          </Field>
         </div>
       </Modal>
     </div>
@@ -969,7 +973,7 @@ export function ClaimsInbox() {
           <Field label="Marché concerné">
             <Select value={v.subcontract_id} onChange={(e) => setV({ ...v, subcontract_id: e.target.value })} options={[{ value: "", label: "—" }, ...(contracts.data ?? []).map((c) => ({ value: c.id, label: `${c.number} — ${c.title}` }))]} />
           </Field>
-          <Field label="Objet">
+          <Field label="Objet" required help="3 caractères minimum">
             <Input value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} />
           </Field>
           <Field label="Exposé">
@@ -1059,10 +1063,10 @@ export function DisputesInbox() {
               <Select value={v.situation_id} onChange={(e) => setV({ ...v, situation_id: e.target.value })} options={[{ value: "", label: "—" }, ...(situations.data ?? []).filter((x) => !v.subcontract_id || x.subcontract?.id === v.subcontract_id).map((x) => ({ value: x.id, label: `${x.number} (${date(x.period_end)})` }))]} />
             </Field>
           </div>
-          <Field label="Objet">
+          <Field label="Objet" required help="3 caractères minimum">
             <Input value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} />
           </Field>
-          <Field label="Exposé des faits (10 caractères minimum)">
+          <Field label="Exposé des faits (10 caractères minimum)" required>
             <Textarea value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} rows={4} />
           </Field>
           <Field label="Montant contesté">

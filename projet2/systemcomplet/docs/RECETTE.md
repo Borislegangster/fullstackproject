@@ -1,3945 +1,3828 @@
 # La Villa Mballa
 
-## Le grand essai de la plateforme GLOBUS ENGINEERING, raconté comme une histoire
+## Le manuel de recette de la plateforme GLOBUS ENGINEERING
 
-*Manuel de recette complet — de la première visite sur le site jusqu'à la garantie du bâtiment*
+*Une seule histoire, du premier visiteur du site jusqu'à la remise des clés d'une villa, pour vérifier pas à pas que
+toute la plateforme fonctionne : le site vitrine, l'ERP du personnel, l'espace client, l'extranet des partenaires et les
+trois applications mobiles.*
 
 ---
 
 ## Sommaire
 
-- **Avant-propos** — comment lire ce livre
-- **Prologue** — la maison GLOBUS et ses portes
-- **Les personnages** et **le petit lexique pour les non-initiés**
-- **Livre I — Les préparatifs**
-  - Chapitre 1 — La veille du grand jour
-  - Chapitre 2 — Le Gardien fait le tour de la maison (scènes P1 à P4)
-- **Livre II — Les fondations**
-  - Chapitre 3 — Le Gardien distribue les clés (A1 à A13)
-- **Livre III — La rencontre**
-  - Chapitre 4 — Un visiteur pousse la porte (V1 à V11)
-  - Chapitre 5 — Jordan, le commercial, entre en scène (C1 à C16)
-  - Chapitre 6 — Paul reçoit ses clés (K1 à K6)
-- **Livre IV — Le chantier se prépare**
-  - Chapitre 7 — Samuel monte le projet (M1 à M15)
-  - Chapitre 8 — Le ciment de Martin (H1 à H16)
-  - Chapitre 9 — Les électriciens d'Akwa (S1 à S13)
-- **Livre V — La vie du chantier**
-  - Chapitre 10 — Une journée avec Ernest (T1 à T12)
-  - Chapitre 11 — Paul suit, décide et paie (R1 à R22, dont R8 bis)
-  - Chapitre 12 — Les chiffres de Rachel et de Grâce (F1 à F9)
-  - Chapitre 13 — Les hommes, la sécurité et les machines (Q1 à Q9)
-  - Chapitre 14 — La directrice en déplacement (D1 à D4)
-- **Livre VI — Autour de la maison**
-  - Chapitre 15 — Les messages qui circulent (N1 à N5)
-  - Chapitre 16 — La vitrine se refait une beauté (W1 à W7)
-  - Chapitre 17 — Les portes qui doivent rester fermées (X1 à X12)
-- **Épilogue** — Chapitre 18 — Le bilan (Z1 à Z4)
-- **Annexes** — A : ce qui ne peut pas encore être testé · B : les données de l'histoire · C : la fiche d'anomalie ·
-  D : les fichiers à préparer · E : le tableau de bord de la recette · F : que faire si…
+- **Mode d'emploi** — comment lire une scène, les conventions, les personnages, les services non encore activés
+- **Livre I — Les préparatifs** : chapitre 1 (le matériel), chapitre 2 (l'état de la plateforme)
+- **Livre II — Les fondations** : chapitre 3 (organisations, partenaires, comptes du personnel)
+- **Livre III — La rencontre** : chapitre 4 (le site vitrine), chapitre 5 (du prospect au contrat), chapitre 6 (l'espace client)
+- **Livre IV — Le chantier se prépare** : chapitre 7 (le projet), chapitre 8 (les achats), chapitre 9 (la sous-traitance)
+- **Livre V — La vie du chantier** : chapitres 10 à 14 (terrain, client, finances, RH-QHSE, direction mobile)
+- **Livre VI — Autour de la maison** : chapitres 15 à 17 (communication, site web, sécurité)
+- **Épilogue** — chapitre 18 (le bilan et le nettoyage)
+- **Annexes** — A (ce qui dépend d'un service non activé), B (données de l'histoire), C (fiche d'anomalie),
+  D (fichiers à préparer), E (tableau de bord de la recette), F (que faire si…), G (référence des formulaires)
 
 ---
 
-## Avant-propos : comment lire ce livre
+## Mode d'emploi
 
-Ce document n'est pas un mode d'emploi ordinaire. C'est une histoire, celle d'une maison qui n'existe pas encore : la
-**Villa Mballa**, une belle maison à étage que Monsieur Paul Mballa rêve de construire à Douala. En suivant cette maison
-depuis le premier clic de Paul sur le site internet jusqu'au jour où il signale une petite fuite sous sa fenêtre, vous
-allez traverser, une à une, **toutes les pièces de la plateforme GLOBUS** : le site vitrine, l'outil de gestion de
-l'entreprise (l'ERP), l'espace réservé aux clients, l'espace réservé aux fournisseurs et sous-traitants (l'extranet) et
-les trois applications pour téléphone.
+### À quoi sert ce manuel
 
-Rien de ce qui se passe dans cette histoire n'est réel. Paul, sa villa, la quincaillerie qui livre le ciment et
-l'entreprise d'électricité sont des personnages inventés. Mais les écrans, les boutons, les e-mails et les documents
-que vous allez manipuler, eux, sont bien réels : c'est la plateforme de production, celle que vos clients utiliseront.
-C'est tout l'intérêt de cet essai, que les informaticiens appellent une **recette** : vérifier, avant de livrer, que tout
-fonctionne vraiment, de bout en bout, comme dans la vraie vie.
+Une **recette**, c'est l'essai complet d'un logiciel avant de le livrer : on joue de vraies situations et on vérifie
+que chaque écran fait ce qu'il doit. Ce manuel déroule une histoire réaliste — la construction de la villa de Paul
+Mballa à Douala — et chaque étape de l'histoire est une **scène** à jouer sur la plateforme.
 
-### Pour qui est ce livre
+Il est écrit pour quelqu'un qui n'est pas informaticien : chaque clic est décrit, chaque champ à remplir est nommé
+exactement comme à l'écran.
 
-Pour vous, même si vous n'avez jamais travaillé dans l'informatique. Chaque geste est décrit : où regarder sur l'écran,
-sur quoi cliquer, quoi écrire, et ce qui doit apparaître ensuite. Les mots techniques sont expliqués dans le petit
-lexique qui suit le prologue. Si un mot vous arrête, allez y jeter un œil.
+### Comment se présente une scène
 
-### Comment sont construits les chapitres
+Chaque scène suit toujours le même plan :
 
-L'histoire est découpée en **six livres**, eux-mêmes divisés en **chapitres**, eux-mêmes composés de **scènes**. Chaque
-scène correspond à un test précis et se présente toujours de la même façon :
+> ### Scène A9 — Créer les comptes du personnel
+> **Pourquoi** : ce que la scène vérifie, et pourquoi c'est important.
+> **Qui** : le personnage qui agit (et donc le profil de navigateur à utiliser). **Où** : le menu et l'écran.
+> **Avant** : ce qui doit déjà être fait (si besoin).
+> **Méthode** : les gestes, numérotés, dans l'ordre.
+> **Les champs** : un tableau des champs du formulaire, avec la valeur à saisir.
+> **Résultat attendu** : ce que vous devez voir. Si ce n'est pas le cas, c'est une anomalie (annexe C).
+> - [ ] la case à cocher de la scène.
 
-1. **Un récit** en italique, qui raconte ce qui se passe dans l'histoire et pourquoi on le fait.
-2. **Une fiche** qui indique *qui* agit (quel personnage, donc quel compte vous devez utiliser) et *où* (sur quel
-   appareil, dans quel menu).
-3. **Ce que vous faites** : les gestes, numérotés, dans l'ordre.
-4. **Ce que vous devez constater** : le résultat attendu. Si vous voyez bien cela, le test est réussi.
-5. **Une case à cocher** que vous cochez quand tout est conforme.
+### Les conventions d'écriture
 
-Chaque scène porte un **code** (par exemple *A1*, *H11* ou *R8 bis*). Ce code ne sert qu'à une chose : si quelque chose ne
-se passe pas comme prévu, vous notez le code dans la fiche d'anomalie (annexe C), et tout le monde saura exactement de
-quel moment de l'histoire vous parlez.
+| Écriture | Signification |
+| --- | --- |
+| **Nouveau fournisseur** (en gras) | Un bouton, un onglet, un menu ou un titre **exactement** comme à l'écran. |
+| *Achats et logistique › Fournisseurs* | Le chemin dans le menu de gauche : la rubrique, puis l'entrée. |
+| `TEST Quincaillerie du Wouri` | Le texte à taper, tel quel. |
+| « Fournisseur » | Une valeur à **choisir** dans une liste déroulante ou à cocher. |
+| ★ | Champ **obligatoire** : il porte un astérisque rouge à l'écran, le formulaire refuse d'enregistrer s'il est vide. |
+| *(vide)* | Laissez le champ vide. |
 
-### Combien de temps cela prend-il
+**Dans les tableaux de champs**, les champs sont listés **dans l'ordre où ils apparaissent à l'écran**. Les champs du
+formulaire qui ne sont pas cités sont **facultatifs : laissez-les vides** (ou à leur valeur proposée). La liste complète
+de chaque formulaire, avec tous ses champs, se trouve dans le document `docs/FORMULAIRES.md` (annexe G).
 
-Comptez **trois à quatre journées** si vous êtes seul, ou deux journées si vous êtes deux. Ne vous pressez pas : une
-recette faite à moitié ne protège de rien. Surtout, **suivez l'ordre des chapitres**. Chaque chapitre utilise ce que le
-précédent a créé : on ne peut pas livrer du ciment sur un chantier qui n'existe pas encore, ni demander à Paul de valider
-un carrelage avant qu'il ait reçu les clés de son espace client.
+**Les listes déroulantes « à recherche »** (projets, fournisseurs, utilisateurs, organisations…) : cliquez dans le
+champ, tapez les premières lettres (par exemple `TEST`), puis cliquez sur la bonne ligne.
+
+**Les champs « mots-clés »** (catégories, zones, étiquettes…) : tapez un mot puis appuyez sur **Entrée** ; le mot
+devient une petite étiquette. Recommencez pour chaque mot.
+
+**Les dates** : cliquez dans le champ et choisissez dans le calendrier. Quand le manuel dit « dans 30 jours », comptez à
+partir du jour où vous jouez la scène.
+
+**Les montants** sont en francs CFA (FCFA), sans espace ni point : `25000000` pour vingt-cinq millions.
+
+### Combien de temps
+
+Comptez **trois à quatre journées** pour tout jouer, en respectant l'ordre des chapitres : chaque chapitre a besoin de
+ce qui a été créé dans les précédents (on ne peut pas commander du ciment pour un projet qui n'existe pas encore).
 
 ### Si quelque chose ne marche pas
 
-Pas de panique. Notez ce que vous avez fait, ce que vous attendiez et ce qui s'est passé, avec une capture d'écran si
-possible, sur une fiche d'anomalie (annexe C). Puis continuez l'histoire si vous le pouvez. L'annexe F, « Que faire si… »,
-répond aux petits ennuis les plus courants : un e-mail qui n'arrive pas, un code refusé, une page qui reste blanche.
+1. Relisez la scène : un champ ★ oublié, une valeur mal choisie ?
+2. Lisez le message affiché : la plateforme dit toujours ce qui manque (« Champ obligatoire », « Choisissez… »).
+3. Notez l'anomalie sur la fiche de l'annexe C (scène, écran, ce que vous avez fait, ce que vous avez vu, capture
+   d'écran) et passez à la scène suivante si elle ne dépend pas de celle-ci.
 
----
+### Les services pas encore activés : ce n'est pas un problème
 
-## Prologue : la maison GLOBUS et ses portes
+Plusieurs services dépendent de comptes à ouvrir chez des prestataires : **paiement en ligne** (MTN Mobile Money,
+Orange Money, carte bancaire), **WhatsApp Business**, **SMS** et les **assistants IA** (Claude). Tant qu'ils ne sont pas
+activés (*Administration › Paramètres*, onglet **Intégrations**, bloc **Activer les services**), **la recette se joue
+quand même** :
 
-*Imaginez la plateforme GLOBUS comme un grand immeuble au cœur de Douala. Il possède plusieurs portes, et chacune
-n'ouvre que sur les pièces destinées à ceux qui la franchissent.*
+- tout ce qui passe par WhatsApp ou SMS est aussi envoyé **par e-mail**, et c'est l'e-mail que la recette vérifie ;
+- les paiements du client se testent avec les **encaissements hors plateforme** (virement, chèque, espèces, Mobile Money
+  reçu directement), qui suivent exactement le même circuit comptable ;
+- les écrans qui demandent un service absent l'**indiquent clairement** (par exemple « Aucun moyen de paiement en ligne n'est activé. Contactez votre chargé
+  d'affaires. ») : la recette vous demande alors simplement de **vérifier ce message**.
 
-**La grande vitrine du rez-de-chaussée**, c'est le **site internet** : `https://globus-engineering-sarl.com`. Tout le monde
-peut y entrer, sans badge ni mot de passe. On y découvre l'entreprise, ses offres, ses réalisations, son blog, et on peut
-y laisser une demande : c'est là que Paul fera son tout premier pas.
-
-**La porte du personnel**, c'est l'**ERP**, à l'adresse `https://globus-engineering-sarl.com/erp`. C'est le bureau de
-l'entreprise : on y gère les clients, les devis, les chantiers, les achats, les factures, le personnel, la sécurité… Chaque
-employé n'y voit que les pièces qui correspondent à son métier. Le comptable ne voit pas le planning du grutier, et le
-technicien ne voit pas la trésorerie.
-
-**La porte des clients**, c'est l'**espace client**, à l'adresse `…/espace-client`. Paul y suivra son chantier comme on suit
-la croissance d'un enfant : photos, plans, factures, décisions à prendre, messages avec son chef de projet.
-
-**La porte des partenaires**, c'est l'**extranet**, à l'adresse `…/extranet`. Les fournisseurs (qui livrent les matériaux)
-et les sous-traitants (qui réalisent une partie des travaux) y reçoivent leurs commandes, y répondent aux appels d'offres
-et y déposent leurs factures.
-
-**Une seule entrée pour toutes les portes intérieures** : la page de connexion, `…/connexion`. Selon le compte avec lequel
-on s'y présente, la plateforme ouvre automatiquement la bonne porte.
-
-Enfin, **trois applications pour téléphone Android** prolongent l'immeuble jusque sur le terrain :
-
-- **GLOBUS Terrain**, pour le personnel du chantier (chef de chantier, magasinier, technicien…). Elle fonctionne même
-  sans réseau.
-- **GLOBUS Direction**, pour la direction et les responsables, qui y valident les dépenses en déplacement.
-- **GLOBUS Client**, pour les clients comme Paul.
+Chaque scène concernée porte la mention **Si le service est activé / s'il ne l'est pas**, et l'annexe A les récapitule :
+vous les rejouerez le jour où le service sera branché.
 
 ---
 
 ## Les personnages
 
-*Toute bonne histoire a ses personnages. Les nôtres sont onze. Vous les incarnerez tous, l'un après l'autre, et parfois
-deux en même temps. Chacun a son propre compte, sa propre adresse e-mail, et ses propres droits.*
+Onze personnages, chacun avec son propre compte et sa propre adresse e-mail. Vous les jouerez tous.
 
-| Code | Personnage | Ce qu'il fait dans l'histoire | Rôle à lui donner dans la plateforme | Adresse e-mail à utiliser |
-| --- | --- | --- | --- | --- |
-| **ADM** | **Vous, le Gardien des clés** | L'administrateur : vous créez les comptes et veillez sur la maison | Administrateur / DG (déjà en place) | votre adresse habituelle |
-| **DIR** | **Grâce Ewane**, la directrice | Elle approuve les dépenses importantes et contrôle | Direction / Responsable | `votre.adresse+direction@gmail.com` |
-| **COM** | **Jordan Nkeng**, le commercial | Il transforme la demande de Paul en contrat signé | Commercial | `votre.adresse+commercial@gmail.com` |
-| **CDP** | **Samuel Fotso**, l'ingénieur chef de projet | Il pilote le chantier de la Villa Mballa | Chef de projet / Conducteur de travaux | `votre.adresse+chefprojet@gmail.com` |
-| **CDC** | **Ernest Tchoua**, le chef de chantier | Il vit sur le terrain : réceptions, journal, sécurité, stock | Chef de chantier + Magasinier + Responsable QHSE | `votre.adresse+chantier@gmail.com` |
-| **ACH** | **Linda Mbarga**, l'acheteuse | Elle choisit les fournisseurs et passe les commandes | Acheteur / Logistique | `votre.adresse+achat@gmail.com` |
-| **FIN** | **Rachel Ndongo**, la comptable | Elle facture, paie, encaisse et gère aussi le personnel | Finance / Comptabilité + Ressources humaines | `votre.adresse+finance@gmail.com` |
-| **TEC** | **Moussa Bello**, le technicien | Il intervient en SAV et pointe sur le chantier | Artisan / Technicien | `votre.adresse+technicien@gmail.com` |
-| **FOU** | **Martin Kamga**, gérant de la *TEST Quincaillerie du Wouri* | Il vend et livre le ciment | Fournisseur | `votre.adresse+fournisseur@gmail.com` |
-| **STT** | **Sylvie Abena**, gérante de *TEST Électricité Akwa* | Son entreprise réalise l'électricité de la villa | Sous-traitant | `votre.adresse+soustraitant@gmail.com` |
-| **CLI** | **Paul Mballa**, le client | Il rêve de sa villa et la fait construire | Client (son compte se crée **tout seul**, au chapitre 5) | `votre.adresse+client@gmail.com` |
+| Code | Personnage | Ce qu'il fait | Rôle(s) à cocher | Métier (liste) | Fonction (texte) | Adresse e-mail |
+| --- | --- | --- | --- | --- | --- | --- |
+| ADM | **Vous, le Gardien** | Administre la plateforme | « Administrateur / DG » (déjà en place) | — | — | votre adresse habituelle |
+| DIR | **Grâce** TEST-EWANE | Directrice : approuve et contrôle | « Direction / Responsable » | *(vide)* | `Directrice des opérations` | `votre.adresse+direction@gmail.com` |
+| COM | **Jordan** TEST-NKENG | Commercial : du prospect au contrat | « Commercial » | *(vide)* | `Commercial` | `votre.adresse+commercial@gmail.com` |
+| CDP | **Samuel** TEST-FOTSO | Ingénieur chef de projet | « Chef de projet / Conducteur de travaux » | *(vide)* | `Ingénieur chef de projet` | `votre.adresse+chefprojet@gmail.com` |
+| CDC | **Ernest** TEST-TCHOUA | Chef de chantier, magasinier, sécurité | « Chef de chantier » + « Magasinier » + « Responsable QHSE » | « Gros œuvre » | `Chef de chantier` | `votre.adresse+chantier@gmail.com` |
+| ACH | **Linda** TEST-MBARGA | Acheteuse | « Acheteur / Logistique » | *(vide)* | `Acheteuse` | `votre.adresse+achat@gmail.com` |
+| FIN | **Rachel** TEST-NDONGO | Comptable et RH | « Finance / Comptabilité » + « Ressources humaines » | *(vide)* | `Comptable` | `votre.adresse+finance@gmail.com` |
+| TEC | **Moussa** TEST-BELLO | Électricien, SAV, pointage | « Artisan / Technicien » | « Électricité » | `Électricien` | `votre.adresse+technicien@gmail.com` |
+| FOU | **Martin** TEST-KAMGA | Gérant de *TEST Quincaillerie du Wouri* | « Fournisseur » | *(vide)* | `Gérant` | `votre.adresse+fournisseur@gmail.com` |
+| STT | **Sylvie** TEST-ABENA | Gérante de *TEST Électricité Akwa* | « Sous-traitant » | *(vide)* | `Gérante` | `votre.adresse+soustraitant@gmail.com` |
+| CLI | **Paul** TEST-MBALLA | Le client | « Client » — son compte se crée **tout seul** (scène C14) | — | — | `votre.adresse+client@gmail.com` |
 
-### Le petit secret des adresses « + »
+> **Attention, deux mots qui se ressemblent.** Le **rôle** (cases à cocher « Rôles ») donne les droits dans la
+> plateforme : « Chef de chantier » est un rôle. Le **métier** (liste « Métier ») décrit le savoir-faire de la
+> personne : « Gros œuvre », « Électricité »… « Chef de chantier » **n'est pas** un métier.
 
-*Vous vous demandez sans doute comment vous allez trouver onze adresses e-mail. Rassurez-vous : une seule boîte Gmail
-suffit.*
+**Une seule boîte Gmail suffit.** Gmail ignore ce qui suit le signe **+** : un e-mail envoyé à
+`jean.dupont+client@gmail.com` arrive dans la boîte de `jean.dupont@gmail.com`. Pour la plateforme, ce sont pourtant des
+adresses différentes, donc des personnes différentes. Dans tout le manuel, remplacez `votre.adresse` par la partie de
+votre adresse Gmail avant le `@`.
 
-Gmail possède une particularité très pratique : il ignore tout ce qui suit le signe **+** dans une adresse. Si votre
-adresse est `jean.dupont@gmail.com`, alors un e-mail envoyé à `jean.dupont+client@gmail.com` ou à
-`jean.dupont+finance@gmail.com` arrivera… dans votre boîte habituelle. Pourtant, pour la plateforme GLOBUS, ce sont des
-adresses différentes, donc des personnes différentes. Dans tout ce livre, remplacez simplement `votre.adresse` par la
-partie de votre adresse Gmail qui précède le `@`.
+> **Règle d'or.** N'utilisez **jamais** votre propre adresse (celle du Gardien) pour un autre personnage, surtout pas
+> pour Paul : si l'adresse existe déjà, la plateforme rattache le projet à ce compte au lieu de créer le client.
 
-> **Attention, règle d'or.** N'utilisez **jamais** votre propre adresse (celle du Gardien) pour Paul. Si l'adresse du
-> client correspond déjà à un compte existant, la plateforme rattache le projet à ce compte au lieu d'inviter un
-> nouveau client, et toute l'histoire de Paul serait faussée.
+**Pourquoi autant de personnages ?** La plateforme applique la **séparation des tâches** : personne n'approuve ce qu'il a
+lui-même demandé ou saisi. Ernest demande du ciment, Grâce approuve ; Rachel prépare un paiement, Grâce le valide. Pour
+tester ces circuits, il faut plusieurs comptes.
 
-> **Bon à savoir.** Paul n'est pas créé à la main. Il naît tout seul, au moment où l'entreprise crée son projet à partir
-> du contrat signé. C'est exactement ce qui se passera avec vos vrais clients.
+**Qui voit quoi.** Certains rôles voient **tous** les projets (Direction, Commercial, Acheteur, Finance, Magasinier,
+QHSE, RH) ; d'autres ne voient **que les projets dont ils sont membres** (Chef de projet, Chef de chantier, Artisan /
+Technicien) : c'est pourquoi la scène M2 ajoute Samuel, Ernest et Moussa à l'équipe du projet.
 
-### Pourquoi tant de personnages ?
-
-*Parce que la plateforme est prudente, comme une bonne banque.* Elle applique ce qu'on appelle la **séparation des
-tâches** : personne ne peut approuver ce qu'il a lui-même demandé ou créé. Ernest demande du ciment, Grâce approuve.
-Rachel prépare un paiement, Grâce le valide. Si une seule personne pouvait tout faire, une erreur ou une fraude passerait
-inaperçue. Pour tester ces circuits, il faut donc plusieurs personnes différentes, et c'est pour cela que chaque
-personnage possède son propre compte.
+**La double authentification** (le code à 6 chiffres de l'application du téléphone) est **obligatoire** pour les rôles
+« Administrateur / DG », « Direction / Responsable » et « Finance / Comptabilité » (donc pour vous, Grâce et Rachel), et
+conseillée pour tous les autres.
 
 ---
 
-## Petit lexique pour les non-initiés
+## Petit lexique
 
-*Avant de partir, quelques mots de vocabulaire. Ils reviendront souvent.*
-
-- **Navigateur** : le programme qui sert à aller sur internet (Google Chrome, Microsoft Edge, Firefox…). Ce livre prend
-  l'exemple de **Google Chrome**.
-- **Profil de navigateur** : un « Chrome dans le Chrome ». Chaque profil garde ses propres connexions. En créant un profil
-  par personnage, vous pouvez être connecté en même temps en tant que Grâce dans une fenêtre et en tant que Rachel dans
-  une autre, sans que l'une déconnecte l'autre.
-- **Barre d'adresse** : la longue zone en haut de la fenêtre du navigateur où s'écrit l'adresse du site (par exemple
-  `https://globus-engineering-sarl.com/erp`). Vous pouvez y taper une adresse puis appuyer sur la touche **Entrée**.
-- **Menu latéral** : la colonne de rubriques à gauche de l'écran dans l'ERP, l'espace client et l'extranet. Les rubriques
-  sont regroupées sous des titres (Projets, Achats et logistique, Finance…). Sur téléphone, ce menu est caché derrière
-  l'icône **☰** (trois traits horizontaux) en haut à gauche.
-- **Le chemin de menus** : quand ce livre écrit *Administration › Paramètres*, cela veut dire : « dans le menu de gauche,
-  repérez le titre **Administration**, puis cliquez sur la rubrique **Paramètres** qui se trouve dessous ».
-- **Onglet** : à l'intérieur d'une page, une rangée de titres cliquables (comme les intercalaires d'un classeur). Cliquer
-  sur un onglet change le contenu affiché, sans quitter la page.
-- **Bouton** : une zone colorée sur laquelle on clique pour agir (**Enregistrer**, **Envoyer**, **Approuver**…). Dans ce
-  livre, les noms de boutons sont toujours écrits **en gras**, exactement comme à l'écran.
-- **Champ** : une case dans laquelle on écrit ou choisit une valeur. Un astérisque rouge (`*`) à côté de son nom signifie
-  qu'il est obligatoire.
-- **Liste déroulante** : un champ avec une petite flèche ; on clique dessus et on choisit une valeur dans la liste qui
-  apparaît.
-- **Fiche** ou **panneau latéral** : quand on clique sur une ligne d'une liste, ses détails s'ouvrent, souvent dans un
-  panneau qui glisse depuis la droite, avec en bas les boutons d'action.
-- **Fenêtre** (ou *boîte de dialogue*) : un petit cadre qui s'ouvre par-dessus la page pour vous demander des
-  informations ou une confirmation. Elle se ferme avec la croix **×** en haut à droite ou le bouton **Annuler**.
-- **Notification** : un message de la plateforme. Il apparaît sous la petite **cloche** en haut à droite de l'écran, et
-  parfois aussi par e-mail.
-- **Notification push** : une notification qui s'affiche même quand la plateforme est fermée, en haut de l'écran du
-  téléphone ou dans le coin de l'écran de l'ordinateur.
-- **Double authentification** (on dit aussi **MFA**) : une seconde serrure. Après le mot de passe, la plateforme demande
-  un code à 6 chiffres qui change toutes les 30 secondes et que seul votre téléphone connaît, grâce à une application
-  d'authentification.
-- **Application d'authentification** : une application gratuite pour téléphone (Google Authenticator ou Microsoft
-  Authenticator) qui fabrique ces codes à 6 chiffres.
-- **Codes de secours** : une liste de codes à usage unique, à garder précieusement, qui remplacent le téléphone si on le
-  perd.
-- **Code à usage unique (OTP)** : un code envoyé par e-mail pour confirmer une décision importante (accepter un devis,
-  valider une décision, signer un marché). Il ne sert qu'une seule fois.
-- **QR code** : un petit carré noir et blanc, rempli de motifs, que l'appareil photo d'un téléphone sait lire. Il remplace
-  une adresse ou un numéro trop long à taper.
-- **APK** : le fichier d'installation d'une application Android, quand elle ne vient pas du Play Store.
-- **PDF** : un document prêt à imprimer, qui s'ouvre de la même façon sur tous les appareils.
-- **Mode avion** : un réglage du téléphone qui coupe tout réseau. Nous l'utiliserons pour simuler un chantier sans
-  couverture.
-- **Statut** : l'étape où en est un dossier (brouillon, envoyé, approuvé, payé…). Il s'affiche souvent dans une petite
-  pastille de couleur.
-- **Actualiser** (ou *recharger*) : demander au navigateur de réafficher la page. Touche **F5** sur l'ordinateur, ou
-  flèche circulaire à gauche de la barre d'adresse.
+| Mot | Sens |
+| --- | --- |
+| **ERP** | L'espace de travail du personnel : `https://globus-engineering-sarl.com/erp`. |
+| **Espace client** | L'espace de Paul : suivi du chantier, documents, décisions, paiements. |
+| **Extranet** | L'espace des partenaires (fournisseurs, sous-traitants). |
+| **Vitrine** | Le site public de l'entreprise. |
+| **Lead** | Un prospect : quelqu'un qui a laissé ses coordonnées et un projet. |
+| **Opportunité** | Une affaire en cours de négociation avec un prospect. |
+| **OTP** | Un code à usage unique reçu par e-mail pour confirmer une décision (accepter un devis, signer). |
+| **Double authentification (MFA)** | Le second verrou du compte : le code à 6 chiffres de l'application du téléphone. |
+| **GED** | La gestion des documents : plans, contrats, PV, avec leurs versions. |
+| **BIM / maquette** | La maquette numérique 3D du bâtiment. |
+| **Situation de travaux** | La facture d'avancement d'un sous-traitant (« j'ai fait 30 % »). |
+| **Rapprochement « trois pièces »** | Vérifier qu'une facture fournisseur correspond à la commande et à la réception. |
+| **Séquestre** | Argent bloqué chez un tiers, libéré à une étape du chantier. |
+| **QHSE** | Qualité, hygiène, sécurité, environnement. |
+| **EPI** | Équipement de protection individuelle (casque, gants…). |
 
 ---
 
 # Livre I — Les préparatifs
 
-*Avant de poser la première pierre, un bon chef de chantier prépare ses outils, vérifie le terrain et range son
-matériel. Faisons de même. Ce livre ne se fait qu'une fois.*
+*Avant de poser la première pierre, un bon chef de chantier prépare ses outils. Ce livre ne se fait qu'une fois.*
 
-## Chapitre 1 — La veille du grand jour
+## Chapitre 1 — Le matériel
 
 ### 1.1 Une décision à prendre avant tout
 
-*Il est tard. Vous relisez une dernière fois votre plan de bataille, et une question vous arrête : que deviendra tout ce
-que vous allez créer pendant l'essai ?*
+**Pourquoi** : l'essai se joue sur la vraie plateforme. Le projet de Paul, ses factures, les comptes des personnages vont
+réellement exister et consommer de vrais numéros. Il faut décider dès maintenant de ce qu'ils deviendront.
 
-L'essai se déroule sur la vraie plateforme. Le projet de Paul, ses factures, les comptes des personnages : tout cela va
-réellement exister dans la base de données de l'entreprise. Les factures reçoivent de vrais numéros, et le projet prend
-un vrai code. Il faut donc choisir, **avant de commencer**, entre deux chemins :
+- **Premier chemin — garder les traces.** Tout ce que vous créez porte « TEST » dans son nom ; à la fin, vous archivez le
+  projet et désactivez les comptes (scène Z2). Les numéros consommés (code projet, factures) ne reviennent pas.
+- **Second chemin — effacer l'essai (recommandé avant la mise en service).** À la fin, le Gardien lance la **remise à
+  zéro des données d'exploitation** (scène Z3) : comptes, projets et données métier sont supprimés ; le **site, le CMS,
+  la médiathèque, les paramètres et les intégrations sont conservés** ; la numérotation repart de zéro.
 
-**Premier chemin : garder les traces de l'essai.** Tout ce que vous créez porte le mot « TEST » dans son nom. À la fin,
-vous archivez le projet et vous désactivez les comptes (chapitre 18). L'inconvénient : les numéros utilisés pendant l'essai
-(code du projet, numéros de factures) sont consommés, et vos vrais premiers clients commenceront un peu plus loin dans la
-numérotation.
+> **Partir d'une base propre.** Si la plateforme contient déjà des données d'essais précédents, faites la remise à zéro
+> (scène Z3) **avant** de commencer.
 
-**Second chemin : effacer l'essai comme on efface un tableau.** À la fin, le Gardien utilise la **remise à zéro des
-données d'exploitation** (*Administration › Paramètres › Système et sauvegardes*, scène Z3). Elle supprime tous les
-comptes, projets et données métier, mais **conserve le site vitrine, le CMS, la médiathèque, les paramètres et les
-intégrations** : le travail fait sur le site pendant l'essai n'est pas perdu. La numérotation repart à zéro et un
-nouvel administrateur est invité par e-mail. C'est le chemin recommandé avant la mise en service.
-
-> **Partir d'une base propre.** Si la plateforme contient déjà des données d'essais précédents, faites cette même
-> remise à zéro **avant** de commencer : vos personnages seront les seuls comptes, et le projet de Paul portera le
-> premier numéro.
-
-- [ ] J'ai choisi mon chemin (premier ou second) et je m'y tiens.
+- [ ] J'ai choisi mon chemin et je m'y tiens.
 
 ### 1.2 Préparer les adresses e-mail
 
-Relisez le tableau des personnages et notez sur une feuille les onze adresses, en remplaçant `votre.adresse` par la
-vôtre. Ajoutez-en trois qui serviront ponctuellement : `votre.adresse+contact@gmail.com` (un visiteur qui écrit via le
-formulaire de contact), `votre.adresse+news@gmail.com` (un abonné à la lettre d'information) et
-`votre.adresse+erreur@gmail.com` (une invitation envoyée par erreur, que l'on annulera).
+**Méthode**
 
-Pendant l'essai, ouvrez votre boîte Gmail dans un coin de l'écran : c'est là que vont arriver toutes les invitations,
-tous les codes et toutes les notifications de tous les personnages. Si un e-mail tarde, regardez aussi dans le dossier
-**Spam** (ou *Courrier indésirable*) et dans l'onglet **Promotions** de Gmail.
+1. Recopiez sur une feuille les adresses du tableau des personnages, en remplaçant `votre.adresse` par la vôtre.
+2. Ajoutez trois adresses de service : `votre.adresse+contact@gmail.com` (un visiteur du site),
+   `votre.adresse+news@gmail.com` (un abonné à la lettre d'information) et `votre.adresse+erreur@gmail.com` (une
+   invitation envoyée par erreur).
+3. Gardez Gmail ouvert pendant tout l'essai. Si un e-mail tarde, regardez dans **Spam** et dans l'onglet **Promotions**.
 
-- [ ] Les quatorze adresses sont notées sur ma feuille.
+- [ ] Les quatorze adresses sont notées.
 
-### 1.3 Un profil de navigateur pour chaque personnage
+### 1.3 Un profil de navigateur par personnage
 
-*C'est l'astuce qui vous évitera mille déconnexions.*
+**Pourquoi** : un navigateur ne garde qu'une connexion à la fois. Avec un **profil Chrome** par personnage, chacun garde
+sa propre fenêtre connectée, et vous passez de l'un à l'autre sans vous déconnecter.
 
-Avec un seul navigateur, vous ne pouvez être connecté qu'avec un seul compte à la fois : vous connecter en tant que
-Rachel déconnecterait Grâce. Les profils de Chrome règlent ce problème : chaque profil est une fenêtre indépendante, avec
-ses propres connexions.
+**Méthode** (Google Chrome, sur l'ordinateur)
 
-**Ce que vous faites** (dans Google Chrome, sur l'ordinateur)
+1. En haut à droite de Chrome, cliquez sur le **rond de votre profil** (photo, initiale ou silhouette).
+2. Cliquez sur **Ajouter** (ou **+ Ajouter un profil**), puis **Continuer sans compte**.
+3. Nommez le profil **GLOBUS ADM**, choisissez une couleur, cliquez sur **Terminé**.
+4. Recommencez pour : **GLOBUS DIR**, **GLOBUS COM**, **GLOBUS CDP**, **GLOBUS CDC**, **GLOBUS ACH**, **GLOBUS FIN**,
+   **GLOBUS TEC**, **GLOBUS FOU**, **GLOBUS STT**, **GLOBUS CLI**, et **Visiteur** (personne de connecté).
 
-1. En haut à droite de la fenêtre de Chrome, juste à gauche des trois petits points verticaux, cliquez sur le **rond**
-   qui représente votre profil actuel (une photo, une initiale ou une silhouette).
-2. Dans le petit cadre qui s'ouvre, cliquez sur **Ajouter** (parfois écrit **+ Ajouter un profil**).
-3. Choisissez **Continuer sans compte** : inutile de lier ce profil à un compte Google.
-4. Donnez-lui un nom parlant, par exemple **GLOBUS ADM**, choisissez une couleur, puis cliquez sur **Terminé**. Une
-   nouvelle fenêtre Chrome s'ouvre : c'est votre profil « GLOBUS ADM ».
-5. Recommencez pour chaque personnage : **GLOBUS DIR**, **GLOBUS COM**, **GLOBUS CDP**, **GLOBUS CDC**, **GLOBUS ACH**,
-   **GLOBUS FIN**, **GLOBUS TEC**, **GLOBUS FOU**, **GLOBUS STT**, **GLOBUS CLI**, plus un profil **Visiteur** (quelqu'un qui
-   n'est connecté à rien).
-6. Choisissez des couleurs différentes : vous reconnaîtrez chaque personnage au premier coup d'œil.
+**Résultat attendu** : un clic sur le rond du profil affiche les douze profils ; chacun ouvre sa propre fenêtre.
 
-**Ce que vous devez constater** : en cliquant sur le rond en haut à droite, la liste de vos douze profils apparaît, et un
-clic sur l'un d'eux ouvre sa fenêtre.
+> N'utilisez pas la navigation privée pour jouer deux personnages : toutes les fenêtres privées partagent la même
+> session.
 
-> Les fenêtres de **navigation privée** partagent toutes la même session entre elles. Ne les utilisez pas pour jouer deux
-> personnages à la fois.
+- [ ] Les douze profils existent.
 
-- [ ] Mes douze profils de navigateur existent.
+### 1.4 L'application d'authentification
 
-### 1.4 L'application d'authentification sur votre téléphone
+1. Sur votre téléphone, installez **Google Authenticator** (ou **Microsoft Authenticator**) depuis le Play Store ou
+   l'App Store.
+2. Ouvrez-la une fois. Elle est vide : chaque personnage y ajoutera sa ligne à la scène A12.
 
-*La plupart des personnages vont protéger leur compte par une double serrure. Les codes de cette seconde serrure
-viendront tous de la même application, sur votre téléphone.*
-
-**Ce que vous faites**
-
-1. Sur votre téléphone, ouvrez le **Play Store** (ou l'App Store sur iPhone).
-2. Cherchez **Google Authenticator** (ou **Microsoft Authenticator**) et installez-la.
-3. Ouvrez-la une première fois pour vérifier qu'elle démarre. Pour l'instant, elle est vide : chaque personnage y ajoutera
-   sa ligne au moment de son activation (scène A12).
-
-- [ ] L'application d'authentification est installée.
+- [ ] L'application est installée.
 
 ### 1.5 Les applications GLOBUS sur un téléphone Android
 
-*Ernest, le chef de chantier, ne travaille pas derrière un bureau. Grâce valide en déplacement. Et Paul regarde son
-chantier depuis son canapé. Il leur faut les applications mobiles.*
+**Pourquoi** : Ernest travaille sur le chantier avec l'application **GLOBUS Terrain**, Grâce valide en déplacement avec
+**GLOBUS Direction**, Paul suit sa villa avec **GLOBUS Client**.
 
-Les trois fichiers d'installation se trouvent sur l'ordinateur de travail, dans le dossier
-`G:\projet2\projet2\systemcomplet\dist\mobile\2026-10-20\` : **GLOBUS-Terrain.apk**, **GLOBUS-Direction.apk** et
-**GLOBUS-Client.apk**. (Pour une version plus récente, on les retrouve sur le site GitHub du projet, rubrique *Actions*,
-dans la dernière exécution réussie, tout en bas de la page, section *Artifacts*.)
+**Méthode**
 
-**Ce que vous faites**
+1. Récupérez les trois fichiers d'installation : `GLOBUS-Terrain.apk`, `GLOBUS-Direction.apk`, `GLOBUS-Client.apk`
+   (dossier `dist\mobile\` du projet sur l'ordinateur de travail, ou sur GitHub : *Actions* › dernière exécution réussie
+   › section *Artifacts*).
+2. Copiez-les sur le téléphone (câble USB en mode **Transfert de fichiers**, dossier **Download** ; ou via Google Drive).
+3. Sur le téléphone, application **Fichiers** › **Téléchargements**, touchez chaque fichier `.apk`. Si Android demande,
+   touchez **Paramètres** › **Autoriser cette source**, revenez, puis **Installer**.
 
-1. Branchez le téléphone Android à l'ordinateur avec son câble USB. Sur le téléphone, si une question apparaît, choisissez
-   **Transfert de fichiers**.
-2. Sur l'ordinateur, ouvrez l'Explorateur de fichiers : le téléphone y apparaît comme un disque. Copiez les trois fichiers
-   `.apk` dans son dossier **Download** (ou *Téléchargements*). Sans câble, déposez-les dans votre Google Drive et
-   téléchargez-les depuis le téléphone (WhatsApp refuse souvent des fichiers de cette taille).
-3. Sur le téléphone, ouvrez l'application **Fichiers**, puis le dossier **Téléchargements**, et touchez
-   **GLOBUS-Terrain.apk**.
-4. Android affiche un avertissement sur les applications de source inconnue : touchez **Paramètres**, activez
-   **Autoriser cette source**, revenez en arrière, puis touchez **Installer**.
-5. Recommencez avec **GLOBUS-Direction.apk** et **GLOBUS-Client.apk**.
+**Résultat attendu** : trois icônes GLOBUS sur le téléphone. Ne les ouvrez pas encore.
 
-**Ce que vous devez constater** : trois nouvelles icônes GLOBUS apparaissent parmi les applications du téléphone. Ne les
-ouvrez pas encore : leurs propriétaires n'ont pas encore de compte.
+> L'idéal est d'avoir deux téléphones (un pour Ernest, un pour Grâce et Paul). Les iPhone ne peuvent pas encore installer
+> ces applications (annexe A).
 
-> Idéalement, utilisez **deux téléphones** : l'un pour Ernest (Terrain), l'autre pour Grâce et Paul. Un seul suffit
-> toutefois, en changeant d'application selon le personnage. Les iPhone ne peuvent pas installer ces applications pour
-> le moment (voir annexe A).
+- [ ] Les trois applications sont installées.
 
-- [ ] Les trois applications sont installées sur le téléphone.
+### 1.6 Les fichiers de l'histoire
 
-### 1.6 La boîte à outils : les fichiers de l'histoire
+Préparez dans un dossier de l'ordinateur les fichiers de l'annexe D : quelques PDF (n'importe lesquels, renommés « Plan
+RDC », « Facture fournisseur »…) et une demi-douzaine de photos prises avec le téléphone, **localisation activée**.
+Prévoyez une **imprimante** ou un second écran : plusieurs QR codes devront être scannés.
 
-*Paul enverra des photos de son terrain, Ernest photographiera le chantier, Martin déposera une facture… Il vous faut
-quelques fichiers.* Préparez dans un dossier de l'ordinateur tout ce qui est listé à l'annexe D : quelques PDF (n'importe
-lesquels feront l'affaire, on leur donnera des noms comme « Plan RDC » ou « Facture fournisseur »), et une demi-douzaine
-de photos prises avec le téléphone, localisation activée.
+- [ ] Les fichiers sont prêts.
 
-Prévoyez aussi une **imprimante**, ou à défaut l'écran d'un second appareil : plusieurs QR codes devront être scannés
-(le badge d'un ouvrier, l'entrée du chantier, le bon de commande du ciment).
+## Chapitre 2 — L'état de la plateforme
 
-- [ ] Mes fichiers de test sont prêts et je peux imprimer ou afficher des QR codes.
+### Scène P1 — Les voyants des services
 
-## Chapitre 2 — Le Gardien fait le tour de la maison
+**Pourquoi** : chaque service extérieur (e-mail, notifications, maquettes 3D, antivirus…) a un voyant. On note ce qui est
+branché et ce qui ne l'est pas encore.
 
-*Le matin du premier jour, avant que quiconque n'arrive, vous faites le tour du propriétaire. Les lumières s'allument,
-les portes s'ouvrent. Mais est-ce que tout est bien branché ?*
+**Qui** : le Gardien (profil **GLOBUS ADM**). **Où** : *Administration › Paramètres*, onglet **Intégrations**.
 
-### Scène P1 — Les voyants du tableau électrique
+**Méthode**
 
-*Dans la plateforme, chaque service extérieur (l'envoi des e-mails, les notifications, la lecture des maquettes 3D,
-l'antivirus…) est représenté par une carte, comme les disjoncteurs d'un tableau électrique. Une coche verte : le
-courant passe. Une croix : il manque quelque chose.*
+1. Ouvrez `https://globus-engineering-sarl.com/connexion`, connectez-vous (e-mail, mot de passe, puis code à 6 chiffres).
+2. Menu de gauche : *Administration › Paramètres*, puis l'onglet **Intégrations**.
+3. Lisez la rangée de cartes en haut, puis le bloc **Activer les services** et la liste **Clés et secrets des
+   prestataires**.
 
-> **Qui :** vous, le Gardien (profil **GLOBUS ADM**). **Où :** l'ERP, sur l'ordinateur.
+**Résultat attendu**
 
-**Ce que vous faites**
+- Coche verte sur : **E-mail**, **Notifications push web**, **Notifications push mobile**, **Autodesk APS (BIM)**,
+  **Reconnaissance vocale serveur**, **Antivirus des fichiers**, **Temps réel multi-serveurs (Redis)**, **Relais
+  d'appels (TURN)**.
+- Croix possibles, **attendues tant que le service n'est pas activé** : **WhatsApp Business**, **SMS**, **Paiements**,
+  **IA (Claude)**.
+- Dans **Clés et secrets des prestataires**, aucune clé marquée **Requis** non renseignée (les clés « Non utilisé »
+  concernent des services non activés : rien à faire).
 
-1. Dans votre profil GLOBUS ADM, allez sur `https://globus-engineering-sarl.com/connexion` et connectez-vous comme
-   d'habitude (e-mail, mot de passe, puis le code à 6 chiffres de votre téléphone).
-2. Dans le menu de gauche, sous le titre **Administration**, cliquez sur **Paramètres**.
-3. En haut de la page, cliquez sur l'onglet **Intégrations**.
-4. Regardez la rangée de cartes en haut.
+Notez les croix sur votre feuille : les scènes qui en dépendent sont signalées (annexe A).
 
-**Ce que vous devez constater**
+- [ ] **P1** — Les voyants sont relevés.
 
-- Une **coche verte** sur : E-mail, Notifications push web, Notifications push mobile, Autodesk APS, Antivirus,
-  Reconnaissance vocale.
-- Des **croix** sur les paiements en ligne, WhatsApp, SMS, et sur l'IA si sa clé n'a pas été renouvelée. Ces croix sont
-  attendues : elles correspondent aux limites connues décrites à l'annexe A. Notez-les simplement.
+### Scène P2 — Le moteur de la plateforme
 
-- [ ] **P1** — Les voyants correspondent à ce qui est attendu.
+**Pourquoi** : des tâches automatiques tournent en arrière-plan (envois, relances, sauvegardes). On vérifie qu'elles
+fonctionnent.
 
-### Scène P2 — Le cœur de la maison
+**Qui** : le Gardien. **Où** : *Administration › Paramètres*, bouton **Système et sauvegardes** (en haut de la page).
 
-*Derrière les murs bat un moteur : des tâches automatiques tournent la nuit, des sauvegardes se font chaque jour. On
-vérifie qu'il ronronne.*
+**Méthode** : cliquez sur **Système et sauvegardes** ; lisez les indicateurs du haut, puis le bloc **Tâches planifiées**.
 
-> **Qui :** le Gardien. **Où :** ERP, *Administration › Paramètres*.
+**Résultat attendu**
 
-**Ce que vous faites**
+- **Événements en échec** : `0` (vert).
+- **Dernière sauvegarde** : il y a moins de 24 heures.
+- **Tâches planifiées** : aucune en erreur.
 
-1. Toujours dans **Paramètres**, cliquez sur le bouton **Système et sauvegardes**.
-2. Lisez les indicateurs en haut de la page, puis la liste des tâches planifiées.
+- [ ] **P2** — Le moteur est en bonne santé.
 
-**Ce que vous devez constater**
+### Scène P3 — La sauvegarde de départ
 
-- « Événements en échec » vaut **0**.
-- « Dernière sauvegarde » date de **moins de 24 heures**.
-- Les tâches planifiées affichent un statut correct (pas d'erreur rouge).
+**Pourquoi** : avoir un point de retour avant l'essai.
 
-- [ ] **P2** — Le système est en bonne santé.
+**Qui** : le Gardien. **Où** : *Paramètres › Système et sauvegardes*, bloc des sauvegardes.
 
-### 2.3 La photographie de départ
+**Méthode**
 
-*Si vous avez choisi le second chemin (tout effacer à la fin), ces deux scènes sont indispensables. Sinon, elles restent
-une excellente précaution.*
+1. Dans la liste **Type**, choisissez « Complète ».
+2. Cliquez sur **Sauvegarder maintenant**. La sauvegarde se fait en arrière-plan : patientez quelques minutes et
+   actualisez la page jusqu'à la voir terminée.
+3. Sur cette sauvegarde, cliquez sur **Vérifier**.
 
-### Scène P3 — Prendre la photo
+**Résultat attendu** : la vérification confirme l'intégrité (empreinte et signature correctes).
 
-> **Qui :** le Gardien. **Où :** ERP, *Paramètres › Système et sauvegardes*, section **Sauvegardes**.
+- [ ] **P3** — Sauvegarde complète faite et vérifiée.
 
-**Ce que vous faites**
+### Scène P4 — Vérifier que la sauvegarde se restaure
 
-1. Dans la section **Sauvegardes**, choisissez le type **Complète**.
-2. Cliquez sur **Sauvegarder maintenant**. La sauvegarde se fait en arrière-plan : patientez quelques minutes, puis
-   actualisez la page jusqu'à ce qu'elle apparaisse terminée dans la liste.
-3. Sur cette nouvelle sauvegarde, cliquez sur **Vérifier**.
+**Pourquoi** : une sauvegarde jamais restaurée n'est pas une garantie. Le test se fait dans une base à part : la vraie
+plateforme n'est pas touchée.
 
-**Ce que vous devez constater** : la vérification confirme l'intégrité de la sauvegarde (son empreinte et sa signature
-sont correctes).
+**Méthode** : sur la sauvegarde de P3, cliquez sur **Test de restauration**, attendez la fin.
 
-- [ ] **P3** — La sauvegarde complète est faite et vérifiée.
+**Résultat attendu** : test réussi. **Notez la date et l'heure** de cette sauvegarde : c'est votre point de retour.
 
-### Scène P4 — S'assurer que la photo est nette
-
-*Une sauvegarde qu'on n'a jamais essayé de restaurer, c'est un parachute qu'on n'a jamais déplié. On l'essaie, sans
-risque : la restauration de test se fait dans une base à part, la vraie plateforme n'est pas touchée.*
-
-> **Qui :** le Gardien. **Où :** même écran.
-
-**Ce que vous faites**
-
-1. Sur la sauvegarde de la scène P3, cliquez sur **Test de restauration**.
-2. Attendez la fin de l'opération.
-
-**Ce que vous devez constater** : le test de restauration est réussi. **Notez la date et l'heure de cette sauvegarde**
-sur votre feuille : c'est votre point de retour.
-
-- [ ] **P4** — Le test de restauration a réussi ; la date de la sauvegarde est notée.
+- [ ] **P4** — Test de restauration réussi, date notée.
 
 ---
 
 # Livre II — Les fondations
 
-*Une maison commence par ses fondations, une entreprise par ses équipes. Avant qu'un seul client ne frappe à la porte,
-il faut que chacun ait sa clé, que les partenaires soient enregistrés et que les équipes soient formées.*
+*Avant qu'un client ne frappe à la porte, il faut que les partenaires soient enregistrés, que chacun ait sa clé et que
+les équipes soient formées.*
 
-## Chapitre 3 — Le Gardien distribue les clés
+## Chapitre 3 — Organisations, partenaires et comptes
 
-### Scène A1 — Le Gardien franchit la porte
+### Scène A1 — Le Gardien entre dans l'ERP
 
-*Vous voilà dans le hall de l'ERP. C'est ici que tout se décide. Prenez le temps de regarder autour de vous.*
+**Qui** : le Gardien (profil **GLOBUS ADM**). **Où** : `https://globus-engineering-sarl.com/connexion`.
 
-> **Qui :** le Gardien (profil **GLOBUS ADM**). **Où :** `https://globus-engineering-sarl.com/connexion`, sur l'ordinateur.
+**Méthode**
 
-**Ce que vous faites**
+1. Remplissez **Adresse e-mail** et **Mot de passe**, cliquez sur **Se connecter**.
+2. Tapez le code à 6 chiffres de l'application du téléphone dans **Code de l'application d'authentification**, cliquez
+   sur **Vérifier**.
+3. Parcourez le menu de gauche.
 
-1. Si vous étiez déconnecté, saisissez votre adresse e-mail et votre mot de passe, puis cliquez sur **Se connecter**.
-2. Ouvrez votre application d'authentification sur le téléphone, lisez le code à 6 chiffres affiché pour GLOBUS, tapez-le
-   dans la case prévue et cliquez sur **Vérifier**.
-3. Faites défiler le menu de gauche de haut en bas.
+**Résultat attendu** : vous arrivez sur le **Tableau de bord** ; le menu montre toutes les rubriques (Projets, Achats et
+logistique, Sous-traitance, Finance, Commercial, RH et QHSE, Site web, Communication, Administration).
 
-**Ce que vous devez constater**
+- [ ] **A1** — Connexion réussie, toutes les rubriques visibles.
 
-- Vous arrivez sur le **Tableau de bord**.
-- Le menu de gauche montre toutes les grandes rubriques : Projets, Achats et logistique, Sous-traitance, Finance,
-  Commercial, RH et QHSE, Site web, Communication, Administration et Aide. Le Gardien voit tout : c'est normal, il a les
-  clés de toutes les pièces.
+### Scène A2 — Les rôles et leurs droits
 
-- [ ] **A1** — Connexion réussie, toutes les rubriques sont visibles.
+**Pourquoi** : comprendre ce qu'ouvre chaque rôle avant de les distribuer.
 
-### Scène A2 — Le trousseau des rôles
+**Qui** : le Gardien. **Où** : *Administration › Utilisateurs et rôles*, onglet **Rôles et permissions**.
 
-*Chaque employé reçoit un trousseau : un « rôle ». Le rôle « Chef de chantier » ouvre certaines portes, pas d'autres.
-Avant de distribuer les trousseaux, jetez un œil à l'un d'eux. Regardez, mais ne touchez à rien.*
+**Méthode**
 
-> **Qui :** le Gardien. **Où :** ERP, *Administration › Utilisateurs et rôles*.
+1. Repérez la carte « Chef de chantier » : elle indique son public, le nombre de permissions, et les badges éventuels
+   **MFA** (double authentification obligatoire) et **Tous projets** (voit tous les projets).
+2. Cliquez sur **Modifier** sur cette carte : la grille des permissions s'ouvre.
+3. Regardez sans rien changer, puis fermez la fenêtre **sans enregistrer**.
 
-**Ce que vous faites**
+**Résultat attendu** : la grille s'affiche ; les cartes « Direction / Responsable » et « Finance / Comptabilité » portent
+le badge **MFA** ; « Chef de chantier » ne porte pas **Tous projets**.
 
-1. Dans le menu de gauche, sous **Administration**, cliquez sur **Utilisateurs et rôles**.
-2. Cliquez sur l'onglet **Rôles et permissions**.
-3. Sur la ligne « Chef de chantier », cliquez sur **Voir**.
+- [ ] **A2** — Les rôles et leurs droits s'affichent.
 
-**Ce que vous devez constater** : une grande grille (la « matrice ») s'affiche, avec toutes les permissions du rôle,
-cochées ou non. Les permissions dites **sensibles** (finances, données personnelles, sécurité) sont signalées. Refermez
-sans rien modifier.
+### Scène A3 — L'organisation du fournisseur
 
-- [ ] **A2** — La matrice du rôle s'affiche correctement.
+**Pourquoi** : une **organisation** est une société connue de la plateforme. Celle de Martin ouvrira plus tard la porte
+de l'extranet fournisseur.
 
-### Scène A3 — La quincaillerie entre dans le registre
+**Qui** : le Gardien. **Où** : *Administration › Utilisateurs et rôles*, onglet **Organisations**.
 
-*Quelque part à Bonabéri, sur la rive du Wouri, Martin Kamga tient une quincaillerie. Avant de pouvoir lui commander quoi
-que ce soit, l'entreprise doit l'inscrire dans son registre, comme on inscrit un nouveau voisin dans le carnet
-d'adresses.*
+**Méthode**
 
-> **Qui :** le Gardien. **Où :** ERP, *Administration › Utilisateurs et rôles*, onglet **Organisations**.
+1. Cliquez sur **Nouvelle organisation**. La fenêtre **Nouvelle organisation** s'ouvre.
+2. Remplissez :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST Quincaillerie du Wouri` | ★ |
+| Type | « Fournisseur » | ★ |
+| E-mail | `votre.adresse+fournisseur@gmail.com` | |
+| Ville | `Douala` | |
+| Pays | `Cameroun` | |
+| Actif | coché | |
 
-1. Toujours dans **Utilisateurs et rôles**, cliquez sur l'onglet **Organisations**.
-2. Cliquez sur le bouton **Nouvelle organisation** en haut à droite.
-3. Dans le champ **Nom**, écrivez `TEST Quincaillerie du Wouri`.
-4. Dans la liste **Type**, choisissez **fournisseur**.
-5. Dans **Ville**, écrivez `Douala`.
-6. Cliquez sur le bouton d'enregistrement en bas de la fenêtre.
+3. Cliquez sur **Créer**.
 
-**Ce que vous devez constater** : la fenêtre se ferme et « TEST Quincaillerie du Wouri » apparaît dans la liste. Si vous
-filtrez la liste avec **Type = fournisseur**, elle est toujours là.
+**Résultat attendu** : « TEST Quincaillerie du Wouri » apparaît dans la liste, type « Fournisseur ».
 
-- [ ] **A3** — L'organisation fournisseur est créée.
+- [ ] **A3** — Organisation fournisseur créée.
 
-### Scène A4 — Les électriciens d'Akwa
+### Scène A4 — L'organisation du sous-traitant
 
-*À l'autre bout de la ville, dans le quartier d'Akwa, Sylvie Abena dirige une petite entreprise d'électricité. Elle aussi
-entre dans le registre.*
+**Qui / Où** : idem A3.
 
-> **Qui :** le Gardien. **Où :** même onglet **Organisations**.
+**Méthode** : **Nouvelle organisation**, puis :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST Électricité Akwa` | ★ |
+| Type | « Sous-traitant » | ★ |
+| E-mail | `votre.adresse+soustraitant@gmail.com` | |
+| Ville | `Douala` | |
+| Actif | coché | |
 
-1. Cliquez de nouveau sur **Nouvelle organisation**.
-2. **Nom** : `TEST Électricité Akwa`. **Type** : **sous-traitant**.
-3. Enregistrez.
+Cliquez sur **Créer**.
 
-**Ce que vous devez constater** : « TEST Électricité Akwa » apparaît dans la liste.
+**Résultat attendu** : « TEST Électricité Akwa » apparaît, type « Sous-traitant ».
 
-- [ ] **A4** — L'organisation sous-traitant est créée.
+- [ ] **A4** — Organisation sous-traitant créée.
 
-### Scène A5 — La fiche de Martin dans le carnet des fournisseurs
+### Scène A5 — La fiche fournisseur de Martin
 
-*Le registre des organisations dit « qui existe ». Le carnet des fournisseurs, lui, dit « à qui l'on achète, quoi, à quel
-prix et dans quels délais ». Il faut relier les deux : c'est ce lien qui permettra à Martin, plus tard, d'ouvrir sa propre
-porte dans l'extranet.*
+**Pourquoi** : le **carnet des fournisseurs** décrit à qui l'on achète, quoi et à quelles conditions. On le **relie à
+l'organisation** de A3 : c'est ce lien qui permettra à Martin d'ouvrir son extranet.
 
-> **Qui :** le Gardien. **Où :** ERP, *Achats et logistique › Fournisseurs*.
+**Qui** : le Gardien. **Où** : *Achats et logistique › Fournisseurs*.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Dans le menu de gauche, sous **Achats et logistique**, cliquez sur **Fournisseurs**.
-2. Cliquez sur **Nouveau fournisseur**.
-3. **Raison sociale** : `TEST Quincaillerie du Wouri`.
-4. **Catégories** : ajoutez « ciment » et « acier ».
-5. **E-mail** : `votre.adresse+fournisseur@gmail.com`.
-6. **Délai de livraison** : `3` (jours).
-7. Dans le champ **Organisation**, choisissez « TEST Quincaillerie du Wouri » dans la liste. *C'est le lien essentiel.*
-8. Enregistrez.
+1. Cliquez sur **Nouveau fournisseur**. La fenêtre **Nouveau fournisseur** s'ouvre.
+2. Remplissez :
 
-**Ce que vous devez constater** : la fiche du fournisseur s'ouvre, avec ses onglets **Profil**, **Catalogue et tarifs**,
-**Commandes**, **Documents**, **Performance**, **Incidents** et **Contacts**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code | *(vide : attribué automatiquement, FRN-…)* | |
+| Raison sociale | `TEST Quincaillerie du Wouri` | ★ |
+| Ville | `Douala` | |
+| Pays | `Cameroun` (déjà proposé) | |
+| Catégories | `ciment` puis **Entrée**, `acier` puis **Entrée** | |
+| Délai de paiement (jours) | `30` (proposé) | |
+| Délai de livraison (jours) | `3` | |
+| E-mail | `votre.adresse+fournisseur@gmail.com` | |
+| Canal préféré | « E-mail » | |
+| Organisation (accès extranet) | « TEST Quincaillerie du Wouri » | |
 
-- [ ] **A5** — La fiche fournisseur est créée et reliée à son organisation.
+> Le **Canal préféré** « E-mail » est conseillé tant que WhatsApp n'est pas activé : les bons de commande partiront par
+> e-mail. (Avec « WhatsApp » choisi mais WhatsApp non activé, la plateforme bascule d'elle-même sur l'e-mail.)
 
-### Scène A6 — Le sac de ciment entre au catalogue
+3. Cliquez sur **Créer**.
 
-*Martin vend un ciment bien connu des maçons de Douala : le CPJ 42.5, en sacs de cinquante kilos. Inscrivons-le à son
-catalogue, avec son prix.*
+**Résultat attendu** : la fiche s'ouvre avec les onglets **Profil**, **Catalogue et tarifs**, **Commandes**,
+**Documents**, **Performance**, **Incidents**, **Contacts** ; l'organisation est affichée dans le profil.
 
-> **Qui :** le Gardien. **Où :** fiche du fournisseur, onglet **Catalogue et tarifs**.
+> Si vous choisissez par erreur une organisation déjà reliée à un autre fournisseur, la plateforme refuse : « Cette
+> organisation est déjà reliée à une autre fiche ».
 
-**Ce que vous faites**
+- [ ] **A5** — Fiche fournisseur créée et reliée à son organisation.
 
-1. Sur la fiche « TEST Quincaillerie du Wouri », cliquez sur l'onglet **Catalogue et tarifs**.
-2. Cliquez sur **Nouveau produit**.
-3. **Référence** : `CIM-425`. **Nom** : `Ciment CPJ 42.5 sac 50 kg`. **Unité** : sac.
-4. **Prix unitaire** : `5200` (francs CFA).
-5. **Prix valable jusqu'au** : une date dans trois mois.
-6. Enregistrez.
+### Scène A6 — Le ciment entre au catalogue
 
-**Ce que vous devez constater** : le ciment apparaît dans le catalogue de Martin.
+**Qui** : le Gardien. **Où** : fiche « TEST Quincaillerie du Wouri », onglet **Catalogue et tarifs**.
 
-- [ ] **A6** — Le produit est au catalogue.
+**Méthode**
 
-### Scène A7 — La fiche de Sylvie dans le carnet des sous-traitants
+1. Cliquez sur **Nouveau produit**.
+2. Remplissez :
 
-*Même travail pour Sylvie, dans le carnet des sous-traitants. Son entreprise n'est pas encore « qualifiée » : on ne
-confie pas l'électricité d'une maison à une entreprise sans avoir vérifié ses références. Ce sera fait au chapitre 9.*
+| Champ | Valeur | |
+| --- | --- | --- |
+| Référence | `CIM-425` | ★ |
+| Nom | `Ciment CPJ 42.5 sac 50 kg` | ★ |
+| Catégorie | `ciment` | |
+| Unité | `sac` | |
+| Prix unitaire | `5200` | |
+| Devise | `XAF` (proposée) | |
+| Quantité minimum | `10` | |
+| Délai de livraison (jours) | `3` | |
+| Prix valable jusqu'au | une date dans 3 mois | |
+| Actif | coché | |
 
-> **Qui :** le Gardien. **Où :** ERP, *Sous-traitance › Sous-traitants*.
+3. Cliquez sur **Créer**.
 
-**Ce que vous faites**
+**Résultat attendu** : le ciment apparaît dans le catalogue au prix de 5 200 FCFA.
 
-1. Dans le menu de gauche, sous **Sous-traitance**, cliquez sur **Sous-traitants**.
-2. Cliquez sur **Nouveau sous-traitant**.
-3. **Raison sociale** : `TEST Électricité Akwa`.
-4. **Corps de métier** : dans la famille « lots techniques », cochez **électricité**.
-5. **Assurance RC** : indiquez une date d'échéance dans le futur (par exemple dans un an).
-6. **E-mail** : `votre.adresse+soustraitant@gmail.com`.
-7. **Organisation** : choisissez « TEST Électricité Akwa ».
-8. Enregistrez.
+- [ ] **A6** — Produit au catalogue.
 
-**Ce que vous devez constater** : la fiche est créée avec le statut **Prospect** (en attente de qualification), reliée
-à son organisation.
+### Scène A7 — La fiche sous-traitant de Sylvie
 
-- [ ] **A7** — La fiche sous-traitant est créée.
+**Pourquoi** : même principe pour la sous-traitance. Son entreprise n'est pas encore « qualifiée » : ce sera fait au
+chapitre 9.
 
-### Scène A8 — Une équipe sans chef
+**Qui** : le Gardien. **Où** : *Sous-traitance › Sous-traitants*, onglet **Sous-traitants**.
 
-*Sur un chantier, on ne travaille pas seul. L'équipe de gros œuvre existe déjà dans l'esprit de l'entreprise ; donnons-lui
-une existence dans la plateforme. Son chef sera désigné un peu plus tard, quand Ernest aura sa clé.*
+**Méthode**
 
-> **Qui :** le Gardien. **Où :** ERP, *Administration › Utilisateurs et rôles*, onglet **Équipes**.
+1. Cliquez sur **Nouveau sous-traitant**.
+2. Remplissez :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Raison sociale | `TEST Électricité Akwa` | ★ |
+| Corps de métier | dans la famille « Lots techniques », cochez « Électricité » | |
+| Zones | `Douala` puis **Entrée** | |
+| E-mail | `votre.adresse+soustraitant@gmail.com` | |
+| Ville | `Douala` | |
+| Effectif | `8` | |
+| Assurance RC jusqu'au | une date dans 1 an | |
+| Organisation (accès extranet) | « TEST Électricité Akwa » | |
 
-1. Dans **Utilisateurs et rôles**, cliquez sur l'onglet **Équipes**, puis sur **Nouvelle équipe**.
-2. **Nom** : `TEST Équipe gros œuvre`. **Métier** : maçonnerie.
-3. Enregistrez (laissez le chef d'équipe vide pour l'instant).
+3. Cliquez sur **Créer**.
 
-**Ce que vous devez constater** : l'équipe apparaît dans la liste.
+**Résultat attendu** : la fiche est créée au statut **Prospect** (en attente de qualification), reliée à son organisation.
 
-- [ ] **A8** — L'équipe est créée.
+- [ ] **A7** — Fiche sous-traitant créée.
 
-### Scène A9 — Sept invitations pour sept collègues
+### Scène A8 — L'équipe de gros œuvre
 
-*Le moment est venu d'appeler l'équipe. Grâce, Jordan, Samuel, Ernest, Linda, Rachel et Moussa vont chacun recevoir une
-invitation par e-mail, avec un lien personnel pour choisir leur mot de passe. Aucun mot de passe ne circule : c'est
-chaque personne qui choisit le sien.*
+**Qui** : le Gardien. **Où** : *Administration › Utilisateurs et rôles*, onglet **Équipes**.
 
-> **Qui :** le Gardien. **Où :** ERP, *Administration › Utilisateurs et rôles*, onglet **Utilisateurs**.
+**Méthode**
 
-**Ce que vous faites** — recommencez ces gestes **sept fois**, une fois par collègue :
+1. Cliquez sur **Nouvelle équipe**.
+2. Remplissez (le chef et les membres seront ajoutés à la scène A13, quand leurs comptes existeront) :
 
-1. Dans **Utilisateurs et rôles**, onglet **Utilisateurs**, cliquez sur **Nouvel utilisateur**.
-2. **E-mail** : l'adresse du personnage (voir le tableau des personnages).
-3. **Prénom** : le prénom du personnage (Grâce, Jordan, Samuel, Ernest, Linda, Rachel, Moussa).
-4. **Nom** : écrivez le nom précédé de « TEST- », par exemple `TEST-EWANE`, `TEST-NKENG`, `TEST-FOTSO`, `TEST-TCHOUA`,
-   `TEST-MBARGA`, `TEST-NDONGO`, `TEST-BELLO`. Ainsi, tous les comptes d'essai se reconnaissent d'un coup d'œil.
-5. **Rôles** : cochez le ou les rôles indiqués dans le tableau. Pour Ernest, cochez les trois : *Chef de chantier*,
-   *Magasinier* et *Responsable QHSE*. Pour Rachel, les deux : *Finance / Comptabilité* et *Ressources humaines*.
-6. **Métier** : pour Ernest, choisissez « Chef de chantier » ; pour les autres, laissez « Non précisé » sauf si un métier
-   s'impose (Moussa peut être électricien, par exemple).
-7. Laissez cochée la case **Envoyer l'invitation** et choisissez le canal **E-mail**.
-8. Enregistrez.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST Équipe gros œuvre` | ★ |
+| Métier | « Gros œuvre » | |
+| Description | `Équipe de la Villa Mballa` | |
+| Actif | coché | |
 
-**Ce que vous devez constater**
+3. Cliquez sur **Créer**.
 
-- Les sept comptes apparaissent dans la liste avec le statut « invité ».
-- L'onglet **Invitations** liste sept invitations « en attente ».
-- Dans votre boîte Gmail arrivent sept e-mails d'invitation (un par adresse « + »). Ne les ouvrez pas encore.
+**Résultat attendu** : l'équipe apparaît dans la liste.
+
+- [ ] **A8** — Équipe créée.
+
+### Scène A9 — Les comptes du personnel
+
+**Pourquoi** : chaque collègue reçoit une **invitation** par e-mail avec un lien personnel pour choisir lui-même son mot
+de passe. Aucun mot de passe ne circule.
+
+**Qui** : le Gardien. **Où** : *Administration › Utilisateurs et rôles*, onglet **Utilisateurs**.
+
+**Méthode** — à faire **sept fois**, une par collègue (Grâce, Jordan, Samuel, Ernest, Linda, Rachel, Moussa) :
+
+1. Cliquez sur **Nouvel utilisateur**. La fenêtre **Nouvel utilisateur** s'ouvre.
+2. Remplissez les champs ci-dessous avec les valeurs de la ligne du collègue (tableau suivant).
+3. Cliquez sur **Créer**.
+
+| Champ (dans l'ordre de l'écran) | Valeur | |
+| --- | --- | --- |
+| E-mail | l'adresse du collègue | ★ |
+| Prénom | le prénom | ★ |
+| Nom | le nom en « TEST- » | ★ |
+| Fonction | la fonction (tableau) | |
+| Métier | le métier (tableau) ; sinon laissez « Non précisé » | |
+| Organisation | *(vide)* — le personnel est rattaché automatiquement à l'entreprise | |
+| Rôles | cochez le ou les rôles du tableau | ★ |
+| Projets | *(vide)* — les projets seront attribués à la scène M2 | |
+| Envoyer l'invitation | coché (déjà coché) | |
+| Envoyer l'accès par | « E-mail » coché (déjà coché) | |
+
+| Prénom | Nom | E-mail | Fonction | Métier | Rôles à cocher |
+| --- | --- | --- | --- | --- | --- |
+| `Grâce` | `TEST-EWANE` | `votre.adresse+direction@gmail.com` | `Directrice des opérations` | Non précisé | « Direction / Responsable » |
+| `Jordan` | `TEST-NKENG` | `votre.adresse+commercial@gmail.com` | `Commercial` | Non précisé | « Commercial » |
+| `Samuel` | `TEST-FOTSO` | `votre.adresse+chefprojet@gmail.com` | `Ingénieur chef de projet` | Non précisé | « Chef de projet / Conducteur de travaux » |
+| `Ernest` | `TEST-TCHOUA` | `votre.adresse+chantier@gmail.com` | `Chef de chantier` | « Gros œuvre » | « Chef de chantier », « Magasinier », « Responsable QHSE » |
+| `Linda` | `TEST-MBARGA` | `votre.adresse+achat@gmail.com` | `Acheteuse` | Non précisé | « Acheteur / Logistique » |
+| `Rachel` | `TEST-NDONGO` | `votre.adresse+finance@gmail.com` | `Comptable` | Non précisé | « Finance / Comptabilité », « Ressources humaines » |
+| `Moussa` | `TEST-BELLO` | `votre.adresse+technicien@gmail.com` | `Électricien` | « Électricité » | « Artisan / Technicien » |
+
+**Résultat attendu**
+
+- Les sept comptes apparaissent dans la liste, colonne **Statut** : **Invité**.
+- L'onglet **Invitations** liste sept invitations en attente.
+- Sept e-mails d'invitation arrivent dans Gmail (un par adresse « + »). **Ne les ouvrez pas encore.**
 
 - [ ] **A9** — Les sept collègues sont invités.
 
-### Scène A10 — Les partenaires reçoivent leur clé
+### Scène A10 — Les comptes des partenaires
 
-*Martin et Sylvie ne sont pas des employés. Ils n'entreront donc pas par la porte du personnel, mais par celle des
-partenaires, l'extranet. C'est leur organisation qui décide de la porte.*
+**Pourquoi** : Martin et Sylvie ne sont pas des employés : leur compte est rattaché à **leur organisation**, qui leur
+ouvre l'extranet.
 
-> **Qui :** le Gardien. **Où :** même onglet **Utilisateurs**.
+**Qui / Où** : idem A9.
 
-**Ce que vous faites**
+**Méthode** : **Nouvel utilisateur**, deux fois :
 
-1. **Nouvel utilisateur** pour Martin : adresse `+fournisseur`, prénom `Martin`, nom `TEST-KAMGA`, rôle **Fournisseur**,
-   organisation « TEST Quincaillerie du Wouri », invitation par e-mail. Enregistrez.
-2. **Nouvel utilisateur** pour Sylvie : adresse `+soustraitant`, prénom `Sylvie`, nom `TEST-ABENA`, rôle **Sous-traitant**,
-   organisation « TEST Électricité Akwa », invitation par e-mail. Enregistrez.
+| Champ | Martin | Sylvie | |
+| --- | --- | --- | --- |
+| E-mail | `votre.adresse+fournisseur@gmail.com` | `votre.adresse+soustraitant@gmail.com` | ★ |
+| Prénom | `Martin` | `Sylvie` | ★ |
+| Nom | `TEST-KAMGA` | `TEST-ABENA` | ★ |
+| Fonction | `Gérant` | `Gérante` | |
+| Organisation | « TEST Quincaillerie du Wouri » | « TEST Électricité Akwa » | ★ pour un partenaire |
+| Rôles | « Fournisseur » | « Sous-traitant » | ★ |
+| Envoyer l'invitation / par | coché, « E-mail » | coché, « E-mail » | |
 
-**Ce que vous devez constater** : deux invitations supplémentaires « en attente » (neuf en tout).
+Cliquez sur **Créer** à chaque fois.
+
+**Résultat attendu** : deux invitations de plus (neuf en tout).
+
+> **Contrôle** : essayez de créer un compte « Fournisseur » **sans** organisation. La plateforme refuse : « Choisissez
+> l'organisation du compte (type « fournisseur ») ». Annulez.
 
 - [ ] **A10** — Les deux partenaires sont invités.
 
 ### Scène A11 — L'invitation envoyée par erreur
 
-*Il arrive à tout le monde de se tromper d'adresse. Que se passe-t-il alors ? On peut rattraper l'invitation avant qu'elle
-ne serve.*
+**Pourquoi** : vérifier qu'une invitation peut être annulée, puis renvoyée.
 
-> **Qui :** le Gardien. **Où :** onglets **Utilisateurs** puis **Invitations**.
+**Qui** : le Gardien. **Où** : onglets **Utilisateurs** puis **Invitations**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Créez un **Nouvel utilisateur** avec l'adresse `votre.adresse+erreur@gmail.com` (prénom et nom au choix, un rôle
-   quelconque, invitation par e-mail).
-2. Ouvrez l'onglet **Invitations**, repérez cette invitation et cliquez sur **Révoquer**.
-3. Dans Gmail, ouvrez l'e-mail reçu sur l'adresse `+erreur` et cliquez sur son lien.
+1. **Nouvel utilisateur** : E-mail `votre.adresse+erreur@gmail.com`, Prénom `Erreur`, Nom `TEST-ERREUR`, Rôles « Artisan /
+   Technicien », invitation par e-mail. **Créer**.
+2. Onglet **Invitations** : sur cette invitation, cliquez sur **Révoquer** (effet immédiat, sans confirmation).
+3. Dans Gmail, ouvrez l'e-mail reçu sur `+erreur` et cliquez sur son lien.
+4. Revenez dans l'onglet **Invitations** : sur la ligne révoquée, cliquez sur **Renvoyer**. Dans la fenêtre **Renvoyer
+   l'invitation**, laissez « E-mail » coché et cliquez sur **Renvoyer**.
+5. Ouvrez le nouvel e-mail et son lien : la page d'activation s'affiche. **Fermez-la sans activer.**
+6. Onglet **Utilisateurs** : cliquez sur ce compte (statut **Invité**) pour ouvrir sa fiche, cliquez sur **Désactiver**,
+   puis confirmez dans la fenêtre **Désactiver le compte**.
 
-**Ce que vous devez constater** : l'invitation passe au statut « révoquée », et le lien de l'e-mail ne fonctionne plus (un
-message indique que le lien est invalide ou expiré).
+**Résultat attendu**
 
-*Mais imaginons que l'adresse était la bonne, et que la révocation était elle-même une erreur. Le Gardien peut envoyer un
-nouveau lien.*
+- Étape 3 : le lien révoqué affiche un message « lien invalide ou expiré ».
+- Étape 5 : le nouveau lien fonctionne ; l'ancien, non.
+- Étape 6 : le compte passe à **Désactivé**.
 
-4. Toujours dans l'onglet **Invitations**, sur la ligne révoquée, cliquez sur **Renvoyer**.
-5. Dans la fenêtre **Renvoyer l'invitation**, laissez **E-mail** coché, écrivez un petit message si vous le souhaitez, puis
-   cliquez sur **Renvoyer**.
-6. Ouvrez le nouvel e-mail reçu sur l'adresse `+erreur` et cliquez sur son lien ; vérifiez que la page d'activation
-   s'affiche, puis fermez-la sans activer le compte.
-7. Dans l'onglet **Utilisateurs**, ouvrez ce compte : son statut est **Invité**. Cliquez sur **Désactiver** pour qu'il ne
-   serve plus.
+- [ ] **A11** — Révocation, renvoi et désactivation fonctionnent.
 
-**Ce que vous devez aussi constater** : le nouveau lien fonctionne, l'ancien non ; la liste des invitations montre la
-nouvelle invitation « en attente » et l'ancienne « révoquée » (sans bouton **Renvoyer**, seule la plus récente l'a).
+### Scène A12 — Chacun active son compte
 
-- [ ] **A11** — Une invitation révoquée devient inutilisable, et un nouveau lien peut être renvoyé.
+**Pourquoi** : chaque collègue choisit son mot de passe et pose sa double authentification.
 
-### Scène A12 — Chacun ouvre sa porte
+**Qui** : tour à tour Grâce, Jordan, Samuel, Ernest, Linda, Rachel, Moussa, Martin et Sylvie, **chacun dans son profil
+de navigateur**. **Où** : Gmail puis la page d'activation.
 
-*Le jour se lève sur la plateforme. L'un après l'autre, vos collègues ouvrent leur e-mail d'invitation, choisissent leur
-mot de passe et posent leur seconde serrure. C'est vous qui allez jouer chacun d'eux. Prenez votre temps : cette scène se
-répète neuf fois.*
+**Méthode** — pour chaque personnage :
 
-> **Qui :** tour à tour Grâce, Jordan, Samuel, Ernest, Linda, Rachel, Moussa, Martin et Sylvie, **chacun dans son propre
-> profil de navigateur**. **Où :** Gmail, puis la plateforme.
+1. Ouvrez la fenêtre Chrome de son profil (ex. **GLOBUS DIR** pour Grâce), puis Gmail, puis l'e-mail d'invitation
+   adressé à son adresse « + » ; cliquez sur le lien.
+2. Sur la page d'activation :
 
-**Ce que vous faites** — pour chaque personnage :
+| Champ | Valeur | |
+| --- | --- | --- |
+| Prénom / Nom | déjà remplis : vérifiez-les | |
+| Téléphone (WhatsApp) | facultatif | |
+| Choisissez votre mot de passe | 12 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial (ex. `Villa-Mballa-2026!`) | ★ |
+| Confirmez le mot de passe | le même | ★ |
 
-1. Ouvrez la fenêtre Chrome du profil du personnage (par exemple **GLOBUS DIR** pour Grâce).
-2. Dans cette fenêtre, ouvrez Gmail, retrouvez l'e-mail d'invitation adressé à l'adresse « + » du personnage (regardez
-   aussi dans les Spams) et cliquez sur le lien.
-3. Sur la page d'activation, vérifiez que le prénom et le nom sont justes.
-4. Choisissez un mot de passe d'au moins **12 caractères** (notez-le sur votre feuille, personnage par personnage), puis
-   cliquez sur **Activer et continuer**.
-5. **Pour Grâce et Rachel, c'est obligatoire ; pour les autres, c'est vivement conseillé** : posez la seconde serrure.
-   - Ouvrez **Mon compte** (en cliquant sur votre nom en haut à droite, ou dans le menu), puis l'onglet **Sécurité**.
-   - Cliquez sur **Configurer une application d'authentification**. Un QR code apparaît.
-   - Sur le téléphone, dans l'application d'authentification, touchez le **+**, puis **Scanner un code QR**, et visez le
-     QR code à l'écran. Une nouvelle ligne apparaît dans l'application.
-   - Tapez le code à 6 chiffres affiché par l'application et cliquez sur **Activer**.
-   - Cliquez sur **Télécharger** pour enregistrer les codes de secours, rangez le fichier en lieu sûr, puis cliquez sur
-     **J'ai conservé mes codes**.
-6. Astuce : dans l'application d'authentification, renommez chaque ligne avec le nom du personnage, pour ne pas les
-   confondre.
+3. Cliquez sur **Activer et continuer**. Notez le mot de passe de chaque personnage sur votre feuille.
+4. **Double authentification** — obligatoire pour Grâce et Rachel, conseillée pour les autres :
+   1. Ouvrez **Mon compte** (votre nom en haut à droite), onglet **Sécurité**.
+   2. Cliquez sur **Configurer une application d'authentification** : un QR code s'affiche.
+   3. Dans l'application du téléphone, touchez **+** › **Scanner un code QR** et visez l'écran. Renommez la ligne avec le
+      nom du personnage.
+   4. Tapez le code affiché par l'application dans **Code à 6 chiffres**, cliquez sur **Activer**.
+   5. Cliquez sur **Télécharger** pour garder les codes de secours, puis sur **J'ai conservé mes codes**.
 
-**Ce que vous devez constater**
+**Résultat attendu**
 
-- Chaque employé arrive dans l'ERP, sur `/erp`, avec un **menu réduit à son métier** (Ernest ne voit pas la Finance,
-  Rachel ne voit pas le Hub BIM, etc.).
-- Martin et Sylvie arrivent dans l'**extranet**, sur `/extranet`.
-- Chez Grâce et Rachel, le bandeau rouge « La double authentification est obligatoire pour votre profil » disparaît dès
-  que la seconde serrure est activée.
-- Côté Gardien, dans *Administration › Sécurité*, onglet **Synthèse**, la rubrique « MFA à activer » ne cite plus Grâce ni
-  Rachel.
+- Chaque employé arrive dans l'ERP avec **un menu réduit à son métier** (Ernest ne voit pas la Finance ; Rachel ne voit
+  pas le Hub BIM).
+- Martin et Sylvie arrivent dans l'**extranet**.
+- Chez Grâce et Rachel, le bandeau « La double authentification est obligatoire pour votre profil » disparaît une fois
+  la double authentification activée.
+- Côté Gardien, *Administration › Sécurité*, onglet **Synthèse**, bloc **MFA à activer** : Grâce et Rachel n'y figurent
+  plus.
 
-- [ ] **A12** — Les neuf comptes sont activés, la double authentification est en place au moins pour Grâce et Rachel.
+- [ ] **A12** — Les neuf comptes sont activés ; MFA en place au moins pour Grâce et Rachel.
 
 ### Scène A13 — L'équipe trouve son chef
 
-*Ernest a maintenant sa clé. Il peut prendre la tête de l'équipe de gros œuvre, avec Moussa à ses côtés.*
+**Qui** : le Gardien. **Où** : *Utilisateurs et rôles*, onglet **Équipes**.
 
-> **Qui :** le Gardien. **Où :** *Utilisateurs et rôles*, onglet **Équipes**.
+**Méthode**
 
-**Ce que vous faites**
+1. Cliquez sur l'équipe « TEST Équipe gros œuvre » : sa fiche s'ouvre. Cliquez sur **Modifier**.
+2. Remplissez :
 
-1. Ouvrez l'équipe « TEST Équipe gros œuvre » et cliquez sur **Modifier**.
-2. **Chef d'équipe** : Ernest. **Membres** : Ernest et Moussa.
-3. Enregistrez.
+| Champ | Valeur |
+| --- | --- |
+| Chef d'équipe | « Ernest TEST-TCHOUA » |
+| Membres | « Ernest TEST-TCHOUA » et « Moussa TEST-BELLO » |
 
-**Ce que vous devez constater** : la fiche de l'équipe affiche le chef et les membres **par leur nom** (et non par un code
-incompréhensible).
+3. Cliquez sur **Enregistrer**.
 
-- [ ] **A13** — L'équipe est complète.
+**Résultat attendu** : la fiche affiche le chef et les membres **par leur nom**.
+
+- [ ] **A13** — Équipe complète.
 
 ---
 
 # Livre III — La rencontre
 
-*Toute histoire de maison commence par un rêve et une rencontre. Paul ne connaît pas encore GLOBUS. Il cherche, il
-compare, il hésite. Ce livre raconte comment un simple visiteur devient un client.*
+## Chapitre 4 — Le site vitrine
 
-## Chapitre 4 — Un visiteur pousse la porte
+*Un dimanche soir, Paul Mballa, qui vient d'acheter un terrain à Bonamoussadi, cherche « construction villa Douala » et
+arrive sur le site de GLOBUS ENGINEERING.*
 
-*C'est un dimanche soir. Paul Mballa, après des années d'économies, a enfin un terrain à Bonamoussadi. Allongé sur son
-canapé, téléphone en main, il tape « construction villa Douala » dans son moteur de recherche. Un lien l'amène sur le
-site de GLOBUS ENGINEERING.*
+Pour tout ce chapitre, vous êtes un **visiteur anonyme** : profil **Visiteur** de Chrome sur l'ordinateur. Refaites
+aussi les scènes V1 à V4 **sur un téléphone** : la plupart des vrais visiteurs viendront de là.
 
-Pour ce chapitre, vous êtes un visiteur anonyme : vous n'êtes connecté à rien. Utilisez le profil **Visiteur** de Chrome
-sur l'ordinateur, **et refaites aussi le parcours sur un téléphone**, car la plupart des vrais visiteurs viendront de leur
-téléphone.
+### Scène V1 — Le bandeau des cookies
 
-### Scène V1 — La question des cookies
+**Pourquoi** : la loi impose de demander l'accord du visiteur avant toute mesure d'audience ; son choix doit être
+respecté et modifiable.
 
-*À peine arrivé, Paul voit apparaître en bas de l'écran un bandeau qui lui parle de « cookies ». Ce sont de petits
-fichiers qui permettent, entre autres, de mesurer l'audience du site. La loi impose de lui demander son accord.*
+**Qui** : le Visiteur. **Où** : `https://globus-engineering-sarl.com`.
 
-> **Qui :** le Visiteur. **Où :** la page d'accueil du site, `https://globus-engineering-sarl.com`.
+**Méthode**
 
-**Ce que vous faites**
-
-1. Ouvrez la page d'accueil dans le profil Visiteur.
-2. Sur le bandeau des cookies, cliquez sur **Personnaliser**.
-3. Refusez la mesure d'audience, puis enregistrez votre choix.
+1. Ouvrez la page d'accueil. Le bandeau des cookies apparaît en bas.
+2. Cliquez sur **Personnaliser** : deux réglages s'affichent, **Mesure d'audience** et **Marketing**.
+3. Laissez **Mesure d'audience** coupé et **Marketing** coupé, cliquez sur **Enregistrer mes choix**.
 4. Actualisez la page (touche **F5**).
-5. Descendez tout en bas de la page, dans le pied de page, et cliquez sur **Gérer les cookies**.
+5. Tout en bas de la page, cliquez sur **Gérer les cookies**.
 
-**Ce que vous devez constater** : après l'actualisation, le bandeau ne revient pas ; le lien **Gérer les cookies** le fait
-réapparaître pour changer d'avis.
+**Résultat attendu** : après F5, le bandeau ne revient pas ; **Gérer les cookies** le fait réapparaître avec vos choix.
+Les boutons **Tout refuser** et **Tout accepter** existent aussi.
 
 - [ ] **V1** — Le choix des cookies est respecté et modifiable.
 
-### Scène V2 — La promenade dans les pièces de la vitrine
+### Scène V2 — La visite de toutes les pages
 
-*Paul flâne. Il ouvre un menu, puis un autre, regarde les réalisations, revient en arrière. Un seul lien cassé, une seule
-image absente, et la confiance s'effrite.*
+**Pourquoi** : un lien cassé ou une image absente fait fuir un prospect.
 
-> **Qui :** le Visiteur. **Où :** tout le site, sur ordinateur **et** sur téléphone.
+**Qui** : le Visiteur, sur ordinateur **et** téléphone. **Où** : tout le site.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Cliquez une à une sur toutes les entrées du menu du haut, et sur chaque entrée des sous-menus qui se déroulent.
-2. Sur téléphone, ouvrez le menu **☰** en haut et parcourez-le.
-3. Cliquez sur les boutons d'action de l'en-tête (par exemple **Décrire mon projet** ou **Contact**), sans remplir les
-   formulaires pour l'instant.
-4. En bas de page, cliquez sur chaque lien du pied de page : colonne principale, colonne des services, liens légaux.
+1. Cliquez sur chaque entrée du menu du haut, et sur chaque entrée de ses sous-menus.
+2. Sur téléphone, ouvrez le menu **☰** et parcourez-le de la même façon.
+3. Cliquez sur les boutons de l'en-tête (**Décrire mon projet**, **Contact**…) sans remplir les formulaires.
+4. Dans le pied de page, cliquez sur chaque lien (colonnes, services, liens légaux).
 
-**Ce que vous devez constater**
+**Résultat attendu** : aucune page « introuvable », aucune image cassée, tout en français ; sur téléphone rien ne déborde.
 
-- Aucune page « introuvable », aucune image cassée (un petit carré vide à la place d'une photo).
-- Tous les textes sont en français.
-- Sur téléphone, rien ne déborde de l'écran, rien n'est illisible.
+- [ ] **V2** — Navigation impeccable sur ordinateur et téléphone.
 
-- [ ] **V2** — La navigation est impeccable sur ordinateur et sur téléphone.
+### Scène V3 — La recherche du site
 
-### Scène V3 — Paul cherche
+**Méthode** : cliquez sur la **loupe** en haut ; tapez `villa`, validez ; recommencez avec `devis`.
 
-*Paul se demande si GLOBUS construit des villas. Il clique sur la petite loupe.*
+**Résultat attendu** : des résultats pertinents (pages, offres, articles, questions fréquentes) avec le mot surligné.
 
-> **Qui :** le Visiteur. **Où :** icône **loupe** en haut du site.
+- [ ] **V3** — La recherche fonctionne.
 
-**Ce que vous faites**
+### Scène V4 — Les contenus
 
-1. Cliquez sur la loupe, tapez `villa`, validez.
-2. Recommencez avec le mot `devis`.
+**Méthode** : ouvrez une offre, une expertise, un service, une réalisation, un article de blog, la page **FAQ** et le
+centre d'aide.
 
-**Ce que vous devez constater** : des résultats pertinents s'affichent (pages, offres, articles, questions fréquentes), et
-le mot recherché y est surligné.
+**Résultat attendu** : chaque page s'affiche avec texte et images ; les contenus « mis en avant » apparaissent sur
+l'accueil.
 
-- [ ] **V3** — La recherche du site fonctionne.
+- [ ] **V4** — Les contenus s'affichent.
 
-### Scène V4 — Les vitrines dans la vitrine
+### Scène V5 — « Décrire mon projet » : Paul devient un prospect
 
-*Paul lit une offre, s'attarde sur une réalisation, parcourt un article du blog, consulte la foire aux questions.*
+**Pourquoi** : c'est la porte d'entrée commerciale. La demande crée un **lead** (prospect) dans le CRM, affecté
+automatiquement à un commercial.
 
-> **Qui :** le Visiteur. **Où :** les rubriques du site.
+**Qui** : le Visiteur (Paul). **Où** : bouton **Décrire mon projet** (en-tête du site).
 
-**Ce que vous faites**
+**Méthode** — le formulaire a **quatre étapes** (« Votre univers », « Votre projet », « Budget et délai », « Vos
+coordonnées ») ; passez de l'une à l'autre avec **Continuer** :
 
-1. Ouvrez une offre, une expertise, un service, une réalisation, un article de blog, la page FAQ et le centre d'aide.
+1. **Votre univers** : cliquez sur la carte de l'univers de la maison individuelle (« Globus Home » ou équivalent).
+   **Continuer**.
+2. **Votre projet** :
 
-**Ce que vous devez constater** : chaque page s'affiche avec ses images et son texte, et les contenus « mis en avant »
-apparaissent bien sur la page d'accueil.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Type de projet | « maison individuelle » | ★ |
+| Localisation du projet (ville, quartier) | `Bonamoussadi, Douala` | |
+| Disposez-vous d'un terrain ? | « Oui » | |
+| Statut du terrain | « Titre foncier » | |
+| Surface du terrain (m²) | `500` | |
+| Surface à construire (m²) | `180` | |
+| Nombre de niveaux | `2` | |
+| Nombre de pièces | `6` | |
+| Standing | « Confort » | |
 
-- [ ] **V4** — Les contenus s'affichent correctement.
+   **Continuer**.
+3. **Budget et délai** :
 
-### Scène V5 — « Décrire mon projet »
+| Champ | Valeur |
+| --- | --- |
+| Budget minimum | `20000000` |
+| Budget maximum | `30000000` (doit être supérieur au minimum) |
+| Devise | « FCFA (XAF) » |
+| Délai souhaité | « Sous 3 mois » |
+| Financement | « Fonds propres » |
+| Décrivez votre projet en quelques mots | `Villa familiale R+1, 4 chambres, terrain titré.` |
 
-*Paul se décide. Il clique sur le grand bouton **Décrire mon projet**. En quatre petites étapes, il raconte son rêve. Sans
-le savoir, il vient de devenir ce que les commerciaux appellent un « lead » : un prospect.*
+   Cochez éventuellement des priorités et des services. **Continuer**.
+4. **Vos coordonnées** :
 
-> **Qui :** le Visiteur, qui devient Paul. **Où :** bouton **Décrire mon projet**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Prénom | `Paul` | ★ |
+| Nom | `TEST-MBALLA` | |
+| E-mail | `votre.adresse+client@gmail.com` | au moins un moyen de contact |
+| Téléphone | un numéro (ex. `690000000`) | |
+| Pays de résidence | `Cameroun` | |
+| Ville | `Douala` | |
+| Canal de contact préféré | « E-mail » | |
+| Case « J'accepte que GLOBUS ENGINEERING traite mes données pour répondre à ma demande. » | cochée | ★ |
 
-**Ce que vous faites**
+5. Cliquez sur **Envoyer ma demande**.
 
-1. Cliquez sur **Décrire mon projet**.
-2. **Étape « Votre univers »** : choisissez **HOME** (la maison individuelle), puis cliquez sur **Continuer**.
-3. **Étape « Votre projet »** : type maison, surface `180` m², `2` niveaux, terrain : **Oui**, ville `Douala`. Cliquez
-   sur **Continuer**.
-4. **Étape « Budget et délai »** : budget de `20 000 000` à `30 000 000` XAF, délai **3 mois**, financement **Fonds
-   propres**. Cliquez sur **Continuer**.
-5. **Étape « Vos coordonnées »** : prénom `Paul`, nom `TEST-MBALLA`, e-mail `votre.adresse+client@gmail.com`, un numéro de
-   téléphone, contact préféré **email**, et cochez la case de consentement.
-6. Cliquez sur **Envoyer ma demande**.
+**Résultat attendu**
 
-**Ce que vous devez constater**
+- Un message de confirmation s'affiche, avec une estimation indicative.
+- Un e-mail d'accusé de réception arrive sur l'adresse `+client`.
+- (Côté ERP, chapitre 5 : un lead « Paul TEST-MBALLA » existe, affecté à un commercial.)
 
-- Un message de confirmation s'affiche, avec un numéro de demande.
-- Quelques instants plus tard, un e-mail d'accusé de réception arrive sur l'adresse `+client`.
+> Si vous oubliez le prénom ou les moyens de contact, l'étape refuse de continuer avec un message clair (« Indiquez au
+> moins un moyen de vous joindre »).
 
 - [ ] **V5** — La demande de Paul est envoyée et accusée.
 
-### Scène V6 — La photo du terrain
+### Scène V6 — L'estimation instantanée
 
-*Encore curieux, Paul découvre la page « Estimation instantanée ». Il y dépose la photo de son terrain, pour avoir une
-première idée du prix.*
+**Pourquoi** : une estimation de prix immédiate à partir d'une photo, d'un croquis ou d'une description.
 
-> **Qui :** Paul (encore anonyme). **Où :** la page **Estimation instantanée** du site.
+**Qui** : le Visiteur (Paul). **Où** : page **Estimation instantanée** du site.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Ouvrez la page d'estimation instantanée.
-2. Déposez une photo de terrain (ou un croquis), décrivez le projet en quelques lignes.
-3. Indiquez les coordonnées de Paul (adresse `+client`), cochez le consentement et envoyez.
+1. Déposez une photo de terrain (zone de dépôt des images) ou enregistrez une courte note vocale.
+2. Remplissez :
 
-**Ce que vous devez constater** : la demande est enregistrée. L'analyse automatique de la photo dépend de l'intelligence
-artificielle, qui peut être indisponible (voir annexe A) ; ce n'est pas une anomalie.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Univers | « Maison (Home) » | |
+| Surface habitable (m²) | `180` | |
+| Niveaux | `2` | |
+| Standing | « Confort » | |
+| Localisation du terrain | `Bonamoussadi` | |
+| Votre projet en quelques mots | `Villa R+1 4 chambres` | |
+| Prénom | `Paul` | ★ |
+| Nom | `TEST-MBALLA` | |
+| Ville de résidence | `Douala` | |
+| E-mail | `votre.adresse+client@gmail.com` | |
+| Case « J'accepte que GLOBUS ENGINEERING analyse mes éléments et me recontacte… » | cochée | ★ |
 
-- [ ] **V6** — La demande d'estimation est enregistrée.
+3. Cliquez sur **Obtenir mon estimation**.
 
-### Scène V7 — Un autre visiteur écrit
+**Résultat attendu** : une fourchette de prix s'affiche. **Si l'IA n'est pas activée**, l'analyse de la photo n'est pas
+faite mais l'estimation par surface et standing s'affiche quand même : ce n'est pas une anomalie.
 
-*Pendant ce temps, une autre personne, curieuse, remplit le formulaire de contact.*
+- [ ] **V6** — L'estimation est obtenue et la demande enregistrée.
 
-> **Qui :** un autre visiteur. **Où :** la page **Contact**.
+### Scène V7 — Le formulaire de contact
 
-**Ce que vous faites**
+**Qui** : un autre visiteur. **Où** : page **Contact**.
 
-1. Remplissez le formulaire avec l'adresse `votre.adresse+contact@gmail.com` et un petit message.
-2. Envoyez.
+**Méthode** — remplissez le formulaire « Écrivez-nous » :
 
-**Ce que vous devez constater** : un message de succès s'affiche, et un e-mail d'accusé de réception arrive sur l'adresse
-`+contact`.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Prénom | `Claire` | ★ |
+| Nom | `TEST-CONTACT` | ★ |
+| E-mail | `votre.adresse+contact@gmail.com` | ★ |
+| Téléphone / WhatsApp | *(vide)* | |
+| Objet | `Demande de renseignements` | ★ |
+| Message | `Bonjour, faites-vous des extensions ?` | ★ |
+| Case « J'accepte que GLOBUS ENGINEERING traite mes données… » | cochée | ★ |
+
+Cliquez sur le bouton d'envoi.
+
+**Résultat attendu** : message de succès ; un e-mail d'accusé de réception arrive sur `+contact`.
 
 - [ ] **V7** — Le formulaire de contact fonctionne.
 
 ### Scène V8 — L'abonnement à la lettre d'information
 
-*Une lectrice fidèle s'abonne à la lettre d'information. La plateforme, prudente, lui demande de confirmer par e-mail :
-c'est ce qu'on appelle le « double consentement ».*
+**Pourquoi** : l'inscription se fait en **double consentement** (confirmation par e-mail).
 
-> **Qui :** un visiteur. **Où :** le pied de page, bloc **Newsletter**.
+**Méthode**
 
-**Ce que vous faites**
+1. Dans le pied de page, bloc lettre d'information : tapez `votre.adresse+news@gmail.com`, cochez « J'accepte de recevoir
+   la newsletter… », cliquez sur **S'inscrire**.
+2. Ouvrez l'e-mail de confirmation reçu sur `+news` et cliquez sur son lien.
 
-1. Dans le pied de page, saisissez `votre.adresse+news@gmail.com`, cochez la case d'accord et cliquez sur **S'inscrire**.
-2. Ouvrez l'e-mail de confirmation reçu sur l'adresse `+news` et cliquez sur le lien qu'il contient.
+**Résultat attendu** : message « Vérifiez votre boîte e-mail… », puis la page de confirmation après le clic. (Sans la
+case cochée, le message « Merci de cocher la case de consentement » s'affiche.)
 
-**Ce que vous devez constater** : l'inscription est confirmée. (Vous verrez cette abonnée avec le statut « confirmé » au
-chapitre 16.)
+- [ ] **V8** — Abonnement confirmé par e-mail.
 
-- [ ] **V8** — L'abonnement est confirmé par e-mail.
+### Scène V9 — L'assistant du site
 
-### Scène V9 — La conversation avec l'assistant
+**Méthode**
 
-*Paul, insomniaque, pose une question à la petite bulle de discussion qui clignote en bas de l'écran.*
+1. Cliquez sur la bulle de discussion en bas à droite.
+2. Écrivez `Combien coûte une villa de 150 m² ?` et envoyez.
+3. Si l'assistant propose de laisser vos coordonnées, faites-le (adresse `+client`).
 
-> **Qui :** le Visiteur. **Où :** la bulle en bas à droite du site.
-
-**Ce que vous faites**
-
-1. Cliquez sur la bulle de l'assistant.
-2. Écrivez : `Combien coûte une villa de 150 m² ?`
-3. Si l'assistant propose de laisser vos coordonnées, faites-le.
-
-**Ce que vous devez constater** : l'assistant répond de façon cohérente (s'il fonctionne sans l'intelligence artificielle,
-il répond à partir de règles préparées à l'avance). Cette conversation sera retrouvée par Jordan au chapitre suivant.
+**Résultat attendu** : une réponse cohérente. **Si l'IA n'est pas activée**, l'assistant répond à partir de réponses
+préparées et propose d'être recontacté : c'est normal. La conversation sera retrouvée par Jordan (scène C16).
 
 - [ ] **V9** — L'assistant répond.
 
 ### Scène V10 — Un commentaire sous un article
 
-*Avant de fermer son téléphone, Paul laisse un mot sous un article du blog.*
+**Méthode** : ouvrez un article du blog ; en bas, remplissez :
 
-> **Qui :** le Visiteur. **Où :** un article du blog.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `Paul` | ★ |
+| E-mail (non publié) | `votre.adresse+client@gmail.com` | |
+| Votre commentaire | `Article très utile, merci !` | ★ |
 
-**Ce que vous faites**
+Cliquez sur **Publier**.
 
-1. Ouvrez un article du blog, descendez jusqu'au formulaire de commentaire.
-2. Indiquez un nom, un e-mail et un commentaire, puis envoyez.
+**Résultat attendu** : « Merci ! Votre commentaire sera publié après modération. » (Modération : scène W1.)
 
-**Ce que vous devez constater** : le message « Votre commentaire sera publié après modération » s'affiche. (Il sera modéré
-au chapitre 16.)
+- [ ] **V10** — Commentaire en attente de modération.
 
-- [ ] **V10** — Le commentaire est en attente de modération.
+### Scène V11 — Les pages légales
 
-### Scène V11 — Les petits caractères
+**Méthode** : ouvrez, depuis le pied de page, les mentions légales, la politique de confidentialité, la politique cookies
+et les conditions générales.
 
-*Un visiteur prudent lit toujours les mentions légales. Un client exigeant aussi.*
+**Résultat attendu** : chaque page a un vrai contenu, avec les coordonnées exactes de l'entreprise.
 
-> **Qui :** le Visiteur. **Où :** les liens légaux du pied de page.
+- [ ] **V11** — Pages légales complètes.
 
-**Ce que vous faites** : ouvrez les mentions légales, la politique de confidentialité, la politique cookies et les
-conditions générales d'utilisation.
+---
 
-**Ce que vous devez constater** : chaque page a un vrai contenu, à jour, avec les bonnes coordonnées de l'entreprise.
+## Chapitre 5 — Du prospect au contrat
 
-- [ ] **V11** — Les pages légales sont complètes.
-
-## Chapitre 5 — Jordan, le commercial, entre en scène
-
-*Lundi matin, huit heures. Jordan Nkeng pose son café sur son bureau et ouvre l'ERP. Une notification l'attend : un
-certain Paul, à Douala, rêve d'une villa. Commence alors un patient travail de commercial, du premier appel jusqu'à la
-signature.*
+*Lundi matin, Jordan Nkeng ouvre l'ERP. Un certain Paul, à Douala, rêve d'une villa. Commence le travail du commercial,
+du premier appel jusqu'à la signature.*
 
 ### Scène C1 — La règle qui distribue les prospects
 
-*Avant que Jordan ne s'installe, le Gardien règle une petite mécanique : tous les prospects de Douala iront
-automatiquement à Jordan. Ainsi, aucune demande ne reste sans réponse.*
+**Pourquoi** : aucun prospect ne doit rester sans commercial. Une **règle d'affectation** envoie automatiquement les
+prospects de Douala à Jordan.
 
-> **Qui :** le Gardien (profil GLOBUS ADM). **Où :** ERP, *Commercial › CRM*, onglet **Réglages**.
+**Qui** : le Gardien. **Où** : *Commercial › CRM*, onglet **Réglages**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Dans le menu de gauche, sous **Commercial**, cliquez sur **CRM**, puis sur l'onglet **Réglages**.
-2. Dans la partie **Règles d'affectation des leads**, cliquez sur **Nouvelle règle**.
-3. **Nom** : `TEST Douala`. **Critère** : ville `Douala`. **Commerciaux** : Jordan. **Stratégie** : tour de rôle.
-4. Enregistrez.
+1. Dans le bloc **Règles d'affectation des leads**, cliquez sur **Nouvelle règle**.
+2. Remplissez :
 
-**Ce que vous devez constater** : la règle est active ; les prochains prospects de Douala iront à Jordan.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST Douala` | ★ |
+| Priorité | `1` | |
+| Critères › Villes | `Douala` puis **Entrée** (laissez les autres critères vides : « Indifférent ») | |
+| Commerciaux | « Jordan TEST-NKENG » | |
+| Stratégie | « Tour de rôle » | |
+| Actif | coché | |
 
-> Si la demande de Paul (scène V5) est arrivée avant cette règle, elle n'a peut-être pas été affectée à Jordan : à la scène
-> C2, vous pourrez l'affecter à la main avec le bouton **Affecter** de la fiche.
+3. Cliquez sur **Créer**.
 
-- [ ] **C1** — La règle d'affectation est en place.
+**Résultat attendu** : la règle apparaît, active.
 
-### Scène C2 — Le prospect est arrivé
+> La demande de Paul (V5) est peut-être arrivée **avant** cette règle et a pu être confiée à un autre commercial. À la
+> scène C2, vous la confierez à Jordan avec le bouton **Affecter**.
 
-> **Qui :** Jordan (profil **GLOBUS COM**). **Où :** ERP, *Commercial › CRM*, onglet **Leads**.
+- [ ] **C1** — Règle d'affectation en place.
 
-**Ce que vous faites**
+### Scène C2 — Le prospect arrive chez Jordan
 
-1. Dans la fenêtre de Jordan, ouvrez l'ERP, puis *Commercial › CRM*, onglet **Leads**.
-2. Regardez la cloche en haut à droite.
+**Qui** : Jordan (profil **GLOBUS COM**). **Où** : *Commercial › CRM*, onglet **Leads**.
 
-**Ce que vous devez constater**
+**Méthode**
 
-- Les demandes de Paul (scènes V5 et V6, et V7 si le formulaire de contact crée aussi un prospect) apparaissent dans la
-  liste, avec leur source, leur univers, leur score, leur « température » (froid, tiède, chaud) et un chronomètre : le
-  délai de première réponse.
-- La cloche de Jordan signale une nouvelle notification.
+1. Ouvrez l'onglet **Leads** ; regardez la cloche des notifications en haut à droite.
+2. Si le lead de Paul (V5) n'est pas affecté à Jordan : ouvrez-le (profil du Gardien), cliquez sur **Affecter**, choisissez
+   **Commercial** « Jordan TEST-NKENG », **Enregistrer**.
 
-- [ ] **C2** — Les prospects sont arrivés chez Jordan.
+**Résultat attendu** : les demandes de Paul (V5, V6) apparaissent avec leur source, leur univers, leur score et leur
+« température » ; un compte à rebours indique le délai de première réponse ; la cloche de Jordan signale un nouveau
+lead.
+
+- [ ] **C2** — Le prospect est chez Jordan.
 
 ### Scène C3 — Le dossier de Paul
 
-*Jordan ouvre la fiche de Paul et découvre tout ce qu'il a raconté dimanche soir.*
+**Qui** : Jordan. **Où** : fiche du lead de la scène V5 (cliquez sur sa ligne).
 
-> **Qui :** Jordan. **Où :** la fiche du lead de la scène V5.
+**Résultat attendu** : le bloc du dossier « Décrire mon projet » reprend toutes les réponses de Paul (type de projet,
+terrain, surfaces, budget…) avec un taux de complétude ; le score est expliqué.
 
-**Ce que vous faites** : cliquez sur la ligne du prospect Paul.
+- [ ] **C3** — Dossier complet.
 
-**Ce que vous devez constater** : le bloc **Dossier « Décrire mon projet »** reprend toutes les réponses de Paul, avec un
-taux de complétude, et le score est expliqué.
+### Scène C4 — Le premier appel et la relance
 
-- [ ] **C3** — Le dossier du prospect est complet.
+**Pourquoi** : la première activité enregistrée **arrête le chronomètre** de réponse et fait passer le lead à
+« Contacté ».
 
-### Scène C4 — Le premier appel
+**Qui** : Jordan. **Où** : fiche du lead, bloc **Activités**.
 
-*Jordan décroche son téléphone. Paul répond, surpris et ravi d'être rappelé si vite. Ils conviennent d'une visite du
-terrain. Jordan note l'appel : le chronomètre s'arrête.*
+**Méthode** — deux activités :
 
-> **Qui :** Jordan. **Où :** fiche du lead.
+1. Cliquez sur **Activité**. Fenêtre **Nouvelle activité** — l'appel qui vient d'avoir lieu :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Type | « Appel » | ★ |
+| Objet | `Premier échange, RDV terrain` | ★ |
+| Contenu | `Paul confirme budget et terrain titré.` | |
+| Fait | coché | |
+| Sens | « Sortant » | |
+| Résultat | `RDV terrain jeudi` | |
 
-1. Sur la fiche de Paul, cliquez sur **Activité**.
-2. **Type** : appel. **Compte rendu** : `Premier échange, RDV terrain`. **Relance** : dans deux jours.
-3. Enregistrez.
+   **Enregistrer**.
+2. Cliquez de nouveau sur **Activité** — la relance à faire :
 
-**Ce que vous devez constater** : le chronomètre du délai de réponse s'arrête, et le statut du prospect passe à
-« contacté ».
+| Champ | Valeur | |
+| --- | --- | --- |
+| Type | « Relance » | ★ |
+| Objet | `Rappeler Paul après la visite` | ★ |
+| Échéance | dans deux jours, 10:00 | |
+| Fait | **non** coché | |
 
-- [ ] **C4** — La première activité est enregistrée.
+   **Enregistrer**.
+
+**Résultat attendu** : les deux activités figurent dans le fil ; le chronomètre de réponse est arrêté ; le statut du lead
+devient **Contacté**.
+
+- [ ] **C4** — Premier contact enregistré, relance planifiée.
 
 ### Scène C5 — Qualifier le projet
 
-*Paul a un vrai budget, un délai réaliste, et c'est lui qui décide. Jordan le note : le prospect est « qualifié ».*
+**Qui** : Jordan. **Où** : fiche du lead.
 
-> **Qui :** Jordan. **Où :** fiche du lead.
+**Méthode**
 
-**Ce que vous faites**
+1. Cliquez sur **Qualifier**. La fenêtre **Qualification du lead** permet aussi de corriger les coordonnées.
+2. Complétez :
 
-1. Cliquez sur **Qualifier**. La fenêtre permet aussi de corriger ses coordonnées (nom, téléphone, WhatsApp, ville…).
-2. **Budget maximum** : `25 000 000`. **Échéance** : « Sous 3 mois ». **Offre visée** : choisissez une offre de
-   l'univers. Dans **Étiquettes**, ajoutez `décisionnaire` (c'est bien Paul qui décide).
-3. Enregistrez.
-4. Cliquez sur **Statut**, choisissez « Qualifié », enregistrez.
+| Champ | Valeur |
+| --- | --- |
+| WhatsApp | le numéro de Paul (même que le téléphone) |
+| Univers | « Globus Home » |
+| Offre visée | une offre de la liste (ex. « Maison clé en main ») |
+| Budget maximum | `25000000` |
+| Délai souhaité | « Sous 3 mois » |
+| Étiquettes | `décisionnaire` puis **Entrée** |
 
-**Ce que vous devez constater** : les informations sont à jour sur la fiche et le statut devient « qualifié ».
+3. **Enregistrer**.
+4. Cliquez sur **Statut**. Fenêtre **Statut du lead** : **Statut** « Qualifié ». **Enregistrer**.
 
-- [ ] **C5** — Le prospect est qualifié.
+**Résultat attendu** : la fiche affiche les nouvelles informations ; statut **Qualifié**.
 
-### Scène C6 — Du prospect à l'affaire
+> **Contrôle du champ conditionnel** : dans **Statut**, choisissez « Perdu » : le champ **Motif de perte** apparaît,
+> obligatoire. Revenez sur « Qualifié » : il disparaît.
 
-*Le rêve de Paul devient une « opportunité » : une affaire que l'entreprise espère gagner.*
+- [ ] **C5** — Prospect qualifié.
 
-> **Qui :** Jordan. **Où :** fiche du lead.
+### Scène C6 — Du prospect à l'opportunité
 
-**Ce que vous faites**
+**Pourquoi** : l'affaire entre dans le **pipeline** ; un contact et une organisation cliente sont créés pour Paul.
 
-1. Cliquez sur **Convertir en opportunité**.
-2. **Montant estimé** : `25 000 000` XAF. Choisissez une **étape** et une **date de décision** dans quinze jours.
-3. Validez, puis cliquez sur **Voir le pipeline**.
+**Qui** : Jordan. **Où** : fiche du lead.
 
-**Ce que vous devez constater**
+**Méthode**
 
-- Une carte au nom de Paul apparaît dans l'onglet **Pipeline**.
-- Dans l'onglet **Contacts**, un contact « Paul TEST-MBALLA » a été créé, ainsi qu'une organisation cliente.
+1. Cliquez sur **Convertir en opportunité**. Remplissez :
 
-- [ ] **C6** — L'opportunité est créée.
+| Champ | Valeur |
+| --- | --- |
+| Titre | proposé (modifiable) |
+| Montant estimé | `25000000` |
+| Étape | « Découverte » |
+| Date de décision attendue | dans 15 jours |
+| Créer l'organisation | coché |
 
-### Scène C7 — L'affaire avance d'une case
+2. **Enregistrer**, puis cliquez sur **Voir le pipeline**.
 
-*Le pipeline ressemble à un tableau de liège avec des colonnes. Chaque affaire est une carte que l'on fait glisser de
-colonne en colonne à mesure qu'elle avance.*
+**Résultat attendu** : une carte au nom de Paul dans la colonne « Découverte » de l'onglet **Pipeline** ; dans l'onglet
+**Contacts**, « Paul TEST-MBALLA » et une organisation cliente ; le lead passe à **Converti**.
 
-> **Qui :** Jordan. **Où :** onglet **Pipeline**.
+- [ ] **C6** — Opportunité créée.
 
-**Ce que vous faites** : cliquez sur la carte de Paul, gardez le bouton de la souris enfoncé, faites-la glisser jusqu'à
-la colonne suivante, puis relâchez. Actualisez ensuite la page.
+### Scène C7 — L'affaire avance d'une étape
 
-**Ce que vous devez constater** : la carte a changé de colonne et y reste après l'actualisation.
+**Qui** : Jordan. **Où** : onglet **Pipeline**.
+
+**Méthode** : sur la carte de Paul, dans la **liste d'étape** de la carte, choisissez « Proposition ». Actualisez la page.
+
+**Résultat attendu** : la carte passe dans la colonne « Proposition » et y reste après actualisation.
+
+> Choisir « Perdu » ouvre une fenêtre demandant le motif : ne le faites pas ici.
 
 - [ ] **C7** — Le pipeline se met à jour.
 
 ### Scène C8 — Le devis
 
-*Après la visite du terrain, Jordan prépare le devis : les études, le gros œuvre, le second œuvre. Trois lignes, une TVA,
-et un échéancier en trois temps.*
+**Pourquoi** : un devis clair, ligne par ligne, avec un échéancier qui totalise 100 %.
 
-> **Qui :** Jordan. **Où :** la carte de Paul dans le pipeline.
+**Qui** : Jordan. **Où** : onglet **Pipeline**, bouton **Devis** sur la carte de Paul.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Sur la carte de l'opportunité, cliquez sur **Devis**. L'**Intitulé du devis**, le client et le contact sont repris
-   de l'opportunité ; vérifiez-les.
-2. Remplissez le tableau des lignes chiffrées. Une ligne est déjà présente : remplissez-la, puis cliquez sur **Ligne**
-   pour ajouter chacune des suivantes. Dans chaque ligne, la colonne qui compte est **Désignation** (ce que l'on vend) ;
-   la **Section** n'est qu'un titre de regroupement facultatif.
-   - **Désignation** « Études et plans » : **Qté** `1`, **PU HT** `3 000 000` ;
-   - **Désignation** « Gros œuvre » : **Qté** `1`, **PU HT** `15 000 000` ;
-   - **Désignation** « Second œuvre » : **Qté** `1`, **PU HT** `7 000 000`.
-3. Vérifiez la **TVA (%)** : 19,25.
-4. Dans **Échéancier de paiement**, cliquez trois fois sur **Échéance** et remplissez chaque ligne : le **libellé**
-   (« Acompte à la signature », « Mi-chantier », « Réception »), le **% du total** (`30`, `40`, `30`) — le montant se
-   calcule tout seul — et, si vous voulez, le jalon déclencheur.
-5. **Valable jusqu'au** : une date dans 30 jours. Cliquez sur **Créer le devis**.
-6. Cliquez sur **PDF** pour voir le document.
+1. Cliquez sur **Devis** : la fenêtre **Nouveau devis** s'ouvre, avec l'opportunité, le client et le contact déjà repris.
+2. En-tête :
 
-*Si une ligne ou une échéance est incomplète (désignation, quantité ou prix manquant), le devis n'est pas enregistré et
-un message indique laquelle compléter : rien n'est perdu en silence.*
+| Champ | Valeur | |
+| --- | --- | --- |
+| Intitulé du devis | `Villa Mballa — construction R+1` | ★ |
+| Valable jusqu'au | dans 30 jours | |
+| Devise | « FCFA (XAF) » | |
+| TVA (%) | `19.25` (proposé) | |
+| Remise globale (montant) | `0` | |
+| Introduction | `Construction d'une villa R+1 à Bonamoussadi.` | |
 
-**Ce que vous devez constater** : les totaux hors taxes, TVA et toutes taxes comprises sont justes (25 000 000 HT), et le
-PDF est lisible, propre, aux couleurs de l'entreprise.
+3. **Lignes chiffrées** : une ligne vide est déjà présente ; remplissez-la, puis cliquez sur **Ligne** pour chaque ligne
+   suivante. La colonne qui compte est **Désignation** ★ ; **Section** n'est qu'un titre de regroupement (facultatif).
 
-- [ ] **C8** — Le devis est juste et son PDF est présentable.
+| Section | Lot | Désignation ★ | Unité | Qté ★ | PU HT ★ | Remise % |
+| --- | --- | --- | --- | --- | --- | --- |
+| `Études` | `ET` | `Études et plans` | `forfait` | `1` | `3000000` | `0` |
+| `Gros œuvre` | `GO` | `Gros œuvre` | `forfait` | `1` | `15000000` | `0` |
+| `Second œuvre` | `SO` | `Second œuvre` | `forfait` | `1` | `7000000` | `0` |
+
+4. **Échéancier de paiement** : cliquez trois fois sur **Échéance** et remplissez :
+
+| Libellé de l'échéance ★ | % du total ★ | Jalon déclencheur |
+| --- | --- | --- |
+| `Acompte à la signature` | `30` | `Signature du contrat` |
+| `Mi-chantier` | `40` | `Fin du gros œuvre` |
+| `Réception` | `30` | `Réception des travaux` |
+
+5. **Conditions particulières** : `Paiement à 15 jours.` Cliquez sur **Créer le devis**.
+6. Sur la fiche du devis, cliquez sur **PDF**.
+
+**Résultat attendu**
+
+- Sous-total HT **25 000 000**, TVA 19,25 % **4 812 500**, total TTC **29 812 500** FCFA ; chaque échéance affiche son
+  montant.
+- Le PDF reprend les sections, les lignes, l'échéancier, aux couleurs de l'entreprise.
+
+> **Contrôle** : laissez une ligne sans **Désignation** et cliquez sur **Créer le devis** : la plateforme refuse avec
+> « Devis incomplet — ligne N : désignation manquante… ». Rien n'est enregistré en silence.
+
+- [ ] **C8** — Devis juste, PDF présentable.
 
 ### Scène C9 — Le devis part chez Paul
 
-> **Qui :** Jordan. **Où :** la fiche du devis.
+**Qui** : Jordan. **Où** : fiche du devis.
 
-**Ce que vous faites** : cliquez sur **Envoyer**.
+**Méthode** : cliquez sur **Envoyer**.
 
-**Ce que vous devez constater** : le devis passe au statut « envoyé », et un e-mail arrive sur l'adresse `+client`, avec
-un lien sécurisé vers le devis.
+**Résultat attendu** : statut **Envoyé** ; le bloc **Lien client** affiche un lien ; un e-mail arrive sur `+client` avec
+ce lien.
 
-- [ ] **C9** — Le devis est envoyé.
+- [ ] **C9** — Devis envoyé.
 
-### Scène C10 — Paul signe du bout des doigts
+### Scène C10 — Paul accepte par code
 
-*Le soir même, Paul ouvre l'e-mail. Il lit le devis ligne par ligne, sourit, et l'accepte. Pas besoin d'imprimer, de
-signer, de scanner : un code reçu par e-mail fait office de signature, et la plateforme en garde la preuve.*
+**Pourquoi** : l'acceptation par code reçu par e-mail vaut signature ; la plateforme en garde la preuve.
 
-> **Qui :** Paul, qui n'a pas encore de compte (profil **GLOBUS CLI**). **Où :** le lien de l'e-mail.
+**Qui** : Paul, sans compte (profil **GLOBUS CLI**). **Où** : le lien de l'e-mail.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Dans la fenêtre GLOBUS CLI, ouvrez Gmail, puis l'e-mail du devis reçu sur `+client`, et cliquez sur le lien.
-2. Lisez le devis. En bas, saisissez le **Nom et prénom du signataire**.
-3. Cochez la case « J'ai lu le devis et j'accepte ses conditions. »
-4. Cliquez sur **Recevoir mon code** (par e-mail). Un code arrive dans Gmail.
-5. Tapez ce code dans le champ **Code reçu**, puis cliquez sur **Accepter ce devis**.
+1. Dans Gmail (adresse `+client`), ouvrez l'e-mail du devis et cliquez sur le lien.
+2. Lisez le devis. En bas, cliquez sur **Recevoir mon code de validation** : un code arrive par e-mail.
+3. Remplissez :
 
-**Ce que vous devez constater**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code reçu | le code de l'e-mail | ★ |
+| Nom et prénom du signataire | `Paul TEST-MBALLA` | ★ |
+| J'ai lu le devis et j'accepte ses conditions. | cochée | ★ |
 
-- La page affiche « Devis accepté ».
-- Chez Jordan, le devis passe « accepté », avec la preuve de l'acceptation (date, heure, moyen de réception du code), et
-  Jordan reçoit une notification.
+4. Cliquez sur **J'accepte le devis**.
 
-- [ ] **C10** — Le client a accepté le devis par code.
+**Résultat attendu** : la page confirme l'acceptation ; chez Jordan, le devis passe **Accepté** avec la preuve (date,
+heure, moyen de réception du code) et une notification.
 
-### Scène C11 — Le devis qu'on révise et celui qu'on perd
+- [ ] **C10** — Devis accepté par code.
 
-*Tous les devis ne se terminent pas aussi bien. On vérifie qu'on peut réviser un devis sans perdre l'ancienne version, et
-enregistrer un refus.*
+### Scène C11 — Le refus puis la révision
 
-> **Qui :** Jordan. **Où :** onglet **Devis**.
+**Pourquoi** : un devis refusé se révise sans perdre l'ancienne version.
 
-**Ce que vous faites**
+**Qui** : Jordan. **Où** : onglet **Pipeline**, puis la fiche du nouveau devis.
 
-1. Créez un **second** devis, en brouillon, pour l'opportunité de Paul (une seule ligne suffit).
-2. Cliquez sur **Réviser** : une nouvelle version est créée.
-3. Puis, sur ce second devis, cliquez sur **Refus client** et indiquez le motif « prix ».
+**Méthode**
 
-**Ce que vous devez constater** : la révision crée une nouvelle version, l'ancienne reste consultable, et le second devis
-passe au statut « refusé ». Le premier devis, accepté, n'est pas touché.
+1. Sur la carte de Paul, cliquez sur **Devis** ; créez un **second** devis avec une seule ligne (Désignation `Option
+   piscine`, Qté `1`, PU HT `4000000`) ; **Créer le devis**.
+2. Sur ce devis, cliquez sur **Envoyer**.
+3. Cliquez sur **Refus client** ; dans **Motif communiqué par le client**, tapez `Prix trop élevé` ; confirmez. Le devis
+   passe **Refusé**.
+4. Cliquez sur **Réviser** : une nouvelle version (même numéro, révision 2) est créée en **Brouillon**.
 
-- [ ] **C11** — La révision et le refus fonctionnent.
+**Résultat attendu** : la version refusée reste consultable au statut **Remplacé** ; la révision 2 est en brouillon,
+avec les mêmes lignes ; le premier devis, accepté, n'est pas touché (un devis accepté ne peut pas être révisé).
+
+- [ ] **C11** — Refus et révision fonctionnent.
 
 ### Scène C12 — Le contrat
 
-*Un devis accepté, c'est une promesse. Le contrat, c'est un engagement.*
+**Qui** : Jordan. **Où** : fiche du devis **accepté** (C10).
 
-> **Qui :** le Gardien (ou Jordan, qui a aussi le droit de gérer les contrats). **Où :** le devis accepté.
+**Méthode** : cliquez sur **Établir le contrat**, puis confirmez dans la fenêtre **Établir le contrat**.
 
-**Ce que vous faites**
+**Résultat attendu** : la fiche du contrat s'ouvre (statut **Brouillon**), avec le montant, les conditions et le bloc
+**Échéancier contractuel** repris du devis.
 
-1. Ouvrez le devis accepté (celui de la scène C10) et cliquez sur **Établir le contrat**.
-2. Vérifiez les conditions et l'échéancier contractuel, repris du devis, puis validez.
-
-**Ce que vous devez constater** : le contrat apparaît dans l'onglet **Contrats**, avec son **Échéancier contractuel**.
-
-- [ ] **C12** — Le contrat est établi.
+- [ ] **C12** — Contrat établi.
 
 ### Scène C13 — La signature
 
-*Paul est venu au bureau, stylo en main. Le contrat papier est signé, scanné, et la signature est enregistrée dans la
-plateforme.*
+**Qui** : Jordan. **Où** : fiche du contrat.
 
-> **Qui :** le Gardien. **Où :** onglet **Contrats**.
+**Méthode**
 
-**Ce que vous faites**
+1. Cliquez sur **Enregistrer la signature**. Fenêtre **Enregistrer la signature du contrat** :
 
-1. Ouvrez le contrat et cliquez sur **Contrat signé**.
-2. **Date** : aujourd'hui. **Mode** : signature manuscrite scannée. Joignez un PDF (le « contrat signé » de l'annexe D).
-3. Cliquez sur **Enregistrer la signature**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Signataire | `Paul TEST-MBALLA` (proposé) | ★ |
+| Mode de signature | « Signature manuscrite scannée » | |
+| Date de signature | aujourd'hui | |
+| Contrat signé scanné | déposez le PDF « Contrat signé » (annexe D) | ★ avec ce mode |
 
-**Ce que vous devez constater** : le contrat passe au statut « signé ».
+2. Cliquez sur **Enregistrer la signature**.
 
-- [ ] **C13** — La signature est enregistrée.
+**Résultat attendu** : statut **Signé** ; l'indicateur **Signature** affiche la date ; un bouton **Contrat signé** permet
+d'ouvrir le scan.
 
-### Scène C14 — La naissance du projet (et du compte de Paul)
+- [ ] **C13** — Signature enregistrée.
 
-*C'est le moment le plus important du chapitre. En un seul clic, le contrat devient un projet de chantier : son budget,
-ses jalons de paiement, son chef de projet. Et, dans le même mouvement, la plateforme envoie à Paul les clés de son
-espace client.*
+### Scène C14 — La naissance du projet et l'invitation de Paul
 
-> **Qui :** le Gardien. **Où :** le contrat signé.
+**Pourquoi** : en un clic, le contrat devient un projet de chantier (budget, jalons de paiement, chef de projet), et Paul
+reçoit l'accès à son espace client.
 
-**Ce que vous faites**
+**Qui** : Jordan (ou le Gardien). **Où** : fiche du contrat signé.
 
-1. Sur le contrat signé, cliquez sur **Créer le projet**.
-2. **Nom** : `TEST — Villa Mballa`. **Responsable** : Samuel.
-3. Validez, puis cliquez sur **Projet** pour ouvrir sa fiche.
+**Méthode**
 
-**Ce que vous devez constater**
+1. Cliquez sur **Créer le projet**. Fenêtre **Créer le projet à partir du contrat** :
 
-- Le projet est créé avec un code de la forme PRJ-AAAA-NNNNN.
-- Il possède déjà un budget initial réparti par lot, des **jalons** issus de l'échéancier (30 %, 40 %, 30 %), et Samuel
-  figure parmi ses membres.
-- **Paul reçoit un e-mail d'invitation** à son espace client, sur l'adresse `+client`.
+| Champ | Valeur |
+| --- | --- |
+| Nom du projet | `TEST — Villa Mballa` |
+| Chef de projet | « Samuel TEST-FOTSO » |
+| Comptes clients existants à rattacher | *(vide)* |
+| Inviter le client par e-mail | `votre.adresse+client@gmail.com` (proposé) |
 
-- [ ] **C14** — Le projet est né et Paul est invité.
+2. Cliquez sur **Créer le projet**, puis sur le bouton **Projet PRJ-…** de la fiche.
 
-### Scène C15 — La relance du mercredi
+**Résultat attendu**
 
-*Jordan n'oublie rien : la relance prévue lors du premier appel l'attend.*
+- Le projet a un code de la forme **PRJ-AAAA-NNNNN** ; Samuel est membre ; le budget initial et les jalons de paiement
+  (30 %, 40 %, 30 %) sont repris de l'échéancier.
+- **Paul reçoit un e-mail d'invitation** à l'espace client sur `+client`.
 
-> **Qui :** Jordan. **Où :** *CRM*, onglet **Activités**.
+- [ ] **C14** — Projet créé, Paul invité.
 
-**Ce que vous faites** : retrouvez la relance créée à la scène C4 et cliquez sur **Marquer faite**.
+### Scène C15 — La relance
 
-**Ce que vous devez constater** : la relance est close.
+**Qui** : Jordan. **Où** : *CRM*, onglet **Activités**.
 
-- [ ] **C15** — Les relances se suivent et se ferment.
+**Méthode** : sur la relance « Rappeler Paul après la visite » (C4), cliquez sur **Marquer faite** ; dans **Résultat**,
+tapez `Devis accepté` ; confirmez.
 
-### Scène C16 — La conversation de la nuit
+**Résultat attendu** : la relance passe à « Fait ».
 
-*Jordan retrouve la conversation que Paul avait eue avec l'assistant du site.*
+- [ ] **C15** — Relance close.
 
-> **Qui :** Jordan. **Où :** *Commercial › Assistant et WhatsApp*.
+### Scène C16 — La conversation de l'assistant
 
-**Ce que vous faites** : ouvrez la conversation de la scène V9, lisez-la, puis cliquez sur **Clore**.
+**Qui** : Jordan. **Où** : *Commercial › Assistant et WhatsApp*.
 
-**Ce que vous devez constater** : la conversation est lisible en entier, puis close.
+**Méthode** : ouvrez la conversation de la scène V9, lisez-la, puis cliquez sur **Clore**.
 
-- [ ] **C16** — Les conversations de l'assistant sont consultables.
+**Résultat attendu** : la conversation est lisible en entier, puis close.
 
-## Chapitre 6 — Paul reçoit ses clés
+- [ ] **C16** — Conversations consultables et clôturables.
 
-*Paul ouvre l'e-mail de GLOBUS avec une petite émotion : « Votre espace client est prêt ». Derrière ce lien se trouve sa
-maison avant la maison, le lieu où il la verra naître.*
+---
+
+## Chapitre 6 — L'espace client de Paul
+
+*Paul reçoit l'e-mail « Votre espace client est prêt ». Derrière ce lien, il verra sa maison naître.*
 
 ### Scène K1 — L'activation
 
-> **Qui :** Paul (profil **GLOBUS CLI**). **Où :** l'e-mail d'invitation reçu sur `+client`.
+**Qui** : Paul (profil **GLOBUS CLI**). **Où** : l'e-mail d'invitation reçu sur `+client`.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Dans la fenêtre GLOBUS CLI, ouvrez l'e-mail d'invitation et cliquez sur son lien.
-2. Vérifiez le prénom et le nom, choisissez un mot de passe d'au moins 12 caractères (notez-le), puis cliquez sur
-   **Activer et continuer**.
+1. Ouvrez l'e-mail d'invitation et cliquez sur son lien.
+2. Page d'activation :
 
-**Ce que vous devez constater** : Paul arrive dans son espace client, et la plateforme lui demande aussitôt de poser sa
-seconde serrure.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Prénom / Nom | déjà remplis (`Paul`, `TEST-MBALLA`) : vérifiez | |
+| Téléphone (WhatsApp) | facultatif | |
+| Choisissez votre mot de passe | 12 caractères minimum (majuscule, minuscule, chiffre, caractère spécial) | ★ |
+| Confirmez le mot de passe | le même | ★ |
 
-- [ ] **K1** — Le compte de Paul est activé.
+3. Cliquez sur **Activer et continuer**. Notez le mot de passe.
 
-### Scène K2 — La seconde serrure de Paul
+**Résultat attendu** : Paul arrive dans son espace client, sur la page **Mon compte** : la double authentification lui
+est demandée (elle est **obligatoire pour un client**).
 
-*Pour un client, la double authentification n'est pas une option : son espace permet de valider des décisions et de
-payer. La plateforme refuse d'aller plus loin tant qu'elle n'est pas posée.*
+- [ ] **K1** — Compte de Paul activé.
 
-> **Qui :** Paul. **Où :** *Mon compte*, onglet **Sécurité**.
+### Scène K2 — La double authentification de Paul
 
-**Ce que vous faites**
+**Pourquoi** : l'espace client permet de valider des décisions et de payer : la plateforme refuse d'aller plus loin tant
+que la double authentification n'est pas posée.
+
+**Qui** : Paul. **Où** : **Mon compte**, onglet **Sécurité**.
+
+**Méthode**
 
 1. Cliquez sur **Configurer une application d'authentification**.
-2. Scannez le QR code avec l'application d'authentification du téléphone, tapez le code affiché, puis cliquez sur
-   **Activer**.
-3. Téléchargez les codes de secours, puis cliquez sur **J'ai conservé mes codes**.
+2. Scannez le QR code avec l'application du téléphone (renommez la ligne « Paul »), tapez le code dans **Code à 6
+   chiffres**, cliquez sur **Activer**.
+3. **Télécharger** les codes de secours, puis **J'ai conservé mes codes**.
 
-**Ce que vous devez constater** : le reste de l'espace client devient accessible.
+**Résultat attendu** : le reste de l'espace client devient accessible.
 
-- [ ] **K2** — La double authentification du client est active.
+- [ ] **K2** — Double authentification du client active.
 
-### Scène K3 — Partir et revenir
+### Scène K3 — Se déconnecter et revenir
 
-> **Qui :** Paul. **Où :** son espace client.
+**Méthode**
 
-**Ce que vous faites**
+1. Cliquez sur le nom en haut à droite, puis déconnectez-vous.
+2. Sur la page de connexion : **Adresse e-mail**, **Mot de passe**, cochez **Rester connecté**, cliquez sur **Se
+   connecter**.
+3. Tapez le code dans **Code de l'application d'authentification**, cochez **Faire confiance à cet appareil pendant 30
+   jours**, cliquez sur **Vérifier**.
 
-1. Cliquez sur votre nom en haut à droite et déconnectez-vous.
-2. Reconnectez-vous : e-mail, mot de passe, cochez **Rester connecté**, cliquez sur **Se connecter**, puis tapez le code à
-   6 chiffres et cliquez sur **Vérifier**.
-
-**Ce que vous devez constater** : la connexion réussit ; grâce à **Rester connecté**, cet ordinateur devient un « appareil
-de confiance ».
+**Résultat attendu** : connexion réussie ; à la prochaine connexion depuis ce navigateur, le code ne sera plus demandé
+pendant 30 jours.
 
 - [ ] **K3** — Déconnexion et reconnexion fonctionnent.
 
 ### Scène K4 — Le tableau de bord de Paul
 
-*La première chose que voit Paul, c'est le tableau de bord de son projet. Rien n'a encore commencé, mais tout y est déjà.*
+**Qui** : Paul. **Où** : menu **Tableau de bord**.
 
-> **Qui :** Paul. **Où :** menu **Tableau de bord**.
+**Résultat attendu**
 
-**Ce que vous devez constater**
-
-- La référence et le nom du projet (« TEST — Villa Mballa »).
-- Le montant du contrat (25 000 000 hors taxes, plus la TVA).
-- La frise des jalons.
+- Le code et le nom du projet « TEST — Villa Mballa ».
+- Le montant du contrat (25 000 000 HT + TVA).
+- La frise des jalons de paiement (30 %, 40 %, 30 %).
 - Aucun montant payé pour l'instant.
 - **Aucune donnée d'un autre client.**
 
-- [ ] **K4** — Le tableau de bord est juste et ne montre que le projet de Paul.
+- [ ] **K4** — Tableau de bord juste, limité au projet de Paul.
 
-### Scène K5 — La visite de toutes les pièces
+### Scène K5 — La visite de toutes les pages
 
-*Paul ouvre chaque porte de son espace, une à une. La plupart des pièces sont encore vides, et c'est normal : rien n'a
-encore été publié pour lui.*
+**Méthode** : cliquez une à une sur les entrées du menu : **Passeport projet**, **Chantier**, **Planning**,
+**Finances**, **Documents**, **Preuves certifiées**, **Validations**, **Maquette 3D / BIM**, **Configurateur**, **Live,
+360° et drone**, **Messagerie**, **Appels**, **Mon bâtiment**, **Énergie et confort**, **SAV et garanties**, **Dossier
+Tranquillité**, **Mon avis**, **Notifications**, **Mon compte**, **Documentation**.
 
-> **Qui :** Paul. **Où :** tout le menu de l'espace client.
+**Résultat attendu**
 
-**Ce que vous faites** : cliquez successivement sur Passeport projet, Chantier, Planning, Finances, Documents, Preuves
-certifiées, Validations, Immersion (maquette 3D, configurateur, live), Messagerie, Appels, Mon bâtiment, Énergie, SAV,
-Dossier Tranquillité, Mon avis, Notifications et Mon compte.
+- Chaque page s'ouvre sans erreur ; une page encore vide l'explique (« Aucun document publié »…).
+- **Financement** et **Parrainage** n'apparaissent pas tant que ces programmes ne sont pas ouverts (chapitre 11).
 
-**Ce que vous devez constater**
+- [ ] **K5** — Toutes les pages de l'espace client s'ouvrent.
 
-- Chaque page s'ouvre sans erreur, et une page vide l'explique clairement (« Aucune image publiée », « Aucun document
-  publié »…).
-- Les menus **Financement** et **Parrainage** n'apparaissent pas : ils ne seront ouverts qu'au chapitre 11.
+### Scène K6 — L'application GLOBUS Client
 
-- [ ] **K5** — Toutes les pages de l'espace client s'ouvrent proprement.
+**Qui** : Paul. **Où** : téléphone, application **GLOBUS Client**.
 
-### Scène K6 — Le chantier dans la poche
+**Méthode**
 
-*Paul installe l'application GLOBUS Client sur son téléphone, pour suivre son chantier partout.*
-
-> **Qui :** Paul. **Où :** le téléphone, application **GLOBUS Client**.
-
-**Ce que vous faites**
-
-1. Ouvrez l'application GLOBUS Client.
-2. Saisissez l'e-mail et le mot de passe de Paul, cochez **Rester connecté**, touchez **Se connecter**, puis tapez le code
-   à 6 chiffres et touchez **Vérifier**.
-3. Parcourez les onglets du bas : **Accueil**, **Chantier**, **Finances**, **Messages**, **Plus**.
-4. Allez dans *Mon compte*, onglet **Notifications**, touchez **Activer le push** et acceptez les notifications du
+1. Ouvrez l'application ; saisissez l'e-mail et le mot de passe de Paul, cochez **Rester connecté**, touchez **Se
+   connecter**, puis tapez le code à 6 chiffres et touchez **Vérifier**.
+2. Parcourez les onglets du bas : **Accueil**, **Chantier**, **Finances**, **Messages**, **Plus**.
+3. **Plus** › **Mon compte**, onglet **Notifications** : touchez **Activer le push**, acceptez les notifications du
    téléphone, puis touchez **Envoyer une notification de test**.
 
-**Ce que vous devez constater** : les mêmes informations que sur l'ordinateur, et une notification de test qui apparaît en
-haut de l'écran du téléphone.
+**Résultat attendu** : les mêmes informations que sur l'ordinateur ; la notification de test apparaît sur le téléphone.
 
-- [ ] **K6** — L'application client fonctionne et reçoit les notifications.
+- [ ] **K6** — Application client fonctionnelle, notifications reçues.
 
 ---
 
 # Livre IV — Le chantier se prépare
 
-*Le contrat est signé, Paul a ses clés. Mais une maison ne se construit pas avec un contrat. Il faut un plan, une équipe,
-du ciment, des électriciens. Ce livre raconte les semaines de préparation, celles que le client ne voit pas mais dont
-tout dépend.*
-
 ## Chapitre 7 — Samuel monte le projet
 
-*Samuel Fotso est ingénieur. Il aime les plannings bien tenus, les plans à jour et les risques anticipés. La Villa
-Mballa est désormais son projet. Tout ce chapitre se passe dans la fiche du projet : dans le menu de gauche de l'ERP,
-sous **Projets**, cliquez sur **Chantiers**, puis sur la ligne « TEST — Villa Mballa ». La fiche du projet possède de
-nombreux onglets en haut de la page ; chaque scène vous dira lequel ouvrir.*
+*La Villa Mballa est désormais le projet de Samuel. Tout se passe dans la **fiche du projet** : menu *Projets ›
+Chantiers*, ligne « TEST — Villa Mballa ». La fiche a des onglets en haut : **Synthèse**, **Confiance et preuves**,
+**Planning**, **Sites, phases, lots**, **Jalons**, **Équipe**, **Journal de chantier**, **Photos et vidéos**,
+**Décisions**, **Avenants**, **Budget**, **Risques**, **Tranquillité**, **Garanties**, **Immersion et digests**,
+**Panneau connecté**.*
 
-### Scène M1 — Compléter la carte d'identité du projet
+### Scène M1 — La carte d'identité du projet
 
-> **Qui :** Samuel (profil **GLOBUS CDP**). **Où :** fiche du projet, onglet **Synthèse**.
+**Qui** : Samuel (profil **GLOBUS CDP**). **Où** : fiche du projet, onglet **Synthèse**, bloc **Informations**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Dans l'onglet **Synthèse**, sur le bloc **Informations**, cliquez sur **Modifier**.
-2. Complétez : l'adresse, la ville `Douala`, les coordonnées GPS du terrain (latitude et longitude ; vous pouvez prendre
-   celles de votre position, lues dans l'application Google Maps de votre téléphone en appuyant longuement sur votre
-   point bleu), la surface `180`, `2` niveaux, l'univers.
-3. Cochez **Visible par le client**.
-4. Enregistrez.
+1. Cliquez sur **Modifier** : fenêtre **Modifier le projet**.
+2. Complétez (le reste est déjà rempli depuis le contrat) :
 
-**Ce que vous devez constater** : les informations sont à jour, et les indicateurs du projet (budget, engagé, facturé…)
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST — Villa Mballa` (déjà rempli) | ★ |
+| Univers | « Globus Home » | |
+| Offre | l'offre choisie au devis (liste) | |
+| Type de projet | « Construction neuve » | |
+| Statut | « Préparation » | |
+| Adresse | `Bonamoussadi, rue des Manguiers` | |
+| Ville | `Douala` | |
+| Latitude / Longitude | les coordonnées du terrain (*voir l'astuce*) | |
+| Surface (m²) | `180` | |
+| Niveaux | `2` | |
+| Début prévu / Fin prévue | dans 15 jours / dans 9 mois | |
+| Responsable | « Samuel TEST-FOTSO » | |
+| Directeur de projet | « Grâce TEST-EWANE » | |
+| Visible par le client | coché | |
+
+> **Astuce coordonnées** : sur le téléphone, ouvrez Google Maps, appuyez longuement sur l'endroit voulu : la latitude et
+> la longitude s'affichent (ex. `4.0920` et `9.7440`). Pour pouvoir **tester le pointage** (chapitre 13) sans aller à
+> Bonamoussadi, mettez les coordonnées de l'endroit où vous jouez la recette.
+
+3. Cliquez sur **Enregistrer**.
+
+**Résultat attendu** : « Projet mis à jour » ; les informations et les indicateurs (budget, engagé, facturé…)
 s'affichent.
 
-- [ ] **M1** — La fiche du projet est complète.
+- [ ] **M1** — Fiche projet complète.
 
-### Scène M2 — Former l'équipe du projet
+### Scène M2 — L'équipe du projet
 
-*Un projet sans équipe n'est qu'une idée. Samuel y fait entrer Ernest, Moussa, Linda et Rachel. Être membre d'un projet,
-c'est ce qui ouvre la porte de ce projet à ceux qui ne voient pas tout.*
+**Pourquoi** : Samuel, Ernest et Moussa ne voient **que** les projets dont ils sont membres. Rachel, Linda et Grâce voient
+tous les projets, mais on les ajoute pour qu'elles reçoivent les notifications du projet.
 
-> **Qui :** Samuel. **Où :** onglet **Équipe**.
+**Qui** : Samuel. **Où** : onglet **Équipe**.
 
-**Ce que vous faites** — quatre fois :
+**Méthode** — cliquez sur **Ajouter un membre** pour chaque ligne, remplissez, **Enregistrer** :
 
-1. Cliquez sur **Ajouter un membre**.
-2. Choisissez la personne et son rôle sur le projet : Ernest (chef de chantier), Moussa (technicien), Linda (acheteuse),
-   Rachel (en cochant l'**accès aux finances**).
-3. Validez.
+| Utilisateur ★ | Rôle sur le projet | Accès aux finances |
+| --- | --- | --- |
+| « Ernest TEST-TCHOUA » | « Chef de chantier » | non |
+| « Moussa TEST-BELLO » | « Membre » | non |
+| « Linda TEST-MBARGA » | « Acheteur » | non |
+| « Rachel TEST-NDONGO » | « Comptable » | **oui** |
 
-**Ce que vous devez constater** : les quatre membres sont listés. Vérifiez dans la fenêtre d'Ernest (profil GLOBUS CDC) :
-dans *Projets › Chantiers*, il voit désormais « TEST — Villa Mballa ».
+(Laissez **Lots**, **Disciplines** et **Chantiers** vides : accès à tout le projet.)
 
-- [ ] **M2** — L'équipe du projet est formée.
+**Résultat attendu** : les quatre membres (plus Samuel) sont listés. Dans la fenêtre d'Ernest (**GLOBUS CDC**),
+*Projets › Chantiers* affiche maintenant « TEST — Villa Mballa ».
 
-### Scène M3 — Le site et son périmètre invisible
+- [ ] **M2** — Équipe formée.
 
-*Le terrain de Paul s'appelle désormais « Parcelle Bonamoussadi ». Samuel dessine autour de lui un cercle invisible de
-cent cinquante mètres : c'est dans ce cercle, et seulement dans ce cercle, que les ouvriers pourront pointer leur arrivée
-avec leur téléphone.*
+### Scène M3 — Le site et son périmètre de pointage
 
-> **Qui :** Samuel. **Où :** onglet **Sites, phases, lots**.
+**Pourquoi** : le **site** est l'endroit physique du chantier. Son **rayon de géorepérage** est le cercle à l'intérieur
+duquel les ouvriers peuvent pointer avec leur téléphone.
 
-**Ce que vous faites**
+**Qui** : Samuel. **Où** : onglet **Sites, phases, lots**.
 
-1. Cliquez sur **Nouveau site**.
-2. **Code** : `S1`. **Nom** : `Parcelle Bonamoussadi`.
-3. Indiquez les **coordonnées GPS** (les mêmes qu'en M1) et un **Rayon de géorepérage (m)** de `150`.
-4. **Chef de chantier** : Ernest. Enregistrez.
+**Méthode** : cliquez sur **Nouveau site**, remplissez, **Créer** :
 
-**Ce que vous devez constater** : le site est créé. Il sera indispensable au pointage du chapitre 13.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code | `S1-MBALLA` | ★ |
+| Nom | `Parcelle Bonamoussadi` | ★ |
+| Ville | `Douala` | |
+| Latitude / Longitude | les mêmes qu'en M1 | |
+| Rayon de géorepérage (m) | `150` | |
+| Chef de chantier | « Ernest TEST-TCHOUA » | |
+| Statut | « Préparation » | |
+| Date de début | dans 15 jours | |
+| Instructions d'accès | `Portail bleu, demander le gardien` | |
+| Notes sécurité | `Casque obligatoire` | |
 
-> Astuce : pour tester le pointage sans aller physiquement à Bonamoussadi, mettez ici les coordonnées de l'endroit où vous
-> vous trouvez.
+**Résultat attendu** : le site apparaît. (Le **Code** doit être unique sur toute la plateforme.)
 
-- [ ] **M3** — Le site est créé avec son périmètre.
+- [ ] **M3** — Site créé avec son périmètre.
 
-### Scène M4 — Découper la maison en lots et en phases
+### Scène M4 — Lots et phases
 
-*Une maison se construit par morceaux : les lots (le gros œuvre, l'électricité…) et les phases (les fondations,
-l'élévation…). Certains lots sont déjà nés du devis ; Samuel ajoute celui de l'électricité.*
+**Pourquoi** : les **lots** découpent les travaux par métier (gros œuvre, électricité…) ; les **phases** par étape dans
+le temps (fondations, élévation…).
 
-> **Qui :** Samuel. **Où :** onglet **Sites, phases, lots**.
+**Qui** : Samuel. **Où** : onglet **Sites, phases, lots**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Vérifiez la présence des lots créés automatiquement depuis le devis.
-2. Cliquez sur **Nouveau lot** : code `LOT-ELEC`, nom `Électricité`, discipline électricité, budget `2 000 000`.
-   Enregistrez.
-3. Cliquez sur **Nouvelle phase** : `Fondations`, cochez **Visible par le client**. Enregistrez.
-4. Recommencez avec une phase `Élévation`.
+1. Vérifiez les lots créés depuis le devis (ET, GO, SO).
+2. **Nouveau lot**, **Créer** :
 
-**Ce que vous devez constater** : les lots et les phases apparaissent.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code | `ELEC` | ★ |
+| Nom | `Électricité` | ★ |
+| Discipline | « Électricité » | |
+| Budget | `2000000` | |
+| Statut | « Planifié » | |
 
-- [ ] **M4** — La structure du projet est en place.
+3. **Nouvelle phase**, deux fois, **Créer** :
 
-### Scène M5 — Les grandes étapes de paiement
+| Champ | Phase 1 | Phase 2 | |
+| --- | --- | --- | --- |
+| Nom | `Fondations` | `Élévation` | ★ |
+| Ordre | `1` | `2` | |
+| Début prévu / Fin prévue | dans 15 j / dans 45 j | dans 45 j / dans 4 mois | |
+| Statut | « Planifié » | « Planifié » | |
+| Couleur | une couleur (sélecteur) | une autre | |
+| Visible par le client | coché | coché | |
 
-*Les jalons sont les bornes kilométriques du chantier. Trois d'entre eux déclenchent un paiement de Paul.*
+**Résultat attendu** : le lot « Électricité » et les deux phases apparaissent.
 
-> **Qui :** Samuel. **Où :** onglet **Jalons**.
+- [ ] **M4** — Structure du projet en place.
 
-**Ce que vous faites**
+### Scène M5 — Les jalons
 
-1. Vérifiez que les trois jalons du contrat sont là, avec leur **Part de paiement (%)** : 30, 40 et 30.
-2. Cliquez sur **Nouveau jalon** : `Implantation`, une date d'échéance, cochez **Visible par le client**, sans part de
-   paiement. Enregistrez.
+**Qui** : Samuel. **Où** : onglet **Jalons**.
 
-**Ce que vous devez constater** : quatre jalons, dont trois liés à un paiement.
+**Méthode**
 
-- [ ] **M5** — Les jalons sont corrects.
+1. Vérifiez les trois jalons issus du contrat, avec leur **Part de paiement (%)** : 30, 40, 30.
+2. **Nouveau jalon**, **Créer** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `Implantation` | ★ |
+| Date d'échéance | dans 20 jours | ★ |
+| Statut | « Planifié » | |
+| Visible par le client | coché | |
+| Part de paiement (%) | *(vide)* | |
+
+**Résultat attendu** : quatre jalons, dont trois liés à un paiement.
+
+- [ ] **M5** — Jalons corrects.
 
 ### Scène M6 — Le planning
 
-*Samuel ouvre le planning comme on déroule une carte. Quatre tâches, l'une après l'autre : on n'élève pas les murs avant
-d'avoir coulé les fondations. Il les relie entre elles, demande à la plateforme de calculer les dates, puis fige ce
-planning comme référence : c'est la promesse faite à Paul.*
+**Pourquoi** : enchaîner les tâches, calculer les dates (méthode du chemin critique) et figer la référence promise au
+client.
 
-> **Qui :** Samuel. **Où :** onglet **Planning**.
+**Qui** : Samuel. **Où** : onglet **Planning**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Cliquez quatre fois sur **Nouvelle tâche** pour créer : `Implantation`, `Terrassement`, `Fondations`,
-   `Élévation murs`. Pour chacune, indiquez des dates, une durée et un lot. Cochez **Visible par le client** pour deux
-   d'entre elles.
-2. Dans le **Diagramme de Gantt** (les barres horizontales), cliquez sur **Dépendance** et reliez les tâches deux à deux,
-   en type « fin-début » : Implantation avant Terrassement, Terrassement avant Fondations, Fondations avant Élévation.
-3. Cliquez sur **Ordonnancer (CPM)** : la plateforme recalcule toutes les dates.
-4. Cliquez sur **Figer une référence**, nommez-la `Contrat`, et validez.
+1. Cliquez quatre fois sur **Nouvelle tâche** :
 
-**Ce que vous devez constater**
+| Titre ★ | Phase | Lot | Chantier | Début prévu | Durée (jours) | Visible par le client |
+| --- | --- | --- | --- | --- | --- | --- |
+| `Implantation` | Fondations | GO | Parcelle Bonamoussadi | dans 15 j | `3` | coché |
+| `Terrassement` | Fondations | GO | Parcelle Bonamoussadi | dans 18 j | `7` | non |
+| `Fondations` | Fondations | GO | Parcelle Bonamoussadi | dans 25 j | `15` | coché |
+| `Élévation murs` | Élévation | GO | Parcelle Bonamoussadi | dans 40 j | `30` | non |
 
-- Le Gantt est cohérent : les barres s'enchaînent, et le **chemin critique** (les tâches qui ne peuvent pas prendre de
-  retard sans retarder toute la maison) est en rouge.
+   Laissez **Statut** « À faire » et **Priorité** « Normale ». **Créer** à chaque fois.
+2. Cliquez sur **Dépendance** trois fois (fenêtre **Ajouter une dépendance**) :
+
+| Tâche prédécesseur ★ | Tâche successeur ★ | Type | Décalage (jours) |
+| --- | --- | --- | --- |
+| Implantation | Terrassement | « Fin → Début » | `0` |
+| Terrassement | Fondations | « Fin → Début » | `0` |
+| Fondations | Élévation murs | « Fin → Début » | `0` |
+
+3. Cliquez sur **Ordonnancer (CPM)**.
+4. Cliquez sur **Figer une référence** : **Nom** ★ `Contrat`, **Motif** `Planning contractuel`, **Enregistrer**.
+
+**Résultat attendu**
+
+- Le **Diagramme de Gantt** enchaîne les barres ; le **chemin critique** est en rouge.
 - La référence « Contrat » apparaît dans **Références de planning (baselines)**.
 
-- [ ] **M6** — Le planning est construit et figé.
+- [ ] **M6** — Planning construit et figé.
 
-### Scène M7 — Le planning qui regarde la météo
+### Scène M7 — L'analyse des aléas du planning
 
-*Chaque matin, la plateforme scrute les risques des trente prochains jours : la pluie annoncée, une livraison en retard,
-une absence. Samuel lui demande de le faire tout de suite.*
+**Qui** : Samuel. **Où** : onglet **Planning**, bloc d'analyse des 30 prochains jours (pluie, livraisons, absences).
 
-> **Qui :** Samuel. **Où :** onglet **Planning**, bloc **Planning intelligent**.
+**Méthode** : cliquez sur **Analyser maintenant**. Si un risque apparaît, cliquez sur **Écarter**, indiquez un motif,
+confirmez avec **Écarter**.
 
-**Ce que vous faites**
+**Résultat attendu** : l'analyse s'exécute ; elle affiche des risques ou « Aucun risque détecté ». (La météo n'est
+analysée que si le service météo est activé.)
 
-1. Cliquez sur **Analyser maintenant**.
-2. Si un risque apparaît, cliquez sur **Écarter** et indiquez un motif.
-
-**Ce que vous devez constater** : l'analyse s'exécute ; elle affiche des risques ou indique qu'il n'y en a aucun.
-
-- [ ] **M7** — L'analyse des risques de planning fonctionne.
+- [ ] **M7** — Analyse des aléas fonctionnelle.
 
 ### Scène M8 — Le budget de référence
 
-*Rachel vérifie le budget né du contrat. Grâce l'approuve : c'est à lui qu'on comparera toutes les dépenses pour savoir si
-le chantier gagne ou perd de l'argent.*
+**Pourquoi** : le budget approuvé sert de référence pour mesurer la marge.
 
-> **Qui :** Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où :** onglet **Budget**.
+**Qui** : Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où** : onglet **Budget**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Rachel ouvre l'onglet **Budget** et vérifie la version « Budget initial (contrat) ». Au besoin, elle crée une
-   **Nouvelle version**.
-2. Grâce ouvre la même version et clique sur **Approuver**.
+1. Rachel ouvre l'onglet **Budget** et vérifie la version issue du contrat dans **Budgets (versions)**.
+2. Rachel crée une version ajustée : **Nouvelle version**, fenêtre **Nouvelle version de budget** :
 
-**Ce que vous devez constater** : la version approuvée devient la référence des marges. Si Rachel a créé elle-même une
-version, elle ne peut pas l'approuver : c'est la séparation des tâches, ce n'est pas une anomalie.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Libellé | `Budget de référence` | ★ |
+| Chiffre d'affaires visé | `25000000` | |
+| Lignes | une ligne par lot (bouton d'ajout) — voir ci-dessous | ★ |
 
-- [ ] **M8** — Le budget de référence est approuvé.
+| Lot | Catégorie | Libellé | Montant |
+| --- | --- | --- | --- |
+| GO | « Matériaux » | `Ciment, acier, agrégats` | `9000000` |
+| GO | « Main-d'œuvre » | `Équipe gros œuvre` | `3000000` |
+| ELEC | « Sous-traitance » | `Électricité` | `2000000` |
+| SO | « Matériaux » | `Second œuvre` | `5000000` |
 
-### Scène M9 — Le plan du rez-de-chaussée
+   **Enregistrer**.
+3. Rachel essaie de cliquer sur **Approuver** sur sa propre version : refusé (séparation des tâches).
+4. Grâce ouvre la même version et clique sur **Approuver**.
 
-*Dans le classeur numérique de l'entreprise (la GED, pour « gestion électronique des documents »), Samuel dépose le plan
-du rez-de-chaussée. Il le soumet à Grâce, qui le valide, puis le publie « bon pour exécution ». Plus tard, une nouvelle
-version remplacera la première, qui deviendra obsolète.*
+**Résultat attendu** : étape 3, la plateforme refuse (« Séparation des tâches : un budget est approuvé par une autre
+personne que son auteur ») ; étape 4, la version passe **Approuvé** et devient la référence des marges.
 
-> **Qui :** Samuel, puis Grâce. **Où :** ERP, *Projets › GED*.
+- [ ] **M8** — Budget de référence approuvé, séparation des tâches respectée.
 
-**Ce que vous faites**
+### Scène M9 — Le plan du rez-de-chaussée (GED)
 
-1. Samuel clique sur **Déposer un document** : projet « TEST — Villa Mballa », type **plan**, discipline architecture,
-   titre `Plan RDC`, confidentialité normale, fichier PDF « Plan RDC ». Il clique sur **Déposer**.
-2. Dans la fiche du document, il fait passer la version **En revue**, en ajoutant une étape avec Grâce comme approbatrice.
-3. Grâce, notifiée, ouvre le document et clique sur **Valider**.
-4. Samuel clique sur **Publier**.
-5. Samuel clique ensuite sur **Nouvelle version**, dépose le PDF « Plan RDC v2 », puis refait le circuit (en revue,
-   validation par Grâce, publication).
+**Pourquoi** : un plan suit un circuit : dépôt, revue, validation, publication « bon pour exécution », puis nouvelle
+version qui rend l'ancienne périmée.
 
-**Ce que vous devez constater** : la version publiée porte la mention « bon pour exécution » ; après la publication de la
-version 2, la première devient obsolète.
+**Qui** : Samuel, puis Grâce. **Où** : *Projets › GED*.
 
-- [ ] **M9** — Le circuit d'approbation et de publication d'un plan fonctionne.
+**Méthode**
+
+1. Samuel : choisissez le projet en haut à gauche, cliquez sur **Déposer un document** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Fichier | le PDF « Plan RDC » (zone de dépôt) | ★ |
+| Titre | `Plan RDC` | ★ |
+| Type | « Plan » | ★ |
+| Discipline | « Architecture » | |
+| Confidentialité | « Interne » | ★ |
+| Code | *(vide : attribué automatiquement)* | |
+| Projet | « TEST — Villa Mballa » | |
+| Lot | « GO » | |
+
+   Cliquez sur **Déposer** : la fiche du document s'ouvre (version 1, brouillon).
+2. Samuel clique sur **Faire évoluer** : choisissez « Soumettre en revue » ; cliquez sur **Ajouter une étape**, type
+   « Personne », « Grâce TEST-EWANE » ; **Confirmer**.
+3. Grâce (notifiée) ouvre le document, **Faire évoluer** › « Valider » › **Confirmer**.
+4. Samuel : **Faire évoluer** › « Publier (bon pour exécution) » › **Confirmer**.
+5. Samuel : **Nouvelle version** : déposez « Plan RDC v2 », **Motif de la révision** ★ `Ajout d'une fenêtre`, cochez
+   **Révision majeure** ; **Déposer**. Refaites les étapes 2 à 4 sur cette version.
+
+**Résultat attendu** : la version publiée porte « bon pour exécution » ; après publication de la v2, la v1 est **périmée**
+(obsolète).
+
+- [ ] **M9** — Circuit de validation et de publication d'un plan fonctionnel.
 
 ### Scène M10 — Le plan arrive chez Paul
 
-*Paul attend de voir ses plans. Samuel coche une case, et le plan apparaît dans l'espace client.*
+**Qui** : Samuel, puis Paul. **Où** : fiche du document « Plan RDC », puis l'espace client.
 
-> **Qui :** Samuel, puis Paul. **Où :** fiche du document dans la GED, puis espace client.
+**Méthode**
 
-**Ce que vous faites**
+1. Samuel clique sur **Propriétés**, coche **Visible par le client**, **Enregistrer**.
+2. Paul (**GLOBUS CLI**) : menu **Documents**, ouvrez « Plan RDC ». Puis cliquez sur **Authenticité**.
 
-1. Samuel ouvre la fiche de « Plan RDC », clique sur **Propriétés**, coche la visibilité **client** et enregistre.
-2. Paul (profil GLOBUS CLI) ouvre le menu **Documents** de son espace, puis clique sur **Ouvrir** à côté de « Plan RDC ».
-3. Paul clique sur **Authenticité**.
+**Résultat attendu** : Paul voit seulement la version en vigueur ; le PDF porte un filigrane à son nom ; la page
+d'authenticité confirme le document publié par GLOBUS.
 
-**Ce que vous devez constater**
+- [ ] **M10** — Plan visible, filigrané et authentifié côté client.
 
-- Paul voit « Plan RDC » (seulement la version en vigueur).
-- Le document qu'il ouvre porte un filigrane à son nom.
-- La page d'authenticité confirme que c'est bien le document publié par GLOBUS.
+### Scène M11 — La maquette 3D (si vous avez un fichier IFC ou RVT)
 
-- [ ] **M10** — Le client voit le plan publié, filigrané et authentifié.
+**Qui** : Samuel. **Où** : *Projets › Hub BIM*, onglet **Maquettes**.
 
-### Scène M11 — La maquette en trois dimensions (si vous en avez une)
+**Méthode**
 
-*Si l'architecte a produit une maquette numérique (un fichier IFC ou RVT), Samuel la dépose dans le Hub BIM : Paul pourra
-alors tourner autour de sa maison avant qu'elle n'existe.*
+1. **Nouvelle maquette** : **Nom** ★ `Villa Mballa — Architecture`, **Discipline** ★ « Architecture », **Créer**.
+2. Ouvrez la maquette, **Nouvelle version** : déposez le fichier, **Motif de la révision** `Version initiale`, cochez
+   **Rendre visible dans l'espace client (immersion 3D)**, **Déposer**.
+3. Attendez que la conversion se termine (statut « prête », plusieurs minutes), puis **Valider** et **Publier**.
 
-> **Qui :** Samuel. **Où :** ERP, *Projets › Hub BIM*, onglet **Maquettes**.
+**Résultat attendu** : la maquette s'affiche en 3D ; Paul la voit dans **Maquette 3D / BIM**. **Sans fichier, notez la
+scène « non testée ».**
 
-**Ce que vous faites**
-
-1. Cliquez sur **Nouvelle maquette** (nom et discipline).
-2. Cliquez sur **Nouvelle version**, déposez le fichier et cliquez sur **Déposer**.
-3. Attendez que le statut indique « prête » (la conversion peut prendre plusieurs minutes), puis cliquez sur **Valider**,
-   puis sur **Publier**.
-4. Dans l'onglet **Maquette fédérée**, créez une issue localisée (un point de la maquette où un problème est signalé).
-
-**Ce que vous devez constater** : la maquette s'affiche en 3D ; l'issue est localisée ; Paul voit la maquette dans le
-menu **Immersion** de son espace. **Sans fichier de maquette, passez cette scène et notez-la « non testée ».**
-
-- [ ] **M11** — La maquette 3D est publiée (ou scène notée « non testée »).
+- [ ] **M11** — Maquette publiée (ou « non testée »).
 
 ### Scène M12 — Le QR code du séjour
 
-*Sur le futur chantier, chaque pièce aura son QR code collé au mur. En le scannant, un ouvrier verra les plans et les
-tâches de cette pièce, et seulement ceux-là.*
+**Pourquoi** : chaque pièce aura un QR code ; le scanner montre aux ouvriers les plans et tâches de cette pièce.
 
-> **Qui :** Samuel. **Où :** *Hub BIM*, onglet **Zones**.
+**Qui** : Samuel. **Où** : *Hub BIM*, onglet **Zones**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Cliquez sur **Nouvelle zone** : nom `Séjour RDC` (et un code). Enregistrez.
-2. Cliquez sur **QR de la zone**, puis sur **Imprimer**.
+1. **Nouvelle zone**, **Créer** :
 
-**Ce que vous devez constater** : le QR code s'imprime. Gardez-le : il servira au chapitre 10.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Chantier | « Parcelle Bonamoussadi » | |
+| Code | `Z-SEJOUR` | ★ |
+| Nom | `Séjour RDC` | ★ |
+| Niveau | `RDC` | |
+| Type de zone | « Pièce » | |
+| Surface (m²) | `35` | |
+| Libellé client | `Séjour` | |
 
-- [ ] **M12** — Le QR code de la zone est imprimé.
+2. Sur la zone, cliquez sur **QR de la zone**, puis **Imprimer**.
+
+**Résultat attendu** : le QR code s'imprime. Gardez-le pour le chapitre 10.
+
+- [ ] **M12** — QR de zone imprimé.
 
 ### Scène M13 — La réunion de lancement
 
-*Samuel invite Paul et Ernest à une réunion de lancement, en visioconférence, demain à dix heures.*
+**Qui** : Samuel. **Où** : *Projets › Agenda*.
 
-> **Qui :** Samuel. **Où :** ERP, *Projets › Agenda*.
+**Méthode**
 
-**Ce que vous faites**
+1. Cliquez sur **Nouvel événement** :
 
-1. Cliquez sur **Nouvel événement**.
-2. **Titre** : `Réunion de lancement`. **Type** : visite client. **Date** : demain, `10:00`. **Projet** : TEST — Villa
-   Mballa. **Participants** : Paul et Ernest. Cochez la visioconférence.
-3. Cliquez sur **Créer l'événement**.
-4. Dans la fenêtre de Paul, menu **Planning**, retrouvez l'événement et cliquez sur **Ajouter à mon calendrier (.ics)**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Titre | `Réunion de lancement` | ★ |
+| Type | « Visite de chantier » | |
+| Projet | « TEST — Villa Mballa » | |
+| Début / Fin | demain 10:00 / demain 11:00 | ★ |
+| Lieu | `Bureau GLOBUS` | |
+| Participants | « Paul TEST-MBALLA », « Ernest TEST-TCHOUA » | |
+| Rappels (minutes avant) | `60` puis **Entrée** | |
+| Créer la visioconférence | coché | |
+| Visible par le client | coché | |
 
-**Ce que vous devez constater** : Paul et Ernest sont notifiés ; l'événement apparaît dans le planning de l'espace client ;
-le fichier .ics se télécharge et peut s'ouvrir dans un agenda (Outlook, Google Agenda, téléphone).
+2. Cliquez sur **Créer l'événement**.
+3. Paul (**GLOBUS CLI**) : menu **Planning**, retrouvez l'événement, cliquez sur **Ajouter à mon calendrier (.ics)**.
 
-- [ ] **M13** — L'agenda et les invitations fonctionnent.
+**Résultat attendu** : Paul et Ernest sont notifiés ; l'événement figure dans le planning de l'espace client ; le
+fichier .ics s'ouvre dans un agenda.
 
-### Scène M14 — La saison des pluies
+- [ ] **M13** — Agenda et invitations fonctionnels.
 
-*Samuel connaît Douala. Il inscrit un risque dans le registre : la saison des pluies.*
+### Scène M14 — Le risque de la saison des pluies
 
-> **Qui :** Samuel. **Où :** onglet **Risques** de la fiche projet.
+**Qui** : Samuel. **Où** : onglet **Risques**.
 
-**Ce que vous faites** : cliquez sur **Nouveau risque** : titre `Saison des pluies`, une probabilité, un impact, une
-**Exposition financière** de `500 000`. Enregistrez.
+**Méthode** : **Nouveau risque**, **Créer** :
 
-**Ce que vous devez constater** : le risque apparaît dans le registre.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Titre | `Saison des pluies` | ★ |
+| Catégorie | « Planning » | |
+| Probabilité | `4` (échelle 1 à 5) | |
+| Impact | `3` (échelle 1 à 5) | |
+| Responsable | « Samuel TEST-FOTSO » | |
+| Mesures de maîtrise | `Bâcher les fouilles, avancer le terrassement` | |
+| Statut | « Identifié » | |
+| Exposition financière | `500000` | |
 
-- [ ] **M14** — Le registre des risques fonctionne.
+**Résultat attendu** : le risque apparaît avec un score de 12 (4 × 3).
 
-### Scène M15 — Le panneau de chantier
+- [ ] **M14** — Registre des risques fonctionnel.
 
-*Devant chaque chantier se dresse un panneau. Celui de GLOBUS porte un QR code : un passant curieux le scanne et découvre
-le projet, son permis, son avancement.*
+### Scène M15 — Le panneau de chantier connecté
 
-> **Qui :** Samuel. **Où :** onglet **Panneau connecté**.
+**Pourquoi** : le panneau devant le chantier porte un QR code menant à une page publique (permis, avancement).
 
-**Ce que vous faites**
+**Qui** : Samuel. **Où** : onglet **Panneau connecté**.
 
-1. Renseignez le **Titre affiché**, la **Localisation affichée** (le quartier, jamais l'adresse exacte), l'**Entreprise**,
-   le **N° du permis de bâtir**, et activez les interrupteurs **Avancement** et **Photos**.
-2. Cliquez sur **Enregistrer**, puis sur **Publier**.
-3. Cliquez sur **Panneau A3 (PDF)**.
-4. Scannez le QR code du PDF avec un téléphone.
+**Méthode**
 
-**Ce que vous devez constater** : le PDF du panneau contient un QR code ; une fois scanné, il ouvre la page publique du
-chantier.
+1. Remplissez :
 
-- [ ] **M15** — Le panneau connecté est publié.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Titre affiché | `Villa Mballa` | ★ |
+| Adresse de la page | proposée (lettres, chiffres, tirets) | |
+| Localisation affichée | `Bonamoussadi, Douala` (jamais l'adresse exacte) | |
+| Maître d'ouvrage affiché | `Famille M.` | |
+| Entreprise | `GLOBUS ENGINEERING` | |
+| N° du permis de bâtir | `PC-TEST-2026-001` | |
+| Date du permis | une date passée | |
+| Interrupteurs | **Avancement** et **Photos** activés | |
 
-## Chapitre 8 — Le ciment de Martin
+2. Cliquez sur **Enregistrer**, puis **Publier**.
+3. Cliquez sur **Panneau A3 (PDF)** ; scannez son QR code avec un téléphone.
 
-*Avant de couler les fondations, il faut du ciment. Cent sacs. Ce chapitre suit leur voyage, de la demande d'Ernest
-jusqu'au paiement de Martin, en passant par l'approbation de Grâce, la commande de Linda, la livraison et la réception
-sur le chantier. C'est un voyage où chacun joue son rôle, et où personne ne peut tout faire seul.*
+**Résultat attendu** : le PDF contient un QR code qui ouvre la page publique du chantier ; le compteur **Scans du QR
+code** augmente.
 
-### Scène H1 — Le dépôt du chantier et son premier article
+- [ ] **M15** — Panneau publié.
 
-*Ernest, qui fait aussi office de magasinier, prépare l'endroit où l'on rangera le ciment : un petit dépôt sur le
-chantier.*
+---
 
-> **Qui :** Ernest (profil **GLOBUS CDC**). **Où :** ERP, *Achats et logistique › Stocks*, onglet **Articles, dépôts,
-> emplacements**.
+## Chapitre 8 — Le ciment de Martin (la chaîne d'achat)
 
-**Ce que vous faites**
+*Cent sacs de ciment pour les fondations. Ce chapitre suit leur voyage : demande d'Ernest, approbations, commande de
+Linda, livraison, réception, stock, facture, paiement. Chacun joue son rôle ; personne ne peut tout faire seul.*
 
-1. Cliquez sur **Nouveau dépôt** : code `DEP-S1`, type **chantier**, projet TEST — Villa Mballa. Enregistrez.
-2. Cliquez sur **Nouvel article** : référence `CIM-425`, nom `Ciment CPJ 42.5`, unité **sac**, **Seuil d'alerte** `20`.
-   Enregistrez.
+> **Les circuits d'approbation** sont réglés par des **règles d'approbation** (par montant). Par défaut : une demande
+> jusqu'à 500 000 FCFA est approuvée par le chef de projet ; de 500 000 à 5 000 000 FCFA, par le chef de projet
+> (niveau 1) **puis** par l'acheteur (niveau 2) ; au-delà, la direction intervient. Notre demande (100 sacs × 5 200 =
+> 520 000 FCFA) passe donc par **Samuel puis Linda**.
 
-**Ce que vous devez constater** : le dépôt et l'article apparaissent dans les listes.
+### Scène H1 — Le dépôt du chantier et l'article ciment
 
-- [ ] **H1** — Le dépôt et l'article existent.
+**Qui** : Ernest (profil **GLOBUS CDC**, rôle Magasinier). **Où** : *Achats et logistique › Stocks*, onglet des
+référentiels (articles, dépôts, emplacements).
 
-### Scène H2 — Ernest a besoin de ciment
+**Méthode**
 
-> **Qui :** Ernest. **Où :** ERP, *Achats et logistique › Achats*, onglet **Demandes d'achat**.
+1. **Nouveau dépôt**, **Créer** :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code | `DEP-S1` | ★ |
+| Nom | `Dépôt chantier Villa Mballa` | ★ |
+| Type | « Chantier » | |
+| Projet | « TEST — Villa Mballa » | |
+| Chantier | « Parcelle Bonamoussadi » | |
+| Responsable | « Ernest TEST-TCHOUA » | |
+| Actif | coché | |
 
-1. Cliquez sur **Nouvelle demande**.
-2. **Projet** : TEST — Villa Mballa. Ajoutez une ligne : l'article ciment, quantité `100` sacs, prix estimé `5200`.
-3. **Urgence** : normale. **Besoin pour le** : dans cinq jours.
-4. Cochez **Soumettre immédiatement**, puis enregistrez.
+2. **Nouvel article**, **Créer** :
 
-**Ce que vous devez constater** : la demande passe au statut « soumise », et l'approbatrice (Grâce) est notifiée.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Référence (SKU) | `CIM-425` | ★ |
+| Nom | `Ciment CPJ 42.5 sac 50 kg` | ★ |
+| Catégorie | `ciment` | |
+| Unité | `sac` | |
+| Seuil d'alerte | `20` | |
+| Quantité de réapprovisionnement | `100` | |
+| Fournisseur préféré | « TEST Quincaillerie du Wouri » | |
+| Consommable | coché | |
+| Actif | coché | |
 
-- [ ] **H2** — La demande d'achat est soumise.
+**Résultat attendu** : le dépôt et l'article apparaissent.
 
-### Scène H3 — Grâce dit oui
+- [ ] **H1** — Dépôt et article créés.
 
-*Dans son bureau, Grâce voit arriver la demande. Elle vérifie le besoin, le montant, le circuit d'approbation, et
-approuve. Ernest, lui, n'avait aucun moyen d'approuver sa propre demande.*
+### Scène H2 — Ernest demande du ciment
 
-> **Qui :** Grâce (profil **GLOBUS DIR**). **Où :** *Achats*, onglet **Mes approbations**.
+**Qui** : Ernest. **Où** : *Achats et logistique › Achats*, onglet **Demandes d'achat**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Ouvrez la demande d'Ernest.
-2. Lisez le **Besoin exprimé** et le **Circuit d'approbation**.
-3. Cliquez sur **Approuver**, puis sur **Confirmer**.
-4. Vérification : dans la fenêtre d'Ernest, ouvrez sa demande. Aucun bouton ne lui permet de l'approuver lui-même.
+1. **Nouvelle demande** :
 
-**Ce que vous devez constater** : la demande passe « approuvée ».
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Chantier | « Parcelle Bonamoussadi » | |
+| Lot | « GO » | |
+| Urgence | « Normale » | |
+| Justification | `Coulage des fondations` | ★ pour soumettre |
+| Besoin pour le | dans 5 jours | |
+| Lignes (bouton d'ajout) | une ligne : voir ci-dessous | ★ |
+| Soumettre immédiatement | coché | |
 
-- [ ] **H3** — L'approbation fonctionne et respecte la séparation des tâches.
+| Article de stock | Description ★ | Quantité ★ | Unité | Prix unitaire estimé |
+| --- | --- | --- | --- | --- |
+| « CIM-425 — Ciment CPJ 42.5… » | `Ciment CPJ 42.5 sac 50 kg` | `100` | `sac` | `5200` |
 
-### Scène H4 — Linda choisit le fournisseur et commande
+2. **Créer**.
 
-*Linda, l'acheteuse, demande à la plateforme de classer les fournisseurs : prix, délai, qualité, stock, zone de
-livraison. Martin arrive en tête. Linda commande.*
+**Résultat attendu** : la demande passe **Soumise** (total 520 000 FCFA) ; Samuel, premier approbateur, est notifié.
 
-> **Qui :** Linda (profil **GLOBUS ACH**). **Où :** la demande approuvée, dans *Achats*.
+> Sans **Justification**, la plateforme refuse de soumettre (« Justification obligatoire »).
 
-**Ce que vous faites**
+- [ ] **H2** — Demande d'achat soumise.
 
-1. Ouvrez la demande approuvée. Dans le bloc **Choix du fournisseur**, cliquez sur **Classer les fournisseurs**.
-2. Sur la ligne « TEST Quincaillerie du Wouri », cliquez sur **Commander**.
-3. Vérifiez les lignes, les prix, la date prévue et l'adresse de livraison, puis cliquez sur **Créer le bon de commande**.
-4. Ouvrez le bon de commande (onglet **Bons de commande**), cliquez sur **PDF** pour le voir, puis sur **QR réception** et
-   imprimez ce QR code.
+### Scène H3 — Deux approbations, et personne ne s'approuve soi-même
 
-**Ce que vous devez constater** : le bon de commande est créé, son PDF est correct, et le QR de réception est imprimé
-(il servira à Ernest à la scène H8).
+**Qui** : Samuel (**GLOBUS CDP**), puis Linda (**GLOBUS ACH**). **Où** : *Achats*, onglet **Mes approbations**.
 
-- [ ] **H4** — Le bon de commande est créé.
+**Méthode**
+
+1. Ernest ouvre sa demande : aucun bouton ne lui permet de l'approuver.
+2. Samuel : onglet **Mes approbations**, ouvrez la demande ; lisez le besoin et le **circuit d'approbation** (niveau 1
+   chef de projet, niveau 2 acheteur) ; cliquez sur **Approuver**, puis **Confirmer**.
+3. Linda : même onglet, ouvrez la demande (niveau 2), **Approuver**, **Confirmer**.
+
+**Résultat attendu** : après Samuel, la demande reste **Soumise** (niveau 2 en attente) ; après Linda, elle passe
+**Approuvée**.
+
+- [ ] **H3** — Circuit à deux niveaux et séparation des tâches respectés.
+
+### Scène H4 — Linda choisit le fournisseur et crée le bon de commande
+
+**Qui** : Linda. **Où** : la demande approuvée.
+
+**Méthode**
+
+1. Dans le bloc du choix du fournisseur, cliquez sur **Classer les fournisseurs** (prix, délai, qualité, stock, zone).
+2. Sur la ligne « TEST Quincaillerie du Wouri », cliquez sur **Commander** : fenêtre **Commande chez TEST Quincaillerie du
+   Wouri** :
+
+| Champ | Valeur |
+| --- | --- |
+| Livraison souhaitée | dans 3 jours |
+| Canal d'envoi | « E-mail » |
+| Notes pour le fournisseur | `Livraison au portail bleu, appeler Ernest` |
+| Envoyer immédiatement au fournisseur | **non** coché (on l'envoie à la scène H5) |
+
+3. Cliquez sur **Créer le bon de commande**.
+4. Sur le bon de commande : **PDF** pour le voir ; **QR réception** puis imprimez le QR (scène H8).
+
+**Résultat attendu** : bon de commande créé (BC-…) au prix catalogue 5 200 FCFA ; PDF correct ; QR imprimé.
+
+- [ ] **H4** — Bon de commande créé.
 
 ### Scène H5 — La commande part chez Martin
 
-> **Qui :** Linda. **Où :** la fiche du bon de commande.
+**Qui** : Linda. **Où** : fiche du bon de commande.
 
-**Ce que vous faites** : cliquez sur **Envoyer au fournisseur**, choisissez le canal **e-mail**, écrivez un court message
-et cliquez sur **Envoyer**.
+**Méthode** : **Envoyer au fournisseur** ; fenêtre **Envoyer le bon de commande** : **Canal** « E-mail » ; **Envoyer**.
 
-**Ce que vous devez constater** : le statut passe « envoyée », et un e-mail arrive sur l'adresse `+fournisseur`.
+**Résultat attendu** : statut **Envoyée** ; un e-mail avec le PDF et un lien sécurisé arrive sur `+fournisseur`. (Si
+WhatsApp n'est pas activé et que « WhatsApp » est choisi, l'envoi bascule sur l'e-mail.)
 
-- [ ] **H5** — La commande est envoyée au fournisseur.
+- [ ] **H5** — Commande envoyée.
 
-### Scène H6 — Martin répond
+### Scène H6 — Martin contre-propose puis confirme
 
-*Dans sa quincaillerie, Martin ouvre son extranet. Il ne voit que ses propres commandes, jamais celles des autres
-fournisseurs ni leurs prix. Il tente sa chance avec un petit rabais… puis confirme.*
+**Pourquoi** : Martin ne voit que ses propres commandes ; il peut négocier avant de confirmer.
 
-> **Qui :** Martin (profil **GLOBUS FOU**), puis Linda. **Où :** extranet, menu *Fournitures › Commandes*.
+**Qui** : Martin (**GLOBUS FOU**), puis Linda. **Où** : extranet, menu des commandes ; puis l'ERP.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Martin ouvre sa commande. Vérifiez qu'il ne voit aucune donnée d'un autre fournisseur.
-2. Martin clique sur **Proposer une contre-offre** : prix unitaire proposé `5000`, son nom, un message. Il envoie.
-3. Linda, dans l'ERP, ouvre le bon de commande et clique sur **Accepter la contre-offre**.
-4. Martin clique sur **Confirmer la commande** (son nom, un commentaire facultatif).
+1. Martin ouvre la commande : il ne voit aucune donnée d'un autre fournisseur.
+2. **Proposer une contre-offre** : dans la ligne, prix unitaire `5000` ; **Date de livraison proposée** dans 3 jours ;
+   **Votre nom** `Martin TEST-KAMGA` ; **Message** `Prix spécial chantier` ; **Envoyer la contre-offre**.
+3. Linda ouvre le bon de commande (statut **Contre-proposée**) et clique sur **Accepter la contre-offre**.
+4. Martin clique sur **Confirmer la commande** ; **Votre nom** ; **Commentaire (facultatif)** ; **Confirmer**.
 
-**Ce que vous devez constater** : côté Linda, la commande passe « confirmée », au nouveau prix.
+**Résultat attendu** : chez Linda, la commande passe **Confirmée** au prix de 5 000 FCFA (total 500 000).
 
-- [ ] **H6** — La contre-offre et la confirmation fonctionnent.
+- [ ] **H6** — Contre-offre et confirmation fonctionnent.
 
-### Scène H7 — Le camion est en route
+### Scène H7 — L'expédition annoncée
 
-> **Qui :** Martin. **Où :** extranet, sa commande.
+**Qui** : Martin. **Où** : extranet, la commande.
 
-**Ce que vous faites** : cliquez sur **Annoncer une expédition** : arrivée estimée demain, un transporteur, un numéro de
-bon de livraison, un chauffeur. Cliquez sur **Annoncer**.
+**Méthode** : **Annoncer une expédition** :
 
-**Ce que vous devez constater** : la livraison apparaît dans l'ERP (*Achats et logistique › Livraisons*) et dans
-l'extranet de Martin (*Fournitures › Livraisons*) ; Ernest est prévenu.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Arrivée estimée | demain 09:00 | ★ |
+| Transporteur | `Transports Wouri` | |
+| Immatriculation | `LT-123-AB` | |
+| N° bon de livraison | `BL-TEST-001` | |
+| Chauffeur | `Jean` | |
+| Téléphone du chauffeur | `690000001` | |
 
-- [ ] **H7** — L'expédition est annoncée.
+Cliquez sur **Annoncer**.
 
-### Scène H8 — Le camion arrive à Bonamoussadi
+**Résultat attendu** : la livraison apparaît dans l'ERP (*Achats et logistique › Livraisons*) et dans l'extranet ;
+Ernest est prévenu.
 
-*Le camion se gare devant le chantier. Ernest compte les sacs : quatre-vingt-dix-huit en bon état, deux percés. Il les
-refuse, photographie le bon de livraison, et valide la réception depuis son téléphone.*
+- [ ] **H7** — Expédition annoncée.
 
-> **Qui :** Ernest. **Où :** le téléphone, application **GLOBUS Terrain**.
+### Scène H8 — La réception sur le chantier
 
-**Ce que vous faites**
+**Pourquoi** : 98 sacs en bon état, 2 percés : on réceptionne ce qui est conforme et on refuse le reste, avec photo et
+position GPS.
 
-1. Ouvrez GLOBUS Terrain et connectez-vous avec le compte d'Ernest (e-mail, mot de passe, code).
-2. Touchez **Scanner**, puis visez le QR de réception imprimé à la scène H4.
-3. Indiquez `98` reçus et `2` refusés, avec le motif `sacs percés`.
-4. Ajoutez une photo et le bon de livraison, puis touchez **Valider la réception**.
+**Qui** : Ernest. **Où** : téléphone, application **GLOBUS Terrain** (ou, sans téléphone, l'ERP : bouton
+**Réceptionner** du bon de commande).
 
-**Ce que vous devez constater**
+**Méthode (téléphone)**
+
+1. Connectez-vous avec le compte d'Ernest. Touchez **Réception** (ou **Scanner**) et visez le QR de la scène H4.
+2. Indiquez **98** reçus et **2** refusés, motif « Endommagé ».
+3. Ajoutez une photo et la photo du bon de livraison ; destination « Stock (dépôt) », dépôt `DEP-S1`.
+4. Touchez **Valider la réception**.
+
+**Méthode (ERP)** : bouton **Réceptionner** sur le bon de commande ; **Destination** « Stock (dépôt) », **Dépôt** ★
+« DEP-S1 », **Chantier** « Parcelle Bonamoussadi », **N° bon de livraison** `BL-TEST-001` ; par ligne : reçus `98`,
+refusés `2`, motif « Endommagé » ; **Relever la position GPS** ; **Enregistrer et valider**.
+
+**Résultat attendu**
 
 - La réception est validée.
-- Un incident fournisseur est créé automatiquement pour les deux sacs refusés.
-- Le stock du dépôt DEP-S1 augmente de 98 sacs.
+- Un incident fournisseur est créé pour les 2 sacs refusés (onglet **Incidents** de la fiche fournisseur).
+- Le stock de `DEP-S1` augmente de 98 sacs.
 
-> Sans téléphone, la même réception peut se faire dans l'ERP : *Achats et logistique › Livraisons*, onglet
-> **Réceptions**, **Nouvelle réception**.
-
-- [ ] **H8** — La réception est faite, l'écart est signalé, le stock est à jour.
+- [ ] **H8** — Réception faite, écart signalé, stock à jour.
 
 ### Scène H9 — Les sacs vivent leur vie
 
-*Trente sacs partent vers la bétonnière. Vingt-cinq sont gâchés, cinq reviennent au dépôt. Chaque mouvement est tracé, et
-le coût des sacs consommés est imputé au chantier.*
+**Pourquoi** : chaque mouvement est tracé et le coût des sacs consommés est imputé au chantier.
 
-> **Qui :** Ernest. **Où :** ERP, *Achats et logistique › Stocks*.
+**Qui** : Ernest. **Où** : *Achats et logistique › Stocks*.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Onglet **État du stock** : vérifiez les 98 sacs dans DEP-S1 et leur valeur. Onglet **Mouvements** : l'entrée apparaît.
-2. Onglet **Affectations chantier** : cliquez sur **Réserver pour un chantier** (article ciment, dépôt DEP-S1, projet
-   TEST, quantité `30`).
-3. Sur cette réservation, cliquez sur **Sortir** (30), puis **Consommé** (25), puis **Retour** (5).
+1. Onglet de l'état du stock : 98 sacs dans `DEP-S1`, valorisés. Onglet des mouvements : l'entrée apparaît.
+2. Onglet **Affectations chantier** : **Réserver pour un chantier** :
 
-**Ce que vous devez constater** : le coût de 25 sacs apparaît dans les dépenses du projet (fiche projet, onglet
-**Budget**, liste **Dépenses**).
+| Champ | Valeur | |
+| --- | --- | --- |
+| Article | « CIM-425 » | ★ |
+| Dépôt | « DEP-S1 » | ★ |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Chantier | « Parcelle Bonamoussadi » | |
+| Lot | « GO » | |
+| Quantité | `30` | ★ |
 
-- [ ] **H9** — Les mouvements de stock et l'imputation des coûts fonctionnent.
+   **Créer**.
+3. Sur la réservation : **Sortir** (**Quantité** ★ `30`) ; puis **Retour** (**Quantité** ★ `5`, **Motif** `Surplus`) ;
+   puis **Consommé** (confirmez).
+
+**Résultat attendu** : le stock passe à 73 sacs (98 − 30 + 5) ; dans la fiche projet, onglet **Budget**, liste
+**Dépenses** : la sortie (30 sacs) et le retour (−5 sacs), soit **25 sacs** imputés au chantier.
+
+- [ ] **H9** — Mouvements de stock et imputation des coûts corrects.
 
 ### Scène H10 — La facture de Martin
 
-> **Qui :** Martin. **Où :** extranet, sa commande.
+**Qui** : Martin. **Où** : extranet, la commande.
 
-**Ce que vous faites**
+**Méthode** : **Déposer une facture** :
 
-1. Cliquez sur **Déposer une facture**.
-2. **Numéro de votre facture** : `FAC-TEST-001`. Une date, une échéance, le montant de TVA. Les quantités sont
-   préremplies (98).
-3. Joignez le PDF « facture fournisseur » et cliquez sur **Déposer la facture**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Numéro de votre facture | `FAC-TEST-001` | ★ |
+| Date de facture | aujourd'hui | ★ |
+| Échéance | dans 30 jours | |
+| Montant de TVA | `0` | |
+| Lignes | quantités préremplies (98) au prix confirmé : ne changez rien | |
+| Facture (PDF ou image) | le PDF « Facture fournisseur » | ★ |
 
-**Ce que vous devez constater** : la facture apparaît dans *Facturation › Factures* de l'extranet, avec un **Contrôle**
-« Conforme ».
+Cliquez sur **Déposer la facture**.
 
-- [ ] **H10** — La facture fournisseur est déposée.
+**Résultat attendu** : la facture apparaît dans la facturation de l'extranet avec un contrôle « Conforme ».
 
-### Scène H11 — Rachel vérifie les trois pièces
+- [ ] **H10** — Facture fournisseur déposée.
 
-*Rachel a une règle d'or : on ne paie une facture que si elle correspond à la commande et à ce qui a été réellement reçu.
-Commande, réception, facture : les trois pièces doivent dire la même chose.*
+### Scène H11 — Le rapprochement des trois pièces
 
-> **Qui :** Rachel (profil **GLOBUS FIN**), puis Grâce. **Où :** ERP, *Finance › Facturation*, onglet **Factures
-> fournisseurs**.
+**Pourquoi** : on ne paie que si la facture correspond à la commande **et** à ce qui a été reçu.
 
-**Ce que vous faites**
+**Qui** : Rachel (**GLOBUS FIN**), puis Grâce (**GLOBUS DIR**). **Où** : *Finance › Facturation*, onglets **Factures
+fournisseurs** et **Anomalies 3 pièces**.
 
-1. Ouvrez la facture `FAC-TEST-001` et cliquez sur **Rapprocher**.
-2. Vérifiez que commande, réception et facture concordent, puis cliquez sur **Valider (bon à payer)**.
-3. Contre-épreuve : avec **Saisir une facture**, créez une seconde facture de Martin pour la même commande, avec un prix
-   plus élevé. Elle doit partir dans l'onglet **Anomalies 3 pièces**. Grâce l'ouvre, clique sur **Arbitrer** et la rejette.
+**Méthode**
 
-**Ce que vous devez constater** : la bonne facture est « bon à payer » ; la facture trop chère est arrêtée et arbitrée.
+1. Rachel ouvre `FAC-TEST-001`, clique sur **Rapprocher** : commande, réception et facture concordent (98 × 5 000).
+   Cliquez sur **Valider (bon à payer)**.
+2. **Contre-épreuve** : **Saisir une facture** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Fournisseur | « TEST Quincaillerie du Wouri » | ★ |
+| Bon de commande | le BC de la scène H4 | |
+| N° de facture du fournisseur | `FAC-TEST-002` | ★ |
+| Date de facture | aujourd'hui | ★ |
+| Lignes | Désignation `Ciment CPJ 42.5`, Qté `98`, Prix unitaire `6000` | ★ |
+| Lancer le rapprochement 3 pièces dès l'enregistrement | coché | |
+
+   **Enregistrer la facture**. Elle part dans l'onglet **Anomalies 3 pièces**.
+3. Grâce l'ouvre, clique sur **Arbitrer** : **Décision** ★ « Rejeter la facture », **Justification** ★ `Prix supérieur
+   au bon de commande` ; **Enregistrer**.
+
+**Résultat attendu** : `FAC-TEST-001` est **bon à payer** ; `FAC-TEST-002` est arrêtée puis rejetée.
 
 - [ ] **H11** — Le rapprochement des trois pièces protège des erreurs.
 
 ### Scène H12 — L'ordre de paiement
 
-> **Qui :** Rachel. **Où :** la facture « bon à payer ».
+**Qui** : Rachel. **Où** : la facture `FAC-TEST-001`.
 
-**Ce que vous faites**
+**Méthode** : cliquez sur **Payer** ; fenêtre **Ordre de paiement** :
 
-1. Sur la facture, cliquez sur **Payer** (ou, au choix, *Finance › Finances*, onglet **Paiements**, **Ordre de paiement**).
-2. Indiquez le montant, le mode **virement** et la date, puis cliquez sur **Créer l'ordre de paiement**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Pièce à régler | « Facture fournisseur » | ★ |
+| Facture fournisseur | `FAC-TEST-001` (seules les factures validées, « bon à payer », sont proposées) | ★ |
+| Montant | proposé (490 000) | |
+| Mode de règlement | « Virement bancaire » | ★ |
+| Notes | `Règlement ciment` | |
 
-**Ce que vous devez constater** : l'ordre de paiement est créé au statut « à approuver ».
+Cliquez sur **Créer l'ordre de paiement**.
 
-- [ ] **H12** — L'ordre de paiement est créé.
+**Résultat attendu** : l'ordre de paiement est créé, en attente d'approbation.
+
+- [ ] **H12** — Ordre de paiement créé.
 
 ### Scène H13 — Le double regard
 
-*Rachel essaie d'approuver elle-même son ordre de paiement. La plateforme refuse : il faut une seconde personne. C'est
-Grâce qui approuvera.*
+**Qui** : Rachel, puis Grâce. **Où** : *Finance › Finances*, onglet des paiements.
 
-> **Qui :** Rachel, puis Grâce. **Où :** *Finance › Finances*, onglet **Paiements**.
+**Méthode**
 
-**Ce que vous faites**
+1. Rachel ouvre son ordre de paiement et clique sur **Approuver**.
+2. Grâce ouvre le même paiement et clique sur **Approuver** (fenêtre **Approuver le paiement**), confirme.
 
-1. Rachel ouvre son ordre de paiement et tente de cliquer sur **Approuver**.
-2. Grâce ouvre le même paiement et clique sur **Approuver**.
+**Résultat attendu** : Rachel est refusée (« Séparation des tâches : l'initiateur ne peut pas approuver son
+paiement ») ; Grâce réussit, le paiement passe **Approuvé**.
 
-**Ce que vous devez constater** : la tentative de Rachel est refusée (« une seconde personne est requise ») ; celle de
-Grâce réussit, et le paiement passe « approuvé ».
+- [ ] **H13** — Double regard fonctionnel.
 
-- [ ] **H13** — Le double regard fonctionne.
+### Scène H14 — L'exécution du virement
 
-### Scène H14 — L'argent part
+**Qui** : Rachel. **Où** : le paiement approuvé.
 
-*Le virement a été fait à la banque. Rachel l'enregistre dans la plateforme, avec sa preuve et sa référence. Cette
-référence, « VIR-TEST-0001 », servira à retrouver le virement sur le relevé bancaire au chapitre 12.*
+**Méthode** : **Exécuter** ; fenêtre **Exécuter le paiement** :
 
-> **Qui :** Rachel. **Où :** le paiement approuvé.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Canal d'exécution | « Virement / Mobile Money effectué hors plateforme (preuve jointe) » | |
+| Référence bancaire / Mobile Money | `VIR-TEST-0001` (elle servira au relevé bancaire, scène F3) | |
+| Preuve d'exécution | le PDF « Preuve de virement » | ★ |
 
-**Ce que vous faites**
+Cliquez sur **Confirmer l'exécution**.
 
-1. Ouvrez le paiement approuvé et cliquez sur **Exécuter**.
-2. Choisissez le mode **Virement / Mobile Money effectué hors plateforme (preuve jointe)**.
-3. **Référence bancaire / Mobile Money** : `VIR-TEST-0001`. Joignez le PDF de preuve de virement.
-4. Cliquez sur **Confirmer l'exécution**.
+**Résultat attendu** : paiement **Payé**, facture **Payée** ; Martin voit le règlement dans son extranet.
 
-**Ce que vous devez constater** : le paiement passe « payé », la facture aussi, et Martin voit le règlement dans son
-extranet (*Facturation › Paiements*).
+- [ ] **H14** — Paiement exécuté, visible du fournisseur.
 
-- [ ] **H14** — Le paiement est exécuté et visible du fournisseur.
+### Scène H15 — Noter Martin et clôturer la commande
 
-### Scène H15 — Noter Martin
+**Qui** : Linda. **Où** : le bon de commande.
 
-*Linda prend une minute pour noter la prestation de Martin : la qualité, le délai, le service. Ces notes nourrissent le
-classement des fournisseurs pour les prochaines commandes.*
+**Méthode**
 
-> **Qui :** Linda. **Où :** le bon de commande.
+1. **Noter le fournisseur** :
 
-**Ce que vous faites** : cliquez sur **Noter le fournisseur** (par exemple qualité 4 sur 5), validez, puis cliquez sur
-**Clôturer**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Qualité | `4` (de 1 à 5) | ★ |
+| Ponctualité | `5` | ★ |
+| Conformité | `3` (2 sacs percés) | ★ |
+| Communication | `5` | ★ |
+| Commentaire | `Bonne réactivité` | |
 
-**Ce que vous devez constater** : le bon de commande est clôturé ; la note apparaît dans l'onglet **Performance** de la
-fiche fournisseur, et Martin la voit dans *Fournitures › Performance* de son extranet.
+   **Enregistrer**.
+2. **Clôturer** et confirmez.
 
-- [ ] **H15** — La notation et la clôture fonctionnent.
+**Résultat attendu** : bon de commande **Clôturé** ; la note apparaît dans l'onglet **Performance** de la fiche
+fournisseur et dans l'extranet de Martin.
+
+- [ ] **H15** — Notation et clôture fonctionnent.
 
 ### Scène H16 — Les papiers de Martin
 
-*Un fournisseur sérieux tient ses attestations à jour. Martin dépose son attestation fiscale ; Linda la vérifie.*
+**Qui** : Martin, puis Linda. **Où** : extranet, menu des documents ; puis ERP, fiche fournisseur, onglet **Documents**.
 
-> **Qui :** Martin, puis Linda. **Où :** extranet, *Fournitures › Documents* ; puis ERP, fiche fournisseur.
+**Méthode**
 
-**Ce que vous faites**
+1. Martin : **Déposer un document** : **Type** « Attestation de régularité fiscale », **Intitulé** `Attestation fiscale 2026`, **Valable
+   jusqu'au** dans 6 mois, le PDF ; **Déposer**.
+2. Linda : fiche fournisseur, onglet **Documents**, sur l'attestation : **Marquer vérifié**.
 
-1. Martin clique sur **Déposer un document** : type attestation fiscale, un intitulé, une date de validité, le PDF
-   d'attestation. Il clique sur **Déposer**.
-2. Linda ouvre la fiche du fournisseur, onglet **Documents**, et clique sur **Marquer vérifié**.
+**Résultat attendu** : chez Martin, le document passe « vérifié par GLOBUS ».
 
-**Ce que vous devez constater** : dans l'extranet de Martin, le document passe « vérifié par GLOBUS ».
+- [ ] **H16** — Documents légaux du fournisseur gérés.
 
-- [ ] **H16** — Les documents légaux du fournisseur sont gérés.
+---
 
-## Chapitre 9 — Les électriciens d'Akwa
+## Chapitre 9 — L'électricité de Sylvie (la sous-traitance)
 
-*L'électricité d'une maison ne s'improvise pas. GLOBUS va confier ce lot à une entreprise spécialisée, mais pas sans
-précautions : vérifier ses références, la mettre en concurrence, signer un vrai marché, contrôler chaque mètre de câble
-déclaré avant de payer. C'est l'histoire de Sylvie Abena et de son entreprise, TEST Électricité Akwa.*
+*Le lot électricité est confié à l'entreprise de Sylvie. Ce chapitre suit tout le circuit : qualification, appel
+d'offres sous pli scellé, négociation, attribution, signature, mobilisation, situation de travaux, contrôle terrain,
+facture, paiement, réclamation et litige.*
 
-### Scène S1 — L'examen de passage
+> **Les chiffres de l'histoire** (pour vérifier les calculs de la plateforme) :
+>
+> | Poste | Quantité | Prix offert | Prix après négociation (× 0,95) |
+> | --- | --- | --- | --- |
+> | E1 — Tableau électrique et protections | 1 u | 400 000 | 380 000 |
+> | E2 — Points lumineux | 40 u | 15 000 | 14 250 |
+> | E3 — Prises de courant | 40 u | 10 000 | 9 500 |
+> | **Total HT** | | **1 400 000** | **1 330 000** |
+>
+> Marché : retenue de garantie 5 %, avance 133 000 récupérée à 10 % par situation, TVA 19,25 %.
 
-*Avant d'inviter Sylvie à remettre une offre, Samuel vérifie que son entreprise est sérieuse : ses références, sa
-capacité, sa sécurité, sa solidité financière.*
+> **Qui a le droit de faire quoi** : Samuel (chef de projet) gère consultations, marchés et validation des situations ;
+> **seule Grâce (direction) peut attribuer un marché et l'envoyer pour signature** ; Ernest (chef de chantier) fait le
+> constat terrain ; Rachel (finance) traite les factures et les paiements.
 
-> **Qui :** Samuel (profil **GLOBUS CDP**). **Où :** ERP, *Sous-traitance › Sous-traitants*.
+### Scène S1 — Qualifier l'entreprise de Sylvie
 
-**Ce que vous faites**
+**Pourquoi** : on ne consulte que des entreprises **qualifiées** (dossier noté, assurances valides).
 
-1. Ouvrez la fiche « TEST Électricité Akwa » et cliquez sur **Qualifier**.
-2. **Corps de métier** qualifié : électricité.
-3. Donnez une note de 4 sur 5 à chaque critère (références, capacité, sécurité, solidité financière, qualité). Le score
-   sur 100 se calcule sous vos yeux.
-4. Ajoutez une référence de chantier (bouton **Référence** : un projet, un client, une année, un montant).
-5. Déposez une pièce justificative (un PDF), puis choisissez la décision « approuver » et enregistrez.
+**Qui** : Samuel (profil **GLOBUS CDP**). **Où** : *Sous-traitance › Sous-traitants*, onglet **Sous-traitants**, fiche
+« TEST Électricité Akwa » (créée à la scène A7, statut **Prospect**).
 
-**Ce que vous devez constater** : le score atteint au moins 50, et l'entreprise passe au statut « qualifié ».
+**Méthode**
 
-- [ ] **S1** — Le sous-traitant est qualifié.
+1. Cliquez sur **Qualifier** ; fenêtre **Qualification** :
 
-### Scène S2 — L'appel d'offres
+| Champ | Valeur | |
+| --- | --- | --- |
+| Corps de métier | « Électricité » (proposé d'office) | ★ |
+| Critères notés (0 à 5) | cliquez : Références `4`, Capacité (moyens humains et matériels) `4`, Sécurité `4`, Solidité financière `3`, Qualité `4` | ★ |
+| Références chantier | bouton **Référence** : Projet `Immeuble R+3 Akwa`, Client `TEST SCI Akwa`, Année `2025`, Montant (FCFA) `9000000` | |
+| Pièces justificatives | déposez le PDF « Attestation d'assurance » | |
+| Décision | « Approuvé » | ★ |
+| Commentaire | `Dossier complet` | |
 
-*Samuel lance une consultation pour le lot électricité : un tableau électrique et trente points lumineux. Pour que
-l'essai ne dure pas des jours, la date limite de remise des offres est fixée dans dix minutes.*
+2. Sous les critères, lisez le score : **77 / 100** (50 minimum pour approuver). Cliquez sur **Enregistrer**.
 
-> **Qui :** Samuel. **Où :** *Sous-traitance › Sous-traitants*, onglet **Consultations**.
+**Résultat attendu** : la fiche passe **Qualifié** ; onglet **Qualifications** : « Électricité — score 77 », valable 2 ans.
 
-**Ce que vous faites**
+> **Contrôle** : une approbation est refusée si le score est sous 50 (« Score de qualification insuffisant ») ou si
+> l'**Assurance RC** est absente ou expirée. Pour le gros œuvre, la charpente, la couverture… l'**assurance décennale** est
+> aussi exigée.
 
-1. Cliquez sur **Nouvelle consultation**.
-2. **Projet** : TEST — Villa Mballa. **Intitulé** : `Lot électricité`. **Date limite de remise des offres** : dans
-   10 minutes. (Le pli scellé est automatique : les offres restent cachées jusqu'à la date limite.)
-3. Dans **Pièces du dossier de consultation (DCE)**, cochez un plan déposé dans la GED du projet (chapitre M). Laissez
-   les **Critères de notation** proposés (prix 50, délai 20, technique 20, historique 10 : total 100 %).
-4. Dans le **Lot 1** déjà présent : **Code** `ELEC`, **Intitulé du lot** `Électricité`. Ajoutez deux postes (bouton
-   **Poste**) : « Tableau électrique », unité « u », quantité `1` ; « Points lumineux », unité « u », quantité `30`.
-5. Cliquez sur **Créer la consultation**.
-6. Sur la fiche de la consultation, cliquez sur **Inviter**, choisissez « TEST Électricité Akwa » et validez.
-7. Cliquez enfin sur **Publier** (une consultation sans entreprise invitée ne peut pas être publiée).
+- [ ] **S1** — Sous-traitant qualifié, score correct.
 
-**Ce que vous devez constater** : la fiche affiche la pièce du DCE et les critères ; Sylvie est notifiée de
-l'invitation.
+### Scène S2 — L'appel d'offres du lot électricité
 
-- [ ] **S2** — La consultation est publiée et Sylvie est invitée.
+**Pourquoi** : la consultation met plusieurs entreprises en concurrence sur un bordereau de prix identique.
 
-### Scène S3 — Sylvie remet son offre
+**Qui** : Samuel. **Où** : *Sous-traitance › Sous-traitants*, onglet **Consultations**, bouton **Nouvelle consultation**.
 
-*Dans son bureau d'Akwa, Sylvie étudie le dossier et chiffre son offre. Elle la dépose sous « pli scellé » : personne,
-chez GLOBUS, ne pourra en voir le montant avant la date limite.*
+**Méthode** : remplissez, dans l'ordre de l'écran :
 
-> **Qui :** Sylvie (profil **GLOBUS STT**). **Où :** extranet, *Sous-traitance › Consultations*.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Date limite de remise des offres | dans 3 jours, 12:00 | ★ |
+| Intitulé | `Lot électricité Villa Mballa` | ★ |
+| Démarrage souhaité | dans 10 jours | |
+| Durée cible (jours) | `45` | |
+| Description | `Installation électrique complète R+0` | |
+| Cahier des charges technique | `Norme NF C 15-100, câbles cuivre, tableau 4 rangées` | |
+| Exclusions | `Raccordement ENEO non compris` | |
+| Variantes autorisées | non coché | |
+| Pièces du dossier de consultation (DCE) | cochez « Plan RDC » (la version publiée à la scène M9) | |
+| Critères de notation des offres | laissez Prix 50, Délai 20, Valeur technique 20, Historique avec GLOBUS 10 (total 100 %) | |
 
-**Ce que vous faites**
+Bloc **Lot 1** :
 
-1. Ouvrez la consultation « Lot électricité ».
-2. Sur le lot, cliquez sur **Remettre une offre**.
-3. Saisissez les prix unitaires : `350000` pour le tableau, `25000` pour les points lumineux. **Délai d'exécution
-   proposé** : `20` jours. Joignez le PDF « mémoire technique ».
-4. Cliquez sur **Déposer l'offre**.
-5. Dans la fenêtre de Samuel, ouvrez la consultation.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code | `L1` (proposé) | ★ |
+| Intitulé du lot | `Électricité` | ★ |
+| Estimation | `1500000` | |
+| Lot du projet | « ELEC » | |
 
-**Ce que vous devez constater** : chez Sylvie, « Offre déposée » ; chez Samuel, l'offre existe mais son montant reste
-**invisible** tant que la date limite n'est pas passée.
+Postes du lot (bouton **Poste** pour chaque ligne supplémentaire) :
 
-- [ ] **S3** — L'offre est déposée et reste scellée.
+| Code | Désignation ★ | Unité | Quantité ★ |
+| --- | --- | --- | --- |
+| `E1` | `Tableau électrique et protections` | `u` | `1` |
+| `E2` | `Points lumineux` | `u` | `40` |
+| `E3` | `Prises de courant` | `u` | `40` |
 
-### Scène S4 — L'ouverture des plis
+Cliquez sur **Créer la consultation**.
 
-*Dix minutes ont passé. Samuel ouvre les plis, compare, évalue, négocie un peu, et attribue le lot.*
+**Résultat attendu** : la consultation est créée au statut **Brouillon**, la fiche s'ouvre.
 
-> **Qui :** Samuel (ou Grâce), puis Sylvie. **Où :** la consultation.
+> **Contrôle** : le bouton **Créer la consultation** reste grisé tant que le projet, l'intitulé, la date limite, au moins
+> un poste complet par lot et un total de critères égal à 100 % ne sont pas renseignés.
 
-**Ce que vous faites**
+- [ ] **S2** — Consultation créée avec son bordereau et son DCE.
 
-1. Après la date limite, Samuel clique sur **Clôturer** : les plis s'ouvrent.
-2. Il consulte le **Bordereau comparé**, puis clique sur **Évaluer** et donne une note technique.
-3. Il clique sur **Négocier** et demande une contre-proposition.
-4. Sylvie, dans son extranet, clique sur **Accepter …** (ou sur **Contre-proposer**, avec un montant, un délai et un
-   commentaire).
-5. Samuel clique sur **Attribuer**.
+### Scène S3 — Inviter puis publier
 
-**Ce que vous devez constater** : un marché est créé en brouillon, dans l'onglet **Marchés**.
+**Qui** : Samuel. **Où** : la fiche de la consultation.
 
-- [ ] **S4** — La consultation est clôturée et le lot attribué.
+**Méthode**
 
-### Scène S5 — La signature électronique du marché
+1. Cliquez d'abord sur **Publier** : la plateforme refuse (« Inviter au moins un sous-traitant qualifié »).
+2. Cliquez sur **Inviter** ; fenêtre **Inviter des entreprises** : **Corps de métier** « Électricité », puis dans la
+   liste choisissez « TEST Électricité Akwa » ; cliquez sur **Inviter**.
+3. Cliquez sur **Publier**.
 
-*Le marché est prêt. Sylvie le lit, puis le signe sans papier : son nom, sa qualité, une case cochée, et un code reçu
-par e-mail.*
+**Résultat attendu** : statut **Publié** ; bloc **Invitations** : « TEST Électricité Akwa ». Sylvie reçoit un e-mail et
+une notification.
 
-> **Qui :** Grâce ou Samuel, puis Sylvie. **Où :** onglet **Marchés** ; extranet, *Mes marchés*.
+- [ ] **S3** — Invitation et publication (avec le contrôle).
 
-**Ce que vous faites**
+### Scène S4 — Sylvie remet son offre
 
-1. Dans l'ERP, sur le marché en brouillon, cliquez sur **Envoyer pour signature**.
-2. Sylvie ouvre *Mes marchés*, clique sur **Contrat PDF** pour le lire, puis sur **Signer le marché**.
-3. Elle saisit son nom et sa qualité, coche la case d'acceptation, clique sur **Recevoir mon code**, tape le code reçu par
-   e-mail et clique sur **Signer**.
+**Pourquoi** : l'offre est **scellée** : personne chez GLOBUS ne peut la lire avant la date limite.
 
-**Ce que vous devez constater** : le marché passe « en cours », avec une signature horodatée.
+**Qui** : Sylvie (profil **GLOBUS STT**). **Où** : extranet, menu **Consultations**, la consultation.
 
-- [ ] **S5** — Le marché est signé électroniquement.
+**Méthode**
 
-### Scène S6 — Les électriciens arrivent
+1. Bloc **Dossier de consultation** : cliquez sur **Télécharger** à côté de « Plan RDC » (le PDF porte un filigrane au
+   nom de son entreprise).
+2. Sur le bloc **Lot L1 — Électricité**, cliquez sur **Remettre une offre** ; fenêtre **Offre — lot L1 Électricité** :
 
-> **Qui :** Samuel. **Où :** la fiche du marché.
+| Poste | Prix unitaire HT ★ |
+| --- | --- |
+| Tableau électrique et protections | `400000` |
+| Points lumineux | `15000` |
+| Prises de courant | `10000` |
 
-**Ce que vous faites** : cliquez sur **Mobilisation** : une date, un effectif de `4` personnes, le chantier S1. Validez.
+| Champ | Valeur |
+| --- | --- |
+| Délai d'exécution proposé (jours) | `40` |
+| Mémoire technique (PDF) | le PDF « Mémoire technique » |
+| Réserves / exclusions | `Fourniture des luminaires décoratifs par le client` |
 
-**Ce que vous devez constater** : la mobilisation apparaît dans la fiche du marché.
+3. Vérifiez **Montant total HT de l'offre** : **1 400 000 FCFA**. Cliquez sur **Déposer l'offre**.
 
-- [ ] **S6** — La mobilisation est enregistrée.
+**Résultat attendu** : l'offre apparaît sous le lot au statut **Soumis**, avec un bouton **Retirer** (possible jusqu'à
+la date limite).
 
-### Scène S7 — La première situation de travaux
+- [ ] **S4** — Offre déposée depuis l'extranet.
 
-*Au bout de quelques semaines, Sylvie déclare ce qu'elle a fait : le tableau est posé, dix points lumineux aussi. C'est sa
-« situation de travaux », la base de son paiement. Elle doit y joindre des photos : sans preuve, pas de paiement.*
+### Scène S5 — Le pli scellé, l'ouverture et le comparatif
 
-> **Qui :** Sylvie. **Où :** extranet, *Mes marchés*.
+**Qui** : Samuel. **Où** : la fiche de la consultation.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Ouvrez le marché et cliquez sur **Nouvelle situation**.
-2. Indiquez la période (le mois en cours). Réalisé sur la période : tableau `1`, points lumineux `10`.
-3. Cliquez sur **Créer la situation**, puis ouvrez-la.
-4. Essai : cliquez sur **Soumettre** sans photo. La plateforme doit refuser.
-5. Sélectionnez deux photos et cliquez sur **Envoyer les photos**, puis sur **Soumettre**.
+1. Bloc **Offres** : « 1 offre(s) reçue(s) — ouverture à la date limite » et le cadenas : le contenu est invisible.
+2. Pour ne pas attendre trois jours, cliquez sur **Clôturer**, puis **Confirmer** (« Les offres seront ouvertes et plus
+   aucune remise ne sera acceptée »).
+3. Le comparatif apparaît : montant, écart / estimation (environ −6,7 %), délai, score total. Ouvrez **Bordereau comparé (prix
+   unitaires par poste)**.
+4. Sur la ligne de Sylvie, cliquez sur **Évaluer** : **Note technique** ★ `80` ; **Enregistrer**.
 
-**Ce que vous devez constater** : sans photo, la soumission est refusée ; avec photos, la situation passe « soumise ».
+**Résultat attendu** : statut **Clôturé** ; la note technique et le score total se mettent à jour.
 
-- [ ] **S7** — La situation est soumise avec ses preuves.
+- [ ] **S5** — Offres scellées puis ouvertes, comparatif et évaluation.
 
-### Scène S8 — Ernest compte les points lumineux
+### Scène S6 — La négociation
 
-*Ernest fait le tour de la maison et compte : neuf points lumineux, pas dix. Il l'écrit.*
+**Qui** : Samuel, puis Sylvie, puis Samuel.
 
-> **Qui :** Ernest (profil **GLOBUS CDC**). **Où :** ERP, *Sous-traitance › Situations*.
+**Méthode**
 
-**Ce que vous faites**
+1. Samuel, ligne de Sylvie : **Négocier** ; **Montant** ★ `1300000`, **Durée (jours)** `40`, **Commentaire**
+   `Alignement sur le budget` ; **Enregistrer**.
+2. Sylvie, extranet, la consultation : sous son offre, la proposition GLOBUS s'affiche avec **Accepter 1 300 000 FCFA**
+   et **Contre-proposer**. Cliquez sur **Contre-proposer** : **Montant HT proposé** ★ `1330000`, **Délai (jours)**
+   `40`, **Commentaire** `Prix plancher` ; **Envoyer**.
+3. Samuel, ligne de Sylvie : cliquez sur **Accepter 1 330 000 FCFA**.
 
-1. Ouvrez la situation de Sylvie et cliquez sur **Constat terrain**.
-2. Quantités constatées : points lumineux `9`. Ajoutez une observation et une photo.
-3. Cliquez sur **Enregistrer le constat**.
+**Résultat attendu** : le montant de l'offre devient **1 330 000** (l'ancien montant barré) ; **Historique des
+négociations** : trois tours.
 
-**Ce que vous devez constater** : la situation passe « contrôlée sur le terrain », et Sylvie voit dans son extranet
-« Constaté » = 9.
+> **Contrôle** : une partie ne peut pas accepter sa propre proposition, ni en faire deux de suite sans réponse.
 
-- [ ] **S8** — Le constat terrain corrige la déclaration.
+- [ ] **S6** — Négociation à trois tours historisée.
 
-### Scène S9 — Grâce valide
+### Scène S7 — L'attribution (direction)
 
-> **Qui :** Grâce (profil **GLOBUS DIR**). **Où :** la situation contrôlée.
+**Pourquoi** : attribuer engage l'entreprise : c'est réservé à la direction.
 
-**Ce que vous faites** : cliquez sur **Valider**, lisez les montants calculés (montant de la période, retenue de
-garantie, récupération d'avance), puis confirmez.
+**Qui** : Samuel, puis Grâce (profil **GLOBUS DIR**). **Où** : la fiche de la consultation.
 
-**Ce que vous devez constater** : la situation passe « validée ».
+**Méthode**
 
-- [ ] **S9** — La situation est validée.
+1. Samuel : le bouton **Attribuer** n'apparaît pas pour lui.
+2. Grâce : ligne de Sylvie, **Attribuer** ; fenêtre **Attribuer à TEST Électricité Akwa** :
 
-### Scène S10 — La facture de Sylvie et son paiement
+| Champ | Valeur |
+| --- | --- |
+| Titre | `Électricité Villa Mballa` |
+| Retenue de garantie (%) | `5` |
+| Avance forfaitaire | `133000` |
+| Récupération d'avance (%) | `10` |
+| Pénalité par jour | `10000` |
+| Plafond des pénalités (%) | `10` |
+| Taux de TVA | `19.25` |
+| Date de début | aujourd'hui |
+| Date de fin | dans 60 jours |
+| Conditions | `Conditions générales GLOBUS de sous-traitance` |
 
-*Sylvie dépose sa facture. Rachel la valide, prépare le paiement, Grâce l'approuve, Rachel l'exécute : le même circuit que
-pour Martin.*
+3. **Enregistrer**.
 
-> **Qui :** Sylvie, puis Rachel et Grâce. **Où :** extranet ; puis ERP, *Sous-traitance › Sous-traitants*, onglet
-> **Factures**, et *Finance › Finances*.
+**Résultat attendu** : « Marché créé » ; la fiche du marché s'ouvre au statut **Brouillon**, **Montant du marché HT**
+**1 330 000 FCFA** (TVA 19,25 %) ; **Bordereau du marché** : 380 000 / 14 250 / 9 500 (prix ramenés au prorata de la
+négociation).
 
-**Ce que vous faites**
+- [ ] **S7** — Attribution réservée à la direction, prix négociés repris.
 
-1. Sylvie ouvre sa situation validée, clique sur **Déposer la facture** : un numéro, une date, le montant TTC, le PDF
-   « facture sous-traitant ». Elle clique sur **Déposer**.
-2. Rachel ouvre l'onglet **Factures** de la sous-traitance et clique sur **Valider (bon à payer)**.
-3. Le paiement suit ensuite exactement les scènes H12, H13 et H14 : ordre de paiement par Rachel, approbation par Grâce,
-   exécution par Rachel (choisissez une autre référence, par exemple `VIR-TEST-0003`).
+### Scène S8 — Le marché part en signature, Sylvie signe par code
 
-**Ce que vous devez constater** : Sylvie voit sa facture « payée » et le paiement dans *Facturation › Paiements*.
+**Qui** : Grâce, puis Sylvie. **Où** : la fiche du marché (ERP), puis extranet, menu **Mes marchés**.
 
-- [ ] **S10** — La facture du sous-traitant est payée.
+**Méthode**
 
-### Scène S11 — Sylvie réclame
+1. Grâce : **Contrat PDF** pour relire le contrat, puis **Envoyer pour signature**.
+2. Sylvie : ouvrez le marché (badge **À signer**), lisez le **Contrat PDF**, cliquez sur **Signer le marché** :
 
-*Sylvie estime avoir fait des travaux supplémentaires non prévus. Elle dépose une réclamation de 150 000 francs. Samuel
-la refuse, réponse écrite à l'appui.*
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom et qualité du signataire | `Sylvie TEST-ABENA, gérante` (3 caractères minimum) | ★ |
+| J'ai lu le contrat et j'accepte ses conditions… | coché | ★ |
 
-> **Qui :** Sylvie, puis Samuel. **Où :** extranet, *Sous-traitance › Réclamations* ; ERP, onglet **Réclamations** des
-> sous-traitants.
+3. Cliquez sur **Recevoir mon code**, ouvrez l'e-mail, tapez le code dans **Code reçu**, cliquez sur **Signer**.
 
-**Ce que vous faites**
+**Résultat attendu** : « Marché signé » ; statut **Signé** des deux côtés ; la fiche ERP affiche **Signé le … par
+Sylvie TEST-ABENA, gérante**.
 
-1. Sylvie clique sur **Nouvelle réclamation** : le marché concerné, un objet, un exposé, un montant de `150000`. Elle
-   clique sur **Déposer**.
-2. Samuel ouvre la réclamation et clique sur **Répondre** : décision « refuser », avec une réponse écrite.
+- [ ] **S8** — Signature électronique par code fonctionnelle.
 
-**Ce que vous devez constater** : Sylvie voit la réponse de Samuel dans son extranet.
+### Scène S9 — La mobilisation et la facture d'avance
 
-- [ ] **S11** — Les réclamations circulent dans les deux sens.
+**Pourquoi** : aucune situation n'est possible avant que l'équipe soit accueillie sur le chantier ; l'avance prévue au
+marché se facture après signature.
 
-### Scène S12 — Le litige
+**Qui** : Samuel, puis Rachel (profil **GLOBUS FIN**). **Où** : la fiche du marché.
 
-*Sylvie conteste le point lumineux manquant : 25 000 francs. Elle ouvre un litige. Pendant toute sa durée, ce montant est
-« gelé » ; le reste de ses factures continue de vivre. Chaque échange s'inscrit dans une chronologie que personne ne peut
-modifier.*
+**Méthode**
 
-> **Qui :** Sylvie, puis Grâce. **Où :** extranet, *Litiges* ; ERP, *Sous-traitance › Litiges*.
+1. Samuel : **Mobilisation** ; fenêtre **Mobilisation du sous-traitant** :
 
-**Ce que vous faites**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Date de mobilisation | aujourd'hui | ★ |
+| Effectif | `4` | ★ |
+| Encadrant | `Sylvie TEST-ABENA` | |
+| Matériel | `Échafaudage roulant, perforateurs` | |
+| Accès chantier accordé | coché | |
+| Accueil sécurité effectué | coché | |
+| Notes | `Badge remis à chaque électricien` | |
 
-1. Sylvie clique sur **Ouvrir un litige** : le marché, la situation contestée, un exposé des faits, un montant contesté de
-   `25000`, une pièce justificative. Elle clique sur **Ouvrir le litige**.
-2. Grâce ouvre le litige, clique sur **Faire évoluer** (passage en analyse), puis sur **Ajouter à la chronologie** (un
-   échange).
-3. Grâce clique sur **Décision** (une décision motivée), puis sur **Clore (résolu)**.
+   **Enregistrer**.
+2. Rachel : **Facture d'avance**, puis **Confirmer** (« Générer la facture d'avance de 133 000 FCFA ? »).
 
-**Ce que vous devez constater** : le montant est gelé pendant le litige puis libéré selon la décision ; la chronologie est
-visible des deux côtés et ne peut pas être modifiée.
+**Résultat attendu** : le marché passe **Mobilisé** (les deux cases cochées sont nécessaires) ; onglet **Factures** de
+*Sous-traitance › Sous-traitants* : une facture de type « Avance forfaitaire » de 133 000 FCFA, déjà **Bon à payer**.
 
-- [ ] **S12** — Le litige suit son cours jusqu'à sa résolution.
+- [ ] **S9** — Mobilisation et avance.
 
-### Scène S13 — Trop, c'est trop
+### Scène S10 — La première situation de travaux
 
-*Dernière épreuve : Sylvie déclare plus de points lumineux que le marché n'en prévoit. La plateforme bloque la
-validation : il faut une dérogation explicite et justifiée.*
+**Pourquoi** : Sylvie déclare ce qu'elle a fait sur la période, preuves photo à l'appui.
 
-> **Qui :** Sylvie, puis Grâce. **Où :** extranet, puis ERP.
+**Qui** : Sylvie. **Où** : extranet, **Mes marchés**, le marché.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Sylvie crée une nouvelle situation avec des quantités qui dépassent le marché (par exemple 40 points lumineux au
-   total), joint des photos et la soumet.
-2. Ernest enregistre un constat terrain.
-3. Grâce tente de cliquer sur **Valider** : la validation doit être bloquée.
-4. Grâce clique sur **Accorder une dérogation** et écrit une justification.
+1. **Nouvelle situation** ; fenêtre **Nouvelle situation de travaux** :
 
-**Ce que vous devez constater** : la validation est bloquée tant qu'il n'y a pas de dérogation ; une fois la dérogation
-accordée, elle devient possible.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Début de période | aujourd'hui | ★ |
+| Fin de période | aujourd'hui | ★ |
 
-- [ ] **S13** — Le dépassement de marché est contrôlé.
+| Poste | Réalisé sur la période (au moins un poste) |
+| --- | --- |
+| Tableau électrique et protections | `1` |
+| Points lumineux | `20` |
+| Prises de courant | `20` |
+
+   Cliquez sur **Créer la situation** : la situation s'ouvre au statut **Brouillon**.
+2. Cliquez sur **Soumettre** tout de suite : refus (« Photos probatoires obligatoires »).
+3. Bloc **Photos d'avancement** : déposez 2 photos, cliquez sur **Envoyer les photos** (le navigateur peut demander la
+   position : acceptez, la photo est géolocalisée).
+4. Cliquez sur **Soumettre**.
+
+**Résultat attendu** : statut **Soumis** ; **Montant de la période** 855 000 FCFA (380 000 + 20 × 14 250 + 20 × 9 500).
+Samuel et Ernest sont notifiés.
+
+- [ ] **S10** — Situation déclarée avec preuves.
+
+### Scène S11 — Le constat terrain et la validation
+
+**Pourquoi** : on ne paie que ce qui est **constaté** sur place, par quelqu'un d'autre que le déclarant.
+
+**Qui** : Ernest (profil **GLOBUS CDC**), puis Samuel. **Où** : *Sous-traitance › Situations*, la situation.
+
+**Méthode**
+
+1. Ernest : **Constat terrain** ; dans la colonne **Constaté** : `1`, `16`, `20` (4 points lumineux ne sont pas
+   finis) ; **Observations** `4 points lumineux sans appareillage` ; **Enregistrer le constat**.
+2. Samuel : **Valider** ; fenêtre **Valider la situation** : laissez **Pénalités retenues (si différentes du calcul)** et
+   **Motif de l'ajustement des pénalités** vides ; **Enregistrer**.
+
+**Résultat attendu** : après le constat, statut **Constat terrain**, la quantité constatée 16 en orange ; après
+validation, statut **Validé** et ces montants :
+
+| Montant | Calcul | Valeur |
+| --- | --- | --- |
+| Montant de la période (brut) | 380 000 + 16 × 14 250 + 20 × 9 500 | 798 000 |
+| Retenue de garantie | 5 % du brut | 39 900 |
+| Avance récupérée | 10 % du brut | 79 800 |
+| Pénalités | aucun retard | 0 |
+| **Net à payer** | brut − retenue − avance | **678 300** |
+
+> **Contrôles** : valider avant le constat est refusé (« Le constat terrain doit précéder la validation ») ; si vous
+> saisissez des pénalités différentes, le **Motif** devient obligatoire.
+
+- [ ] **S11** — Constat, validation et calculs exacts.
+
+### Scène S12 — La facture de Sylvie et son paiement
+
+**Qui** : Sylvie, puis Rachel, puis Grâce, puis Rachel. **Où** : extranet, **Situations** ; puis ERP.
+
+**Méthode**
+
+1. Sylvie : ouvrez la situation validée, **Déposer la facture** ; fenêtre **Facture de la situation** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| N° de facture | `ELEC-TEST-001` | ★ |
+| Date | aujourd'hui (proposée) | ★ |
+| Montant TTC | proposé : **831 915** (net 678 300 + TVA 19,25 % du brut 153 615) | ★ |
+| Facture (PDF ou image) | le PDF « Facture sous-traitant » | ★ |
+
+   **Déposer**. (Essai : un autre montant est refusé, « Montant facturé différent du net validé ».)
+2. Rachel : *Sous-traitance › Sous-traitants*, onglet **Factures**, filtre **Statut** « Reçu » ; sur `ELEC-TEST-001`,
+   **Valider (bon à payer)**, **Confirmer**.
+3. Rachel : *Finance › Finances*, onglet **Paiements**, **Ordre de paiement** ; fenêtre **Nouvel ordre de paiement** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Pièce à régler | « Facture sous-traitant » | ★ |
+| Facture sous-traitant | la facture `ELEC-TEST-001` (seules les factures bon à payer sont proposées) | ★ |
+| Montant | *(vide : solde la facture)* | |
+| Mode de règlement | « Virement bancaire » | ★ |
+| Notes | `Situation 1 électricité` | |
+
+   **Créer l'ordre de paiement**.
+4. Grâce l'approuve, Rachel l'exécute, exactement comme aux scènes H13 et H14 (référence `VIR-TEST-0002`).
+
+**Résultat attendu** : facture **Bon à payer**, puis **Payé** ; la situation passe **Payé** ; Sylvie voit le règlement
+dans son menu **Paiements**.
+
+- [ ] **S12** — Facture conforme, validée, payée.
+
+### Scène S13 — Une réclamation, puis un litige
+
+**Pourquoi** : tout désaccord suit un circuit écrit et horodaté, jusqu'à une décision chiffrée.
+
+**Qui** : Sylvie, Samuel, Grâce. **Où** : extranet, menus **Réclamations** et **Litiges** ; ERP, *Sous-traitance ›
+Litiges*.
+
+**Méthode — la réclamation**
+
+1. Sylvie : **Nouvelle réclamation** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Marché concerné | le marché « Électricité Villa Mballa » | |
+| Objet | `Saignées supplémentaires dans le séjour` (3 caractères minimum) | ★ |
+| Exposé | `Le client a déplacé deux prises après exécution` | |
+| Montant demandé HT | `45000` | |
+
+   **Déposer**.
+2. Samuel : *Sous-traitance › Litiges*, onglet **Réclamations** ; sur la ligne, **Répondre** : **Décision** ★
+   « Accepter », **Réponse** ★ `Accord, à intégrer à la prochaine situation` ; **Répondre**.
+
+**Méthode — le litige**
+
+3. Sylvie : menu **Litiges**, **Ouvrir un litige** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Marché | le marché | |
+| Situation contestée | la situation 1 | |
+| Objet | `Points lumineux non comptés` | ★ |
+| Exposé des faits (10 caractères minimum) | `Les 4 points lumineux étaient posés, seul l'appareillage manquait` | ★ |
+| Montant contesté | `57000` (4 × 14 250) | |
+| Pièces justificatives | une photo | |
+
+   **Ouvrir le litige**.
+4. Samuel : ouvrez le litige, **Faire évoluer** : choisissez « En analyse », **Confirmer** ; recommencez avec « En négociation ».
+5. Samuel : **Ajouter à la chronologie** : **Type** ★ « Proposition », **Contenu** `Moitié des points acceptée`,
+   **Montant** `28500` ; **Enregistrer**.
+6. Sylvie : dans le litige, choisissez « Accord sur la proposition GLOBUS (28 500 FCFA) », **Votre message** `D'accord` ;
+   **Envoyer**.
+7. Grâce : **Décision** : **Montant accepté** ★ `28500`, **Montant refusé** ★ `28500` (la somme doit égaler 57 000),
+   **Résumé** ★ `Accord amiable : deux points sur quatre étaient complets` (20 caractères minimum) ; **Enregistrer**.
+8. Grâce : **Clore (résolu)**, **Commentaire de clôture** `Clos à l'amiable`, **Confirmer**.
+
+**Résultat attendu** : réclamation **Accepté** ; le litige passe Ouvert → En analyse → En négociation → Décision rendue →
+**Résolu** ; la **Chronologie** garde chaque étape, chez GLOBUS comme dans l'extranet. Seule la direction voit les
+boutons **Décision** et **Clore (résolu)**.
+
+- [ ] **S13** — Réclamation et litige menés jusqu'à la résolution.
+
+### Scène S14 — Noter l'entreprise
+
+**Qui** : Samuel. **Où** : fiche « TEST Électricité Akwa », onglet **Notations**, bouton **Noter**.
+
+**Méthode** : fenêtre **Noter le sous-traitant** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Contrat de sous-traitance | le marché « Électricité Villa Mballa » | |
+| Qualité | `4` (de 1 à 5) | ★ |
+| Délais | `5` | ★ |
+| Sécurité | `4` | ★ |
+| Propreté | `3` | ★ |
+| Conformité | `4` | ★ |
+| Coopération | `5` | ★ |
+| Commentaire | `Équipe réactive, chantier à nettoyer` | |
+
+**Enregistrer**.
+
+**Résultat attendu** : la note apparaît dans l'onglet ; **Note moyenne** et **Score global** de la fiche se mettent à
+jour (ils serviront au critère « Historique avec GLOBUS » des prochaines consultations).
+
+- [ ] **S14** — Notation enregistrée.
 
 ---
 
 # Livre V — La vie du chantier
 
-*Les fondations sont coulées, les électriciens sont à l'œuvre. Commence la longue vie du chantier : les journées
-d'Ernest, les décisions de Paul, les chiffres de Rachel, les ouvriers, la sécurité, les machines. Ce livre est le cœur
-battant de l'histoire.*
+## Chapitre 10 — Une journée sur le chantier (l'application GLOBUS Terrain)
 
-## Chapitre 10 — Une journée avec Ernest
+*Ernest et Moussa travaillent avec le téléphone : pointage, tâches, journal, photos, rapport vocal, plans, et même sans
+réseau. Les mêmes écrans existent aussi dans l'ERP web (menu* Chantier *de l'application = rubrique* Projets *de l'ERP).*
 
-*Six heures du matin, Bonamoussadi. Le soleil se lève à peine sur la parcelle. Ernest Tchoua enfile ses chaussures de
-sécurité, glisse son téléphone dans la poche de sa chemise et ouvre GLOBUS Terrain. Toute la journée, c'est cette
-application qui sera son carnet, son appareil photo, son talkie-walkie et son registre.*
+### Scène T1 — Les fiches du personnel (préalable au pointage)
 
-Pour ce chapitre, utilisez le **téléphone** avec l'application **GLOBUS Terrain**, connectée au compte d'Ernest.
+**Pourquoi** : le pointage est rattaché à une **fiche employé**. Sans fiche liée au compte, l'application affiche
+« Aucune fiche employé ».
 
-### Scène T1 — Le bonjour de l'application
+**Qui** : Rachel (profil **GLOBUS FIN**, rôle Ressources humaines). **Où** : *RH et QHSE › Ressources humaines*, onglet
+**Personnel**, bouton **Nouvel employé**.
 
-> **Qui :** Ernest. **Où :** application GLOBUS Terrain.
+**Méthode** : créez deux fiches, **Créer** après chacune :
 
-**Ce que vous faites** : si ce n'est pas déjà fait, connectez-vous avec l'e-mail, le mot de passe et le code d'Ernest.
+| Champ | Ernest | Moussa | |
+| --- | --- | --- | --- |
+| Matricule | `TEST-001` | `TEST-002` | |
+| Compte utilisateur (auto-pointage, espace salarié) | « Ernest TEST-TCHOUA » | « Moussa TEST-BELLO » | |
+| Prénom | `Ernest` | `Moussa` | ★ |
+| Nom | `TEST-TCHOUA` | `TEST-BELLO` | ★ |
+| Fonction | `Chef de chantier` | `Électricien` | ★ |
+| Métier | « Gros œuvre » | « Électricité » | |
+| Type de contrat | « CDI » | « Journalier » | |
+| Date d'embauche | le 1er du mois | le 1er du mois | ★ |
+| Salaire de base | `350000` | *(vide)* | |
+| Taux journalier | *(vide)* | `8000` | |
+| Fréquence de paie | « Mensuelle » | « Mensuelle » | |
+| Projet actuel | « TEST — Villa Mballa » | « TEST — Villa Mballa » | |
 
-**Ce que vous devez constater** : sous la barre du haut s'affiche le **chantier courant**, « TEST — Villa Mballa », et
-seules les rubriques correspondant aux métiers d'Ernest apparaissent (pas de finance, par exemple).
+**Résultat attendu** : deux fiches actives, chacune reliée à son compte.
 
-- [ ] **T1** — L'application s'ouvre sur le bon chantier.
+- [ ] **T1** — Fiches employés liées aux comptes.
 
-### Scène T2 — L'implantation est terminée
+### Scène T2 — Le QR de pointage affiché à l'entrée
 
-*Ernest et son équipe ont planté les piquets qui dessinent la maison au sol. La tâche est terminée.*
+**Qui** : Rachel. **Où** : *Ressources humaines*, onglet **Pointage**, carte **QR d'auto-pointage du chantier**.
 
-> **Qui :** Ernest. **Où :** rubrique **Mes tâches**.
+**Méthode** : **Projet** « TEST — Villa Mballa », **Site** « Parcelle Bonamoussadi » ; le QR apparaît ; cliquez sur
+**Imprimer** (ou gardez-le affiché à l'écran pour la scène suivante).
 
-**Ce que vous faites** : ouvrez la tâche « Implantation », poussez le curseur d'avancement à `100 %` et ajoutez une photo.
+**Résultat attendu** : un QR propre à ce site, imprimable.
 
-**Ce que vous devez constater** : l'avancement du projet est recalculé, aussi bien dans l'ERP (fiche du projet) que dans
-l'espace client de Paul.
+- [ ] **T2** — QR du chantier généré.
 
-- [ ] **T2** — L'avancement d'une tâche remonte partout.
+### Scène T3 — Moussa pointe son arrivée et son départ
 
-### Scène T3 — Le journal du jour
+**Pourquoi** : le pointage vérifie le QR **et** la position du téléphone (périmètre défini à la scène M3).
 
-*Le soir, Ernest rédige son journal : le temps qu'il a fait, combien d'ouvriers étaient là, ce qui a été réalisé. Il le
-rend visible à Paul.*
+**Qui** : Moussa, sur son téléphone, application **GLOBUS Terrain**. **Où** : menu **Personnel › Pointage**.
 
-> **Qui :** Ernest, puis Samuel, puis Paul. **Où :** application, rubrique **Journal de chantier** ; ERP, fiche projet,
-> onglet **Journal de chantier** ; espace client, menu **Chantier**.
+**Méthode**
 
-**Ce que vous faites**
+1. Connectez-vous avec le compte de Moussa (e-mail, mot de passe, code à 6 chiffres si activé).
+2. **Pointage** › **Scanner le QR du chantier** ; autorisez la caméra et la position ; visez le QR ; choisissez
+   « Arrivée ».
+3. En fin de journée : même geste, choisissez « Départ ».
+4. Essai : refaites « Arrivée » le même jour.
 
-1. Ernest rédige le rapport du jour : météo, effectif `6`, travaux réalisés, et coche **Visible par le client**. Il le
-   soumet.
-2. Samuel, dans l'ERP, ouvre le rapport soumis et clique sur **Valider**.
-3. Paul ouvre le menu **Chantier** de son espace.
+**Résultat attendu** : « Arrivée enregistrée », puis « Départ enregistré » ; le bloc **Aujourd'hui** affiche les deux
+heures. L'essai 4 est refusé (« Arrivée déjà enregistrée ce jour »). Dans l'ERP (onglet **Pointage**), colonne **Zone** :
+**Sur site** ou **Hors zone** selon l'endroit où était le téléphone (si vous testez loin de la parcelle, « Hors zone » est
+normal : le pointage est gardé mais signalé). Une arrivée plus de 15 minutes après l'horaire de début est
+marquée **En retard**.
 
-**Ce que vous devez constater** : Paul voit le rapport du jour.
+- [ ] **T3** — Auto-pointage par QR et géolocalisation.
 
-- [ ] **T3** — Le journal de chantier va du terrain au client.
+### Scène T4 — La validation des pointages
 
-### Scène T4 — Les photos du jour
+**Qui** : Ernest (ou Rachel). **Où** : ERP, *Ressources humaines*, onglet **Pointage**.
 
-> **Qui :** Ernest, puis Samuel. **Où :** rubrique **Photos et vidéos** ; ERP, onglet **Photos et vidéos**.
+**Méthode** : sur la ligne de Moussa, **Valider**, puis **Confirmer**.
 
-**Ce que vous faites**
+**Résultat attendu** : le pointage est validé ; il comptera dans la paie (chapitre 13).
 
-1. Ernest prend trois photos, choisit l'étape « pendant les travaux » et ajoute une légende.
-2. Samuel ouvre l'onglet **Photos et vidéos** de la fiche projet.
+- [ ] **T4** — Pointage validé.
 
-**Ce que vous devez constater** : les trois photos sont dans l'ERP, avec leur position GPS. Elles ne sont **pas encore**
-visibles de Paul : il faudra que Samuel les publie (chapitre 11).
+### Scène T5 — Mes tâches
 
-- [ ] **T4** — Les photos arrivent dans l'ERP sans être publiées automatiquement.
+**Qui** : Ernest. **Où** : application, **Chantier › Mes tâches** (désactivez le filtre **Mes tâches** pour voir toutes
+les tâches du chantier).
 
-### Scène T5 — Le rapport dicté
+**Méthode**
 
-*Les mains pleines de ciment, Ernest préfère parler qu'écrire. Il dicte son rapport ; l'application le transforme en
-texte, qu'il relit et valide.*
+1. Touchez la tâche « Implantation » (scène M6) ; bloc **Avancement** : faites glisser à `50 %`.
+2. **Note (travaux réalisés, difficultés)** : `Piquetage terminé, chaises en place` ; **Enregistrer**.
+3. Bloc **Photos de la tâche** : **Ajouter**, prenez une photo.
 
-> **Qui :** Ernest. **Où :** rubrique **Rapports vocaux**.
+**Résultat attendu** : l'avancement 50 % apparaît dans l'ERP (*Projets › Planning*) et dans la courbe du projet.
 
-**Ce que vous faites** : dictez une trentaine de secondes (« Aujourd'hui, coulage de la semelle de fondation côté nord,
-six ouvriers présents, livraison de ciment reçue… »), puis relisez et validez le texte proposé.
+- [ ] **T5** — Avancement saisi sur le terrain.
 
-**Ce que vous devez constater** : la transcription en français est fidèle.
+### Scène T6 — Le journal de chantier du jour
 
-- [ ] **T5** — La dictée vocale fonctionne.
+**Pourquoi** : le rapport journalier est la mémoire du chantier (effectifs, météo, aléas) ; il est validé par le chef de
+projet.
 
-### Scène T6 — Le QR code collé au mur
+**Qui** : Ernest, puis Samuel. **Où** : application, **Chantier › Journal de chantier** ; puis ERP, fiche du projet,
+onglet **Journal de chantier**.
 
-> **Qui :** Ernest. **Où :** bouton **Scanner** de l'application.
+**Méthode**
 
-**Ce que vous faites** : touchez **Scanner** et visez le QR code de la zone « Séjour RDC » imprimé à la scène M12.
+1. Ernest : **Rapport du jour** ; remplissez :
 
-**Ce que vous devez constater** : l'application ouvre les plans autorisés, les tâches et les photos de cette zone, et ne
-propose que la **version publiée** du plan.
+| Champ | Valeur |
+| --- | --- |
+| Date | aujourd'hui (30 jours en arrière au plus) |
+| Météo | « Pluie légère » |
+| Ouvriers GLOBUS | `6` |
+| Sous-traitants | `4` |
+| Température (°C) | `27` |
+| Heures perdues | `1.5` |
+| Travaux réalisés | `Implantation, début des fouilles` |
+| Difficultés / incidents | `Averse à 14 h, arrêt 1 h 30` |
+| Besoins (matériaux, matériel, main-d'œuvre) | `Pompe à eau` |
+| Sécurité | `Accueil sécurité des électriciens` |
+| Livraisons du jour | `98 sacs de ciment` |
+| Visiteurs | `Paul TEST-MBALLA` |
 
-- [ ] **T6** — Le scan d'une zone ouvre les bonnes informations.
+2. Bloc **Photos du jour** : **Ajouter** une photo. Touchez **Enregistrer**, puis **Soumettre au chef de projet** et
+   confirmez (« Soumettre le rapport ? »).
+3. Samuel (ERP) : onglet **Journal de chantier**, ligne du jour : **Valider**, **Confirmer**.
 
-### Scène T7 — Le plan périmé
+**Résultat attendu** : le rapport passe **Soumis** (plus modifiable par Ernest), puis **Validé**.
 
-*Danger classique des chantiers : travailler sur un vieux plan. Samuel publie une nouvelle version du plan ; sur le
-téléphone d'Ernest, un bandeau rouge l'avertit aussitôt.*
+- [ ] **T6** — Journal soumis depuis le terrain et validé.
 
-> **Qui :** Samuel, puis Ernest. **Où :** ERP, GED ; application, rubrique **Plans et maquette**.
+### Scène T7 — Les photos de chantier, dont une pour Paul
 
-**Ce que vous faites**
+**Qui** : Ernest. **Où** : application, **Chantier › Photos et vidéos**.
 
-1. Ernest ouvre une fois le « Plan RDC » sur son téléphone (il est ainsi téléchargé).
-2. Samuel publie une nouvelle version de ce plan dans la GED (comme à la scène M9).
-3. Ernest rouvre le plan sur son téléphone.
+**Méthode**
 
-**Ce que vous devez constater** : un bandeau rouge **Plan périmé** prévient Ernest.
+1. **Photo / vidéo** ; prenez une photo des fouilles.
+2. **Légende (facultatif)** `Fouilles en cours` ; cochez **Publier au client** ; **Envoyer**.
+3. Une deuxième photo, **sans** cocher **Publier au client**.
 
-- [ ] **T7** — L'alerte de plan périmé fonctionne.
+**Résultat attendu** : les deux photos sont dans l'ERP (onglet **Photos et vidéos** du projet) ; **seule la première**
+apparaît dans l'espace de Paul (vérifié au chapitre 11).
 
-### Scène T8 — Le sac qui tombe
+- [ ] **T7** — Photos publiées ou internes selon le choix.
 
-*Un sac de ciment glisse de l'échafaudage et s'écrase à un mètre d'un ouvrier. Personne n'est blessé, mais Ernest le
-signale immédiatement : c'est ainsi qu'on évite le prochain accident.*
+### Scène T8 — Le rapport vocal
 
-> **Qui :** Ernest. **Où :** rubrique **QHSE**, bouton **Signaler**.
+**Pourquoi** : sur le chantier on parle plus vite qu'on n'écrit ; la reconnaissance vocale du serveur transcrit le message.
 
-**Ce que vous faites** : signalez un incident : nature « chute de matériel », gravité moyenne, circonstances, deux photos.
+**Qui** : Ernest. **Où** : application, **Chantier › Rapports vocaux**.
 
-**Ce que vous devez constater** : l'incident apparaît dans l'ERP (*RH et QHSE › QHSE*, onglet **Incidents**), et le
-responsable QHSE est notifié.
+**Méthode**
 
-- [ ] **T8** — L'incident de sécurité est signalé.
+1. **Nouveau rapport vocal** ; parlez 20 secondes (« Fouilles terminées à soixante pour cent, prévoir la pompe demain ») ;
+   arrêtez ; **Envoyer**.
+2. Quand la **Transcription** apparaît, corrigez-la si besoin, puis **Valider**.
 
-### Scène T9 — La zone blanche
+**Résultat attendu** : le rapport passe **Transcrit**, puis **Validé** ; le texte est lisible dans l'ERP.
 
-*À Bonamoussadi, le réseau va et vient. Ernest continue de travailler comme si de rien n'était : l'application garde tout
-en mémoire, à l'abri, et envoie dès que le réseau revient.*
+> Le service de transcription est interne au serveur : il ne demande ni clé ni compte externe.
 
-> **Qui :** Ernest. **Où :** le téléphone et l'application.
+- [ ] **T8** — Rapport vocal transcrit et validé.
 
-**Ce que vous faites**
+### Scène T9 — Le QR du séjour
 
-1. Activez le **mode avion** du téléphone (en faisant glisser le haut de l'écran vers le bas, icône d'avion).
-2. Dans l'application, saisissez : l'avancement d'une tâche, un journal, une photo, un incident.
-3. Désactivez le mode avion.
-4. Patientez jusqu'à deux minutes, ou tirez l'écran d'accueil vers le bas pour forcer l'envoi.
+**Qui** : Ernest. **Où** : application, **Chantier › Scanner**.
 
-**Ce que vous devez constater**
+**Méthode** : scannez le QR de la zone « Z-SEJOUR » imprimé à la scène M12 (ou tapez son code dans **Ou saisir le
+code**, puis **Valider**).
 
-- Pendant la coupure, un bandeau « hors ligne » s'affiche, et vos saisies sont conservées.
-- Au retour du réseau, tout part automatiquement, et l'ERP reçoit chaque saisie **une seule fois** (aucun doublon).
+**Résultat attendu** : la page de la zone s'ouvre : **Plans**, **Maquette 3D** (si la scène M11 a été jouée),
+**Check-list de la zone**, **Photos avant / après**, **Tâches de la zone**, **Issues BIM ouvertes**. Le même scanner
+reconnaît aussi le QR de réception d'un bon de commande (scène H8) et le QR de pointage (scène T2).
 
-- [ ] **T9** — Le mode hors ligne ne perd rien et ne duplique rien.
+- [ ] **T9** — Un seul scanner pour tous les QR du chantier.
 
-### Scène T10 — Deux versions de la vérité
+### Scène T10 — Sans réseau
 
-*Pendant qu'Ernest est hors réseau, il modifie l'avancement d'une tâche. Au même moment, au bureau, Samuel modifie la même
-tâche. Quand le réseau revient, qui a raison ? La plateforme ne choisit pas à leur place : elle leur montre les deux
-versions et leur demande de trancher.*
+**Pourquoi** : dans les fouilles, le réseau est souvent absent ; rien ne doit être perdu.
 
-> **Qui :** Ernest et Samuel. **Où :** application (rubrique **Synchronisation**) et ERP.
+**Qui** : Ernest. **Où** : application, puis **Chantier › Synchronisation**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Ernest active le mode avion et change l'avancement de la tâche « Terrassement ».
-2. Samuel, dans l'ERP, change l'avancement de la même tâche.
-3. Ernest désactive le mode avion.
-4. Ernest ouvre **Synchronisation**, compare les colonnes « Bureau » et « Moi », puis choisit **Fusionner** (ou **Garder
-   le bureau**, ou **Garder ma version**).
+1. Passez le téléphone en **mode avion**.
+2. Faites une saisie : avancement de « Implantation » à `80 %` (scène T5) et une photo.
+3. Ouvrez **Synchronisation** : les saisies sont **En attente**.
+4. Pendant ce temps, Samuel, sur l'ordinateur, met « Implantation » à `70 %`.
+5. Ernest coupe le mode avion, touche **Synchroniser maintenant**.
 
-**Ce que vous devez constater** : la saisie d'Ernest passe en conflit au lieu d'écraser celle de Samuel ; après
-l'arbitrage, une seule valeur reste ; l'arbitrage est tracé dans le journal d'audit.
+**Résultat attendu** : la photo part ; pour l'avancement modifié des deux côtés, la ligne passe **À arbitrer** et
+propose **Garder le bureau**, **Garder ma version** ou **Fusionner**. Choisissez **Garder ma version** : la tâche est à
+80 % partout ; l'écran affiche **Tout est synchronisé**.
 
-- [ ] **T10** — Les conflits de synchronisation sont arbitrés proprement.
+- [ ] **T10** — Saisie hors ligne, synchronisation et arbitrage du conflit.
 
-### Scène T11 — Cinq sacs pour la dalle
+---
 
-> **Qui :** Ernest. **Où :** rubrique **Stock chantier**.
+## Chapitre 11 — Paul suit sa maison (l'espace client pendant les travaux)
 
-**Ce que vous faites** : faites une sortie de `5` sacs de ciment vers le chantier (vous pouvez même le faire en mode
-avion).
+*Paul ne vient pas tous les jours sur le chantier : la plateforme lui montre ce qui est public, lui demande ses décisions,
+lui soumet les avenants et lui présente ses appels de fonds.*
 
-**Ce que vous devez constater** : le mouvement apparaît dans l'ERP (*Achats et logistique › Stocks*, onglet
-**Mouvements**).
+### Scène R1 — Ce que Paul voit, et ce qu'il ne voit pas
 
-- [ ] **T11** — Les sorties de stock depuis le terrain fonctionnent.
+**Qui** : Paul (profil **GLOBUS CLI**). **Où** : espace client, menus **Tableau de bord**, **Chantier**, **Planning**,
+**Documents**.
 
-### Scène T12 — Lire un bon de livraison en le photographiant
+**Méthode** : parcourez ces quatre menus.
 
-> **Qui :** Ernest. **Où :** rubrique **Lecture de documents**.
+**Résultat attendu** :
+- **Chantier** : la photo « Fouilles en cours » publiée à la scène T7 ; **pas** la photo interne.
+- **Planning** : les tâches cochées « Visible par le client » (Implantation, Fondations) ; **pas** Terrassement ni
+  Élévation murs (scène M6).
+- **Documents** : le « Plan RDC » publié (scène M10), dans sa dernière version.
+- Aucun coût interne (budget, prix des sous-traitants, marges) n'apparaît nulle part.
 
-**Ce que vous faites** : photographiez un bon de livraison (n'importe quel document papier fera l'affaire).
+- [ ] **R1** — Cloisonnement client respecté.
 
-**Ce que vous devez constater** : l'application propose les informations qu'elle a lues, mais ne les applique jamais sans
-votre validation. Cette lecture dépend de l'intelligence artificielle, qui peut être indisponible (annexe A) : ce n'est
-alors pas une anomalie, notez simplement « non testé ».
+### Scène R2 — Une décision à prendre : le carrelage
 
-- [ ] **T12** — La lecture de documents fonctionne (ou notée « non testée »).
+**Pourquoi** : les choix du client sont tracés, avec leur impact sur le prix et le délai, et validés par code.
 
-## Chapitre 11 — Paul suit, décide et paie
+**Qui** : Samuel, puis Paul. **Où** : fiche du projet, onglet **Décisions** ; puis espace client, **Validations**.
 
-*À des kilomètres du chantier, Paul ouvre son espace client presque chaque soir. Il regarde les photos, il pose des
-questions, il choisit son carrelage, il paie ses échéances. Ce chapitre raconte la relation entre un client et son
-constructeur, telle que la plateforme la rend possible : transparente, tracée, et sans papier.*
+**Méthode**
 
-### Scène R1 — Les photos arrivent chez Paul
+1. Samuel : **Demander une décision** :
 
-*Samuel trie les photos d'Ernest. Il en choisit deux, nettes et rassurantes, et les publie.*
+| Champ | Valeur | |
+| --- | --- | --- |
+| Type | « Matériau » | |
+| Titre | `Carrelage du séjour` | ★ |
+| Description | `Choix du revêtement de sol du séjour (35 m²)` | |
+| Options proposées au client | bouton **Option** deux fois : A `Grès cérame 60×60`, Impact prix (FCFA) `0`, Impact délai `0` ; B `Marbre reconstitué`, Impact prix `450000`, Impact délai `5` | |
+| Date d'échéance | dans 7 jours | |
 
-> **Qui :** Samuel (profil **GLOBUS CDP**), puis Paul (profil **GLOBUS CLI**). **Où :** fiche projet, onglet **Photos et
-> vidéos** ; espace client, menu **Chantier**.
+   **Créer**.
+2. Paul : **Validations**, onglet **Décisions** : lisez les deux options et leurs impacts ; cliquez sur **Valider** ;
+   cochez l'option « Grès cérame 60×60 » ; **Recevoir le code par** « E-mail » ; **Recevoir mon code** ; tapez le code
+   reçu ; **Confirmer**.
 
-**Ce que vous faites**
+**Résultat attendu** : la décision passe **Validé** des deux côtés, avec l'option retenue, la date et l'heure ; elle
+figure dans l'onglet **Historique** de Paul.
 
-1. Samuel active l'interrupteur **Client** sous deux des photos de la scène T4. (Il vérifie au passage qu'aucune photo
-   interne, montrant par exemple un plan confidentiel, n'est publiée.)
-2. Paul ouvre le menu **Chantier**, puis filtre par étape avec la liste **Toutes les étapes** ; il revient ensuite sur son
-   **Tableau de bord**.
+> **Si le service SMS / WhatsApp n'est pas activé** : choisissez toujours « E-mail » dans **Recevoir le code par**.
 
-**Ce que vous devez constater** : les deux photos apparaissent dans le journal visuel de Paul et dans le bloc
-« Dernières images du chantier » de son tableau de bord.
+- [ ] **R2** — Décision client validée par code.
 
-- [ ] **R1** — La publication des photos au client fonctionne.
+### Scène R3 — Un avenant : deux prises en plus
 
-### Scène R2 — Des photos qui font foi
+**Pourquoi** : tout travail supplémentaire passe par un avenant chiffré, accepté par le client **puis** approuvé par la
+finance ; le montant du contrat est alors mis à jour.
 
-*Une photo datée peut devenir une preuve, à condition que personne ne puisse la falsifier. Samuel « certifie » les photos
-du jour : leur empreinte numérique est scellée, et n'importe qui pourra plus tard vérifier qu'elles n'ont pas été
-retouchées.*
+**Qui** : Samuel, Paul, puis Grâce. **Où** : fiche du projet, onglet **Avenants** ; espace client, **Validations**.
 
-> **Qui :** Samuel, puis Paul. **Où :** fiche projet, onglet **Confiance et preuves** ; espace client, menu **Preuves
-> certifiées**.
+**Méthode**
 
-**Ce que vous faites**
+1. Samuel : **Nouvel avenant** :
 
-1. Samuel clique sur **Certifier les photos du jour**, puis sur **Certificat** pour télécharger le PDF.
-2. Paul ouvre **Preuves certifiées**, puis clique sur **Vérifier un fichier** et y dépose l'une des photos publiées.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Lot | « ELEC » | |
+| Titre | `Deux prises supplémentaires au séjour` | ★ |
+| Description | `Demande de Paul lors de la visite` | |
+| Motif | « Demande client » | |
+| Impact délai (jours) | `1` | |
+| Lignes chiffrées | bouton **Ligne chiffrée** : Désignation `Prise 16 A encastrée`, Quantité `2`, Unité `u`, Prix unitaire (FCFA) `22500` | |
 
-**Ce que vous devez constater** : une preuve est créée ; le certificat PDF contient un QR code ; la vérification confirme
-que l'empreinte du fichier correspond.
+   Le **Total des lignes** affiche 45 000 FCFA. **Créer**.
+2. Samuel : sur la ligne de l'avenant, **Soumettre au client**, **Confirmer**.
+3. Paul : **Validations**, onglet **Avenants** : **Approuver**, **Recevoir mon code**, tapez le code, **Approuver**.
+4. Grâce : sur l'avenant, **Approuver (finance)**, **Confirmer**.
 
-- [ ] **R2** — La certification des photos fonctionne.
+**Résultat attendu** : l'**impact coût** de l'avenant vaut **45 000** (calculé à partir des lignes) ; statuts
+successifs **Brouillon → Soumis → Approuvé client → Approuvé** ; le montant du contrat du projet augmente de
+45 000 FCFA.
 
-### Scène R3 — Le choix du carrelage
+> **Contrôle** : Samuel ne voit pas **Approuver (finance)** (réservé à la finance et à la direction).
 
-*Samuel demande à Paul de choisir le carrelage du séjour. Deux options : un grès 60×60 sans supplément, ou un marbre, plus
-beau, mais 1 500 000 francs de plus et cinq jours de délai supplémentaires.*
+- [ ] **R3** — Avenant chiffré, accepté par le client, approuvé, contrat mis à jour.
 
-> **Qui :** Samuel. **Où :** fiche projet, onglet **Décisions**.
+### Scène R4 — Le premier appel de fonds et son encaissement
 
-**Ce que vous faites**
+**Pourquoi** : Paul paie par étapes. Sans paiement en ligne activé, l'encaissement se saisit avec sa **preuve**, et une
+**autre personne** le confirme.
 
-1. Cliquez sur **Demander une décision**.
-2. **Type** : matériau. **Titre** : `Carrelage séjour`.
-3. Ajoutez deux options (bouton **Option**) : « Grès 60×60 » avec un impact prix de `0` ; « Marbre » avec un impact prix de
-   `1 500 000` et un impact délai de `5` jours.
-4. Fixez une **Date d'échéance**, puis validez.
+**Qui** : Rachel, Paul, Grâce. **Où** : *Finance › Facturation*, onglet des appels de fonds ; espace client,
+**Finances**.
 
-**Ce que vous devez constater** : Paul est notifié, sous la cloche et par e-mail.
+**Méthode**
 
-- [ ] **R3** — La demande de décision part chez le client.
+1. Rachel : **Nouvel appel de fonds** :
 
-### Scène R4 — Paul choisit le marbre
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Jalon | le premier jalon de paiement du contrat (30 %, scène M5) | |
+| Libellé | `Appel de fonds n° 1 — démarrage des fondations` | ★ |
+| Montant | `5000000` | ★ |
+| Devise | « FCFA (XAF) » | |
+| Date d'échéance | dans 10 jours | |
 
-*Paul hésite une soirée entière, puis se décide : ce sera le marbre. Il confirme son choix avec un code reçu par e-mail.
-Ce choix devient irréversible et horodaté, comme une signature. Et parce qu'il coûte plus cher, la plateforme prépare
-automatiquement un avenant au contrat.*
+   **Créer**, puis sur la ligne **Émettre**, **Confirmer**.
+2. Paul : **Finances** : l'appel apparaît avec **Payer**. Cliquez sur **Payer** :
+   - **si le paiement en ligne n'est pas activé** : la fenêtre **Paiement en ligne** affiche « Aucun moyen de paiement
+     en ligne n'est activé. Contactez votre chargé d'affaires. » ; cliquez sur **Annuler** ;
+   - **s'il est activé** : voir l'annexe A.
+3. Rachel : sur l'appel de fonds, **Enregistrer un encaissement** :
 
-> **Qui :** Paul. **Où :** espace client, menu **Validations**, onglet **Décisions**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Montant encaissé | `2000000` (paiement partiel) | |
+| Mode de règlement | « Virement bancaire » | ★ |
+| Date de valeur | hier | ★ |
+| Référence | `VIR-CLIENT-0001` (obligatoire sauf pour les espèces) | |
+| Preuve de l'encaissement | le PDF « Avis de crédit » | ★ |
+| Notes | `Premier versement de Paul` | |
 
-**Ce que vous faites**
+   **Enregistrer un encaissement**.
+4. Rachel : *Finance › Finances*, onglet **Paiements**, ouvrez l'encaissement **À approuver** :
+   **Approuver** est refusé (« Séparation des tâches… »).
+5. Grâce : même encaissement, **Approuver**.
 
-1. Sur la décision « Carrelage séjour », cliquez sur **Valider**.
-2. Choisissez l'option **Marbre** (l'impact prix et délai est rappelé).
-3. Dans **Recevoir le code par**, choisissez e-mail, cliquez sur **Recevoir mon code**, tapez le **Code reçu**, puis
-   confirmez.
+**Résultat attendu** : après Grâce, l'encaissement est **Réussi**, un **reçu PDF** est généré, l'appel de fonds passe
+**Partiellement payé** (reste 3 000 000) ; Paul voit le paiement et peut télécharger son reçu dans **Finances**.
 
-**Ce que vous devez constater**
+> **Contrôles** : une date de valeur dans le futur, un montant supérieur au reste dû ou une référence déjà utilisée sont
+> refusés.
 
-- La décision est « validée » et ne peut plus être modifiée.
-- Un avenant est créé automatiquement pour l'impact prix.
-- La validation apparaît dans le **Journal des validations** du menu **Passeport projet**, et dans *Mon compte*, onglet
-  **Confiance et confidentialité**.
+- [ ] **R4** — Appel de fonds, encaissement hors plateforme, double regard, reçu client.
 
-- [ ] **R4** — La décision est validée par code et figée.
+### Scène R5 — Paul écrit à l'équipe
 
-### Scène R5 — Paul dit non
+**Qui** : Paul, puis Samuel. **Où** : espace client, **Messagerie** ; ERP, *Communication › Messagerie*.
 
-*Toutes les propositions ne plaisent pas. Samuel propose autre chose ; Paul refuse, en expliquant pourquoi.*
+**Méthode** : Paul ouvre la conversation de son projet et écrit `Peut-on visiter samedi ?` ; Samuel répond
+`Oui, 10 h sur le chantier`.
 
-> **Qui :** Samuel, puis Paul. **Où :** onglet **Décisions** ; espace client, **Validations**.
+**Résultat attendu** : le message arrive chez Samuel (notification), la réponse chez Paul, en temps réel.
 
-**Ce que vous faites**
+- [ ] **R5** — Messagerie client ↔ équipe.
 
-1. Samuel crée une seconde décision (par exemple « Couleur de la façade », avec deux options).
-2. Paul clique sur **Refuser**, écrit un **Motif du refus** d'au moins cinq caractères, puis clique sur **Refuser**.
+### Scène R6 — Le dossier Tranquillité
 
-**Ce que vous devez constater** : Samuel est prévenu, et la décision passe « refusée ».
+**Pourquoi** : les pièces foncières et administratives sont centralisées et vérifiées ; le client les consulte.
 
-- [ ] **R5** — Le refus d'une décision fonctionne.
+**Qui** : Samuel, puis Paul. **Où** : fiche du projet, onglet **Tranquillité** ; espace client, **Dossier
+Tranquillité**.
 
-### Scène R6 — L'avenant
+**Méthode**
 
-*Le marbre coûte plus cher : le contrat doit être modifié. C'est le rôle de l'avenant. Samuel le soumet à Paul, qui
-l'approuve par code ; puis Rachel l'approuve à son tour côté finance, et le montant du contrat se met à jour partout.*
+1. Samuel : **Nouvelle pièce** :
 
-> **Qui :** Samuel, Paul, puis Rachel. **Où :** fiche projet, onglet **Avenants** ; espace client, **Validations**, onglet
-> **Avenants**.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Catégorie | « Permis » | ★ |
+| Titre | `Permis de bâtir` | ★ |
+| Numéro de référence | `PB-TEST-2026-001` | |
+| Autorité | `Communauté urbaine de Douala` | |
+| Statut | « En vérification » | |
+| Date de délivrance | il y a 1 mois | |
+| Visible par le client | coché | |
 
-**Ce que vous faites**
+   **Créer** ; puis sur la ligne, **Vérifier** : **Statut** ★ « Vérifié », **Notes** `Original consulté en mairie` ;
+   **Vérifier**.
+2. Paul : **Dossier Tranquillité**.
 
-1. Samuel ouvre l'avenant né de la scène R4 (ou crée un **Nouvel avenant** avec une **Ligne chiffrée**) et clique sur
-   **Soumettre au client**.
-2. Paul ouvre l'onglet **Avenants** de ses **Validations**, clique sur **Approuver**, reçoit et saisit son code, puis
-   confirme avec **Approuver**.
-3. Rachel ouvre l'avenant « approuvé client » et clique sur **Approuver (finance)**.
+**Résultat attendu** : la pièce passe **Vérifié** ; Paul la voit avec son statut.
 
-**Ce que vous devez constater** : le montant du contrat est mis à jour partout : dans l'ERP, sur le tableau de bord de
-Paul et dans son Passeport projet.
+- [ ] **R6** — Dossier Tranquillité partagé.
 
-- [ ] **R6** — L'avenant passe le double circuit client puis finance.
+---
 
-### Scène R7 — Le premier appel de fonds
+## Chapitre 12 — Les comptes du chantier (finances)
 
-*Le premier jalon est atteint : il est temps de demander à Paul les 30 % prévus à la signature. Rachel émet l'appel de
-fonds ; une facture d'acompte se crée toute seule.*
+*Rachel tient la trésorerie : compte bancaire, petite caisse, relevé, factures client et suivi du budget. Chaque
+mouvement d'argent est vu par deux personnes.*
 
-> **Qui :** Rachel (profil **GLOBUS FIN**), puis Paul. **Où :** ERP, *Finance › Facturation*, onglet **Appels de fonds** ;
-> espace client, menu **Finances**.
+### Scène F1 — Le compte bancaire de l'entreprise
 
-**Ce que vous faites**
+**Qui** : Rachel. **Où** : *Finance › Finances*, onglet **Banque**, bouton **Nouveau compte**.
 
-1. Rachel clique sur **Nouvel appel de fonds** : projet TEST — Villa Mballa, jalon « signature 30 % », un libellé, le
-   montant correspondant. Elle enregistre, puis clique sur **Émettre**.
-2. Paul ouvre le menu **Finances**.
+**Méthode**
 
-**Ce que vous devez constater** : une facture d'acompte est générée (avec une TVA de 19,25 %) ; Paul la voit dans
-**Finances**, à la fois dans les appels de fonds et dans les factures (avec son PDF), et il reçoit une notification.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `TEST Compte courant` | ★ |
+| Banque | `TEST Banque` | |
+| Numéro de compte | `CM21 0000 0000 0000 0000 0000 000` (numéro fictif) | |
+| Devise | « FCFA (XAF) » | |
+| Type | « Banque » | |
+| Actif | coché | |
 
-- [ ] **R7** — L'appel de fonds est émis et visible du client.
+**Créer**.
 
-### Scène R8 — Paul essaie de payer en ligne
+**Résultat attendu** : le compte apparaît ; en le rouvrant, le numéro n'est **jamais** réaffiché en clair (seulement
+masqué).
 
-*Paul voudrait payer directement depuis son téléphone, par Mobile Money. Il clique sur **Payer**.*
+- [ ] **F1** — Compte bancaire créé, numéro protégé.
 
-> **Qui :** Paul. **Où :** espace client, menu **Finances**.
+### Scène F2 — La petite caisse du chantier
 
-**Ce que vous faites** : cliquez sur **Payer** à côté de l'appel de fonds.
+**Pourquoi** : les petites dépenses en espèces (carburant, transport) sont justifiées par un reçu et validées par une
+autre personne ; elles entrent dans le budget du projet.
 
-**Ce que vous devez constater**
+**Qui** : Rachel, puis Grâce. **Où** : *Finance › Finances*, onglet **Petites caisses**.
 
-- **Tant qu'aucun opérateur de paiement n'est configuré** (c'est le cas aujourd'hui, voir annexe A), le message suivant
-  s'affiche : « Aucun moyen de paiement en ligne n'est activé. Contactez votre chargé d'affaires. » C'est le comportement
-  attendu, pas une anomalie.
-- Le jour où MTN MoMo ou Orange Money seront configurés : payez un petit montant réel, validez la demande sur votre
-  téléphone avec votre code secret Mobile Money, attendez « Paiement confirmé », puis cliquez sur **Télécharger le reçu**.
+**Méthode**
 
-- [ ] **R8** — Le comportement du paiement en ligne correspond à la configuration.
+1. Rachel : **Nouvelle caisse** :
 
-### Scène R8 bis — Paul paie par virement
+| Champ | Valeur | |
+| --- | --- | --- |
+| Nom | `Caisse Villa Mballa` | ★ |
+| Projet | « TEST — Villa Mballa » | |
+| Chantier | « Parcelle Bonamoussadi » | |
+| Gestionnaire | « Rachel TEST-NDONGO » | |
+| Plafond | `200000` | |
+| Actif | coché | |
 
-*Paul, homme prudent, préfère le bon vieux virement bancaire. Il vire 40 % de l'appel de fonds et envoie la preuve à
-Rachel. Rachel enregistre cet encaissement dans la plateforme, avec la preuve. Mais l'argent ne sera considéré comme reçu
-qu'une fois qu'une autre personne, Grâce, aura vérifié la preuve et approuvé. Jusque-là, Paul ne voit rien : on ne lui
-annonce pas un paiement qui n'a pas été contrôlé.*
+   **Créer**, puis ouvrez la caisse.
+2. Rachel : **Déclarer un mouvement** ; fenêtre **Mouvement de caisse** : **Type** ★ « Entrée (réapprovisionnement) »,
+   **Montant** ★ `100000`, **Objet** ★ `Approvisionnement initial`, **Date de l'opération** ★ aujourd'hui ;
+   **Enregistrer**.
+3. Rachel : **Déclarer un mouvement** : **Type** « Sortie (dépense) », **Montant** `15000`, **Objet** `Carburant groupe
+   électrogène`, **Catégorie** « Carburant », **Lot** « GO », **Date de l'opération** aujourd'hui, **Reçu** ★ (obligatoire
+   pour une sortie) la photo d'un ticket ; **Enregistrer**.
+4. Rachel essaie de **Valider** ses propres mouvements : refus (« Séparation des tâches : validation par une autre
+   personne »).
+5. Grâce : ouvre la caisse et clique sur **Valider** pour chacun des deux mouvements.
 
-> **Qui :** Rachel, puis Grâce, puis Paul. **Où :** ERP, *Finance › Facturation*, onglet **Appels de fonds**, puis
-> *Finance › Finances*, onglet **Paiements** ; espace client, menu **Finances**.
+**Résultat attendu** : solde de la caisse **85 000** ; la dépense de 15 000 apparaît dans l'onglet **Budget** du projet,
+catégorie « Frais généraux », lot GO.
 
-**Ce que vous faites — la saisie, par Rachel**
+> **Contrôles** : une sortie supérieure au solde est refusée (« Solde de caisse insuffisant ») ; une entrée qui ferait
+> dépasser le plafond aussi (« Plafond de caisse dépassé »).
 
-1. Ouvrez l'appel de fonds de la scène R7 et cliquez sur **Enregistrer un encaissement**.
-2. **Montant encaissé** : 40 % du montant de l'appel (un paiement partiel).
-3. **Mode de règlement** : « Virement bancaire ». **Date de valeur** : la date d'hier.
-4. **Référence** : `VIR-TEST-0002`.
-5. **Preuve de l'encaissement** : joignez le PDF de preuve de virement (annexe D).
-6. Cliquez sur **Enregistrer un encaissement**.
+- [ ] **F2** — Petite caisse : reçu, double regard, imputation au budget.
 
-**Ce que vous devez constater après la saisie**
+### Scène F3 — Le relevé bancaire et le rapprochement
 
-- Un message indique que l'encaissement est « à approuver par une autre personne ».
-- La fiche de l'appel de fonds affiche **Encaissements à approuver**.
-- Paul, dans son menu **Finances**, ne voit encore rien dans **Paiements et reçus**, et son **Payé** n'a pas bougé.
+**Pourquoi** : chaque paiement enregistré doit se retrouver sur le relevé de la banque.
 
-**Les contre-épreuves de Rachel** — vérifiez que chacune de ces saisies est **refusée** avec un message clair :
+**Qui** : Rachel. **Où** : *Finance › Finances*, onglet **Banque**, le compte `TEST Compte courant`.
 
-- un montant supérieur au reste à payer ;
-- une date de valeur dans le futur ;
-- un virement sans référence ;
-- une seconde saisie avec la même référence `VIR-TEST-0002`.
+**Avant** : préparez le fichier `releve-test.csv` (annexe D), en remplaçant les dates par celles où vous avez joué les
+scènes H14, R4 et S12 :
 
-**Rachel tente d'approuver sa propre saisie**
+```
+date;libellé;référence;montant
+JJ/MM/AAAA;Virement Quincaillerie du Wouri;VIR-TEST-0001;-490000
+JJ/MM/AAAA;Versement Paul Mballa;VIR-CLIENT-0001;2000000
+JJ/MM/AAAA;Virement Electricite Akwa;VIR-TEST-0002;-831915
+JJ/MM/AAAA;Frais de tenue de compte;FRAIS-10;-5000
+```
 
-1. Rachel va dans *Finance › Finances*, onglet **Paiements**, filtre **Sens** « Encaissements » et filtre **Statut**
-   « À approuver », puis ouvre l'encaissement.
-2. Elle constate le bandeau **Encaissement à vérifier**, un bouton **Approuver** inactif (le double regard l'en empêche),
-   et la possibilité de **Retirer la saisie**.
+**Méthode**
 
-**Ce que vous faites — l'approbation, par Grâce**
+1. Bloc **Importer un relevé** : déposez le fichier dans **Relevé bancaire CSV**, cliquez sur **Importer et rapprocher**.
+2. Filtre « Non rapprochées » : il ne reste que les frais de tenue de compte.
+3. Réimportez le même fichier.
 
-1. Grâce ouvre le même encaissement.
-2. Elle ouvre la **Preuve de l'encaissement** et contrôle le montant, la référence et la date.
-3. Elle clique sur **Approuver**, puis confirme.
+**Résultat attendu** : message « 4 ligne(s) importée(s) · 3 rapprochée(s) automatiquement · 0 doublon(s) ignoré(s) »
+(même référence et même montant que les paiements) ; au second import : « 0 ligne(s) importée(s) · … · 4 doublon(s)
+ignoré(s) ».
 
-**Ce que vous devez constater après l'approbation**
+- [ ] **F3** — Relevé importé, rapprochement automatique, doublons écartés.
 
-- L'encaissement passe « Réussi », et un **Reçu** PDF est disponible (avec la date de valeur et la référence).
-- L'**Historique** montre qu'il a été créé par Rachel et approuvé par Grâce.
-- L'appel de fonds et sa facture passent « Partiellement payé ».
-- Paul reçoit une notification (« Paiement reçu — merci »). Dans son menu **Finances**, le **Payé** correspond au montant
-  encaissé, et le paiement apparaît dans **Paiements et reçus** avec un **Reçu** téléchargeable.
+### Scène F4 — Facturer l'avenant à Paul
 
-- [ ] **R8 bis** — L'encaissement hors ligne est saisi, contrôlé, approuvé par une seconde personne et visible du client.
+**Qui** : Rachel, puis Grâce, puis Paul. **Où** : *Finance › Facturation*, onglet des factures clients, **Nouvelle
+facture**.
 
-### Scène R9 — Paul demande à échelonner
+**Méthode**
 
-*La suite de l'appel de fonds pèse lourd. Paul demande à la payer en trois fois. Rachel lui propose un échéancier ; Paul
-l'accepte par code.*
+1. Rachel :
 
-> **Qui :** Paul, puis Rachel, puis Paul. **Où :** espace client, **Finances** ; ERP, *Finance › Échéanciers clients*.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | |
+| Type | « Facture » | |
+| Titre | `Avenant n° 1 — deux prises supplémentaires` | ★ |
+| Date d'émission | aujourd'hui | ★ |
+| Date d'échéance | dans 15 jours | |
+| Taux de TVA | `19.25` | |
+| Lignes | une ligne : Désignation ★ `Prise 16 A encastrée`, Unité `u`, Quantité ★ `2`, Prix unitaire ★ `22500` | ★ |
 
-**Ce que vous faites**
+   **Créer**.
+2. Rachel : sur la ligne de la facture, **Valider**, **Confirmer** (le PDF définitif est produit, avec son code
+   d'authenticité) ; puis **Envoyer au client**, **Confirmer**.
+3. Paul : **Finances** : la facture apparaît (45 000 HT, TVA 8 662,50, TTC 53 662,50), avec **Payer** et le PDF.
 
-1. Paul clique sur **Échelonner** à côté de la facture, choisit `3` échéances, explique éventuellement sa situation, puis
-   clique sur **Envoyer la demande**.
-2. Rachel ouvre *Finance › Échéanciers clients*, retrouve la demande et clique sur **Proposer au client** (en ajustant
-   éventuellement les dates et montants, dont le total doit égaler le reste dû).
-3. Paul ouvre **Mes échéanciers**, clique sur **Accepter par code**, reçoit et saisit son code, puis clique sur
-   **J'accepte l'échéancier**.
+**Résultat attendu** : facture **Brouillon → Validé → Envoyé** ; Paul est notifié par e-mail ; une facture validée
+n'est plus modifiable (seul un avoir peut la corriger).
 
-**Ce que vous devez constater** : l'échéancier passe « En cours » ; les relances de la facture d'origine sont remplacées par
-celles de l'échéancier.
+- [ ] **F4** — Facture client émise et visible par le client.
 
-- [ ] **R9** — L'échéancier est proposé et accepté.
+### Scène F5 — Le suivi du budget
 
-### Scène R10 — Une facture, une relance, un chèque sans provision et des espèces
+**Qui** : Grâce. **Où** : fiche du projet, onglet **Budget** ; *Finance › Finances*, onglet **Pilotage**.
 
-*Rachel émet une facture complémentaire, la valide, l'envoie et relance Paul. Paul envoie un chèque… qui n'arrive jamais
-à la banque. Grâce refuse donc l'encaissement. Paul finit par régler en espèces au bureau.*
+**Méthode** : lisez, par catégorie, le budget, l'**Engagé** (bons de commande, marchés), le **Consommé** (dépenses
+validées) et le **Reste à engager**.
 
-> **Qui :** Rachel, Grâce et Paul. **Où :** ERP, *Finance › Facturation*, onglet **Factures clients** ; *Finance ›
-> Finances*, onglet **Paiements** ; espace client.
+**Résultat attendu** : on retrouve le ciment (matériaux), le marché d'électricité (sous-traitance), le carburant (frais
+généraux) ; la trésorerie du **Pilotage** reflète les encaissements et décaissements des chapitres 8 à 12.
 
-**Ce que vous faites — la facture**
+- [ ] **F5** — Budget et trésorerie cohérents avec l'histoire.
 
-1. Rachel clique sur **Nouvelle facture** : projet TEST, un titre, une date d'émission, une ou deux lignes. Elle enregistre.
-2. Elle (ou Grâce, selon les droits) clique sur **Valider**, puis sur **Envoyer au client**.
-3. Elle clique sur **Relancer le client**, puis sur **Copier un lien de paiement**, et colle ce lien dans le profil
-   Visiteur.
+### Scène F6 — Une prévision de trésorerie
 
-**Ce que vous devez constater** : le PDF est numéroté ; Paul est notifié et reçoit la relance par e-mail ; le lien ouvre la
-page de paiement sans qu'il soit nécessaire de se connecter.
+**Qui** : Rachel. **Où** : *Finance › Finances*, onglet **Prévisions**, **Nouvelle prévision**.
 
-**Ce que vous faites — le chèque refusé**
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | |
+| Libellé | `Appel de fonds n° 2 attendu` | ★ |
+| Sens | « Entrée » | ★ |
+| Montant | `8000000` | |
+| Date prévue | dans 45 jours | ★ |
+| Probabilité | `80` | |
 
-1. Rachel ouvre la facture, clique sur **Enregistrer un encaissement**, **Mode de règlement** « Chèque », référence
-   `CHQ-TEST-01`, montant `1000`, une preuve. Elle enregistre.
-2. Grâce ouvre l'encaissement dans *Finances › Paiements* et clique sur **Refuser**, avec le motif « Chèque non reçu à la
-   banque ».
+**Créer**.
 
-**Ce que vous devez constater** : l'encaissement passe « Annulé », avec un bandeau **Encaissement refusé** et le motif ; la
-facture reste due ; Paul ne voit rien.
+**Résultat attendu** : la prévision s'ajoute à la courbe de trésorerie prévisionnelle (onglet **Pilotage**).
 
-**Ce que vous faites — les espèces**
+- [ ] **F6** — Prévision de trésorerie prise en compte.
 
-1. Rachel clique de nouveau sur **Enregistrer un encaissement**, mode « Espèces » (la référence est alors facultative ; le
-   montant est prérempli avec le reste dû). Elle enregistre.
-2. Grâce clique sur **Approuver**.
+---
 
-**Ce que vous devez constater** : la facture passe « Payé » et le bouton **Enregistrer un encaissement** disparaît ; Paul
-voit le paiement et son **Reçu** ; la facture n'est plus payable dans son espace.
+## Chapitre 13 — Les hommes et la sécurité (RH et QHSE)
 
-- [ ] **R10** — Facture, relance, refus d'un encaissement et solde en espèces fonctionnent.
+*Congés, paie, équipements de protection, causerie sécurité, inspection, incident : chaque circuit est tracé et vérifié
+par une autre personne que celle qui l'a lancé.*
 
-### Scène R11 — Le geste commercial
+### Scène Q1 — Moussa demande un jour de congé
 
-*Pour s'excuser d'un petit retard, GLOBUS accorde à Paul un avoir.*
+**Qui** : Moussa (application **GLOBUS Terrain**), puis Rachel (ERP). **Où** : **Personnel › Mon espace RH**, bloc
+**Mes congés** ; ERP, *RH et QHSE › Ressources humaines*, onglet **Congés**.
 
-> **Qui :** Rachel. **Où :** une facture validée, dans *Facturation*.
+**Méthode**
 
-**Ce que vous faites** : sur une facture validée, cliquez sur **Émettre un avoir**, indiquez un montant et un motif.
+1. Moussa : **Mes congés › Demander** ; **Type** « Congés payés », dates de début et de fin dans 15 jours (une journée),
+   **Motif (facultatif)** `Mariage d'un proche` ; **Envoyer la demande**.
+2. Rachel : onglet **Congés**, sur la demande : **Accorder**, **Confirmer**.
 
-**Ce que vous devez constater** : l'avoir apparaît dans l'onglet **Avoirs**, et le reste dû diminue chez Paul.
+**Résultat attendu** : la demande passe **Approuvé** ; Moussa le voit dans **Mes congés** et reçoit une notification.
 
-- [ ] **R11** — L'avoir est émis et répercuté.
+- [ ] **Q1** — Demande de congé depuis le terrain, décision RH.
 
-### Scène R12 — Les messages
+### Scène Q2 — La paie du mois
 
-*Paul a une question sur l'emplacement des prises. Il écrit à Samuel, en joignant un croquis. Samuel répond dans la
-minute.*
+**Pourquoi** : la paie part des fiches (T1) et des pointages validés (T4) ; elle n'est validée qu'avec des paramètres
+de cotisation revus par l'expert-comptable.
 
-> **Qui :** Paul, puis Samuel. **Où :** espace client, **Messagerie** ; ERP, *Communication › Messagerie*.
+**Qui** : Rachel, puis Grâce. **Où** : *Ressources humaines*, onglets **Paramètres de paie** et **Paie**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Paul écrit un message au chef de projet et joint un fichier.
-2. Samuel répond depuis sa messagerie.
-3. Fermez l'application client sur le téléphone de Paul, puis faites écrire un nouveau message par Samuel.
+1. Rachel : onglet **Paie**, **Nouvelle paie** : **Période** ★ `AAAA-MM` (le mois en cours, ex. `2026-10`) ;
+   **Créer**, puis ouvrez la paie et cliquez sur **Recalculer**.
+2. Lisez les totaux **Brut**, **Retenues salariales**, **Charges patronales**, **Net à payer** et la ligne de chaque
+   salarié (Ernest au mois, Moussa au jour pointé).
+3. Sur la ligne de Moussa : **Ajuster** ; **Primes** `5000`, **Motif** ★ `Prime de salissure` ; **Enregistrer** : le net
+   est recalculé.
+4. Grâce : **Valider (finance)**.
+   - **Si les paramètres n'ont pas été revus** (bandeau « Paramètres de paie non revus ») : la plateforme **refuse**
+     (« Paramètres de paie non revus par le cabinet comptable »). C'est le comportement attendu : ne cochez la case
+     **Paramètres revus et validés par un expert-comptable** (onglet **Paramètres de paie**) que lorsque c'est vrai.
+     Pour la recette, arrêtez la scène ici.
+   - **Si les paramètres ont été revus** : la paie passe **Validé**, les bulletins PDF sont produits.
+5. (Paramètres revus seulement) Rachel : **Marquer payée** ; **Mode de paiement** « Virement bancaire »,
+   **Référence** `PAIE-TEST-10`, **Preuve (ordre de virement, état signé)** ★ un PDF ; **Confirmer**. Moussa ouvre
+   **Mon espace RH › Mes bulletins de paie** et télécharge son bulletin.
 
-**Ce que vous devez constater** : les messages arrivent en temps réel, avec les accusés de lecture, et une notification
-push apparaît sur le téléphone de Paul quand l'application est fermée.
+**Résultat attendu** : calcul cohérent avec les pointages ; aucune validation sans paramètres revus ; bulletin visible
+du seul salarié concerné.
 
-- [ ] **R12** — La messagerie client fonctionne en temps réel.
+- [ ] **Q2** — Paie calculée, ajustée, validation protégée.
 
-### Scène R13 — L'appel vidéo
+### Scène Q3 — Les casques du chantier
 
-*Plutôt que de longs messages, Samuel appelle Paul en vidéo, depuis le chantier, pour lui montrer les gaines électriques.*
+**Qui** : Ernest (rôle Responsable QHSE). **Où** : *RH et QHSE › QHSE*, onglet **EPI**.
 
-> **Qui :** Samuel (sur l'ordinateur), Paul (sur le téléphone). **Où :** la conversation de la scène R12.
+**Méthode**
 
-**Ce que vous faites**
+1. **Nouvel EPI** : **Nom** ★ `Casque chantier blanc`, **Type** ★ « Casque », **Taille** `Unique`, **Durée de vie
+   (jours)** `730`, **Norme** `EN 397`, **Actif** coché ; **Créer**.
+2. **Remettre un EPI** : **EPI** ★ « Casque chantier blanc », **Employé** « Moussa TEST-BELLO », **Projet** « TEST —
+   Villa Mballa », **Quantité** `1`, **Remis le** aujourd'hui ; **Créer**.
+3. Sur la remise : **Retour**, **Confirmer** (fin de mission simulée).
 
-1. Samuel lance un appel vidéo depuis la conversation.
-2. Sur le téléphone de Paul, l'appel sonne : touchez **Répondre**.
-3. Testez l'image et le son dans les deux sens, puis le partage d'écran depuis l'ordinateur.
-4. Raccrochez, puis ouvrez *Communication › Appels*, onglet **Historique**.
+**Résultat attendu** : la remise apparaît au nom de Moussa, puis marquée rendue.
 
-**Ce que vous devez constater** : sonnerie, image, son et partage d'écran fonctionnent ; l'appel figure dans l'historique.
+- [ ] **Q3** — Catalogue et remise d'EPI tracés.
 
-- [ ] **R13** — L'appel vidéo fonctionne entre ordinateur et téléphone.
+### Scène Q4 — Le quart d'heure sécurité
 
-### Scène R14 — La fuite sous la fenêtre
+**Qui** : Ernest. **Où** : *QHSE*, onglet **Quarts d'heure**, bouton **Quart d'heure**.
 
-*Des mois plus tard, la maison est livrée. Un soir d'orage, Paul remarque une trace d'humidité sous la fenêtre du salon.
-Il ouvre une demande de SAV. Commence alors la ronde du service après-vente : affectation, diagnostic, garantie,
-intervention, validation.*
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Site | « Parcelle Bonamoussadi » | |
+| Date | aujourd'hui | |
+| Durée (min) | `15` | |
+| Thème | `Travail en tranchée` | ★ |
+| Contenu | `Blindage, accès par échelle, distance des déblais` | |
+| Participants (salariés) | « Moussa TEST-BELLO » | |
 
-> **Qui :** Paul, Samuel (ou le Gardien), Moussa, puis Paul. **Où :** espace client, **SAV et garanties** ; ERP,
-> *Commercial › SAV* ; application GLOBUS Terrain de Moussa.
+**Enregistrer**.
 
-**Ce que vous faites — Paul signale**
+**Résultat attendu** : la causerie est enregistrée avec ses participants (indicateur de l'onglet **Indicateurs**).
 
-1. Paul ouvre **SAV et garanties** et clique sur **Nouvelle demande**.
-2. **Objet** : `Infiltration fenêtre`. **Catégorie** : étanchéité. **Priorité** : haute. Une description précise.
-3. Il clique sur **Envoyer la demande**, puis ajoute une photo dans la fiche qui s'ouvre (**Envoyer les fichiers**).
+- [ ] **Q4** — Causerie sécurité enregistrée.
 
-**Ce que vous faites — l'entreprise intervient**
+### Scène Q5 — L'inspection sécurité
 
-1. Samuel ouvre le ticket dans *Commercial › SAV* et clique sur **Affecter** : Moussa.
-2. Moussa, dans son application Terrain (rubrique **SAV et entretien**), réalise : **Diagnostic** (cause, gravité,
-   photos), **Décision garantie** (couvert), **Planifier une intervention** (date, créneau), puis le jour venu
-   **Démarrer** et **Terminer** (rapport d'intervention, une fourniture, photos avant et après).
+**Qui** : Ernest. **Où** : *QHSE*, onglets **Grilles** puis **Inspections**.
 
-**Ce que vous faites — Paul valide**
+**Méthode**
 
-1. Paul clique sur **Valider l'intervention**, donne une note en étoiles et un commentaire, puis **Valider**.
-2. Pour tester, il clique ensuite sur **Rouvrir** (en expliquant pourquoi), puis l'entreprise réintervient et Paul valide
-   de nouveau.
+1. **Nouvelle grille** : **Nom** ★ `Sécurité fouilles`, **Catégorie** « Sécurité », **Liste de contrôle** : ajoutez
+   `Blindage en place`, `Échelle d'accès`, `Port du casque`, **Actif** coché ; **Créer**.
+2. **Nouvelle inspection** : **Grille** « Sécurité fouilles », **Projet** ★ « TEST — Villa Mballa », **Chantier**
+   « Parcelle Bonamoussadi », **Catégorie** « Sécurité », **Date d'inspection** aujourd'hui ; **Créer**.
+3. Dans l'inspection : « Conforme » pour les deux premiers points, « Non conforme » pour `Port du casque`, avec un
+   **Constat** `Un ouvrier sans casque` et une photo ; **Constats généraux** `Rappel fait sur place` ;
+   **Terminer l'inspection**.
 
-**Ce que vous devez constater** : chaque étape est visible chez Paul, le délai de résolution attendu est affiché, et les
-statistiques du SAV (onglet **Statistiques**) sont à jour.
+**Résultat attendu** : l'inspection est **Terminé** avec un score (2 conformes sur 3) ; le point non conforme est prêt à
+donner lieu à une action corrective.
 
-- [ ] **R14** — Le circuit SAV complet fonctionne.
+- [ ] **Q5** — Inspection menée avec la grille.
 
-### Scène R15 — Le carnet d'entretien de la maison
+### Scène Q6 — Un presque-accident, de la déclaration à la clôture
 
-*Une maison vit. Il faut entretenir la climatisation, vidanger la fosse, repeindre un jour. Samuel enregistre les
-équipements installés ; Paul pourra demander une intervention d'un simple clic.*
+**Pourquoi** : un incident ne se clôt qu'après l'analyse des causes et la vérification de chaque action par une autre
+personne que son responsable.
 
-> **Qui :** Samuel, puis Paul. **Où :** fiche projet, onglet **Bâtiment et maintenance** ; espace client, **Mon bâtiment**.
+**Qui** : Ernest, Moussa, Samuel. **Où** : *QHSE*, onglet **Incidents** ; application **GLOBUS Terrain**, **QHSE**.
 
-**Ce que vous faites**
+**Méthode**
 
-1. Samuel clique sur **Ajouter un équipement** : catégorie climatisation, un nom, puis **Ajouter la notice** (un PDF).
-2. Samuel clique sur **Passeport certifié (PDF)**.
-3. Paul ouvre **Mon bâtiment**, carnet d'entretien, et clique sur **Planifier une intervention** (avec ses disponibilités),
-   puis sur **Envoyer la demande**.
+1. Ernest : **Déclarer un incident** :
 
-**Ce que vous devez constater** : un ticket SAV prérempli est créé ; le passeport certifié du bâtiment est généré avec son
-QR code de vérification.
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | ★ |
+| Site | « Parcelle Bonamoussadi » | |
+| Nature | « Presque-accident » | ★ |
+| Gravité | « Moyenne » | ★ |
+| Survenu le | aujourd'hui, 10:30 | ★ |
+| Lieu précis | `Fouille nord` | |
+| Titre | `Chute d'un parpaing près de la fouille` | ★ |
+| Description des faits | `Un parpaing est tombé de la pile, personne touché` | |
+| Mesures immédiates | `Zone balisée, pile refaite` | |
+| Photos | une photo | |
 
-- [ ] **R15** — Le passeport du bâtiment et le carnet d'entretien fonctionnent.
+   **Déclarer l'incident**.
+2. Ernest essaie **Clôturer** : refus (« Analyse des causes requise avant clôture »).
+3. Ernest : **Analyse des causes** : **Cause racine** ★ `Pile trop haute sur sol meuble`, **Jours d'arrêt** `0` ;
+   **Enregistrer**.
+4. Ernest : **Action corrective** : **Titre** ★ `Limiter les piles à 1,20 m`, **Responsable** ★ « Moussa TEST-BELLO »,
+   **Date d'échéance** ★ dans 3 jours ; **Enregistrer**.
+5. Moussa (application, **QHSE**, bloc des actions) : **Démarrer**, puis **Terminer avec preuve** : **Ce qui a été
+   fait** `Piles refaites et marquées`, une photo.
+6. Moussa essaie de vérifier sa propre action dans l'ERP : refus (« Vérification par une personne distincte du
+   responsable »).
+7. Samuel : ouvre l'action (onglet **Actions correctives**), **Vérifier**, **Valider la vérification**.
+8. Ernest : sur l'incident, **Clôturer**, confirmez.
 
-### Scène R16 — Les papiers du terrain et les garanties
+**Résultat attendu** : incident **Clos** ; l'action **Vérifié** ; tout l'historique est conservé.
 
-> **Qui :** Samuel, puis Paul. **Où :** fiche projet, onglets **Tranquillité** et **Garanties** ; espace client,
-> **Dossier Tranquillité** et **Mon bâtiment**.
+> **Pour informer Paul** (facultatif) : sur l'incident, **Informer le client**, **Résumé pour le client** ★ (10
+> caractères minimum, sans nom de personne) ; Paul le voit dans son espace.
 
-**Ce que vous faites**
+- [ ] **Q6** — Incident déclaré, analysé, corrigé, vérifié, clos.
 
-1. Samuel, onglet **Tranquillité**, clique sur **Nouvelle pièce** : catégorie et titre `Titre foncier`, une échéance,
-   cochez la visibilité client.
-2. Samuel, onglet **Garanties**, clique sur **Nouvelle garantie** : type décennale, dates de début et de fin.
-3. Paul ouvre **Dossier Tranquillité**, puis **Mon bâtiment**.
+---
 
-**Ce que vous devez constater** : Paul voit la pièce avec ses badges (par exemple « Échéance proche ») et la garantie.
+## Chapitre 14 — Grâce pilote depuis son téléphone (l'application GLOBUS Direction)
 
-- [ ] **R16** — Le dossier foncier et les garanties sont visibles du client.
+*La direction n'a pas toujours un ordinateur : l'application Direction réunit les indicateurs, les validations et le
+rapport hebdomadaire.*
 
-### Scène R17 — Visiter sans se déplacer
+### Scène D1 — Le tableau de bord
 
-*Le frère de Paul vit à l'étranger. Paul aimerait lui faire visiter le chantier. Samuel publie une visite à 360 degrés ;
-Paul crée un lien de partage.*
+**Qui** : Grâce, téléphone, application **GLOBUS Direction** (connexion avec e-mail, mot de passe et code à 6 chiffres :
+la double authentification est obligatoire pour la direction). **Où** : onglet **Pilotage**.
 
-> **Qui :** Samuel, puis Paul. **Où :** fiche projet, onglet **Immersion et digests** ; espace client, **Live, 360° et
-> drone**.
+**Méthode** : faites défiler le tableau de bord.
 
-**Ce que vous faites**
+**Résultat attendu** : **Chantiers actifs** (au moins la Villa Mballa), **Jalons en retard**, **Incidents QHSE graves**,
+**Tickets SAV ouverts**, **Approbations en attente**, les montants **CA signé**, **Facturé**, **Créances à encaisser**,
+**Dettes fournisseurs**, la **Trésorerie prévisionnelle (6 mois)** (avec la prévision de la scène F6), **Marges par
+chantier**, **Livraisons attendues (7 jours)**. Les chiffres sont ceux de l'ERP web.
 
-1. Samuel clique sur **Nouveau contenu** : type photo 360° (ou une adresse de visite en ligne), un titre, cochez **Publié
-   au client**.
-2. Samuel clique sur **Nouveau résumé** : la période de la semaine et un court résumé.
-3. Paul ouvre **Live, 360° et drone**, sous le contenu clique sur **Partager**, puis **Créer le lien**, et **Copier**.
+- [ ] **D1** — Tableau de bord direction cohérent avec l'ERP.
 
-**Ce que vous devez constater** : le contenu s'affiche chez Paul, et le lien de partage s'ouvre dans le profil Visiteur.
+### Scène D2 — Valider depuis le téléphone
 
-- [ ] **R17** — Les contenus immersifs et leur partage fonctionnent.
+**Pourquoi** : une validation urgente ne doit pas attendre le retour au bureau.
 
-### Scène R18 — Jouer avec les finitions (si une maquette configurable existe)
+**Qui** : Ernest (ERP ou application Terrain), puis Grâce (application Direction). **Où** : onglet **Validations**.
 
-> **Qui :** le Gardien, puis Paul. **Où :** ERP, *Projets › Configurateur 3D* ; espace client, **Configurateur**.
+**Méthode**
 
-**Ce que vous faites**
+1. Ernest crée une nouvelle demande d'achat comme à la scène H2, mais de **6 000 000 FCFA** (par exemple 1 000 sacs à
+   6 000), justification `Stock pour l'élévation`, **Soumettre immédiatement** coché. Au-delà de 5 000 000, la direction
+   intervient (rappel en tête du chapitre 8).
+2. Samuel approuve le niveau 1 (comme à la scène H3) ; au-delà de 5 000 000, le niveau 2 revient à la direction (et
+   non à l'acheteur).
+3. Grâce : onglet **Validations** : la demande apparaît dans **Commandes à approuver** ; ouvrez-la, **Approuver**.
+4. Regardez aussi les autres blocs : **Paiements à approuver**, **Situations à valider**, **Congés à décider**,
+   **Actions à vérifier**, **Décisions client en attente** (vides si tout a été traité).
 
-1. Le Gardien prépare le catalogue de matériaux et une maquette configurable, puis la publie au client.
-2. Paul ouvre le **Configurateur**, choisit des finitions, crée une **Variante**, utilise **Comparer**, puis soumet son
-   choix.
+**Résultat attendu** : la demande passe **Approuvée** ; l'ERP web affiche la même décision, avec l'heure et le nom de
+Grâce.
 
-**Ce que vous devez constater** : les prix et délais se mettent à jour en direct, et le choix soumis arrive chez Samuel.
-**Sans fichier de maquette 3D (GLB), notez cette scène « non testée ».**
+- [ ] **D2** — Approbation mobile, séparation des tâches respectée.
 
-- [ ] **R18** — Le configurateur fonctionne (ou scène notée « non testée »).
+### Scène D3 — Le rapport de direction
 
-### Scène R19 — Une maison plus fraîche
+**Qui** : Grâce. **Où** : **Plus › Rapport de direction**.
 
-> **Qui :** Paul, puis Samuel. **Où :** espace client, **Énergie et confort** ; fiche projet, onglet **Énergie**.
+**Méthode** : **Générer** ; ouvrez le rapport de la semaine, puis **Rapport PDF**.
 
-**Ce que vous faites** : Paul lance une simulation, puis clique sur **Intégrer à mon projet**.
+**Résultat attendu** : un rapport en sections **Finance**, **Chantiers**, **Commercial**, **Contrôles et SAV**,
+**Perspectives**, et son PDF.
 
-**Ce que vous devez constater** : la demande apparaît dans l'onglet **Énergie** de la fiche projet, chez Samuel.
+> Le rapport est calculé par la plateforme à partir des chiffres de la semaine : il ne dépend d'aucun service externe.
 
-- [ ] **R19** — La simulation énergie remonte au chef de projet.
+- [ ] **D3** — Rapport hebdomadaire généré.
 
-### Scène R20 — Le financement et le parrainage
+### Scène D4 — La sécurité des comptes
 
-*Deux services restent fermés tant que l'entreprise ne les a pas lancés : l'aide au financement bancaire et le programme de
-parrainage. Le Gardien les ouvre le temps de l'essai.*
+**Qui** : Grâce. **Où** : **Plus › Sécurité** et **Sessions actives**.
 
-> **Qui :** le Gardien, puis Paul. **Où :** ERP, *Finance › Financement clients* et *Commercial › Ambassadeurs* ; espace
-> client.
+**Méthode** : lisez **Comptes actifs**, **Double authentification**, **Échecs de connexion (24 h)**, **Sans double
+authentification**, **Alertes de sécurité récentes**.
 
-**Ce que vous faites**
+**Résultat attendu** : les onze comptes de l'histoire ; la liste **Sans double authentification** ne contient aucun
+compte de la direction ni de la finance.
 
-1. Le Gardien ouvre *Finance › Financement clients* et clique sur **Ouvrir aux clients**, puis confirme avec **Ouvrir**.
-2. Il ouvre *Commercial › Ambassadeurs*, clique sur **Ouvrir le programme** (confirmation **Ouvrir**), puis sur **Règles**
-   pour vérifier le type et le montant de prime.
-3. Paul actualise son espace : les menus **Financement** et **Parrainage** apparaissent. Il fait une simulation de
-   financement, puis copie son lien d'ambassadeur.
-4. Dans le profil Visiteur, ouvrez ce lien et déposez une demande sur le site.
-5. Le Gardien ouvre l'onglet **Recommandations** des Ambassadeurs.
-6. À la fin, si ces services ne sont pas encore lancés officiellement, le Gardien clique sur **Fermer aux clients** et
-   **Fermer le programme**.
-
-**Ce que vous devez constater** : les menus apparaissent chez Paul ; la demande déposée avec son lien est rattachée à lui
-dans les recommandations.
-
-- [ ] **R20** — Financement et parrainage s'ouvrent, fonctionnent et se referment.
-
-### Scène R21 — L'avis de Paul
-
-*La maison est livrée. Samuel invite Paul à donner son avis. Paul écrit quelques lignes émues et ajoute une photo de sa
-villa.*
-
-> **Qui :** Samuel, puis Paul. **Où :** fiche projet, onglet **Avis client** ; espace client, **Mon avis**.
-
-**Ce que vous faites**
-
-1. Samuel coche le canal **E-mail** et clique sur **Inviter le client**.
-2. Paul ouvre **Mon avis**, écrit un témoignage d'au moins vingt caractères, choisit l'affichage de son nom, ajoute une
-   photo et envoie.
-
-**Ce que vous devez constater** : l'avis est reçu ; il ne sera publié sur le site qu'avec l'accord de Paul.
-
-- [ ] **R21** — L'avis vérifié du client est collecté.
-
-### Scène R22 — Le passeport du projet
-
-*Paul imprime le passeport de son projet. Toute l'histoire y est : le contrat, l'avenant du marbre, les plans en vigueur,
-ses décisions, ses validations signées.*
-
-> **Qui :** Paul. **Où :** espace client, **Passeport projet**.
-
-**Ce que vous faites** : ouvrez le Passeport projet, puis imprimez-le ou enregistrez-le en PDF.
-
-**Ce que vous devez constater** : toutes les rubriques reprennent fidèlement ce qui s'est passé dans les scènes précédentes.
-
-- [ ] **R22** — Le passeport projet est complet et fidèle.
-
-## Chapitre 12 — Les chiffres de Rachel et de Grâce
-
-*Un vendredi soir, quand le chantier s'est tu, Rachel et Grâce restent au bureau. L'une aligne les comptes, l'autre
-regarde la direction que prend l'entreprise. Ce chapitre vérifie que tous les chiffres nés de l'histoire se retrouvent,
-justes, dans les tableaux de bord et les rapports.*
-
-### Scène F1 — Le tableau de bord de la directrice
-
-> **Qui :** Grâce (profil **GLOBUS DIR**). **Où :** ERP, **Tableau de bord**.
-
-**Ce que vous devez constater** : le chiffre d'affaires signé, le facturé, les créances, les dettes fournisseurs, la
-trésorerie prévisionnelle sur six mois, les marges par chantier et les approbations en attente sont **cohérents avec tout
-ce qui s'est passé** dans les chapitres précédents (le contrat de Paul, l'avenant, les paiements à Martin et à Sylvie,
-les encaissements de Paul).
-
-- [ ] **F1** — Le tableau de bord de direction est juste.
-
-### Scène F2 — Le pilotage financier
-
-> **Qui :** Rachel (profil **GLOBUS FIN**). **Où :** ERP, *Finance › Finances*, onglet **Pilotage**.
-
-**Ce que vous devez constater** : la trésorerie prévisionnelle, la marge du projet TEST — Villa Mballa et les créances en
-retard s'affichent et sont plausibles.
-
-- [ ] **F2** — Le pilotage financier s'affiche correctement.
-
-### Scène F3 — Le relevé de la banque
-
-*Chaque mois, la banque envoie son relevé. Rachel l'importe dans la plateforme, qui retrouve toute seule les opérations
-connues grâce à leurs références : le virement à Martin (« VIR-TEST-0001 ») et le virement de Paul (« VIR-TEST-0002 »).
-Ce qu'elle ne reconnaît pas, Rachel le rapproche à la main.*
-
-> **Qui :** Rachel. **Où :** *Finance › Finances*, onglet **Banque**.
-
-**Ce que vous faites**
-
-1. Préparez le petit fichier de relevé décrit à l'annexe B (un fichier texte enregistré avec l'extension `.csv`), en
-   remplaçant les montants par ceux des scènes H14 et R8 bis.
-2. Cliquez sur **Nouveau compte** : nom `TEST Banque`, type banque. Enregistrez.
-3. Sur ce compte, cliquez sur **Importer et rapprocher** et déposez le fichier.
-4. Pour la ligne restée non reconnue (les frais de tenue de compte), cliquez sur **Rapprocher** si un paiement correspond,
-   ou laissez-la de côté.
-
-**Ce que vous devez constater** : les lignes « VIR-TEST-0001 » et « VIR-TEST-0002 » sont rapprochées automatiquement (la
-fiche de l'encaissement de Paul montre son **Rapprochement bancaire**) ; la ligne inconnue reste à rapprocher.
-
-- [ ] **F3** — L'import et le rapprochement bancaire fonctionnent.
-
-### Scène F4 — La petite caisse du chantier
-
-*Sur le chantier, il faut parfois acheter un cadenas ou une rallonge, en liquide. Rachel ouvre une petite caisse confiée à
-Ernest. Ernest déclare une dépense avec la photo du ticket ; Rachel la valide.*
-
-> **Qui :** Rachel, Ernest, puis Rachel. **Où :** *Finance › Finances*, onglet **Petites caisses**.
-
-**Ce que vous faites**
-
-1. Rachel clique sur **Nouvelle caisse** : un nom, le projet TEST, le gestionnaire Ernest, un **Plafond** de `200000`.
-2. Ernest clique sur **Déclarer un mouvement** : dépense de `15000`, un motif, la photo du justificatif.
-3. Rachel ouvre le mouvement en attente et clique sur **Valider**.
-
-**Ce que vous devez constater** : le solde de la caisse n'est débité qu'après la validation de Rachel.
-
-- [ ] **F4** — La petite caisse fonctionne avec validation.
-
-### Scène F5 — Une rentrée d'argent espérée
-
-> **Qui :** Rachel. **Où :** *Finance › Finances*, onglet **Prévisions**.
-
-**Ce que vous faites** : cliquez sur **Nouvelle prévision** : un libellé, le sens « encaissement », une **Date prévue**, un
-montant, une **Probabilité** de `70` %.
-
-**Ce que vous devez constater** : la prévision est intégrée à la trésorerie prévisionnelle (onglet **Pilotage**).
-
-- [ ] **F5** — Les prévisions nourrissent la trésorerie.
-
-### Scène F6 — Les créances par âge et l'export pour le comptable
-
-> **Qui :** Rachel. **Où :** *Finance › Facturation*, onglets **Balance âgée** et **Export comptable**.
-
-**Ce que vous faites**
-
-1. Ouvrez la **Balance âgée** et lisez les tranches (Non échu, 1–30 j, 31–60 j…).
-2. Dans **Export comptable**, choisissez le mois en cours et cliquez sur **Export comptable (CSV)**.
-3. Ouvrez le fichier téléchargé avec Excel.
-
-**Ce que vous devez constater** : les tranches sont cohérentes ; le fichier contient les écritures de ventes, d'achats et de
-règlements.
-
-- [ ] **F6** — La balance âgée et l'export comptable sont justes.
-
-### Scène F7 — Les rapports
-
-> **Qui :** Grâce. **Où :** ERP, **Rapports**.
-
-**Ce que vous faites** : ouvrez la **Synthèse hebdomadaire** ; dans **Exports**, téléchargez une liste au format Excel ;
-dans **Anomalies**, lancez une analyse ; dans **Prévisions**, cliquez sur **Recalculer**.
-
-**Ce que vous devez constater** : les fichiers se téléchargent ; chaque export est tracé dans le journal d'audit (vous le
-vérifierez au chapitre 17).
-
-- [ ] **F7** — Les rapports et exports fonctionnent.
-
-### Scène F8 — Le rapport du lundi matin
-
-> **Qui :** Grâce. **Où :** ERP, **Rapport de direction**.
-
-**Ce que vous faites** : cliquez sur **Générer**, puis ouvrez le PDF.
-
-**Ce que vous devez constater** : le rapport de la semaine est produit. Sa synthèse rédigée automatiquement n'apparaît que
-si l'intelligence artificielle est active (annexe A).
-
-- [ ] **F8** — Le rapport de direction est généré.
-
-### Scène F9 — L'argent mis sous séquestre (si un partenaire existe)
-
-*Certains clients préfèrent que leur argent soit confié à un tiers de confiance, et libéré seulement quand chaque étape
-est prouvée. Cela suppose une banque partenaire.*
-
-> **Qui :** Grâce, puis Paul. **Où :** fiche projet, onglet **Séquestre** ; espace client, **Finances**.
-
-**Ce que vous faites** : mettez en place la convention, placez un appel de fonds sous séquestre, demandez sa libération
-avec des preuves ; Paul clique sur **Valider la libération** ; la double validation interne suit.
-
-**Ce que vous devez constater** : les statuts se succèdent correctement. **Sans partenaire de séquestre réel, notez cette
-scène « non testée ».**
-
-- [ ] **F9** — Le séquestre fonctionne (ou scène notée « non testée »).
-
-## Chapitre 13 — Les hommes, la sécurité et les machines
-
-*Un chantier, ce sont d'abord des femmes et des hommes. Il faut les payer, savoir qui était là, leur accorder des congés,
-les protéger. Et il y a les machines, qui tombent en panne au pire moment. Ce chapitre suit Moussa, l'ouvrier technicien,
-la sécurité d'Ernest et la vieille bétonnière du chantier.*
-
-### Scène Q1 — Le dossier de Moussa et son badge
-
-*Rachel, qui gère aussi le personnel, crée le dossier de Moussa et imprime son badge : une carte avec un QR code, qu'il
-portera autour du cou.*
-
-> **Qui :** Rachel (profil **GLOBUS FIN**, pour son rôle Ressources humaines). **Où :** ERP, *RH et QHSE › Ressources
-> humaines*, onglet **Personnel**.
-
-**Ce que vous faites**
-
-1. Cliquez sur **Nouvel employé** : prénom `Moussa`, nom `TEST-BELLO`, fonction (technicien), date d'embauche, métier,
-   équipe « TEST Équipe gros œuvre ».
-2. Dans **Compte utilisateur**, choisissez le compte de Moussa. *C'est ce lien qui lui donnera son espace RH dans
-   l'application Terrain.*
-3. Enregistrez, puis cliquez sur **Badge** et sur **Imprimer**.
-
-**Ce que vous devez constater** : le badge, avec son QR code, s'imprime.
-
-- [ ] **Q1** — Le dossier et le badge de l'employé sont créés.
-
-### Scène Q2 — Le QR code de l'entrée du chantier
-
-*À l'entrée du chantier, on affiche un QR code. Chaque matin, les ouvriers le scannent avec leur téléphone pour pointer
-leur arrivée ; la plateforme vérifie qu'ils sont bien dans le cercle de cent cinquante mètres.*
-
-> **Qui :** Rachel. **Où :** *Ressources humaines*, onglet **Pointage**.
-
-**Ce que vous faites** : dans le bloc **QR d'auto-pointage du chantier**, choisissez le site « Parcelle Bonamoussadi » et
-cliquez sur **Imprimer**.
-
-**Ce que vous devez constater** : le QR code d'auto-pointage s'imprime.
-
-- [ ] **Q2** — Le QR d'auto-pointage est imprimé.
-
-### Scène Q3 — Les pointages
-
-*Sept heures. Moussa arrive, scanne le QR de l'entrée : il est pointé. Ernest, lui, scanne le badge d'un ouvrier qui n'a
-pas de téléphone. Et pour l'expérience, Moussa essaie de pointer depuis chez lui, loin du chantier.*
-
-> **Qui :** Moussa (application Terrain), Ernest (application Terrain), puis Rachel. **Où :** rubrique **Pointage** de
-> l'application ; ERP, onglet **Pointage**.
-
-**Ce que vous faites**
-
-1. Connectez l'application Terrain avec le compte de Moussa. Dans **Pointage**, scannez le QR du chantier : arrivée. Plus
-   tard, scannez-le de nouveau : départ.
-2. Avec le compte d'Ernest, dans **Pointage**, scannez le **badge** de Moussa imprimé à la scène Q1.
-3. Essayez un pointage depuis un lieu éloigné du site (ou après avoir déplacé le site loin de vous dans la scène M3).
-4. Rachel ouvre la liste des pointages et clique sur **Valider**.
-
-**Ce que vous devez constater** : les arrivées et départs sont enregistrés ; le pointage hors périmètre est signalé au
-responsable ; la validation de Rachel fonctionne.
-
-- [ ] **Q3** — Les pointages par QR, par badge et le contrôle du périmètre fonctionnent.
-
-### Scène Q4 — Les congés de Moussa
-
-> **Qui :** Moussa, puis Rachel. **Où :** application Terrain, **Mon espace RH** ; ERP, onglet **Congés**.
-
-**Ce que vous faites**
-
-1. Moussa ouvre **Mon espace RH** et touche **Demander** : un congé de deux jours.
-2. Rachel ouvre l'onglet **Congés** et clique sur **Accorder**.
-
-**Ce que vous devez constater** : Moussa voit sa demande acceptée dans son application.
-
-- [ ] **Q4** — Les demandes de congé circulent.
-
-### Scène Q5 — La paie du mois
-
-*Fin du mois. Rachel calcule la paie, ajoute une prime à Moussa pour son travail du samedi, puis la fait valider. Moussa
-reçoit son bulletin dans son application.*
-
-> **Qui :** Rachel, puis Grâce. **Où :** *Ressources humaines*, onglet **Paie** ; application Terrain de Moussa.
-
-**Ce que vous faites**
-
-1. Rachel clique sur **Nouvelle paie** et choisit le mois en cours : la paie se calcule.
-2. Elle clique sur **Ouvrir**, puis sur **Ajuster** pour la ligne de Moussa (une prime, avec un motif), puis sur
-   **Recalculer**, et ouvre le **Bulletin**.
-3. Grâce (une autre personne que Rachel) clique sur **Valider (finance)**.
-4. Rachel clique sur **Marquer payée** (date, mode, preuve).
-5. Moussa ouvre **Mon espace RH** dans son application et ouvre son bulletin.
-
-**Ce que vous devez constater** : la paie est figée après validation ; Moussa voit son bulletin, filigrané à son nom, et
-son ouverture est enregistrée.
-
-- [ ] **Q5** — La paie est calculée, validée, payée et consultable.
-
-### Scène Q6 — Ce que l'on apprend d'un incident
-
-*Le sac de ciment tombé au chapitre 10 n'a blessé personne. Mais Ernest veut comprendre pourquoi, et faire en sorte que
-cela n'arrive plus. Il analyse les causes, décide d'une action, informe Paul avec transparence, puis clôt l'incident.*
-
-> **Qui :** Ernest (pour son rôle de responsable QHSE). **Où :** ERP, *RH et QHSE › QHSE*, onglet **Incidents**.
-
-**Ce que vous faites**
-
-1. Ouvrez l'incident de la scène T8 et cliquez sur **Analyse des causes** (par exemple la méthode des « 5 pourquoi »).
-2. Cliquez sur **Action corrective** : un titre (« Installer des garde-corps »), un responsable, une échéance.
-3. Cliquez sur **Informer le client** et écrivez un message factuel.
-4. Dans l'onglet **Actions correctives**, le responsable clique sur **Démarrer**, puis sur **Déclarer réalisée** (avec une
-   photo comme preuve) ; l'action est vérifiée.
-5. Revenez à l'incident et cliquez sur **Clôturer**.
-
-**Ce que vous devez constater** : Paul voit l'encadré « Communiqué au client » dans son menu **Chantier** ; les indicateurs
-QHSE sont à jour.
-
-- [ ] **Q6** — Le traitement complet d'un incident de sécurité fonctionne.
-
-### Scène Q7 — L'inspection de sécurité
-
-> **Qui :** Ernest. **Où :** *QHSE*, onglets **Grilles** et **Inspections**.
-
-**Ce que vous faites**
-
-1. Onglet **Grilles** : **Nouvelle grille**, nom « TEST Sécurité », catégorie sécurité, trois points de contrôle, case
-   **Actif**.
-2. Onglet **Inspections** : **Nouvelle inspection** sur le projet TEST, avec cette grille. Marquez l'un des points comme
-   non conforme.
-3. Cliquez sur **Terminer l'inspection**.
-
-**Ce que vous devez constater** : une action corrective s'ouvre automatiquement pour la non-conformité.
-
-- [ ] **Q7** — Les inspections génèrent les actions correctives.
-
-### Scène Q8 — Le casque de Moussa et le quart d'heure sécurité
-
-> **Qui :** Ernest. **Où :** *QHSE*, onglets **EPI** et **Quarts d'heure**.
-
-**Ce que vous faites**
-
-1. **Nouvel EPI** : nom « Casque de chantier », type, **Durée de vie (jours)** `365`.
-2. **Remettre un EPI** : le casque, à Moussa, sur le projet TEST, une quantité, la date, une signature.
-3. Onglet **Quarts d'heure** : **Quart d'heure**, un thème (« Travail en hauteur »), la date, le chantier, les
-   participants.
-
-**Ce que vous devez constater** : la remise est tracée, avec sa date de renouvellement ; le quart d'heure est enregistré.
-
-- [ ] **Q8** — La gestion des équipements de protection et des quarts d'heure fonctionne.
-
-### Scène Q9 — La bétonnière
-
-*La vieille bétonnière de 350 litres part sur le chantier de Paul. Chaque jour, Ernest note ses heures. Un matin, elle
-tombe en panne. On la répare, puis elle rentre au dépôt.*
-
-> **Qui :** Ernest (ou le Gardien). **Où :** ERP, *Achats et logistique › Matériel* ; application Terrain, **Matériel et
-> engins**.
-
-**Ce que vous faites**
-
-1. Ajoutez le matériel « TEST Bétonnière 350 L ».
-2. Sur sa fiche, cliquez sur **Affecter à un chantier** (projet TEST, site S1, dates).
-3. Dans l'application Terrain, rubrique **Matériel et engins**, faites un relevé d'utilisation (heures).
-4. Dans la fiche, créez un **Nouveau plan** de maintenance (un intervalle en jours ou en heures).
-5. Cliquez sur **Déclarer un incident** : une panne, une description, une photo.
-6. Créez un **Nouvel ordre** de maintenance, cliquez sur **Démarrer**, puis sur **Terminer** (coût, durée d'immobilisation,
-   **Rapport**).
-7. Cliquez sur **Retour au dépôt**.
-
-**Ce que vous devez constater** : l'historique, les affectations et les coûts de la bétonnière sont à jour.
-
-- [ ] **Q9** — Le suivi du matériel fonctionne de bout en bout.
-
-## Chapitre 14 — La directrice en déplacement
-
-*Grâce est à Yaoundé pour un rendez-vous à la banque. Dans le taxi, son téléphone vibre : une demande d'achat attend sa
-décision. Elle valide en deux gestes, sans ouvrir d'ordinateur.*
-
-### Scène D1 — La connexion de Grâce
-
-> **Qui :** Grâce. **Où :** téléphone, application **GLOBUS Direction**.
-
-**Ce que vous faites** : ouvrez GLOBUS Direction, connectez-vous avec l'e-mail, le mot de passe et le code de Grâce (la
-double authentification y est obligatoire).
-
-**Ce que vous devez constater** : le tableau de bord affiche les mêmes chiffres que sur l'ordinateur (scène F1).
-
-- [ ] **D1** — L'application Direction s'ouvre et ses chiffres sont justes.
-
-### Scène D2 — Valider dans le taxi
-
-> **Qui :** Ernest (qui demande), puis Grâce (qui valide). **Où :** ERP ou Terrain ; application Direction, onglet
-> **Validations**.
-
-**Ce que vous faites**
-
-1. Ernest crée une nouvelle demande d'achat (comme à la scène H2).
-2. Sur le téléphone de Grâce, touchez la notification reçue : elle doit ouvrir directement la demande.
-3. Dans **Validations**, onglet **Achats**, touchez **Approuver**.
-4. Vérifiez dans l'ERP, sur l'ordinateur.
-
-**Ce que vous devez constater** : la notification ouvre la bonne demande ; l'approbation apparaît immédiatement dans
-l'ERP.
-
-- [ ] **D2** — La validation mobile d'une demande d'achat fonctionne.
-
-### Scène D3 — Un paiement et une situation, du bout du pouce
-
-> **Qui :** Rachel, puis Grâce. **Où :** ERP ; application Direction.
-
-**Ce que vous faites**
-
-1. Rachel crée un ordre de paiement dans l'ERP (comme à la scène H12).
-2. Grâce, dans **Validations**, onglet **Paiements**, touche **Approuver**.
-3. Faites de même pour une situation de travaux contrôlée (onglet **Situations**).
-
-**Ce que vous devez constater** : les statuts se mettent à jour à l'identique sur le web.
-
-- [ ] **D3** — Les validations mobiles de paiements et de situations fonctionnent.
-
-### Scène D4 — Gérer de loin
-
-> **Qui :** Grâce. **Où :** application Direction, rubriques **Chantiers** et **Administration**.
-
-**Ce que vous faites**
-
-1. Ouvrez **Chantiers**, puis la fiche du projet TEST : budget, indice de confiance, photos, incidents.
-2. Dans **Administration**, ouvrez un utilisateur de test : essayez de le **déverrouiller** (s'il l'est) ou de le
-   **déconnecter partout**.
-
-**Ce que vous devez constater** : les informations s'affichent, et les actions sont tracées dans le journal d'audit.
-
-- [ ] **D4** — La gestion mobile fonctionne et laisse une trace.
+- [ ] **D4** — Supervision de la sécurité depuis le mobile.
 
 ---
 
 # Livre VI — Autour de la maison
 
-*La maison est debout. Restent les liens qui l'unissent au reste du monde : les messages qui circulent, la vitrine qui
-attire les prochains clients, et les portes qui doivent rester fermées à ceux qui n'ont rien à y faire.*
+## Chapitre 15 — Se parler (notifications, messagerie, appels, agenda)
 
-## Chapitre 15 — Les messages qui circulent
+### Scène N1 — Choisir ses notifications
 
-### Scène N1 — Être prévenu même fenêtre fermée
+**Qui** : Samuel. **Où** : *Administration › Mon compte*, onglet **Notifications**.
 
-> **Qui :** chaque personnage, à tour de rôle. **Où :** *Mon compte*, onglet **Notifications**.
+**Méthode** : pour une famille d'événements (par exemple les achats), décochez l'e-mail et gardez la notification dans
+l'application ; enregistrez. Faites ensuite créer une demande d'achat par Ernest (comme en H2).
 
-**Ce que vous faites**
+**Résultat attendu** : Samuel reçoit la notification dans l'application (cloche), **pas** l'e-mail. Remettez ensuite
+l'e-mail.
 
-1. Dans chaque profil, ouvrez *Mon compte*, onglet **Notifications**, et cliquez sur **Activer le push**. Le navigateur
-   demande l'autorisation : acceptez.
-2. Réduisez la fenêtre, puis déclenchez une notification depuis un autre personnage (par exemple une demande de décision
-   comme en R3, ou une demande d'achat comme en H2).
+> **Si WhatsApp / SMS ne sont pas activés**, ces canaux sont indiqués comme indisponibles : seuls l'e-mail, la cloche et
+> le push du téléphone s'appliquent (annexe A).
 
-**Ce que vous devez constater** : une notification s'affiche dans le coin de l'écran, même fenêtre réduite.
+- [ ] **N1** — Préférences de notification respectées.
 
-- [ ] **N1** — Les notifications push du navigateur fonctionnent.
+### Scène N2 — La messagerie d'équipe
 
-### Scène N2 — Choisir ce que l'on reçoit
+**Qui** : Samuel, Ernest, Linda. **Où** : *Communication › Messagerie* (ou **Échanges › Messagerie** sur le téléphone).
 
-> **Qui :** Paul. **Où :** espace client, *Mon compte*, onglet **Notifications**.
+**Méthode** : Samuel crée une conversation de groupe `Villa Mballa — équipe` avec Ernest et Linda ; il envoie un
+message et une photo ; Ernest répond depuis le téléphone.
 
-**Ce que vous faites** : décochez l'e-mail pour une catégorie de notifications, puis déclenchez un événement de cette
-catégorie.
+**Résultat attendu** : messages en temps réel, pièce jointe lisible, indicateur de lecture ; Paul **ne voit pas** cette
+conversation interne.
 
-**Ce que vous devez constater** : aucun e-mail n'arrive pour cette catégorie, mais la notification reste visible sous la
-cloche de l'application.
+- [ ] **N2** — Messagerie interne.
 
-- [ ] **N2** — Les préférences de notification sont respectées.
+### Scène N3 — Un appel
 
-### Scène N3 — Le registre des envois
+**Qui** : Samuel, puis Ernest. **Où** : **Appels** (ERP ou application Terrain).
 
-*Quand quelqu'un dit « je n'ai jamais reçu l'e-mail », c'est ici que l'on regarde.*
+**Méthode** : Samuel appelle Ernest (audio) ; Ernest décroche sur son téléphone ; raccrochez au bout de 30 secondes.
+Refaites un appel sans décrocher.
 
-> **Qui :** le Gardien. **Où :** *Administration › Paramètres*, onglet **Notifications**, sous-onglet **Journal des
-> envois**.
+**Résultat attendu** : l'appel s'établit ; le second apparaît **manqué** dans l'historique d'Ernest.
 
-**Ce que vous devez constater** : les e-mails envoyés au fil de l'histoire apparaissent avec le statut « envoyé », sans
-échec inexpliqué. Les envois par WhatsApp ou SMS apparaissent « échoués » tant que ces canaux ne sont pas configurés
-(annexe A) : c'est attendu.
+- [ ] **N3** — Appels internes.
 
-- [ ] **N3** — Le journal des envois est cohérent.
+### Scène N4 — La visite de samedi à l'agenda
 
-### Scène N4 — La conversation d'équipe
+**Qui** : Samuel, puis Paul. **Où** : *Projets › Agenda* ; espace client, **Agenda**.
 
-> **Qui :** Samuel, Ernest et Moussa. **Où :** *Communication › Messagerie* (et applications mobiles).
+**Méthode** : Samuel crée l'événement `Visite de chantier avec Paul`, samedi 10:00–11:00, projet « TEST — Villa
+Mballa », participants Paul et Ernest ; **Créer**.
 
-**Ce que vous faites**
+**Résultat attendu** : l'événement est dans l'agenda d'Ernest et dans celui de Paul (invitation reçue par e-mail).
 
-1. Samuel crée une conversation de projet avec Ernest et Moussa et y joint un fichier.
-2. Ernest répond à un message précis (fonction « répondre »).
-3. Samuel utilise **Rechercher dans les messages** pour retrouver un mot.
+- [ ] **N4** — Agenda partagé avec le client.
 
-**Ce que vous devez constater** : tout fonctionne sur l'ordinateur comme dans les applications mobiles.
+---
 
-- [ ] **N4** — La messagerie d'équipe fonctionne.
+## Chapitre 16 — Le site web (CMS)
 
-### Scène N5 — L'aide toujours à portée de main
+### Scène W1 — Un article, de la rédaction à la publication
 
-> **Qui :** chaque personnage. **Où :** *Aide › Documentation*, et l'icône **?** en haut de chaque écran.
+**Qui** : le Gardien. **Où** : *Site web › Contenus (CMS)*, rubrique **Articles**, bouton **Nouveau — Articles**.
 
-**Ce que vous faites** : ouvrez la documentation, faites une recherche, puis cliquez sur le **?** depuis plusieurs écrans.
+**Méthode**
 
-**Ce que vous devez constater** : chacun ne voit que les guides de son rôle ; la recherche fonctionne ; le **?** ouvre
-l'aide de l'écran affiché.
+1. **Titre** ★ `TEST — Bien préparer sa construction`, un résumé, un texte, une image de couverture choisie dans la
+   médiathèque ; **Créer** (l'article est en **Brouillon**).
+2. **Soumettre à relecture**, puis **Valider**, puis **Publier**.
+3. Ouvrez le blog du site dans le profil **Visiteur**.
 
-- [ ] **N5** — La documentation intégrée est adaptée à chaque rôle.
+**Résultat attendu** : l'article n'est visible sur le site qu'après **Publier** ; ensuite **Dépublier (brouillon)** le
+retire du site.
 
-## Chapitre 16 — La vitrine se refait une beauté
+- [ ] **W1** — Circuit de publication d'un article.
 
-*Pendant que la Villa Mballa sortait de terre, le site continuait de vivre : des commentaires à modérer, des pages à
-publier, une lettre d'information à envoyer. Le Gardien, qui fait aussi office de responsable marketing, s'en occupe.*
+### Scène W2 — Modérer le commentaire de la scène V10
 
-### Scène W1 — Le commentaire de Paul
+**Qui** : le Gardien. **Où** : *Site web › Contenus (CMS)*, modération des commentaires.
 
-> **Qui :** le Gardien. **Où :** *Site web › Contenus (CMS)*, onglet **Commentaires**.
+**Méthode** : sur le commentaire laissé en V10, **Publier et répondre** ; écrivez `Merci pour votre message` ;
+**Publier la réponse**.
 
-**Ce que vous faites** : retrouvez le commentaire de la scène V10 et cliquez sur **Publier et répondre** (ou **Publier**),
-en écrivant une petite réponse.
+**Résultat attendu** : le commentaire et la réponse apparaissent sous l'article.
 
-**Ce que vous devez constater** : le commentaire et la réponse apparaissent sous l'article, sur le site.
+- [ ] **W2** — Commentaire modéré.
 
-- [ ] **W1** — La modération des commentaires fonctionne.
+### Scène W3 — Une redirection
 
-### Scène W2 — Une page et un lien dans le menu
+**Qui** : le Gardien. **Où** : *Site web › SEO*, **Nouvelle redirection**.
 
-> **Qui :** le Gardien. **Où :** *Site web › Contenus (CMS)*, onglets **Pages** et **Navigation**.
+**Méthode** : ancienne adresse `/test-ancienne-page`, nouvelle adresse `/contact`, type permanent ; **Créer**. Dans le
+profil **Visiteur**, ouvrez `https://globus-engineering-sarl.com/test-ancienne-page`.
 
-**Ce que vous faites**
+**Résultat attendu** : vous arrivez sur la page de contact. Supprimez ensuite la redirection.
 
-1. Onglet **Pages**, **Nouvelle page** : titre `TEST Page recette` (l'adresse se remplit toute seule), une section, un bloc
-   de texte. Cliquez sur **Enregistrer**, puis sur **Publier directement**.
-2. Onglet **Navigation**, menu « Pied de page — principal » : cliquez sur **Élément**, choisissez cette page, puis cliquez
-   sur **Publier le menu**.
-3. Ouvrez le site dans le profil Visiteur et cherchez le lien en bas de page.
-4. Ensuite, retirez le lien du menu (publiez de nouveau le menu), archivez la page, puis supprimez-la.
+- [ ] **W3** — Redirection active.
 
-**Ce que vous devez constater** : la page et le lien apparaissent sur le site en quelques secondes, puis disparaissent
-proprement.
+### Scène W4 — La médiathèque
 
-- [ ] **W2** — La création, la publication et le retrait d'une page fonctionnent.
+**Qui** : le Gardien. **Où** : *Site web › Médiathèque*.
 
-### Scène W3 — Un article de blog
+**Méthode** : envoyez une image dans le dossier `test` ; renseignez son texte alternatif ; puis **Archiver le média**.
 
-> **Qui :** le Gardien. **Où :** *CMS*, onglet **Collections**, **Articles**.
+**Résultat attendu** : l'image est utilisable dans les contenus tant qu'elle n'est pas archivée.
 
-**Ce que vous faites** : cliquez sur **Nouveau — Articles** (un titre, un contenu), soumettez-le, publiez-le, vérifiez-le
-sur le site, puis archivez-le.
+- [ ] **W4** — Médiathèque.
 
-**Ce que vous devez constater** : le circuit brouillon, publié, archivé est respecté.
+> **À ne pas faire en recette** : ne remplissez pas le champ **Message de maintenance** des paramètres du site : il
+> fermerait le site public.
 
-- [ ] **W3** — Le circuit de publication d'un article fonctionne.
+---
 
-### Scène W4 — Le référencement et les redirections
+## Chapitre 17 — La sécurité
 
-> **Qui :** le Gardien. **Où :** *Site web › SEO*.
+### Scène X1 — Le mot de passe oublié
 
-**Ce que vous faites**
+**Qui** : Linda. **Où** : page de connexion, lien **Mot de passe oublié ?**.
 
-1. Dans l'onglet **Audit et métadonnées**, cliquez sur **Optimiser** pour une page, puis sur **Enregistrer**.
-2. Onglet **Redirections** : **Nouvelle redirection** de `/test-ancienne` vers `/`.
-3. Dans le profil Visiteur, tapez l'adresse `https://globus-engineering-sarl.com/test-ancienne` : vous devez arriver sur
-   l'accueil.
-4. Supprimez ensuite la redirection.
-5. Ouvrez `https://globus-engineering-sarl.com/sitemap.xml` et `https://globus-engineering-sarl.com/robots.txt`.
+**Méthode** : **Adresse e-mail** `votre.adresse+achat@gmail.com`, **Envoyer le lien** ; ouvrez l'e-mail, cliquez sur le
+lien ; **Nouveau mot de passe** (12 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial) et
+**Confirmer** ; **Enregistrer** ; reconnectez-vous.
 
-**Ce que vous devez constater** : la redirection fonctionne ; les deux fichiers publics s'ouvrent.
+**Résultat attendu** : connexion avec le nouveau mot de passe ; le lien ne fonctionne qu'une fois. Un mot de passe trop
+simple est refusé.
 
-- [ ] **W4** — Le SEO et les redirections fonctionnent.
+- [ ] **X1** — Réinitialisation du mot de passe.
 
-### Scène W5 — La lettre d'information
+### Scène X2 — Le verrouillage après 5 échecs
 
-> **Qui :** le Gardien. **Où :** *Commercial › Newsletter*.
+**Qui** : Linda (profil **GLOBUS ACH**). **Où** : page de connexion.
 
-**Ce que vous faites**
+**Méthode** : tapez 5 fois un mauvais mot de passe, puis le bon.
 
-1. Onglet **Abonnés** : vérifiez que l'abonnée de la scène V8 est « confirmée ».
-2. Onglet **Segments** : **Nouveau segment** (par exemple les abonnés portant un tag TEST, que vous ajoutez à l'abonnée).
-3. Onglet **Modèles** : **Nouveau modèle** (un objet, un contenu).
-4. Onglet **Campagnes** : **Nouvelle campagne** vers ce segment, puis **Envoyer maintenant**.
+**Résultat attendu** : « Compte temporairement verrouillé après plusieurs échecs. Réessayez plus tard. » ; la connexion
+redevient possible au bout de 15 minutes, ou tout de suite si le Gardien déverrouille le compte (*Administration ›
+Sécurité*, ou **Déverrouiller** dans l'application Direction). L'échec apparaît dans **Échecs de connexion (24 h)**.
 
-**Ce que vous devez constater** : l'e-mail arrive sur l'adresse `+news`, avec un lien de désinscription qui fonctionne.
+- [ ] **X2** — Verrouillage et déverrouillage.
 
-- [ ] **W5** — L'envoi d'une campagne fonctionne.
+### Scène X3 — Changer son mot de passe et fermer ses sessions
 
-### Scène W6 — Les visiteurs ont laissé des traces
+**Qui** : Linda. **Où** : *Administration › Mon compte*, onglets **Sécurité** puis **Sessions et appareils**.
 
-> **Qui :** le Gardien. **Où :** *Site web › Analytics*.
+**Méthode**
 
-**Ce que vous devez constater** : les visites et les conversions du chapitre 4 (« Décrire mon projet », contact,
-newsletter) apparaissent, à condition qu'au moins une visite ait accepté la mesure d'audience dans le bandeau des cookies.
+1. **Sécurité** : **Mot de passe actuel**, **Nouveau mot de passe**, **Confirmation** ; **Modifier le mot de passe**.
+2. Connectez-vous aussi sur le téléphone ; dans **Sessions actives**, sur la session du téléphone, **Révoquer**.
 
-- [ ] **W6** — Les statistiques reflètent les visites.
+**Résultat attendu** : le téléphone est déconnecté à sa prochaine action ; l'**Historique de sécurité** garde la trace.
 
-### Scène W7 — La médiathèque
+- [ ] **X3** — Mot de passe et sessions maîtrisés.
 
-> **Qui :** le Gardien. **Où :** *Site web › Médiathèque*.
+### Scène X4 — Chacun chez soi
 
-**Ce que vous faites**
+**Pourquoi** : un compte ne doit jamais ouvrir ce qui ne le concerne pas, même en tapant l'adresse à la main.
 
-1. Cliquez sur **Envoyer des fichiers** et déposez une image ; renseignez son texte alternatif.
-2. Ouvrez une image déjà utilisée par une page du site et essayez de l'**Archiver**.
+**Méthode** (chaque personnage dans son profil) :
 
-**Ce que vous devez constater** : l'archivage de l'image utilisée est refusé, avec la liste des pages qui l'utilisent.
+| Qui | Adresse tapée | Attendu |
+| --- | --- | --- |
+| Moussa | `/erp/finances` | page refusée (accès non autorisé) |
+| Martin (fournisseur) | `/erp` | renvoyé vers son extranet |
+| Sylvie (sous-traitante) | `/extranet/commandes` | entrée absente : réservée aux fournisseurs |
+| Paul (client) | `/erp/chantiers` | renvoyé vers son espace client |
+| Jordan (commercial) | `/erp/rh` | page refusée |
 
-- [ ] **W7** — La médiathèque protège les images utilisées.
+- [ ] **X4** — Cloisonnement des accès.
 
-## Chapitre 17 — Les portes qui doivent rester fermées
+### Scène X5 — Le journal d'audit
 
-*Jusqu'ici, on a vérifié que chacun pouvait faire son travail. Il faut maintenant vérifier l'inverse : que personne ne
-peut faire ce qui ne le regarde pas. Un bon immeuble n'est pas seulement un immeuble dont les portes s'ouvrent ; c'est
-aussi un immeuble dont les mauvaises portes restent fermées.*
+**Qui** : le Gardien. **Où** : *Administration › Sécurité*.
 
-### Scène X1 — Moussa ne voit pas les comptes
+**Méthode** : filtrez sur la journée et retrouvez : la signature du marché (S8), la validation de la situation (S11),
+l'approbation du paiement (H13), le verrouillage de Linda (X2).
 
-> **Qui :** Moussa (profil **GLOBUS TEC**). **Où :** ERP.
+**Résultat attendu** : chaque événement est daté, attribué à une personne, et ne peut être ni modifié ni supprimé.
 
-**Ce que vous faites**
-
-1. Regardez le menu de gauche de Moussa.
-2. Dans la barre d'adresse, tapez `https://globus-engineering-sarl.com/erp/finances` et appuyez sur **Entrée**.
-
-**Ce que vous devez constater** : aucun menu Finance, CRM ou Administration ; l'adresse tapée à la main est refusée.
-
-- [ ] **X1** — Les menus et pages sont cloisonnés selon le rôle.
-
-### Scène X2 — Paul reste chez lui
-
-> **Qui :** Paul (profil **GLOBUS CLI**). **Où :** barre d'adresse.
-
-**Ce que vous faites** : tapez `https://globus-engineering-sarl.com/erp` et appuyez sur **Entrée**. Puis parcourez de
-nouveau son espace.
-
-**Ce que vous devez constater** : l'accès à l'ERP est refusé ; l'espace client ne montre aucune donnée interne (prix
-d'achat, notes internes de l'équipe, autres projets).
-
-- [ ] **X2** — Le client est cloisonné.
-
-### Scène X3 — Chacun son extranet
-
-> **Qui :** Martin (profil **GLOBUS FOU**), puis Sylvie (profil **GLOBUS STT**). **Où :** extranet.
-
-**Ce que vous devez constater** : Martin ne voit ni les consultations de sous-traitance ni les autres fournisseurs ; Sylvie
-ne voit pas les commandes de fournitures.
-
-- [ ] **X3** — Les partenaires sont cloisonnés.
-
-### Scène X4 — Personne ne s'approuve soi-même
-
-**Ce que vous devez constater** : comme on l'a vu aux scènes H3, H13 et R8 bis, aucun personnage ne peut approuver ce qu'il
-a lui-même créé (demande d'achat, paiement, encaissement). Cochez si ces trois scènes étaient conformes.
-
-- [ ] **X4** — La séparation des tâches est respectée partout.
-
-### Scène X5 — Le cambrioleur maladroit
-
-*Un inconnu essaie de deviner le mot de passe de Moussa. Au bout de cinq essais, la porte se verrouille.*
-
-> **Qui :** un visiteur malveillant (profil **Visiteur**), puis le Gardien. **Où :** page de connexion ; ERP,
-> *Administration › Sécurité* et *Utilisateurs et rôles*.
-
-**Ce que vous faites**
-
-1. Sur la page de connexion, tapez l'adresse de Moussa et un mauvais mot de passe, **cinq fois de suite**.
-2. Le Gardien ouvre *Administration › Sécurité*, onglet **Synthèse**.
-3. Le Gardien ouvre la fiche de Moussa dans *Utilisateurs et rôles* et clique sur **Déverrouiller**.
-
-**Ce que vous devez constater** : le compte de Moussa est verrouillé temporairement ; il apparaît dans les comptes
-verrouillés de la synthèse de sécurité ; le déverrouillage le libère.
-
-- [ ] **X5** — Le verrouillage après plusieurs échecs fonctionne.
-
-### Scène X6 — Moussa a oublié son mot de passe
-
-> **Qui :** Moussa. **Où :** page de connexion.
-
-**Ce que vous faites**
-
-1. Cliquez sur **Mot de passe oublié ?**, tapez l'adresse de Moussa, puis **Envoyer le lien**.
-2. Ouvrez l'e-mail reçu (le lien est valable une heure), choisissez un nouveau mot de passe et **Enregistrer**.
-3. Essayez de vous connecter avec l'ancien mot de passe, puis avec le nouveau.
-
-**Ce que vous devez constater** : l'ancien mot de passe est refusé, le nouveau accepté.
-
-- [ ] **X6** — La réinitialisation du mot de passe fonctionne.
-
-### Scène X7 — Le téléphone oublié dans un taxi
-
-*Ernest a oublié son téléphone dans un taxi. Depuis l'ordinateur du bureau, il ferme toutes ses autres sessions.*
-
-> **Qui :** Ernest. **Où :** *Mon compte*, onglet **Sessions et appareils**.
-
-**Ce que vous faites** : cliquez sur **Fermer les autres sessions** et confirmez.
-
-**Ce que vous devez constater** : l'application Terrain du téléphone d'Ernest est déconnectée.
-
-- [ ] **X7** — La fermeture des sessions à distance fonctionne.
-
-### Scène X8 — La seconde serrure à refaire
-
-*Ernest a un nouveau téléphone : son application d'authentification est vide. Le Gardien réinitialise sa double
-authentification, après avoir vérifié que c'est bien lui.*
-
-> **Qui :** le Gardien, puis Ernest. **Où :** *Utilisateurs et rôles*, fiche d'Ernest.
-
-**Ce que vous faites** : cliquez sur **Réinitialiser la MFA** et confirmez avec votre propre code. Ernest se reconnecte.
-
-**Ce que vous devez constater** : Ernest doit reconfigurer sa double authentification à sa connexion suivante.
-
-- [ ] **X8** — La réinitialisation de la double authentification fonctionne.
-
-### Scène X9 — Les clés les plus précieuses
-
-*Certaines opérations sont si sensibles (les secrets des services extérieurs, par exemple) que la plateforme redemande le
-code de double authentification, même à l'administrateur.*
-
-> **Qui :** le Gardien. **Où :** *Administration › Paramètres*, onglet **Intégrations**.
-
-**Ce que vous faites** : cliquez sur **Régler** à côté d'un secret quelconque, puis annulez sans rien enregistrer.
-
-**Ce que vous devez constater** : si votre session n'est pas encore confirmée, la fenêtre **Confirmer avec votre double
-authentification** apparaît.
-
-- [ ] **X9** — Les opérations sensibles exigent une confirmation.
-
-### Scène X10 — Fermé pour travaux
-
-*Un jour, il faudra peut-être fermer la plateforme quelques minutes pour une opération de maintenance. On essaie.*
-
-> **Qui :** le Gardien, puis Paul. **Où :** *Administration › Paramètres*, onglet **Maintenance**.
-
-**Ce que vous faites**
-
-1. **Message affiché aux utilisateurs** : `Test de maintenance`. **Fin prévue** : dans 15 minutes.
-2. Cliquez sur **Activer** et confirmez.
-3. Dans la fenêtre de Paul, actualisez la page.
-4. Revenez chez le Gardien et cliquez sur **Terminer la maintenance**.
-
-**Ce que vous devez constater** : pendant la maintenance, Paul voit le message et seuls les administrateurs accèdent à la
-plateforme ; ensuite, tout revient à la normale.
-
-- [ ] **X10** — Le mode maintenance fonctionne.
-
-### Scène X11 — Le grand registre
-
-*Tout ce qui s'est passé dans cette histoire a été écrit dans un registre infalsifiable : chaque ligne est liée à la
-précédente par un calcul cryptographique, si bien qu'on ne peut en modifier aucune sans que cela se voie.*
-
-> **Qui :** le Gardien. **Où :** *Administration › Journal d'audit*.
-
-**Ce que vous faites** : recherchez les actions liées au projet TEST, ouvrez-en quelques-unes, puis lancez la vérification
-d'intégrité.
-
-**Ce que vous devez constater** : les actions des chapitres précédents sont toutes là ; le message « Chaîne d'audit
-intègre » s'affiche.
-
-- [ ] **X11** — Le journal d'audit est complet et intègre.
-
-### Scène X12 — La clé qu'on reprend
-
-> **Qui :** le Gardien. **Où :** *Utilisateurs et rôles*.
-
-**Ce que vous faites**
-
-1. Ouvrez un compte de test (par exemple celui de Linda) et cliquez sur **Désactiver le compte**.
-2. Essayez de vous connecter avec ce compte.
-3. Réactivez-le.
-
-**Ce que vous devez constater** : la connexion est refusée tant que le compte est désactivé ; elle redevient possible après
-la réactivation.
-
-- [ ] **X12** — La désactivation et la réactivation d'un compte fonctionnent.
+- [ ] **X5** — Traçabilité complète.
 
 ---
 
 # Épilogue
 
-## Chapitre 18 — Le bilan
+## Chapitre 18 — Le bilan et le nettoyage
 
-*La Villa Mballa n'existe pas, et pourtant vous l'avez construite de bout en bout. Il est temps de faire le bilan, de
-ranger le chantier et de signer le procès-verbal.*
+### Scène Z1 — La fin du marché d'électricité
 
-### Scène Z1 — Compter
+**Qui** : Samuel, Grâce, Rachel. **Où** : la fiche du marché « Électricité Villa Mballa ».
 
-**Ce que vous faites**
+**Méthode**
 
-1. Reportez le résultat de chaque scène dans le tableau récapitulatif de l'annexe E : **OK**, **KO** (anomalie) ou **NT**
-   (non testé, avec la raison).
-2. Classez les anomalies par gravité :
-   - **bloquante** : on ne peut pas continuer l'histoire ;
-   - **majeure** : le résultat est faux ou une règle importante n'est pas respectée ;
-   - **mineure** : gênant, mais on peut faire autrement ;
-   - **cosmétique** : une faute de frappe, un alignement.
+1. Sylvie déclare une seconde situation avec le reste des quantités (E2 : `24`, E3 : `20`), photos, **Soumettre** ;
+   Ernest fait le constat, Samuel valide, Sylvie dépose la facture, Rachel la valide (comme en S10 à S12).
+2. Grâce : **Clôturer**, **Confirmer**.
+3. Rachel : **Libérer la retenue** : **Montant** *(vide : tout le disponible)*, **Motif** ★ `Fin de la garantie de
+   parfait achèvement` ; **Enregistrer**.
 
-**Le critère conseillé pour livrer** : **aucune anomalie bloquante ni majeure** dans les chapitres 3 à 11 et 17.
+**Résultat attendu** : le marché passe **Clôturé** (refusé tant qu'une situation n'est pas soldée ou qu'un litige est
+ouvert) ; la retenue est **libérée** et une facture « Libération de retenue » apparaît, bon à payer.
 
-- [ ] **Z1** — Le bilan est fait.
+- [ ] **Z1** — Clôture du marché et libération de la retenue.
 
-### Scène Z2 — Ranger le chantier (premier chemin : garder les traces)
+### Scène Z2 — L'avis de Paul
 
-**Ce que vous faites**
+**Qui** : Paul. **Où** : espace client, **Mon avis**.
 
-1. Fiche du projet « TEST — Villa Mballa » : cliquez sur **Archiver** et confirmez.
-2. Dans *Utilisateurs et rôles*, désactivez les dix comptes de test (**Désactiver le compte**).
-3. Fiches du fournisseur et du sous-traitant TEST : **Changer le statut** (ou **Statut**) vers « suspendu ».
-4. Si le financement et le parrainage ne sont pas encore lancés officiellement, vérifiez qu'ils sont refermés (scène R20).
-5. Supprimez la page et l'article de test (scènes W2 et W3) s'ils existent encore.
+**Méthode** : donnez une note et un commentaire ; envoyez.
 
-- [ ] **Z2** — Le chantier d'essai est rangé (ou je suis le second chemin).
+**Résultat attendu** : l'avis apparaît dans l'onglet **Avis client** du projet et dans la **Satisfaction client** de
+l'application Direction.
 
-### Scène Z3 — Effacer le tableau (second chemin : la remise à zéro)
+- [ ] **Z2** — Avis client recueilli.
 
-*Si vous avez choisi le second chemin au tout début, c'est le moment de faire place nette, sans toucher au site.*
+### Scène Z3 — Le tableau de bord de la recette
 
-**Ce que vous faites**
+**Qui** : vous. **Où** : annexe E.
 
-1. *Administration › Paramètres*, bouton **Système et sauvegardes**, carte **Remise à zéro des données
-   d'exploitation** : cliquez sur **Préparer la remise à zéro**.
-2. Lisez les deux colonnes **Sera supprimé** et **Sera conservé**.
-3. **E-mail du nouvel administrateur** : l'adresse de l'entreprise (par exemple `contact@globus-engineering-sarl.com`).
-4. Écrivez une justification d'au moins vingt caractères, tapez votre code de double authentification, puis la phrase
-   `REMETTRE A ZERO` en majuscules, et cliquez sur **Remettre à zéro**.
-5. Cliquez sur **Aller à la connexion** : votre compte a été supprimé avec les autres.
-6. Ouvrez la boîte de l'adresse choisie, cliquez sur le lien d'invitation et activez le nouvel administrateur (mot de
-   passe, puis double authentification).
+**Méthode** : reportez chaque case cochée ; comptez les anomalies de l'annexe C par gravité.
 
-**Ce que vous devez constater** : le site vitrine est intact (pages, menus, images, réglages) ; dans l'ERP, il n'y a plus
-qu'un seul compte, aucun projet ni client ; les intégrations restent configurées ; *Paramètres › Système et
-sauvegardes* montre la « Sauvegarde de sécurité (avant opération irréversible) » faite juste avant. Les e-mails envoyés
-pendant l'essai, eux, ne peuvent évidemment pas être rappelés.
+**Résultat attendu** : toutes les scènes jouées sont cochées ou ont une fiche d'anomalie.
 
-- [ ] **Z3** — La remise à zéro a laissé le site intact et une base propre (ou je suis le premier chemin).
+- [ ] **Z3** — Bilan établi.
 
-### Scène Z4 — Le procès-verbal
+### Scène Z4 — Remettre la plateforme à zéro (facultatif)
 
-**Ce que vous faites** : rédigez une page qui indique la date, les personnes présentes, la version testée (affichée sur la
-page **Système**), le résultat global, les réserves éventuelles et la date prévue pour les lever. Signez-la.
+**Pourquoi** : après la recette, les données « TEST » peuvent être effacées pour démarrer l'exploitation.
 
-- [ ] **Z4** — Le procès-verbal de recette est signé.
+**Qui** : le Gardien **en personne** (c'est une suppression définitive). **Où** : *Administration › Paramètres*,
+remise à zéro des données d'exploitation.
 
-*Et ainsi s'achève l'histoire de la Villa Mballa. Quelque part à Douala, un vrai Paul attend déjà de cliquer sur
-« Décrire mon projet ». Cette fois, la maison sera prête à l'accueillir.*
+**Méthode** : faites d'abord une sauvegarde (scène P3) ; lancez la remise à zéro et confirmez avec votre code de double
+authentification.
+
+**Résultat attendu** : projets, prospects, achats, paiements de test supprimés ; le site, le CMS, la médiathèque, les
+paramètres et les comptes du personnel sont conservés.
+
+- [ ] **Z4** — Plateforme prête pour l'exploitation.
 
 ---
 
 # Annexes
 
-## Annexe A — Ce qui ne peut pas encore être testé (au 20 octobre 2026)
+## Annexe A — Ce qui dépend d'un service non activé
 
-*Certaines fonctions dépendent de services extérieurs qui ne sont pas encore branchés. Pendant l'essai, leur absence est
-normale : notez la scène « non testée » plutôt qu'en anomalie.*
+Ces services s'activent dans *Administration › Paramètres*, onglet **Intégrations**, bloc **Activer les services**,
+une fois les comptes ouverts chez les prestataires. **Aucun n'est nécessaire pour jouer la recette.**
 
-| Fonction | Où en est-on | Ce que cela change pendant l'essai |
+| Service | Sans le service (recette actuelle) | Quand il sera activé, rejouez |
 | --- | --- | --- |
-| **Paiement en ligne** (MTN MoMo, Orange Money, carte bancaire) | Pas encore configuré : il faut signer les contrats avec les opérateurs puis saisir leurs clés dans *Intégrations*. | À la scène R8, le message « Aucun moyen de paiement en ligne n'est activé » est attendu. |
-| **Encaissement hors ligne** (virement, chèque, espèces, dépôt Mobile Money direct) | **Disponible** : bouton **Enregistrer un encaissement** sur les appels de fonds et les factures, avec preuve, approuvé par une autre personne dans *Finances › Paiements*. | C'est la façon de faire passer les pièces « Payé » tant que le paiement en ligne n'existe pas : scènes R8 bis et R10. |
-| **WhatsApp** et **SMS** | Pas encore configurés. | Choisissez toujours l'**e-mail** pour recevoir les codes ; les envois WhatsApp ou SMS apparaissent « échoués » dans le journal (scène N3). |
-| **Intelligence artificielle (Claude)** | La clé actuelle est refusée ; il faut la renouveler dans *Intégrations*. | Estimation instantanée, lecture de documents, synthèses et assistant en mode IA fonctionnent en mode réduit (l'assistant répond par règles). |
-| **Google Maps** | Clé à saisir. | Les cartes du site et les positions sur carte ne s'affichent pas. |
-| **iPhone** | Les applications ne sont pas signées pour Apple (il faut un compte Apple Developer). | Testez les applications mobiles sur Android uniquement. |
-| **Séquestre et financement bancaire** | Nécessitent une banque partenaire réelle. | La scène F9 et la transmission du dossier de financement (R20) sont « non testées ». |
+| Paiement en ligne (MTN MoMo, Orange Money, carte) | « Aucun moyen de paiement en ligne n'est activé… » ; encaissement saisi avec preuve (R4) | R4 avec **Payer** : le paiement arrive tout seul, **Réussi**, reçu émis |
+| WhatsApp Business | bons de commande et codes envoyés par e-mail (H5, R2) | H5 avec le canal « WhatsApp », R2 avec « WhatsApp » |
+| SMS | codes par e-mail | R2 avec « SMS » |
+| Assistants IA | les écrans d'assistance indiquent que l'assistant n'est pas disponible ; tout le reste fonctionne | C16, V9, lecture de documents |
+| Transcription vocale | **déjà active** (service interne au serveur, aucune clé à saisir) | — |
 
 ## Annexe B — Les données de l'histoire
 
-- **Le client** : Paul TEST-MBALLA, `votre.adresse+client@gmail.com`, Douala, univers HOME, villa de 180 m² à un étage,
-  budget de 20 à 30 millions de francs CFA.
-- **Le devis** : Études et plans 3 000 000 ; Gros œuvre 15 000 000 ; Second œuvre 7 000 000 ; TVA 19,25 % ; échéancier
-  30 % / 40 % / 30 %.
-- **Le fournisseur** : TEST Quincaillerie du Wouri — Ciment CPJ 42.5 en sac de 50 kg, à 5 200 francs (contre-offre à
-  5 000).
-- **Le sous-traitant** : TEST Électricité Akwa — tableau électrique à 350 000 francs (×1), points lumineux à 25 000 francs
-  (×30).
+| Élément | Valeur |
+| --- | --- |
+| Projet | `TEST — Villa Mballa`, site `S1-MBALLA` « Parcelle Bonamoussadi » |
+| Lots | ET, GO, SO (issus du devis) et ELEC |
+| Fournisseur | `TEST Quincaillerie du Wouri` (Martin) — ciment `CIM-425` à 5 200 FCFA |
+| Sous-traitant | `TEST Électricité Akwa` (Sylvie) — marché 1 330 000 HT, TVA 19,25 % |
+| Références de paiement | `VIR-TEST-0001` (490 000), `VIR-CLIENT-0001` (2 000 000), `VIR-TEST-0002` (831 915) |
+| Dépôt | `DEP-S1` |
+| Zone | `Z-SEJOUR` |
 
-**Le relevé bancaire de la scène F3.** Ouvrez le Bloc-notes de Windows, copiez-y les quatre lignes ci-dessous, puis
-remplacez les montants par les vôtres : celui du paiement exécuté en H14 (négatif, c'est une sortie d'argent) et celui de
-l'encaissement approuvé en R8 bis (positif, c'est une entrée). Enregistrez le fichier sous le nom `releve-test.csv` (dans
-la fenêtre d'enregistrement, choisissez le type « Tous les fichiers » et l'encodage « UTF-8 »).
+## Annexe C — Fiche d'anomalie
 
-```
-date;libellé;référence;montant
-20/10/2026;VIR TEST QUINCAILLERIE;VIR-TEST-0001;-508760
-20/10/2026;VIR RECU TEST-MBALLA;VIR-TEST-0002;3000000
-21/10/2026;FRAIS TENUE DE COMPTE;;-2500
-```
-
-Les références « VIR-TEST-0001 » et « VIR-TEST-0002 » sont celles saisies aux scènes H14 et R8 bis : ce sont elles qui
-permettent à la plateforme de retrouver toute seule les opérations.
-
-## Annexe C — La fiche d'anomalie
-
-*Recopiez cette fiche pour chaque problème rencontré. Plus elle est précise, plus la correction sera rapide.*
-
-```
-Code de la scène   : (par exemple H11)
-Personnage et appareil : (par exemple Rachel — Chrome sur Windows ; Ernest — téléphone Android, application Terrain)
-Date et heure      :
-Ce que j'ai fait   :
-Ce que j'attendais :
-Ce qui s'est passé : (le message exact affiché, et une capture d'écran)
-Gravité            : bloquante / majeure / mineure / cosmétique
-```
-
-Si un message affiche « Erreur interne. Référence : … », recopiez cette **référence** : elle permet de retrouver le
-problème dans les journaux du serveur.
-
-> Pour faire une capture d'écran sous Windows : appuyez en même temps sur les touches **Windows**, **Majuscule** et **S**,
-> puis sélectionnez la zone. Sur Android : appuyez en même temps sur **Marche/Arrêt** et **Volume bas**.
+| Rubrique | À remplir |
+| --- | --- |
+| N° | A-001, A-002… |
+| Scène | ex. S11 |
+| Qui / profil | ex. Samuel, GLOBUS CDP |
+| Écran (menu et onglet) | |
+| Ce que j'ai fait | les gestes, les valeurs saisies |
+| Ce que j'attendais | le « Résultat attendu » de la scène |
+| Ce que j'ai vu | le message exact, une capture d'écran |
+| Gravité | **Bloquante** (impossible de continuer) · **Majeure** (résultat faux) · **Mineure** (gêne, libellé) |
 
 ## Annexe D — Les fichiers à préparer
 
-- Deux PDF quelconques, renommés « Plan RDC » et « Plan RDC v2 », et un PDF « Contrat signé ».
-- Un PDF « Facture fournisseur », un PDF « Facture sous-traitant », un PDF « Preuve de virement ».
-- Un PDF « Mémoire technique » et un PDF « Attestation fiscale ».
-- Six photos de chantier prises avec le téléphone, localisation activée.
-- Facultatif : une maquette numérique IFC ou RVT (Hub BIM), un fichier 3D GLB (configurateur), une photo à 360 degrés.
+Placez-les dans un dossier `Recette GLOBUS` sur l'ordinateur et sur le téléphone :
+
+| Fichier | Sert à |
+| --- | --- |
+| `Plan RDC.pdf`, `Plan RDC v2.pdf` | M9, DCE (S2) |
+| `Attestation d'assurance.pdf` | S1 |
+| `Mémoire technique.pdf` | S4 |
+| `Facture fournisseur.pdf`, `Facture sous-traitant.pdf` | H10, S12 |
+| `Preuve de virement.pdf`, `Avis de crédit.pdf` | H14, R4, S12 |
+| `releve-test.csv` | F3 (modèle dans la scène) |
+| 3 ou 4 photos de chantier (JPG) | T5, T7, S10, Q5, Q6 |
+| un fichier IFC ou RVT (facultatif) | M11 |
+
+N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le contenu.
 
 ## Annexe E — Le tableau de bord de la recette
 
-*Reportez ici le résultat de chaque scène : **OK**, **KO** ou **NT** (non testé).*
+144 scènes. Cochez « OK » ou notez le n° de la fiche d'anomalie (annexe C).
 
-| Code | Scène | Résultat |
-| --- | --- | --- |
-| P1 | Les voyants des intégrations | |
-| P2 | La santé du système | |
-| P3 | La sauvegarde complète | |
-| P4 | Le test de restauration | |
-| A1 | Connexion du Gardien | |
-| A2 | Le trousseau des rôles | |
-| A3 | Organisation fournisseur | |
-| A4 | Organisation sous-traitant | |
-| A5 | Fiche fournisseur reliée | |
-| A6 | Produit au catalogue | |
-| A7 | Fiche sous-traitant reliée | |
-| A8 | Création de l'équipe | |
-| A9 | Invitation des sept collègues | |
-| A10 | Invitation des partenaires | |
-| A11 | Invitation révoquée puis renvoyée | |
-| A12 | Activation des neuf comptes | |
-| A13 | L'équipe complète | |
-| V1 | Bandeau des cookies | |
-| V2 | Navigation sur le site | |
-| V3 | Recherche | |
-| V4 | Contenus du site | |
-| V5 | Décrire mon projet | |
-| V6 | Estimation instantanée | |
-| V7 | Formulaire de contact | |
-| V8 | Abonnement à la newsletter | |
-| V9 | Assistant du site | |
-| V10 | Commentaire de blog | |
-| V11 | Pages légales | |
-| C1 | Règle d'affectation | |
-| C2 | Arrivée des prospects | |
-| C3 | Dossier du prospect | |
-| C4 | Première activité | |
-| C5 | Qualification | |
-| C6 | Conversion en opportunité | |
-| C7 | Pipeline | |
-| C8 | Devis | |
-| C9 | Envoi du devis | |
-| C10 | Acceptation du devis par code | |
-| C11 | Révision et refus | |
-| C12 | Contrat | |
-| C13 | Signature du contrat | |
-| C14 | Création du projet et invitation du client | |
-| C15 | Relance | |
-| C16 | Conversation de l'assistant | |
-| K1 | Activation du client | |
-| K2 | Double authentification du client | |
-| K3 | Déconnexion et reconnexion | |
-| K4 | Tableau de bord du client | |
-| K5 | Pages de l'espace client | |
-| K6 | Application GLOBUS Client | |
-| M1 | Fiche du projet | |
-| M2 | Équipe du projet | |
-| M3 | Site et géorepérage | |
-| M4 | Lots et phases | |
-| M5 | Jalons | |
-| M6 | Planning et référence | |
-| M7 | Planning intelligent | |
-| M8 | Budget de référence | |
-| M9 | Circuit d'un plan dans la GED | |
-| M10 | Plan publié au client | |
-| M11 | Maquette 3D | |
-| M12 | QR code de zone | |
-| M13 | Agenda | |
-| M14 | Registre des risques | |
-| M15 | Panneau connecté | |
-| H1 | Dépôt et article | |
-| H2 | Demande d'achat | |
-| H3 | Approbation | |
-| H4 | Bon de commande | |
-| H5 | Envoi au fournisseur | |
-| H6 | Contre-offre et confirmation | |
-| H7 | Annonce d'expédition | |
-| H8 | Réception sur le chantier | |
-| H9 | Mouvements de stock | |
-| H10 | Facture fournisseur | |
-| H11 | Rapprochement des trois pièces | |
-| H12 | Ordre de paiement | |
-| H13 | Double regard | |
-| H14 | Exécution du paiement | |
-| H15 | Notation et clôture | |
-| H16 | Documents légaux du fournisseur | |
-| S1 | Qualification du sous-traitant | |
-| S2 | Consultation | |
-| S3 | Offre scellée | |
-| S4 | Clôture et attribution | |
-| S5 | Signature du marché | |
-| S6 | Mobilisation | |
-| S7 | Situation de travaux | |
-| S8 | Constat terrain | |
-| S9 | Validation de la situation | |
-| S10 | Facture et paiement du sous-traitant | |
-| S11 | Réclamation | |
-| S12 | Litige | |
-| S13 | Dépassement de marché | |
-| T1 | Connexion à l'application Terrain | |
-| T2 | Avancement d'une tâche | |
-| T3 | Journal de chantier | |
-| T4 | Photos | |
-| T5 | Rapport vocal | |
-| T6 | Scan d'une zone | |
-| T7 | Plan périmé | |
-| T8 | Incident de sécurité | |
-| T9 | Mode hors ligne | |
-| T10 | Conflit de synchronisation | |
-| T11 | Sortie de stock | |
-| T12 | Lecture de documents | |
-| R1 | Photos publiées au client | |
-| R2 | Certification des photos | |
-| R3 | Demande de décision | |
-| R4 | Décision validée par code | |
-| R5 | Décision refusée | |
-| R6 | Avenant | |
-| R7 | Appel de fonds | |
-| R8 | Paiement en ligne | |
-| R8 bis | Encaissement hors ligne | |
-| R9 | Échéancier | |
-| R10 | Facture, relance, chèque refusé, espèces | |
-| R11 | Avoir | |
-| R12 | Messagerie | |
-| R13 | Appel vidéo | |
-| R14 | SAV complet | |
-| R15 | Bâtiment et carnet d'entretien | |
-| R16 | Dossier foncier et garanties | |
-| R17 | Contenus immersifs | |
-| R18 | Configurateur | |
-| R19 | Énergie | |
-| R20 | Financement et parrainage | |
-| R21 | Avis client | |
-| R22 | Passeport projet | |
-| F1 | Tableau de bord de direction | |
-| F2 | Pilotage financier | |
-| F3 | Rapprochement bancaire | |
-| F4 | Petite caisse | |
-| F5 | Prévisions | |
-| F6 | Balance âgée et export comptable | |
-| F7 | Rapports et exports | |
-| F8 | Rapport de direction | |
-| F9 | Séquestre | |
-| Q1 | Dossier et badge de l'employé | |
-| Q2 | QR d'auto-pointage | |
-| Q3 | Pointages | |
-| Q4 | Congés | |
-| Q5 | Paie | |
-| Q6 | Traitement d'un incident | |
-| Q7 | Inspection | |
-| Q8 | Équipements de protection et quart d'heure | |
-| Q9 | Matériel | |
-| D1 | Connexion à l'application Direction | |
-| D2 | Validation d'un achat en mobilité | |
-| D3 | Validation d'un paiement et d'une situation | |
-| D4 | Gestion à distance | |
-| N1 | Notifications push | |
-| N2 | Préférences de notification | |
-| N3 | Journal des envois | |
-| N4 | Messagerie d'équipe | |
-| N5 | Documentation intégrée | |
-| W1 | Modération d'un commentaire | |
-| W2 | Page et menu | |
-| W3 | Article de blog | |
-| W4 | SEO et redirections | |
-| W5 | Campagne de newsletter | |
-| W6 | Statistiques | |
-| W7 | Médiathèque | |
-| X1 | Cloisonnement par rôle | |
-| X2 | Cloisonnement du client | |
-| X3 | Cloisonnement des partenaires | |
-| X4 | Séparation des tâches | |
-| X5 | Verrouillage | |
-| X6 | Mot de passe oublié | |
-| X7 | Fermeture des sessions | |
-| X8 | Réinitialisation de la double authentification | |
-| X9 | Opérations sensibles | |
-| X10 | Mode maintenance | |
-| X11 | Journal d'audit | |
-| X12 | Désactivation d'un compte | |
-| Z1 | Bilan | |
-| Z2 | Rangement (premier chemin) | |
-| Z3 | Remise à zéro (second chemin) | |
-| Z4 | Procès-verbal | |
+| Chapitre | Scène | Ce qui est vérifié | OK | Anomalie |
+| --- | --- | --- | --- | --- |
+| Chapitre 2 | **P1** | Les voyants sont relevés. | [ ] | |
+| Chapitre 2 | **P2** | Le moteur est en bonne santé. | [ ] | |
+| Chapitre 2 | **P3** | Sauvegarde complète faite et vérifiée. | [ ] | |
+| Chapitre 2 | **P4** | Test de restauration réussi, date notée. | [ ] | |
+| Chapitre 3 | **A1** | Connexion réussie, toutes les rubriques visibles. | [ ] | |
+| Chapitre 3 | **A2** | Les rôles et leurs droits s'affichent. | [ ] | |
+| Chapitre 3 | **A3** | Organisation fournisseur créée. | [ ] | |
+| Chapitre 3 | **A4** | Organisation sous-traitant créée. | [ ] | |
+| Chapitre 3 | **A5** | Fiche fournisseur créée et reliée à son organisation. | [ ] | |
+| Chapitre 3 | **A6** | Produit au catalogue. | [ ] | |
+| Chapitre 3 | **A7** | Fiche sous-traitant créée. | [ ] | |
+| Chapitre 3 | **A8** | Équipe créée. | [ ] | |
+| Chapitre 3 | **A9** | Les sept collègues sont invités. | [ ] | |
+| Chapitre 3 | **A10** | Les deux partenaires sont invités. | [ ] | |
+| Chapitre 3 | **A11** | Révocation, renvoi et désactivation fonctionnent. | [ ] | |
+| Chapitre 3 | **A12** | Les neuf comptes sont activés ; MFA en place au moins pour Grâce et Rachel. | [ ] | |
+| Chapitre 3 | **A13** | Équipe complète. | [ ] | |
+| Chapitre 4 | **V1** | Le choix des cookies est respecté et modifiable. | [ ] | |
+| Chapitre 4 | **V2** | Navigation impeccable sur ordinateur et téléphone. | [ ] | |
+| Chapitre 4 | **V3** | La recherche fonctionne. | [ ] | |
+| Chapitre 4 | **V4** | Les contenus s'affichent. | [ ] | |
+| Chapitre 4 | **V5** | La demande de Paul est envoyée et accusée. | [ ] | |
+| Chapitre 4 | **V6** | L'estimation est obtenue et la demande enregistrée. | [ ] | |
+| Chapitre 4 | **V7** | Le formulaire de contact fonctionne. | [ ] | |
+| Chapitre 4 | **V8** | Abonnement confirmé par e-mail. | [ ] | |
+| Chapitre 4 | **V9** | L'assistant répond. | [ ] | |
+| Chapitre 4 | **V10** | Commentaire en attente de modération. | [ ] | |
+| Chapitre 4 | **V11** | Pages légales complètes. | [ ] | |
+| Chapitre 5 | **C1** | Règle d'affectation en place. | [ ] | |
+| Chapitre 5 | **C2** | Le prospect est chez Jordan. | [ ] | |
+| Chapitre 5 | **C3** | Dossier complet. | [ ] | |
+| Chapitre 5 | **C4** | Premier contact enregistré, relance planifiée. | [ ] | |
+| Chapitre 5 | **C5** | Prospect qualifié. | [ ] | |
+| Chapitre 5 | **C6** | Opportunité créée. | [ ] | |
+| Chapitre 5 | **C7** | Le pipeline se met à jour. | [ ] | |
+| Chapitre 5 | **C8** | Devis juste, PDF présentable. | [ ] | |
+| Chapitre 5 | **C9** | Devis envoyé. | [ ] | |
+| Chapitre 5 | **C10** | Devis accepté par code. | [ ] | |
+| Chapitre 5 | **C11** | Refus et révision fonctionnent. | [ ] | |
+| Chapitre 5 | **C12** | Contrat établi. | [ ] | |
+| Chapitre 5 | **C13** | Signature enregistrée. | [ ] | |
+| Chapitre 5 | **C14** | Projet créé, Paul invité. | [ ] | |
+| Chapitre 5 | **C15** | Relance close. | [ ] | |
+| Chapitre 5 | **C16** | Conversations consultables et clôturables. | [ ] | |
+| Chapitre 6 | **K1** | Compte de Paul activé. | [ ] | |
+| Chapitre 6 | **K2** | Double authentification du client active. | [ ] | |
+| Chapitre 6 | **K3** | Déconnexion et reconnexion fonctionnent. | [ ] | |
+| Chapitre 6 | **K4** | Tableau de bord juste, limité au projet de Paul. | [ ] | |
+| Chapitre 6 | **K5** | Toutes les pages de l'espace client s'ouvrent. | [ ] | |
+| Chapitre 6 | **K6** | Application client fonctionnelle, notifications reçues. | [ ] | |
+| Chapitre 7 | **M1** | Fiche projet complète. | [ ] | |
+| Chapitre 7 | **M2** | Équipe formée. | [ ] | |
+| Chapitre 7 | **M3** | Site créé avec son périmètre. | [ ] | |
+| Chapitre 7 | **M4** | Structure du projet en place. | [ ] | |
+| Chapitre 7 | **M5** | Jalons corrects. | [ ] | |
+| Chapitre 7 | **M6** | Planning construit et figé. | [ ] | |
+| Chapitre 7 | **M7** | Analyse des aléas fonctionnelle. | [ ] | |
+| Chapitre 7 | **M8** | Budget de référence approuvé, séparation des tâches respectée. | [ ] | |
+| Chapitre 7 | **M9** | Circuit de validation et de publication d'un plan fonctionnel. | [ ] | |
+| Chapitre 7 | **M10** | Plan visible, filigrané et authentifié côté client. | [ ] | |
+| Chapitre 7 | **M11** | Maquette publiée (ou « non testée »). | [ ] | |
+| Chapitre 7 | **M12** | QR de zone imprimé. | [ ] | |
+| Chapitre 7 | **M13** | Agenda et invitations fonctionnels. | [ ] | |
+| Chapitre 7 | **M14** | Registre des risques fonctionnel. | [ ] | |
+| Chapitre 7 | **M15** | Panneau publié. | [ ] | |
+| Chapitre 8 | **H1** | Dépôt et article créés. | [ ] | |
+| Chapitre 8 | **H2** | Demande d'achat soumise. | [ ] | |
+| Chapitre 8 | **H3** | Circuit à deux niveaux et séparation des tâches respectés. | [ ] | |
+| Chapitre 8 | **H4** | Bon de commande créé. | [ ] | |
+| Chapitre 8 | **H5** | Commande envoyée. | [ ] | |
+| Chapitre 8 | **H6** | Contre-offre et confirmation fonctionnent. | [ ] | |
+| Chapitre 8 | **H7** | Expédition annoncée. | [ ] | |
+| Chapitre 8 | **H8** | Réception faite, écart signalé, stock à jour. | [ ] | |
+| Chapitre 8 | **H9** | Mouvements de stock et imputation des coûts corrects. | [ ] | |
+| Chapitre 8 | **H10** | Facture fournisseur déposée. | [ ] | |
+| Chapitre 8 | **H11** | Le rapprochement des trois pièces protège des erreurs. | [ ] | |
+| Chapitre 8 | **H12** | Ordre de paiement créé. | [ ] | |
+| Chapitre 8 | **H13** | Double regard fonctionnel. | [ ] | |
+| Chapitre 8 | **H14** | Paiement exécuté, visible du fournisseur. | [ ] | |
+| Chapitre 8 | **H15** | Notation et clôture fonctionnent. | [ ] | |
+| Chapitre 8 | **H16** | Documents légaux du fournisseur gérés. | [ ] | |
+| Chapitre 9 | **S1** | Sous-traitant qualifié, score correct. | [ ] | |
+| Chapitre 9 | **S2** | Consultation créée avec son bordereau et son DCE. | [ ] | |
+| Chapitre 9 | **S3** | Invitation et publication (avec le contrôle). | [ ] | |
+| Chapitre 9 | **S4** | Offre déposée depuis l'extranet. | [ ] | |
+| Chapitre 9 | **S5** | Offres scellées puis ouvertes, comparatif et évaluation. | [ ] | |
+| Chapitre 9 | **S6** | Négociation à trois tours historisée. | [ ] | |
+| Chapitre 9 | **S7** | Attribution réservée à la direction, prix négociés repris. | [ ] | |
+| Chapitre 9 | **S8** | Signature électronique par code fonctionnelle. | [ ] | |
+| Chapitre 9 | **S9** | Mobilisation et avance. | [ ] | |
+| Chapitre 9 | **S10** | Situation déclarée avec preuves. | [ ] | |
+| Chapitre 9 | **S11** | Constat, validation et calculs exacts. | [ ] | |
+| Chapitre 9 | **S12** | Facture conforme, validée, payée. | [ ] | |
+| Chapitre 9 | **S13** | Réclamation et litige menés jusqu'à la résolution. | [ ] | |
+| Chapitre 9 | **S14** | Notation enregistrée. | [ ] | |
+| Chapitre 10 | **T1** | Fiches employés liées aux comptes. | [ ] | |
+| Chapitre 10 | **T2** | QR du chantier généré. | [ ] | |
+| Chapitre 10 | **T3** | Auto-pointage par QR et géolocalisation. | [ ] | |
+| Chapitre 10 | **T4** | Pointage validé. | [ ] | |
+| Chapitre 10 | **T5** | Avancement saisi sur le terrain. | [ ] | |
+| Chapitre 10 | **T6** | Journal soumis depuis le terrain et validé. | [ ] | |
+| Chapitre 10 | **T7** | Photos publiées ou internes selon le choix. | [ ] | |
+| Chapitre 10 | **T8** | Rapport vocal transcrit et validé. | [ ] | |
+| Chapitre 10 | **T9** | Un seul scanner pour tous les QR du chantier. | [ ] | |
+| Chapitre 10 | **T10** | Saisie hors ligne, synchronisation et arbitrage du conflit. | [ ] | |
+| Chapitre 11 | **R1** | Cloisonnement client respecté. | [ ] | |
+| Chapitre 11 | **R2** | Décision client validée par code. | [ ] | |
+| Chapitre 11 | **R3** | Avenant chiffré, accepté par le client, approuvé, contrat mis à jour. | [ ] | |
+| Chapitre 11 | **R4** | Appel de fonds, encaissement hors plateforme, double regard, reçu client. | [ ] | |
+| Chapitre 11 | **R5** | Messagerie client ↔ équipe. | [ ] | |
+| Chapitre 11 | **R6** | Dossier Tranquillité partagé. | [ ] | |
+| Chapitre 12 | **F1** | Compte bancaire créé, numéro protégé. | [ ] | |
+| Chapitre 12 | **F2** | Petite caisse : reçu, double regard, imputation au budget. | [ ] | |
+| Chapitre 12 | **F3** | Relevé importé, rapprochement automatique, doublons écartés. | [ ] | |
+| Chapitre 12 | **F4** | Facture client émise et visible par le client. | [ ] | |
+| Chapitre 12 | **F5** | Budget et trésorerie cohérents avec l'histoire. | [ ] | |
+| Chapitre 12 | **F6** | Prévision de trésorerie prise en compte. | [ ] | |
+| Chapitre 13 | **Q1** | Demande de congé depuis le terrain, décision RH. | [ ] | |
+| Chapitre 13 | **Q2** | Paie calculée, ajustée, validation protégée. | [ ] | |
+| Chapitre 13 | **Q3** | Catalogue et remise d'EPI tracés. | [ ] | |
+| Chapitre 13 | **Q4** | Causerie sécurité enregistrée. | [ ] | |
+| Chapitre 13 | **Q5** | Inspection menée avec la grille. | [ ] | |
+| Chapitre 13 | **Q6** | Incident déclaré, analysé, corrigé, vérifié, clos. | [ ] | |
+| Chapitre 14 | **D1** | Tableau de bord direction cohérent avec l'ERP. | [ ] | |
+| Chapitre 14 | **D2** | Approbation mobile, séparation des tâches respectée. | [ ] | |
+| Chapitre 14 | **D3** | Rapport hebdomadaire généré. | [ ] | |
+| Chapitre 14 | **D4** | Supervision de la sécurité depuis le mobile. | [ ] | |
+| Chapitre 15 | **N1** | Préférences de notification respectées. | [ ] | |
+| Chapitre 15 | **N2** | Messagerie interne. | [ ] | |
+| Chapitre 15 | **N3** | Appels internes. | [ ] | |
+| Chapitre 15 | **N4** | Agenda partagé avec le client. | [ ] | |
+| Chapitre 16 | **W1** | Circuit de publication d'un article. | [ ] | |
+| Chapitre 16 | **W2** | Commentaire modéré. | [ ] | |
+| Chapitre 16 | **W3** | Redirection active. | [ ] | |
+| Chapitre 16 | **W4** | Médiathèque. | [ ] | |
+| Chapitre 17 | **X1** | Réinitialisation du mot de passe. | [ ] | |
+| Chapitre 17 | **X2** | Verrouillage et déverrouillage. | [ ] | |
+| Chapitre 17 | **X3** | Mot de passe et sessions maîtrisés. | [ ] | |
+| Chapitre 17 | **X4** | Cloisonnement des accès. | [ ] | |
+| Chapitre 17 | **X5** | Traçabilité complète. | [ ] | |
+| Chapitre 18 | **Z1** | Clôture du marché et libération de la retenue. | [ ] | |
+| Chapitre 18 | **Z2** | Avis client recueilli. | [ ] | |
+| Chapitre 18 | **Z3** | Bilan établi. | [ ] | |
+| Chapitre 18 | **Z4** | Plateforme prête pour l'exploitation. | [ ] | |
 
 ## Annexe F — Que faire si…
 
-**… un e-mail n'arrive pas ?**
-Patientez deux ou trois minutes. Regardez dans le dossier **Spam** et dans l'onglet **Promotions** de Gmail. Vérifiez que
-l'adresse « + » a été tapée sans faute. Enfin, le Gardien peut consulter le **Journal des envois** (scène N3) : si
-l'e-mail y figure « échoué », notez une anomalie.
+| Situation | Que faire |
+| --- | --- |
+| Un bouton est grisé | Un champ ★ manque ou une règle n'est pas remplie (ex. total des critères ≠ 100 %) : relisez la fenêtre. |
+| « Séparation des tâches… » | Normal : faites l'action avec l'autre personnage indiqué dans la scène. |
+| Un e-mail n'arrive pas | Regardez les **Spams** et l'onglet **Promotions** de Gmail ; attendez 2 minutes ; sinon anomalie. |
+| Le code reçu est refusé | Il expire au bout de 10 minutes : **Renvoyer le code**. |
+| Un menu n'apparaît pas | Le rôle du personnage ne le permet pas : vérifiez vos rôles (scène A9). |
+| Le téléphone « Hors zone » | Normal si vous n'êtes pas sur la parcelle : le pointage est gardé et signalé. |
+| Une liste de choix est vide | L'élément n'a pas encore été créé (ex. aucun lot avant M4) : rejouez la scène précédente. |
 
-**… le code à 6 chiffres est refusé ?**
-Vérifiez que vous lisez la bonne ligne dans l'application d'authentification (celle du bon personnage). Attendez le code
-suivant (il change toutes les 30 secondes). Si cela persiste, vérifiez que l'heure de votre téléphone est réglée en
-automatique (*Paramètres › Date et heure › Réglage automatique*).
+## Annexe G — La référence des formulaires
 
-**… le lien d'invitation a expiré ?**
-Les liens d'invitation restent valables sept jours. Passé ce délai, le Gardien envoie un nouveau lien : dans
-*Administration › Utilisateurs et rôles*, ouvrez la fiche de la personne (statut **Invité**) et cliquez sur **Renvoyer
-l'invitation**, ou, dans l'onglet **Invitations**, cliquez sur **Renvoyer** sur la ligne de son adresse. Pour Paul, qui a été
-invité automatiquement à la création de son projet, passez par l'onglet **Invitations** : il n'a pas encore de fiche dans
-l'onglet Utilisateurs.
-
-**… je suis déconnecté sans arrêt en changeant de personnage ?**
-Vous utilisez sans doute le même profil de navigateur pour deux personnages. Reprenez la section 1.3 : un profil par
-personnage.
-
-**… une page reste blanche ou affiche une erreur ?**
-Actualisez la page (touche **F5**). Si l'erreur persiste, faites une capture d'écran, notez la **référence** affichée et
-remplissez une fiche d'anomalie.
-
-**… un bouton décrit dans ce livre n'apparaît pas ?**
-Vérifiez d'abord que vous êtes bien connecté avec le bon personnage : beaucoup de boutons n'apparaissent qu'aux rôles
-autorisés (c'est voulu). Vérifiez ensuite que le dossier est dans le bon statut (par exemple, le bouton **Valider** d'une
-facture n'existe que tant qu'elle est en brouillon). Si tout est correct, notez une anomalie.
-
-**… l'application Terrain n'envoie pas mes saisies ?**
-Vérifiez que le mode avion est bien coupé, puis tirez l'écran d'accueil vers le bas pour forcer l'envoi. Ne vous
-déconnectez jamais avant que tout soit envoyé : les saisies non envoyées sont effacées à la déconnexion.
-
-**… le pointage est refusé alors que je suis sur place ?**
-Vérifiez que la localisation du téléphone est activée et autorisée pour GLOBUS Terrain, et que les coordonnées du site
-(scène M3) correspondent bien à l'endroit où vous vous trouvez.
+Le document `docs/FORMULAIRES.md` liste **tous** les formulaires de la plateforme (309), écran par écran, avec pour
+chacun : le bouton qui l'ouvre, le titre de la fenêtre, chaque champ dans l'ordre, s'il est obligatoire, le type de
+saisie (liste, date, nombre et ses limites), le texte d'aide affiché et le bouton de validation. Il est généré à partir
+du code de la plateforme (`npm run doc:forms`) : il est donc toujours à jour.

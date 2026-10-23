@@ -116,9 +116,23 @@ def text_col(nullable: bool = True) -> Any:
 
 
 def str_col(
-    length: int = 255, *, nullable: bool = True, index: bool = False, unique: bool = False, default: Any = None
+    length: int = 255,
+    *,
+    nullable: bool = True,
+    index: bool = False,
+    unique: bool = False,
+    default: Any = None,
+    choices: tuple[str, ...] | None = None,
 ) -> Any:
-    return mapped_column(String(length), nullable=nullable, index=index, unique=unique, default=default)
+    """Colonne texte ; `choices` : valeurs autorisées (liste de choix à la saisie, autre valeur refusée)."""
+    return mapped_column(
+        String(length),
+        nullable=nullable,
+        index=index,
+        unique=unique,
+        default=default,
+        info={"choices": choices} if choices else {},
+    )
 
 
 def money_col(*, nullable: bool = False, default: Any = Decimal("0")) -> Any:

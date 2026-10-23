@@ -119,6 +119,9 @@ def test_subcontracting_quote_contract_situation_invoice_payment_dispute(client:
     assert tender.status_code == 201, tender.text
     tender = tender.json()
     assert client.post(f"{API}/tenders/{tender['id']}/publish", headers=cph).json()["error"]["code"] == "NO_INVITATION"
+    # La liste « Inviter » propose les entreprises qualifiées ou approuvées (plusieurs statuts à la fois).
+    eligible = client.get(f"{API}/subcontractors", headers=cph, params={"status": "qualified,approved"}).json()
+    assert sub["id"] in {s["id"] for s in eligible["items"]}
     client.post(f"{API}/tenders/{tender['id']}/invitations", headers=cph, json={"subcontractor_ids": [sub["id"]]})
     published = client.post(f"{API}/tenders/{tender['id']}/publish", headers=cph)
     assert published.status_code == 200 and published.json()["status"] == "published"
@@ -271,6 +274,8 @@ def test_subcontracting_quote_contract_situation_invoice_payment_dispute(client:
     assert Decimal(checked["advance_recovered"]) == Decimal("407478.26")
     assert Decimal(checked["retention_amount"]) == Decimal("101869.57")
     assert Decimal(checked["net_amount"]) == gross - Decimal("407478.26") - Decimal("101869.57")
+    # Montant attendu de la facture (marché sans TVA) : le net à payer, affiché et pré-rempli dans les formulaires.
+    assert Decimal(checked["invoice_amount_expected"]) == Decimal(checked["net_amount"])
     validated = client.post(f"{API}/situations/{situation['id']}/validate", headers=cph)
     assert validated.status_code == 200 and validated.json()["status"] == "validated"
     retention = db.execute(select(Retention).where(Retention.subcontract_id == uuid.UUID(contract["id"]))).scalar_one()
@@ -293,10 +298,17 @@ def test_subcontracting_quote_contract_situation_invoice_payment_dispute(client:
     )
     assert invoice.status_code == 201, invoice.text
     invoice = invoice.json()
+    # Les filtres de l'ERP utilisent les statuts réels (reçue → bon à payer), plusieurs statuts à la fois.
+    received = client.get(f"{API}/subcontractor-invoices", headers=fh, params={"status": "received"}).json()
+    assert invoice["id"] in {i["id"] for i in received["items"]}
     assert (
         client.post(f"{API}/subcontractor-invoices/{invoice['id']}/validate", headers=fh).json()["status"]
         == "approved_for_payment"
     )
+    payable = client.get(
+        f"{API}/subcontractor-invoices", headers=fh, params={"status": "approved_for_payment,partially_paid"}
+    ).json()
+    assert invoice["id"] in {i["id"] for i in payable["items"]}
     payment = client.post(
         f"{API}/payments/outgoing",
         headers={**fh, **_idem()},

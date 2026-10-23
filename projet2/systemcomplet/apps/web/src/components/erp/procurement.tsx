@@ -49,7 +49,10 @@ export function RequestsList({ projectId, mine }: { projectId?: string; mine?: b
           fixed: projectId ? { project_id: projectId } : undefined,
           exclude: ["source", "budget_line_id"],
           initial: { source: "web" },
-          fields: { lines: { columns: ["stock_item_id", "description", "quantity", "unit", "estimated_unit_price", "notes"] } },
+          fields: {
+            justification: { widget: "textarea", requiredIf: (v) => !!v.submit, help: "Obligatoire pour soumettre : à quoi sert l'achat (ex. « Coulage des fondations »)." },
+            lines: { columns: ["stock_item_id", "description", "quantity", "unit", "estimated_unit_price", "notes"] },
+          },
         },
       }}
     />

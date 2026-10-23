@@ -116,7 +116,7 @@ export function CrmDashboard() {
 
 /** Offre du site (page « offre » d'un univers) : liste lue sur les pages publiques, donc accessible aux commerciaux
  * sans droit sur le CMS. La valeur est l'adresse courte (slug) de l'offre ; filtrée par univers quand il est choisi. */
-function OfferSelect({ universe, value, onChange }: { universe?: string | null; value: unknown; onChange: (slug: string | null) => void }) {
+export function OfferSelect({ universe, value, onChange }: { universe?: string | null; value: unknown; onChange: (slug: string | null) => void }) {
   const universes = useApi<Row[]>("/public/universes");
   const keys = (universes.data ?? []).filter((u) => !universe || u.key === universe).map((u) => String(u.slug));
   const [offers, setOffers] = useState<{ value: string; label: string }[]>([]);
@@ -690,7 +690,7 @@ export function OpportunitiesBoard() {
           endpoint="POST /crm/opportunities"
           initial={{ stage: "qualification", probability: 20, currency: "XAF" }}
           exclude={["stage", "probability", "lost_reason"]}
-          fields={{ universe: { options: opts(UNIVERSES) }, owner_id: { ref: "users" } }}
+          fields={{ universe: { options: opts(UNIVERSES) }, offer_slug: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> }, owner_id: { ref: "users" } }}
           onCancel={() => setCreating(false)}
           onSuccess={() => {
             setCreating(false);
@@ -706,7 +706,7 @@ export function OpportunitiesBoard() {
             initial={editing}
             partial
             exclude={["stage", "probability", "lost_reason", "lead_id"]}
-            fields={{ universe: { options: opts(UNIVERSES) }, owner_id: { ref: "users" } }}
+            fields={{ universe: { options: opts(UNIVERSES) }, offer_slug: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> }, owner_id: { ref: "users" } }}
             onCancel={() => setEditing(null)}
             onSuccess={() => {
               setEditing(null);

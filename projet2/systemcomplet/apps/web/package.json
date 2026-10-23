@@ -17,6 +17,7 @@
     "check:links": "node scripts/check-links.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:forms": "node scripts/check-forms.mjs",
+    "doc:forms": "node scripts/forms-inventory.mjs",
     "verify": "npm run typecheck && npm run lint && npm run check:mocks && npm run check:links && npm run check:docs && npm run check:forms && npm run build"
   },
   "dependencies": {

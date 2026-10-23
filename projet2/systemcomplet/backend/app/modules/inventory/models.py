@@ -29,7 +29,7 @@ class Warehouse(UUIDPk, Timestamps, Base):
 
     code: Mapped[str] = str_col(30, nullable=False, unique=True)
     name: Mapped[str] = str_col(200, nullable=False)
-    kind: Mapped[str] = str_col(20, nullable=False, default="central")  # central / site
+    kind: Mapped[str] = str_col(20, nullable=False, default="central", choices=("central", "site"))
     site_id: Mapped[uuid.UUID | None] = fk("sites.id")
     project_id: Mapped[uuid.UUID | None] = fk("projects.id")
     address: Mapped[str | None] = text_col()

@@ -32,7 +32,7 @@ const QUALIFICATION_CRITERIA = [
 ];
 const TENDER_STATUSES = ["draft", "published", "closed", "awarded", "cancelled"];
 const CONTRACT_STATUSES = ["draft", "sent", "signed", "mobilized", "in_progress", "completed", "closed", "terminated"];
-const SITUATION_STATUSES = ["draft", "submitted", "field_checked", "validated", "rejected", "invoiced"];
+const SITUATION_STATUSES = ["draft", "submitted", "field_checked", "validated", "rejected", "invoiced", "paid", "disputed"];
 
 /* ----------------------------------------------------------------------------- sous-traitants */
 
@@ -611,9 +611,15 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
             <thead className="text-xs text-muted">
               <tr>
                 <th className="py-1 text-left">Code</th>
-                <th className="py-1 text-left">Désignation</th>
+                <th className="py-1 text-left">
+                  Désignation
+                  <span className="ml-0.5 text-red-600" aria-hidden="true">*</span>
+                </th>
                 <th className="py-1 text-left">Unité</th>
-                <th className="py-1 text-left">Quantité</th>
+                <th className="py-1 text-left">
+                  Quantité
+                  <span className="ml-0.5 text-red-600" aria-hidden="true">*</span>
+                </th>
                 <th />
               </tr>
             </thead>
@@ -1128,7 +1134,7 @@ export function TenderDetail({ id }: { id: string }) {
           <Field label="Corps de métier" help="Restreint les entreprises proposées ; celles déjà ajoutées restent sélectionnées.">
             <Select value={inviteTrade} onChange={(e) => setInviteTrade(e.target.value)} options={tradeOptions()} placeholder="Tous les corps de métier" />
           </Field>
-          <MultiRefSelect source={{ ...REFS.subcontractors, query: { status: "approved", ...(inviteTrade ? { trade: inviteTrade } : {}) } }} value={inviteIds} onChange={setInviteIds} placeholder="Ajouter une entreprise qualifiée…" />
+          <MultiRefSelect source={{ ...REFS.subcontractors, query: { status: "qualified,approved", ...(inviteTrade ? { trade: inviteTrade } : {}) } }} value={inviteIds} onChange={setInviteIds} placeholder="Ajouter une entreprise qualifiée…" />
         </div>
       </Modal>
       <Modal open={dialog === "evaluate" && !!target} onClose={() => setDialog(null)} title={`Évaluation technique — ${target?.subcontractor ?? ""}`}>
@@ -1749,7 +1755,7 @@ export function SituationDetail({ id }: { id: string }) {
         onClose={() => setDialog(null)}
         title="Dérogation au montant du marché"
         reasonLabel="Justification (tracée et auditée)"
-        reasonMin={5}
+        reasonMin={15}
         tone="accent"
         onConfirm={async (reason) => {
           sit.setData(await api(`/situations/${id}/derogation`, { method: "POST", body: { reason } }));
@@ -1770,7 +1776,7 @@ export function SituationDetail({ id }: { id: string }) {
         }}
       />
       <Modal open={dialog === "invoice"} onClose={() => setDialog(null)} title="Facture du sous-traitant">
-        <SchemaForm endpoint="POST /situations/{situation_id}/invoice" params={{ situation_id: id }} initial={{ amount: s.net_amount }} fields={{ amount: { help: "Doit correspondre au net à payer de la situation (TVA incluse le cas échéant)." } }} onCancel={() => setDialog(null)} onSuccess={() => { setDialog(null); void sit.reload(); toast.success("Facture enregistrée"); }} columns={1} />
+        <SchemaForm endpoint="POST /situations/{situation_id}/invoice" params={{ situation_id: id }} initial={{ amount: s.invoice_amount_expected ?? s.net_amount }} fields={{ amount: { help: `Montant attendu : ${money(s.invoice_amount_expected ?? s.net_amount)} (net à payer de la situation, plus la TVA du marché le cas échéant).` } }} onCancel={() => setDialog(null)} onSuccess={() => { setDialog(null); void sit.reload(); toast.success("Facture enregistrée"); }} columns={1} />
       </Modal>
     </div>
   );
@@ -1795,7 +1801,7 @@ export function SubcontractorInvoices() {
           { key: "amount_frozen", label: "Gelé (litige)", format: "money", align: "right", hideOnMobile: true },
           { key: "status", label: "Statut", format: "status" },
         ],
-        filters: [{ key: "status", label: "Statut", options: ["submitted", "validated", "rejected", "partially_paid", "paid"].map((v) => ({ value: v, label: optionLabel(v) })) }],
+        filters: [{ key: "status", label: "Statut", options: ["received", "approved_for_payment", "partially_paid", "paid", "disputed", "rejected"].map((v) => ({ value: v, label: optionLabel(v) })) }],
         detailPath: (r) => `/subcontractor-invoices/${r.id}`,
         detail: (r) => (
           <div className="space-y-3">
@@ -1819,8 +1825,8 @@ export function SubcontractorInvoices() {
           </div>
         ),
         actions: [
-          { key: "validate", label: "Valider (bon à payer)", path: (r) => `/subcontractor-invoices/${r.id}/validate`, when: (r) => r.status === "submitted", perms: ["billing:validate"], confirm: "Valider cette facture pour paiement ?" },
-          { key: "reject", label: "Rejeter", path: (r) => `/subcontractor-invoices/${r.id}/reject`, when: (r) => r.status === "submitted", perms: ["billing:validate"], reasonLabel: "Motif du rejet", tone: "danger" },
+          { key: "validate", label: "Valider (bon à payer)", path: (r) => `/subcontractor-invoices/${r.id}/validate`, when: (r) => r.status === "received", perms: ["billing:validate"], confirm: "Valider cette facture pour paiement ?" },
+          { key: "reject", label: "Rejeter", path: (r) => `/subcontractor-invoices/${r.id}/reject`, when: (r) => r.status === "received", perms: ["billing:validate"], reasonLabel: "Motif du rejet", tone: "danger" },
         ],
       }}
     />
@@ -2199,7 +2205,7 @@ export function DisputeDetail({ id }: { id: string }) {
         </div>
       </Modal>
       <Modal open={dialog === "decision"} onClose={() => setDialog(null)} title="Décision">
-        <SchemaForm endpoint="POST /disputes/{dispute_id}/decision" params={{ dispute_id: id }} initial={{ amount_accepted: 0, amount_refused: d.amount_disputed }} fields={{ file_ids: { hidden: true } }} onCancel={() => setDialog(null)} onSuccess={(res: Row) => { dispute.setData(res); setDialog(null); }} columns={1} />
+        <SchemaForm endpoint="POST /disputes/{dispute_id}/decision" params={{ dispute_id: id }} initial={{ amount_accepted: 0, amount_refused: d.amount_disputed }} fields={{ file_ids: { hidden: true }, amount_refused: { help: `Accepté + refusé = montant contesté (${money(d.amount_disputed)}).` }, summary: { help: "Motivation détaillée de la décision : 20 caractères minimum." } }} onCancel={() => setDialog(null)} onSuccess={(res: Row) => { dispute.setData(res); setDialog(null); }} columns={1} />
       </Modal>
       <ConfirmDialog
         open={dialog === "resolve"}

@@ -279,3 +279,136 @@ def test_too_long_text_is_a_clear_field_error_not_a_server_error(client: Any, db
     assert resp.status_code == 422, resp.text
     fields = {f["field"] for f in resp.json()["error"]["details"]}
     assert "direction" in fields
+
+
+def test_staff_gets_the_company_and_partners_need_their_organization(client: Any, db: Any) -> None:
+    from app.modules.identity.models import Organization, User
+
+    ah = _admin(client, db)
+    staff = client.post(
+        f"{API}/users",
+        headers=ah,
+        json={
+            "email": f"grace-{uuid.uuid4().hex[:5]}@example.com",
+            "first_name": "Grâce",
+            "last_name": "TEST-EWANE",
+            "role_codes": ["DIRECTION"],
+            "send_invitation": False,
+        },
+    )
+    assert staff.status_code == 201, staff.text
+    user = db.get(User, uuid.UUID(staff.json()["id"]))
+    org = db.get(Organization, user.organization_id)
+    assert org is not None and org.kind == "internal"
+
+    missing = client.post(
+        f"{API}/users",
+        headers=ah,
+        json={
+            "email": f"martin-{uuid.uuid4().hex[:5]}@example.com",
+            "first_name": "Martin",
+            "last_name": "TEST-KAMGA",
+            "role_codes": ["FOURNISSEUR"],
+            "send_invitation": False,
+        },
+    )
+    assert missing.status_code == 422 and missing.json()["error"]["code"] == "ORGANIZATION_REQUIRED"
+    supplier_org = _org(db, "supplier")
+    ok = client.post(
+        f"{API}/users",
+        headers=ah,
+        json={
+            "email": f"martin-{uuid.uuid4().hex[:5]}@example.com",
+            "first_name": "Martin",
+            "last_name": "TEST-KAMGA",
+            "role_codes": ["FOURNISSEUR"],
+            "organization_id": str(supplier_org.id),
+            "send_invitation": False,
+        },
+    )
+    assert ok.status_code == 201, ok.text
+
+
+def test_staff_account_without_organization_is_still_internal(db: Any) -> None:
+    from app.core.deps import org_kind_of
+
+    user = make_user(db, roles=["CHEF_PROJET"])
+    user.organization_id = None
+    db.commit()
+    db.refresh(user)
+    assert org_kind_of(user) == "internal"
+
+
+def test_a_budget_is_approved_by_someone_else_than_its_author(client: Any, db: Any) -> None:
+    ah = _admin(client, db)
+    project = client.post(
+        f"{API}/projects",
+        headers=ah,
+        json={"name": "Projet budget", "start_planned": date.today().isoformat()},
+    ).json()
+    budget = client.post(
+        f"{API}/budgets",
+        headers=ah,
+        json={
+            "project_id": project["id"],
+            "label": "Budget de référence",
+            "lines": [{"label": "Gros œuvre", "amount": 1000000}],
+        },
+    )
+    assert budget.status_code == 201, budget.text
+    own = client.post(f"{API}/budgets/{budget.json()['id']}/approve", headers=ah)
+    assert own.status_code == 422 and own.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
+    _director, dh = as_role(client, db, "DIRECTION")
+    other = client.post(f"{API}/budgets/{budget.json()['id']}/approve", headers=dh)
+    assert other.status_code == 200, other.text
+
+
+def test_petty_cash_category_is_checked_and_lands_in_a_budget_cost_category(db: Any) -> None:
+    """Rubriques de petite caisse (transport, carburant…) : liste fermée, ventilée dans les catégories du budget."""
+    from decimal import Decimal
+
+    import pytest
+
+    from app.core.errors import BusinessRuleError
+    from app.modules.finance.models import COST_CATEGORIES, PETTY_CASH_CATEGORIES, PettyCashFund
+    from app.modules.finance.service import petty_cash_movement
+
+    assert set(PETTY_CASH_CATEGORIES.values()) <= set(COST_CATEGORIES)
+    user = make_user(db, email=f"caisse-{uuid.uuid4().hex[:6]}@example.com", roles=["FINANCE"])
+    fund = PettyCashFund(name="Caisse test", ceiling=Decimal("100000"), balance=Decimal("50000"))
+    db.add(fund)
+    db.flush()
+    common = {"kind": "in", "amount": Decimal("1000"), "purpose": "Appoint", "lot_id": None, "receipt_file_id": None}
+    with pytest.raises(BusinessRuleError):
+        petty_cash_movement(db, fund, category="cadeaux", user_id=user.id, transaction_date=date.today(), **common)
+    tx = petty_cash_movement(db, fund, category="carburant", user_id=user.id, transaction_date=date.today(), **common)
+    assert tx.category == "carburant" and PETTY_CASH_CATEGORIES[tx.category] == "frais_generaux"
+
+
+def test_change_order_cost_impact_is_the_total_of_its_priced_lines(client: Any, db: Any) -> None:
+    """Avenant chiffré : l'impact coût est le total des lignes (aucune recopie manuelle à oublier)."""
+    from decimal import Decimal
+
+    from app.modules.projects.models import Project
+
+    headers = _admin(client, db)
+    project = Project(code=f"AV-{uuid.uuid4().hex[:6]}", name="Projet avenant", status="active")
+    db.add(project)
+    db.commit()
+    res = client.post(
+        f"{API}/change-orders",
+        headers=headers,
+        json={
+            "project_id": str(project.id),
+            "title": "Carrelage supplémentaire",
+            "cost_impact": 0,
+            "lines": [
+                {"designation": "Carrelage séjour", "quantity": 20, "unit": "m²", "unit_price": 15000},
+                {"designation": "Plinthes", "quantity": 1, "unit": "forfait", "unit_price": 50000},
+            ],
+        },
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert Decimal(body["cost_impact"]) == Decimal("350000")
+    assert [Decimal(line["amount"]) for line in body["lines"]] == [Decimal("300000"), Decimal("50000")]

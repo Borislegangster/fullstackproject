@@ -310,6 +310,7 @@ export function UsersList() {
             },
             project_ids: { span: 2, label: "Projets", render: ({ value, onChange }) => <MultiRefSelect source={REFS.projects} value={value ?? []} onChange={onChange} /> },
             trade: personTradeField,
+            organization_id: { ref: "organizations", label: "Organisation", help: "Laisser vide pour le personnel de l'entreprise (rattaché automatiquement). Obligatoire pour un fournisseur ou un sous-traitant : son organisation (de son type), qui ouvre sa fiche dans l'extranet." },
             project_role: { options: ["membre", "chef_projet", "conducteur_travaux", "chef_chantier", "ingenieur", "architecte", "bim_manager", "acheteur", "qhse", "comptable", "client", "partenaire"].map((v) => ({ value: v, label: optionLabel(v) })) },
             disciplines: disciplinesField,
             message: { widget: "textarea", help: "Message personnel joint à l'invitation." },

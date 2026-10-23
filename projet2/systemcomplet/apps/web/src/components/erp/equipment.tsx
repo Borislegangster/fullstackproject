@@ -235,7 +235,7 @@ export function EquipmentDetail({ id }: { id: string }) {
                 </Button>
               ) : undefined,
               actions: [
-                { key: "start", label: "Démarrer", path: (r) => `/maintenance-orders/${r.id}/start`, when: (r) => r.status === "scheduled", perms: ["maintenance:manage", "equipment:write"], confirm: "Démarrer l'intervention (matériel indisponible) ?" },
+                { key: "start", label: "Démarrer", path: (r) => `/maintenance-orders/${r.id}/start`, when: (r) => r.status === "planned", perms: ["maintenance:manage", "equipment:write"], confirm: "Démarrer l'intervention (matériel indisponible) ?" },
                 { key: "complete", label: "Terminer", endpoint: "POST /maintenance-orders/{order_id}/complete", when: (r) => r.status === "in_progress", perms: ["maintenance:manage", "equipment:write"] },
               ],
             }}

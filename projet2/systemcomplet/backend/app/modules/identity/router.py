@@ -787,6 +787,7 @@ def create_user(
     from app.modules.bim.service import ensure_known_disciplines, global_disciplines
 
     ensure_known_disciplines(data.disciplines, global_disciplines(db))
+    data.organization_id = service.organization_for_roles(db, data.role_codes, data.organization_id)
     inviter = db.get(User, principal.id)
     assert inviter is not None
     user = User(

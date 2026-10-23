@@ -4,6 +4,7 @@ filigrané, comparaison, recherche, liens, journal d'accès, vérification publi
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
@@ -201,7 +202,7 @@ class DocumentPatch(BaseModel):
     client_visible: bool | None = None
     partner_visible: bool | None = None
     tags: list[str] | None = None
-    retention_until: str | None = None
+    retention_until: date | None = None
 
 
 @router.patch("/documents/{document_id}")

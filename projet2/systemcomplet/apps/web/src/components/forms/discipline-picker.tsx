@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/form";
+import { Checkbox, controlClass } from "@/components/ui/form";
 import { Alert, Skeleton } from "@/components/ui/primitives";
 import { useApi } from "@/lib/hooks";
 
@@ -31,5 +31,24 @@ export function DisciplinesPicker({ path, value, onChange }: { path: string; val
         <Checkbox key={d.key} label={d.name} checked={current.includes(d.key)} onChange={(on) => onChange(on ? [...current, d.key] : current.filter((x) => x !== d.key))} />
       ))}
     </div>
+  );
+}
+
+/** Une discipline à choisir dans le référentiel (lot, issue, zone, règle de détection) ; une valeur hors liste déjà
+ * enregistrée reste affichée. */
+export function DisciplineSelect({ value, onChange, path = "/bim/disciplines", id, invalid }: { value: unknown; onChange: (key: string) => void; path?: string; id?: string; invalid?: boolean }) {
+  const list = useApi<Discipline[]>(path);
+  const current = value ? String(value) : "";
+  const options = [...(list.data ?? [])];
+  if (current && !options.some((d) => d.key === current)) options.push({ key: current, name: current });
+  return (
+    <select id={id} className={controlClass} aria-invalid={invalid || undefined} value={current} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{list.loading && !list.data ? "Chargement…" : "Non précisée"}</option>
+      {options.map((d) => (
+        <option key={d.key} value={d.key}>
+          {d.name}
+        </option>
+      ))}
+    </select>
   );
 }

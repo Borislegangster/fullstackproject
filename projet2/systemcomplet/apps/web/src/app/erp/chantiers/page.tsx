@@ -1,5 +1,6 @@
 "use client";
 
+import { OfferSelect } from "@/components/erp/crm";
 import { ResourceView, CellLink } from "@/components/erp/resource";
 import { Progress } from "@/components/ui/primitives";
 import { toNumber } from "@/lib/format";
@@ -35,7 +36,12 @@ export default function ProjectsPage() {
           endpoint: "POST /projects",
           label: "Nouveau projet",
           perms: ["projects:write"],
-          fields: { client_organization_id: { ref: "clientOrganizations" }, settings: { hidden: true }, tags: { span: 2 } },
+          fields: {
+            client_organization_id: { ref: "clientOrganizations" },
+            offer_code: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> },
+            settings: { hidden: true },
+            tags: { span: 2 },
+          },
         },
       }}
     />

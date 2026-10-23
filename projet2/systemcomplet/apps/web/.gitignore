@@ -6,6 +6,7 @@ out
 .env.local
 *.tsbuildinfo
 .openapi.json
+.forms-inventory
 .routes.txt
 .bodies.txt
 .gets.txt

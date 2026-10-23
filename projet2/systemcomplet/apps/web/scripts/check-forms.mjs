@@ -106,6 +106,9 @@ for (const file of files) {
       const ep = attrs.endpoint;
       if (ep && ts.isStringLiteral(ep)) {
         forms.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart()).line + 1, endpoint: ep.text, fields: attrs.fields, exclude: attrs.exclude, fixed: attrs.fixed, only: attrs.only });
+      } else if (attrs.schema && ts.isStringLiteral(attrs.schema)) {
+        // Formulaire déclaré par son schéma (enregistrement via onSubmit)
+        forms.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart()).line + 1, endpoint: `schema:${attrs.schema.text}`, schema: attrs.schema.text, fields: attrs.fields, exclude: attrs.exclude, fixed: attrs.fixed, only: attrs.only });
       }
     }
     ts.forEachChild(node, visit);
@@ -115,7 +118,7 @@ for (const file of files) {
 
 const problems = [];
 for (const form of forms) {
-  const body = BODIES[form.endpoint];
+  const body = form.schema ? { schema: form.schema } : BODIES[form.endpoint];
   if (!body) continue;
   const defs = SCHEMAS[body.schema] ?? [];
   const cfg = keysOf(form.fields);
@@ -135,7 +138,10 @@ for (const form of forms) {
     const isIdList = def.kind === "list" && def.itemKind === "uuid";
     const isJson = def.kind === "json" || (def.kind === "list" && (def.itemKind === "json" || def.itemKind === "object"));
     let issue = null;
-    if (isId && !FIELD_REFS.has(name)) issue = "identifiant sans sélecteur";
+    // Adresse courte d'un contenu existant (offre, service…) : à choisir dans une liste, jamais à taper.
+    const isSlugRef = def.kind === "string" && /(_slug|^offer_code)$/.test(name);
+    if (isSlugRef) issue = "adresse technique (slug) à taper";
+    else if (isId && !FIELD_REFS.has(name)) issue = "identifiant sans sélecteur";
     else if (isIdList && !LIST_REFS.has(name)) issue = "liste d'identifiants sans sélecteur";
     else if (isJson) issue = "JSON sans éditeur";
     if (issue && !cfg.dynamic) problems.push(`${relative(WEB, form.file).replace(/\\/g, "/")}:${form.line}  ${form.endpoint}  ${name} — ${issue}`);

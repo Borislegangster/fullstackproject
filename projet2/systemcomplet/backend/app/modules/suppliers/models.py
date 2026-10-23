@@ -80,7 +80,9 @@ class SupplierContact(UUIDPk, Base):
     __tablename__ = "supplier_contacts"
 
     supplier_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("suppliers.id", ondelete="CASCADE"), index=True)
-    kind: Mapped[str] = str_col(20, nullable=False, default="commercial")  # commercial / logistique / facturation
+    kind: Mapped[str] = str_col(
+        20, nullable=False, default="commercial", choices=("commercial", "logistique", "facturation", "direction")
+    )
     name: Mapped[str] = str_col(200, nullable=False)
     email: Mapped[str | None] = str_col(254)
     phone: Mapped[str | None] = str_col(40)
@@ -159,8 +161,8 @@ class SupplierIncident(UUIDPk, Timestamps, Base):
 
     supplier_id: Mapped[uuid.UUID] = fk("suppliers.id", nullable=False, ondelete="CASCADE")
     kind: Mapped[str] = str_col(
-        30, nullable=False
-    )  # late / damaged / wrong_product / missing / price / invoice / return
+        30, nullable=False, choices=("late", "damaged", "wrong_product", "missing", "price", "invoice", "return")
+    )
     purchase_order_id: Mapped[uuid.UUID | None] = fk("purchase_orders.id")
     goods_receipt_id: Mapped[uuid.UUID | None] = fk("goods_receipts.id")
     description: Mapped[str | None] = text_col()

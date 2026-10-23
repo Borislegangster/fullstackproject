@@ -189,8 +189,8 @@ def list_subcontractors(
 ) -> dict[str, Any]:
     access.require("subcontracting:read")
     stmt = select(Subcontractor).where(Subcontractor.deleted_at.is_(None))
-    if status:
-        stmt = stmt.where(Subcontractor.status == status)
+    if status:  # plusieurs statuts séparés par des virgules (ex. « qualified,approved »)
+        stmt = stmt.where(Subcontractor.status.in_([v.strip() for v in status.split(",") if v.strip()]))
     if trade:
         stmt = stmt.where(cast(Subcontractor.trades, JSONB).contains([trade]))
     if city:
@@ -896,6 +896,8 @@ class AwardIn(BaseModel):
     advance_amount: Decimal = Field(default=Decimal("0"), ge=0)
     advance_recovery_pct: Decimal = Field(default=Decimal("0"), ge=0, le=100)
     penalty_per_day: Decimal = Field(default=Decimal("0"), ge=0)
+    penalty_cap_pct: Decimal = Field(default=Decimal("10"), ge=0, le=100)  # plafond des pénalités (% du marché)
+    tax_rate: Decimal = Field(default=Decimal("0"), ge=0, le=100)
     start_date: date | None = None
     end_date: date | None = None
     terms: str | None = Field(default=None, max_length=50000)
@@ -923,6 +925,8 @@ def award(
         advance_amount=data.advance_amount,
         advance_recovery_pct=data.advance_recovery_pct,
         penalty_per_day=data.penalty_per_day,
+        penalty_cap_pct=data.penalty_cap_pct,
+        tax_rate=data.tax_rate,
         start_date=data.start_date,
         end_date=data.end_date,
         terms=data.terms,
@@ -1249,6 +1253,7 @@ def situation_out(db: Session, situation: Situation) -> dict[str, Any]:
             }
             if contract
             else None,
+            "invoice_amount_expected": service.expected_invoice_amount(situation, contract) if contract else None,
             "lines": [
                 {
                     **serialize(line),
@@ -1473,8 +1478,9 @@ def list_invoices(
 ) -> dict[str, Any]:
     access.require("billing:read")
     stmt = access.filter_by_project(select(SubcontractorInvoice), SubcontractorInvoice.project_id)
+    if status:  # plusieurs statuts séparés par des virgules (ex. « approved_for_payment,partially_paid »)
+        stmt = stmt.where(SubcontractorInvoice.status.in_([v.strip() for v in status.split(",") if v.strip()]))
     for col, value in (
-        (SubcontractorInvoice.status, status),
         (SubcontractorInvoice.subcontractor_id, subcontractor_id),
         (SubcontractorInvoice.project_id, project_id),
     ):

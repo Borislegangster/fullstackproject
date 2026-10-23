@@ -16,7 +16,7 @@ import { Alert, Badge, Button, Card, CardHeader, DescriptionList, EmptyState, Pa
 import { useToast } from "@/components/ui/toast";
 import { api, apiUrl, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { dateTime, fileSize } from "@/lib/format";
+import { date, dateTime, fileSize } from "@/lib/format";
 import { useApi, useDebounce } from "@/lib/hooks";
 import { optionLabel } from "@/lib/labels";
 import { REFS } from "@/lib/refs";
@@ -604,7 +604,7 @@ export function DocumentDetail({ id }: { id: string }) {
               { label: "Description", value: d.description },
               { label: "Projet", value: d.project_id ? <CellLink href={`/erp/chantiers/${d.project_id}`}>Ouvrir le chantier</CellLink> : "Document général" },
               { label: "Mots-clés", value: (d.tags ?? []).join(", ") || "—" },
-              { label: "Conservation jusqu'au", value: d.retention_until ?? "—" },
+              { label: "Conservation jusqu'au", value: d.retention_until ? date(d.retention_until) : "—" },
               { label: "Version publiée", value: d.published_version?.label ?? "Aucune" },
               { label: "Créé le", value: dateTime(d.created_at) },
             ]}
@@ -626,7 +626,7 @@ export function DocumentDetail({ id }: { id: string }) {
             folder_id: { ref: { ...REFS.folders, dependsOn: undefined, query: d.project_id ? { project_id: d.project_id } : undefined } },
             tags: { widget: "tags" },
             client_visible: { help: "Publie la version en vigueur dans l'espace client (notification envoyée)." },
-            retention_until: { help: "Date AAAA-MM-JJ" },
+            retention_until: { help: "Date jusqu'à laquelle le document doit être conservé (archivage légal)." },
           }}
           onCancel={() => setDialog(null)}
           onSuccess={(res: Row) => {
