@@ -319,6 +319,26 @@ class OrganizationIn(BaseModel):
     is_active: bool = True
 
 
+class OrganizationPatch(BaseModel):
+    """Modification partielle : seuls les champs envoyés changent (les autres gardent leur valeur)."""
+
+    name: str | None = Field(default=None, min_length=2, max_length=200)
+    kind: str | None = Field(default=None, pattern="^(internal|client|supplier|subcontractor|partner)$")
+    legal_name: str | None = None
+    legal_form: str | None = None
+    tax_id: str | None = None
+    trade_register: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    whatsapp: str | None = None
+    address: str | None = None
+    city: str | None = None
+    country: str | None = None
+    website: str | None = None
+    notes: str | None = None
+    is_active: bool | None = None
+
+
 class OrganizationOut(ORM):
     id: uuid.UUID
     name: str

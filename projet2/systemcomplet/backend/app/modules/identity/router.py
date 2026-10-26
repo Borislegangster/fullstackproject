@@ -69,6 +69,7 @@ from app.modules.identity.schemas import (
     MfaVerifyIn,
     OrganizationIn,
     OrganizationOut,
+    OrganizationPatch,
     PasswordChangeIn,
     PasswordForgotIn,
     PasswordResetIn,
@@ -1262,7 +1263,7 @@ def get_organization(
 @admin.patch("/organizations/{org_id}", response_model=OrganizationOut)
 def update_organization(
     org_id: uuid.UUID,
-    data: OrganizationIn,
+    data: OrganizationPatch,
     principal: Principal = Depends(require("users:write")),
     db: Session = Depends(get_db),
 ) -> Organization:
@@ -1270,7 +1271,11 @@ def update_organization(
     if org is None:
         raise NotFound("Organisation introuvable")
     before = audit.snapshot(org)
-    for key, value in data.model_dump().items():
+    changes = data.model_dump(exclude_unset=True)
+    for key in ("name", "kind", "is_active"):  # jamais vidés : obligatoires en base
+        if key in changes and changes[key] is None:
+            changes.pop(key)
+    for key, value in changes.items():
         setattr(org, key, value)
     audit.record(
         db,

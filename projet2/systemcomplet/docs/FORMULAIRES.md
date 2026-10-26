@@ -1334,8 +1334,8 @@ Bouton **Modifier (dans la fiche ouverte depuis la liste)** · fenêtre « fiche
 
 | # | Champ | Obligatoire | Saisie | Aide affichée |
 | --- | --- | --- | --- | --- |
-| 1 | Nom | **Oui** | texte (200 car. max, 2 car. min) |  |
-| 2 | Type | **Oui** | liste : Interne · Client · Fournisseur · Sous-traitant · Partenaire |  |
+| 1 | Nom |  | texte (200 car. max, 2 car. min) |  |
+| 2 | Type |  | liste : Interne · Client · Fournisseur · Sous-traitant · Partenaire |  |
 | 3 | Raison sociale |  | texte |  |
 | 4 | Forme juridique |  | texte |  |
 | 5 | NIU |  | texte |  |
@@ -2197,20 +2197,6 @@ Bouton **Modifier (dans la fiche ouverte depuis la liste)** · fenêtre « fiche
 | 5 | Type |  | liste : Banque · Mobile Money · Prestataire de paiement |  |
 | 6 | Actif |  | case à cocher |  |
 
-### Mouvement de caisse
-
-validation : **Enregistrer** · `POST /petty-cash-funds/{fund_id}/transactions` · composant `PettyCashFund`
-
-| # | Champ | Obligatoire | Saisie | Aide affichée |
-| --- | --- | --- | --- | --- |
-| 1 | Type | **Oui** | liste : Sortie (dépense) · Entrée (réapprovisionnement) |  |
-| 2 | Montant | **Oui** | nombre |  |
-| 3 | Objet | **Oui** | texte |  |
-| 4 | Catégorie |  | liste : Matériaux · Main-d'œuvre · Transport · Restauration · Carburant · Petit outillage · Autre |  |
-| 5 | Lot |  | liste des lots du projet |  |
-| 6 | Date de l'opération | **Oui** | date |  |
-| 7 | Reçu | **Oui** | fichier à déposer | Justificatif (photo du ticket, facture) : obligatoire pour une sortie. |
-
 ### Petites caisses de chantier — Création
 
 Bouton **Nouvelle caisse** · fenêtre « Nouvelle caisse » · validation : **Créer** · `POST /petty-cash-funds` · composant `PettyCashView`
@@ -2236,6 +2222,24 @@ Bouton **Modifier (dans la fiche ouverte depuis la liste)** · fenêtre « fiche
 | 4 | Gestionnaire |  | liste des utilisateurs |  |
 | 5 | Plafond |  | nombre |  |
 | 6 | Actif |  | case à cocher |  |
+
+## Finance › Ma petite caisse (`/erp/caisse`)
+
+### Mouvement de caisse
+
+validation : **Enregistrer** · `POST /petty-cash-funds/{fund_id}/transactions` · composant `PettyCashFund`
+
+Aussi dans : Finance › Finances (`/erp/finances`)
+
+| # | Champ | Obligatoire | Saisie | Aide affichée |
+| --- | --- | --- | --- | --- |
+| 1 | Type | **Oui** | liste : Sortie (dépense) · Entrée (réapprovisionnement) |  |
+| 2 | Montant | **Oui** | nombre |  |
+| 3 | Objet | **Oui** | texte |  |
+| 4 | Catégorie |  | liste : Matériaux · Main-d'œuvre · Transport · Restauration · Carburant · Petit outillage · Autre |  |
+| 5 | Lot |  | liste des lots du projet |  |
+| 6 | Date de l'opération | **Oui** | date |  |
+| 7 | Reçu | **Oui** | fichier à déposer | Justificatif (photo du ticket, facture) : obligatoire pour une sortie. |
 
 ## Projets › Agenda (`/erp/agenda`)
 

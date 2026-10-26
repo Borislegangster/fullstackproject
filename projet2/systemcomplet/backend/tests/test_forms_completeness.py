@@ -461,3 +461,19 @@ def test_petty_cash_custodian_declares_without_finance_rights_and_cannot_validat
         ).status_code
         == 403
     )
+
+
+def test_organization_edit_changes_only_the_sent_fields(client: Any, db: Any) -> None:
+    """Modifier une organisation : le formulaire n'envoie que les champs changés ; les autres (nom, type, e-mail…)
+    gardent leur valeur au lieu d'être exigés ou effacés."""
+    headers = _admin(client, db)
+    org = _org(db, "supplier", name=f"TEST Quincaillerie {uuid.uuid4().hex[:4]}")
+    org.email, org.city, org.legal_name = "fournisseur@example.com", "Douala", "TEST SARL"
+    db.commit()
+    res = client.patch(f"{API}/organizations/{org.id}", headers=headers, json={"phone": "+237 600 00 00 00"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["phone"] == "+237 600 00 00 00" and body["name"] == org.name and body["kind"] == "supplier"
+    assert body["email"] == "fournisseur@example.com" and body["legal_name"] == "TEST SARL" and body["city"] == "Douala"
+    bad = client.patch(f"{API}/organizations/{org.id}", headers=headers, json={"kind": "inconnu"})
+    assert bad.status_code == 422
