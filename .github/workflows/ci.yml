@@ -98,7 +98,8 @@ jobs:
   # ── End-to-end (Playwright) ─────────────────────────────────
   e2e:
     name: 🎭 E2E (Playwright)
-    runs-on: ubuntu-latest
+    # Playwright ne prend pas encore en charge Ubuntu 26.04 (image ubuntu-latest actuelle).
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
