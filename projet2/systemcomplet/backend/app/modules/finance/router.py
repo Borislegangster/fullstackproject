@@ -10,7 +10,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -263,6 +263,30 @@ router.include_router(
 )
 
 
+@router.get("/petty-cash/me")
+def my_cash_funds(db: Session = Depends(get_db), access: Access = Depends(get_access)) -> list[dict[str, Any]]:
+    """Caisses dont l'utilisateur est le gestionnaire (chef de chantier…) : il y déclare ses mouvements, la finance
+    les valide (séparation des tâches)."""
+    funds = (
+        db.execute(
+            select(PettyCashFund)
+            .where(PettyCashFund.custodian_id == access.p.id, PettyCashFund.is_active.is_(True))
+            .order_by(PettyCashFund.name)
+        )
+        .scalars()
+        .all()
+    )
+    out = []
+    for fund in funds:
+        pending = db.execute(
+            select(func.count(PettyCashTransaction.id)).where(
+                PettyCashTransaction.fund_id == fund.id, PettyCashTransaction.status == "pending"
+            )
+        ).scalar_one()
+        out.append(jsonable({**serialize(fund), "pending_count": pending}))
+    return out
+
+
 @router.get("/petty-cash-funds/{fund_id}/transactions")
 def list_cash_tx(
     fund_id: uuid.UUID,
@@ -273,7 +297,8 @@ def list_cash_tx(
     fund = db.get(PettyCashFund, fund_id)
     if fund is None:
         raise NotFound("Caisse introuvable")
-    _require_project_finance(access, fund.project_id, "finance:read")
+    if fund.custodian_id != access.p.id:  # le gestionnaire consulte sa caisse sans droit finance
+        _require_project_finance(access, fund.project_id, "finance:read")
     return paginate(
         db,
         select(PettyCashTransaction).where(PettyCashTransaction.fund_id == fund_id),

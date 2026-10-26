@@ -3013,12 +3013,13 @@ masqué).
 
 - [ ] **F1** — Compte bancaire créé, numéro protégé.
 
-### Scène F2 — La petite caisse du chantier
+### Scène F2 — La petite caisse d'Ernest
 
-**Pourquoi** : les petites dépenses en espèces (carburant, transport) sont justifiées par un reçu et validées par une
-autre personne ; elles entrent dans le budget du projet.
+**Pourquoi** : les petites dépenses en espèces (carburant, transport) sont déclarées par le gestionnaire de la caisse,
+avec le reçu, puis validées par la finance ; elles entrent dans le budget du projet.
 
-**Qui** : Rachel, puis Grâce. **Où** : *Finance › Finances*, onglet **Petites caisses**.
+**Qui** : Rachel, Grâce, puis Ernest. **Où** : *Finance › Finances*, onglet **Petites caisses** ; pour Ernest, *Finance ›
+Ma petite caisse* (ou application **GLOBUS Terrain**, **Logistique › Ma petite caisse**).
 
 **Méthode**
 
@@ -3029,28 +3030,29 @@ autre personne ; elles entrent dans le budget du projet.
 | Nom | `Caisse Villa Mballa` | ★ |
 | Projet | « TEST — Villa Mballa » | |
 | Chantier | « Parcelle Bonamoussadi » | |
-| Gestionnaire | « Rachel TEST-NDONGO » | |
+| Gestionnaire | « Ernest TEST-TCHOUA » | |
 | Plafond | `200000` | |
 | Actif | coché | |
 
    **Créer**, puis ouvrez la caisse.
 2. Rachel : **Déclarer un mouvement** ; fenêtre **Mouvement de caisse** : **Type** ★ « Entrée (réapprovisionnement) »,
    **Montant** ★ `100000`, **Objet** ★ `Approvisionnement initial`, **Date de l'opération** ★ aujourd'hui ;
-   **Enregistrer**.
-3. Rachel : **Déclarer un mouvement** : **Type** « Sortie (dépense) », **Montant** `15000`, **Objet** `Carburant groupe
-   électrogène`, **Catégorie** « Carburant », **Lot** « GO », **Date de l'opération** aujourd'hui, **Reçu** ★ (obligatoire
-   pour une sortie) la photo d'un ticket ; **Enregistrer**.
-4. Rachel essaie de **Valider** ses propres mouvements : refus (« Séparation des tâches : validation par une autre
-   personne »).
-5. Grâce : ouvre la caisse et clique sur **Valider** pour chacun des deux mouvements.
+   **Enregistrer**. Rachel essaie de le **Valider** : refus (« Séparation des tâches : validation par une autre
+   personne ») ; Grâce ouvre la caisse et clique sur **Valider**.
+3. Ernest : reconnectez-vous ; le menu **Finance › Ma petite caisse** apparaît (il n'a pourtant aucun droit finance).
+   **Déclarer un mouvement** : **Type** « Sortie (dépense) », **Montant** `15000`, **Objet** `Carburant groupe
+   électrogène`, **Catégorie** « Carburant », **Lot** « GO », **Date de l'opération** aujourd'hui, **Reçu** ★
+   (obligatoire pour une sortie) la photo d'un ticket ; **Enregistrer**. Ernest ne voit aucun bouton **Valider**.
+4. Rachel : onglet **Petites caisses**, la caisse, sur la sortie d'Ernest : **Valider**.
 
 **Résultat attendu** : solde de la caisse **85 000** ; la dépense de 15 000 apparaît dans l'onglet **Budget** du projet,
-catégorie « Frais généraux », lot GO.
+catégorie « Frais généraux », lot GO. Moussa, qui n'est gestionnaire d'aucune caisse, n'a pas l'entrée **Ma petite
+caisse**.
 
-> **Contrôles** : une sortie supérieure au solde est refusée (« Solde de caisse insuffisant ») ; une entrée qui ferait
-> dépasser le plafond aussi (« Plafond de caisse dépassé »).
+> **Contrôles** : une sortie sans reçu, ou supérieure au solde (« Solde de caisse insuffisant »), est refusée ; une
+> entrée qui ferait dépasser le plafond aussi (« Plafond de caisse dépassé »).
 
-- [ ] **F2** — Petite caisse : reçu, double regard, imputation au budget.
+- [ ] **F2** — Petite caisse : déclaration par le gestionnaire, reçu, double regard, imputation au budget.
 
 ### Scène F3 — Le relevé bancaire et le rapprochement
 
@@ -3775,7 +3777,7 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 | Chapitre 11 | **R5** | Messagerie client ↔ équipe. | [ ] | |
 | Chapitre 11 | **R6** | Dossier Tranquillité partagé. | [ ] | |
 | Chapitre 12 | **F1** | Compte bancaire créé, numéro protégé. | [ ] | |
-| Chapitre 12 | **F2** | Petite caisse : reçu, double regard, imputation au budget. | [ ] | |
+| Chapitre 12 | **F2** | Petite caisse : déclaration par le gestionnaire, reçu, double regard, imputation au budget. | [ ] | |
 | Chapitre 12 | **F3** | Relevé importé, rapprochement automatique, doublons écartés. | [ ] | |
 | Chapitre 12 | **F4** | Facture client émise et visible par le client. | [ ] | |
 | Chapitre 12 | **F5** | Budget et trésorerie cohérents avec l'histoire. | [ ] | |

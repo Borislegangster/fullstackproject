@@ -965,6 +965,27 @@ function PettyCashFund({ fund, reload }: { fund: Row; reload: () => void }) {
   );
 }
 
+/** Caisses dont l'utilisateur est le gestionnaire : déclaration des mouvements sans droit finance, validation par la finance. */
+export function MyPettyCash() {
+  const funds = useApi<Row[]>("/petty-cash/me");
+  return (
+    <div className="space-y-5">
+      <PageTitle title="Ma petite caisse" subtitle="Déclarez vos dépenses et réapprovisionnements avec le reçu : la finance les valide, le solde et le budget du projet suivent." />
+      {funds.loading && !funds.data ? <Skeleton className="h-40 w-full" /> : null}
+      {funds.error ? <Alert tone="danger">{funds.error}</Alert> : null}
+      {funds.data && !funds.data.length ? <EmptyState title="Aucune caisse à votre nom" text="La finance vous désigne comme gestionnaire à la création d'une petite caisse." /> : null}
+      {(funds.data ?? []).map((fund) => (
+        <Card key={fund.id} className="space-y-3 p-5">
+          <p className="font-semibold text-brand-800">
+            {fund.name} {toNumber(fund.pending_count) > 0 ? <Badge tone="warning">{fund.pending_count} en attente de validation</Badge> : null}
+          </p>
+          <PettyCashFund fund={fund} reload={() => void funds.reload()} />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export function PettyCashView() {
   return (
     <ResourceView

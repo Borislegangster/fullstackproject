@@ -412,3 +412,52 @@ def test_change_order_cost_impact_is_the_total_of_its_priced_lines(client: Any, 
     body = res.json()
     assert Decimal(body["cost_impact"]) == Decimal("350000")
     assert [Decimal(line["amount"]) for line in body["lines"]] == [Decimal("300000"), Decimal("50000")]
+
+
+def test_petty_cash_custodian_declares_without_finance_rights_and_cannot_validate(client: Any, db: Any) -> None:
+    """Ma petite caisse : le gestionnaire (chef de chantier, sans droit finance) voit sa caisse, y déclare une
+    dépense avec reçu ; il ne la valide pas ; un autre utilisateur sans droit ne voit rien."""
+    from decimal import Decimal
+
+    from app.modules.finance.models import PettyCashFund
+
+    keeper = make_user(db, email=f"gestionnaire-{uuid.uuid4().hex[:6]}@example.com", roles=["CHEF_CHANTIER"])
+    other = make_user(db, email=f"autre-{uuid.uuid4().hex[:6]}@example.com", roles=["CHEF_CHANTIER"])
+    fund = PettyCashFund(
+        name="Caisse gestionnaire", custodian_id=keeper.id, ceiling=Decimal("100000"), balance=Decimal("50000")
+    )
+    db.add(fund)
+    db.commit()
+    kh, oh = login(client, keeper.email), login(client, other.email)
+
+    me = client.get(f"{API}/auth/me", headers=kh).json()
+    assert "petty_cash" in me["features"]
+    assert "petty_cash" not in client.get(f"{API}/auth/me", headers=oh).json()["features"]
+    mine = client.get(f"{API}/petty-cash/me", headers=kh).json()
+    assert [f["id"] for f in mine] == [str(fund.id)] and mine[0]["pending_count"] == 0
+    assert client.get(f"{API}/petty-cash/me", headers=oh).json() == []
+
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+    form = {"kind": "out", "amount": "15000", "purpose": "Carburant", "category": "carburant"}
+    no_receipt = client.post(
+        f"{API}/petty-cash-funds/{fund.id}/transactions",
+        headers=kh,
+        data={**form, "transaction_date": date.today().isoformat()},
+    )
+    assert no_receipt.status_code == 422 and no_receipt.json()["error"]["code"] == "RECEIPT_REQUIRED"
+    tx = client.post(
+        f"{API}/petty-cash-funds/{fund.id}/transactions",
+        headers=kh,
+        data={**form, "transaction_date": date.today().isoformat()},
+        files={"receipt": ("ticket.png", png, "image/png")},
+    )
+    assert tx.status_code == 201, tx.text
+    listed = client.get(f"{API}/petty-cash-funds/{fund.id}/transactions", headers=kh).json()
+    assert [t["status"] for t in listed["items"]] == ["pending"]
+    assert client.get(f"{API}/petty-cash-funds/{fund.id}/transactions", headers=oh).status_code == 403
+    assert (
+        client.post(
+            f"{API}/petty-cash-transactions/{tx.json()['id']}/validate", headers=kh, json={"approve": True}
+        ).status_code
+        == 403
+    )

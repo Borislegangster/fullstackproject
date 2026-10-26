@@ -10,6 +10,7 @@ import 'screens/home.dart';
 import 'screens/hr.dart';
 import 'screens/media.dart';
 import 'screens/ocr.dart';
+import 'screens/petty_cash.dart';
 import 'screens/plans.dart';
 import 'screens/qhse.dart';
 import 'screens/receipt.dart';
@@ -49,6 +50,7 @@ const sections = <NavSection>[
     ),
     NavItem('$base/stocks', 'Stock chantier', Icons.inventory_2_outlined, perms: ['inventory:read']),
     NavItem('$base/materiel', 'Matériel et engins', Icons.construction_outlined, perms: ['equipment:read']),
+    NavItem('$base/caisse', 'Ma petite caisse', Icons.account_balance_wallet_outlined, feature: 'petty_cash'),
   ]),
   NavSection(title: 'Sécurité et SAV', [
     NavItem('$base/qhse', 'QHSE', Icons.health_and_safety_outlined, anyPerms: ['qhse:read', 'qhse:write', 'site:report']),
@@ -113,6 +115,7 @@ final pages = <AppPage>[
   AppPage('$base/livraisons/:id', 'Livraison', (_, s) => DeliveryScreen(id: s.pathParameters['id']!)),
   AppPage('$base/stocks', 'Stock chantier', (_, _) => const StockScreen()),
   AppPage('$base/materiel', 'Matériel et engins', (_, _) => const EquipmentScreen()),
+  AppPage('$base/caisse', 'Ma petite caisse', (_, _) => const PettyCashScreen()),
   AppPage(
     '$base/materiel/scan',
     'Matériel',

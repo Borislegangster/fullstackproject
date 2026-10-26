@@ -45,6 +45,7 @@ import {
   UserCog,
   Users,
   Wrench,
+  Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -98,6 +99,7 @@ const SECTIONS: NavSection[] = [
       { href: "/erp/finances/echeanciers", label: "Échéanciers clients", icon: Split, perms: ["billing:read"] },
       { href: "/erp/finances/sequestre", label: "Séquestre par jalon", icon: Lock, perms: ["finance:read"] },
       { href: "/erp/finances/financements", label: "Financement clients", icon: HandCoins, perms: ["finance:read"] },
+      { href: "/erp/caisse", label: "Ma petite caisse", icon: Wallet, feature: "petty_cash" },
     ],
   },
   {

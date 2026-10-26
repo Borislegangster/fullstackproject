@@ -86,6 +86,18 @@ def features_for(user: User, spaces: list[str]) -> list[str]:
 
         if financing_enabled(db):
             features.append("financing")
+    if "erp" in spaces:
+        from sqlalchemy import select
+
+        from app.modules.finance.models import PettyCashFund
+
+        custodian = db.execute(
+            select(PettyCashFund.id)
+            .where(PettyCashFund.custodian_id == user.id, PettyCashFund.is_active.is_(True))
+            .limit(1)
+        ).first()
+        if custodian:  # gestionnaire d'une petite caisse : entrée « Ma petite caisse », même sans droit finance
+            features.append("petty_cash")
     return features
 
 

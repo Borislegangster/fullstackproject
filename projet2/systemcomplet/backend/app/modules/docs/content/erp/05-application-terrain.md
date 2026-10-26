@@ -67,6 +67,7 @@ Sans caméra, saisissez le code imprimé sous le QR.
 - **Lecture de documents (IA)** : photographiez un bon de livraison ou une facture ; les données lues sont proposées, jamais appliquées sans votre validation.
 - **Stock chantier** : matériaux réservés (sortir, déclarer consommé, retourner), niveaux par entrepôt, sortie vers le chantier même hors ligne, comptage des inventaires (la validation reste au bureau).
 - **Matériel et engins** : relevé du jour (heures, km, carburant), panne / casse avec photos, position (si le suivi est activé pour l'engin), affectation et restitution (parc).
+- **Ma petite caisse** (si vous êtes gestionnaire d'une caisse) : déclaration d'une dépense ou d'un réapprovisionnement avec la photo du reçu, validée ensuite par la finance ([Ma petite caisse](doc:erp-ma-petite-caisse)).
 
 ## Sécurité, SAV et personnel
 
