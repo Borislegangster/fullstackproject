@@ -531,6 +531,7 @@ export interface SchemaFormProps {
   exclude?: string[];
   /** Valeurs imposées (non affichées) ajoutées à la charge utile. */
   fixed?: Values;
+  /** Modification partielle : seuls les champs changés sont envoyés. Par défaut pour toute route PATCH. */
   partial?: boolean;
   idempotent?: boolean;
   submitLabel?: string;
@@ -601,7 +602,9 @@ export function SchemaForm({
     Object.entries(configs).forEach(([name, cfg]) => {
       if (conditionallyHidden(cfg, v)) delete v[name];
     });
-    const errs = validate(schema, v, configs);
+    // Seuls les champs affichés sont contrôlés : un champ absent du formulaire (only / exclude) ne peut pas bloquer.
+    const shown = Object.fromEntries(Object.entries(v).filter(([k]) => (fixed && k in fixed) || ((!only || only.includes(k)) && !exclude?.includes(k))));
+    const errs = validate(schema, shown, configs);
     setErrors(errs);
     if (Object.keys(errs).length) {
       setFormError("Vérifiez les champs signalés.");
@@ -613,7 +616,14 @@ export function SchemaForm({
       let payload: Values | FormData;
       if (multipart) payload = toFormData(schema, v);
       else {
-        const json = toPayload(schema, v, { partial, initial, keep: Object.keys(fixed ?? {}) });
+        // PATCH : modification partielle par défaut, et jamais d'envoi des champs absents du formulaire (only / exclude) —
+        // un champ non affiché n'est ni exigé ni effacé (ex. le prénom lors d'un simple changement de statut).
+        const isPatch = endpoint?.startsWith("PATCH ") ?? false;
+        let json = toPayload(schema, v, { partial: partial ?? isPatch, initial, keep: Object.keys(fixed ?? {}) });
+        if (isPatch && (only || exclude)) {
+          const keep = new Set(Object.keys(fixed ?? {}));
+          json = Object.fromEntries(Object.entries(json).filter(([k]) => keep.has(k) || ((!only || only.includes(k)) && !exclude?.includes(k))));
+        }
         payload = transform ? transform(json) : json;
       }
       let result: unknown;
