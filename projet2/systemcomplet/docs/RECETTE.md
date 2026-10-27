@@ -618,7 +618,7 @@ Cliquez sur **Créer** à chaque fois.
 
 **Pourquoi** : vérifier qu'une invitation peut être annulée, puis renvoyée.
 
-**Qui** : le Gardien. **Où** : onglets **Utilisateurs** puis **Invitations**.
+**Qui** : le Gardien. **Où** : *Administration › Utilisateurs et rôles*, onglets **Utilisateurs** puis **Invitations**.
 
 **Méthode**
 
@@ -1094,7 +1094,7 @@ devient **Contacté**.
 
 ### Scène C7 — L'affaire avance d'une étape
 
-**Qui** : Jordan. **Où** : onglet **Pipeline**.
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**.
 
 **Méthode** : sur la carte de Paul, dans la **liste d'étape** de la carte, choisissez « Proposition ». Actualisez la page.
 
@@ -1108,7 +1108,7 @@ devient **Contacté**.
 
 **Pourquoi** : un devis clair, ligne par ligne, avec un échéancier qui totalise 100 %.
 
-**Qui** : Jordan. **Où** : onglet **Pipeline**, bouton **Devis** sur la carte de Paul.
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, bouton **Devis** sur la carte de Paul.
 
 **Méthode**
 
@@ -1195,7 +1195,7 @@ heure, moyen de réception du code) et une notification.
 
 **Pourquoi** : un devis refusé se révise sans perdre l'ancienne version.
 
-**Qui** : Jordan. **Où** : onglet **Pipeline**, puis la fiche du nouveau devis.
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, puis la fiche du nouveau devis.
 
 **Méthode**
 
@@ -1453,7 +1453,11 @@ s'affichent.
 **Pourquoi** : Samuel, Ernest et Moussa ne voient **que** les projets dont ils sont membres. Rachel, Linda et Grâce voient
 tous les projets, mais on les ajoute pour qu'elles reçoivent les notifications du projet.
 
-**Qui** : Samuel. **Où** : onglet **Équipe**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Équipe**.
+
+> **Attention, deux écrans différents.** L'équipe **du projet** se gère dans la fiche du projet (onglet **Équipe**,
+> bouton **Ajouter un membre**). L'onglet **Équipes** de *Administration › Utilisateurs et rôles* sert à autre chose :
+> les équipes de métier (scène A8), sans bouton « Ajouter un membre ».
 
 **Méthode** — cliquez sur **Ajouter un membre** pour chaque ligne, remplissez, **Enregistrer** :
 
@@ -1476,7 +1480,7 @@ tous les projets, mais on les ajoute pour qu'elles reçoivent les notifications 
 **Pourquoi** : le **site** est l'endroit physique du chantier. Son **rayon de géorepérage** est le cercle à l'intérieur
 duquel les ouvriers peuvent pointer avec leur téléphone.
 
-**Qui** : Samuel. **Où** : onglet **Sites, phases, lots**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Sites, phases, lots**.
 
 **Méthode** : cliquez sur **Nouveau site**, remplissez, **Créer** :
 
@@ -1502,7 +1506,7 @@ duquel les ouvriers peuvent pointer avec leur téléphone.
 **Pourquoi** : les **lots** découpent les travaux par métier (gros œuvre, électricité…) ; les **phases** par étape dans
 le temps (fondations, élévation…).
 
-**Qui** : Samuel. **Où** : onglet **Sites, phases, lots**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Sites, phases, lots**.
 
 **Méthode**
 
@@ -1534,7 +1538,7 @@ le temps (fondations, élévation…).
 
 ### Scène M5 — Les jalons
 
-**Qui** : Samuel. **Où** : onglet **Jalons**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Jalons**.
 
 **Méthode**
 
@@ -1558,7 +1562,7 @@ le temps (fondations, élévation…).
 **Pourquoi** : enchaîner les tâches, calculer les dates (méthode du chemin critique) et figer la référence promise au
 client.
 
-**Qui** : Samuel. **Où** : onglet **Planning**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Planning**.
 
 **Méthode**
 
@@ -1592,7 +1596,7 @@ client.
 
 ### Scène M7 — L'analyse des aléas du planning
 
-**Qui** : Samuel. **Où** : onglet **Planning**, bloc d'analyse des 30 prochains jours (pluie, livraisons, absences).
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Planning**, bloc d'analyse des 30 prochains jours (pluie, livraisons, absences).
 
 **Méthode** : cliquez sur **Analyser maintenant**. Si un risque apparaît, cliquez sur **Écarter**, indiquez un motif,
 confirmez avec **Écarter**.
@@ -1606,7 +1610,7 @@ analysée que si le service météo est activé.)
 
 **Pourquoi** : le budget approuvé sert de référence pour mesurer la marge.
 
-**Qui** : Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où** : onglet **Budget**.
+**Qui** : Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Budget**.
 
 **Méthode**
 
@@ -1756,7 +1760,7 @@ fichier .ics s'ouvre dans un agenda.
 
 ### Scène M14 — Le risque de la saison des pluies
 
-**Qui** : Samuel. **Où** : onglet **Risques**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Risques**.
 
 **Méthode** : **Nouveau risque**, **Créer** :
 
@@ -1779,7 +1783,7 @@ fichier .ics s'ouvre dans un agenda.
 
 **Pourquoi** : le panneau devant le chantier porte un QR code menant à une page publique (permis, avancement).
 
-**Qui** : Samuel. **Où** : onglet **Panneau connecté**.
+**Qui** : Samuel. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Panneau connecté**.
 
 **Méthode**
 
@@ -1902,7 +1906,7 @@ référentiels (articles, dépôts, emplacements).
 
 ### Scène H4 — Linda choisit le fournisseur et crée le bon de commande
 
-**Qui** : Linda. **Où** : la demande approuvée.
+**Qui** : Linda. **Où** : *Achats et logistique › Achats*, onglet **Demandes d'achat**, la demande approuvée.
 
 **Méthode**
 
@@ -2084,7 +2088,7 @@ fournisseurs** et **Anomalies 3 pièces**.
 
 ### Scène H12 — L'ordre de paiement
 
-**Qui** : Rachel. **Où** : la facture `FAC-TEST-001`.
+**Qui** : Rachel. **Où** : *Finance › Facturation*, onglet **Factures fournisseurs**, la facture `FAC-TEST-001`.
 
 **Méthode** : cliquez sur **Payer** ; fenêtre **Ordre de paiement** :
 
@@ -2118,7 +2122,7 @@ paiement ») ; Grâce réussit, le paiement passe **Approuvé**.
 
 ### Scène H14 — L'exécution du virement
 
-**Qui** : Rachel. **Où** : le paiement approuvé.
+**Qui** : Rachel. **Où** : *Finance › Finances*, onglet **Paiements**, le paiement approuvé.
 
 **Méthode** : **Exécuter** ; fenêtre **Exécuter le paiement** :
 
@@ -2136,7 +2140,7 @@ Cliquez sur **Confirmer l'exécution**.
 
 ### Scène H15 — Noter Martin et clôturer la commande
 
-**Qui** : Linda. **Où** : le bon de commande.
+**Qui** : Linda. **Où** : *Achats et logistique › Achats*, onglet **Bons de commande**, le bon de commande.
 
 **Méthode**
 
@@ -2275,7 +2279,7 @@ Cliquez sur **Créer la consultation**.
 
 ### Scène S3 — Inviter puis publier
 
-**Qui** : Samuel. **Où** : la fiche de la consultation.
+**Qui** : Samuel. **Où** : *Sous-traitance › Sous-traitants*, onglet **Consultations**, la consultation.
 
 **Méthode**
 
@@ -2322,7 +2326,7 @@ la date limite).
 
 ### Scène S5 — Le pli scellé, l'ouverture et le comparatif
 
-**Qui** : Samuel. **Où** : la fiche de la consultation.
+**Qui** : Samuel. **Où** : *Sous-traitance › Sous-traitants*, onglet **Consultations**, la consultation.
 
 **Méthode**
 
@@ -2361,7 +2365,7 @@ négociations** : trois tours.
 
 **Pourquoi** : attribuer engage l'entreprise : c'est réservé à la direction.
 
-**Qui** : Samuel, puis Grâce (profil **GLOBUS DIR**). **Où** : la fiche de la consultation.
+**Qui** : Samuel, puis Grâce (profil **GLOBUS DIR**). **Où** : *Sous-traitance › Sous-traitants*, onglet **Consultations**, la consultation.
 
 **Méthode**
 
@@ -2391,7 +2395,7 @@ négociation).
 
 ### Scène S8 — Le marché part en signature, Sylvie signe par code
 
-**Qui** : Grâce, puis Sylvie. **Où** : la fiche du marché (ERP), puis extranet, menu **Mes marchés**.
+**Qui** : Grâce, puis Sylvie. **Où** : *Sous-traitance › Sous-traitants*, onglet **Marchés**, le marché ; puis extranet, menu **Mes marchés**.
 
 **Méthode**
 
@@ -2415,7 +2419,7 @@ Sylvie TEST-ABENA, gérante**.
 **Pourquoi** : aucune situation n'est possible avant que l'équipe soit accueillie sur le chantier ; l'avance prévue au
 marché se facture après signature.
 
-**Qui** : Samuel, puis Rachel (profil **GLOBUS FIN**). **Où** : la fiche du marché.
+**Qui** : Samuel, puis Rachel (profil **GLOBUS FIN**). **Où** : *Sous-traitance › Sous-traitants*, onglet **Marchés**, le marché.
 
 **Méthode**
 
@@ -3304,7 +3308,7 @@ rapport hebdomadaire.*
 ### Scène D1 — Le tableau de bord
 
 **Qui** : Grâce, téléphone, application **GLOBUS Direction** (connexion avec e-mail, mot de passe et code à 6 chiffres :
-la double authentification est obligatoire pour la direction). **Où** : onglet **Pilotage**.
+la double authentification est obligatoire pour la direction). **Où** : application Direction, onglet **Pilotage** (en bas de l'écran).
 
 **Méthode** : faites défiler le tableau de bord.
 
@@ -3319,7 +3323,7 @@ chantier**, **Livraisons attendues (7 jours)**. Les chiffres sont ceux de l'ERP 
 
 **Pourquoi** : une validation urgente ne doit pas attendre le retour au bureau.
 
-**Qui** : Ernest (ERP ou application Terrain), puis Grâce (application Direction). **Où** : onglet **Validations**.
+**Qui** : Ernest (ERP ou application Terrain), puis Grâce (application Direction). **Où** : application Direction, onglet **Validations** (en bas de l'écran).
 
 **Méthode**
 
@@ -3549,7 +3553,7 @@ l'approbation du paiement (H13), le verrouillage de Linda (X2).
 
 ### Scène Z1 — La fin du marché d'électricité
 
-**Qui** : Samuel, Grâce, Rachel. **Où** : la fiche du marché « Électricité Villa Mballa ».
+**Qui** : Samuel, Grâce, Rachel. **Où** : *Sous-traitance › Sous-traitants*, onglet **Marchés**, le marché « Électricité Villa Mballa ».
 
 **Méthode**
 
