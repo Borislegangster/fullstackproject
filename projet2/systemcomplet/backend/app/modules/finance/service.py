@@ -589,7 +589,8 @@ def margins(db: Session, project_ids: list[uuid.UUID] | None) -> list[dict[str, 
                 ChangeOrder.project_id == project.id, ChangeOrder.status == "approved"
             )
         ).scalar_one()
-        revenue = Decimal(project.contract_amount or 0)
+        contract = Decimal(project.contract_amount or 0)
+        revenue = contract + Decimal(approved_co)  # contrat (avenants non inclus) + avenants approuvés
         committed = db.execute(
             select(func.coalesce(func.sum(Commitment.amount), 0)).where(
                 Commitment.project_id == project.id, Commitment.status != "cancelled"
@@ -631,8 +632,9 @@ def margins(db: Session, project_ids: list[uuid.UUID] | None) -> list[dict[str, 
                 "project_id": project.id,
                 "code": project.code,
                 "name": project.name,
-                "revenue": revenue,
+                "contract_amount": contract,
                 "approved_change_orders": approved_co,
+                "revenue": revenue,
                 "budget": budget.total if budget else None,
                 "committed": committed,
                 "spent": spent,

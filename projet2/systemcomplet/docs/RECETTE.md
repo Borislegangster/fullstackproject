@@ -1269,7 +1269,7 @@ pendant 30 jours.
 **Résultat attendu**
 
 - Le code et le nom du projet « TEST — Villa Mballa ».
-- Le montant du contrat (25 000 000 HT + TVA).
+- Le **Montant du contrat (avenants non inclus)** (25 000 000 HT + TVA) et, à part, **Avenants approuvés** à 0 FCFA.
 - La frise des jalons de paiement (30 %, 40 %, 30 %).
 - Aucun montant payé pour l'instant.
 - **Aucune donnée d'un autre client.**
@@ -3131,7 +3131,7 @@ figure dans l'onglet **Historique** de Paul.
 ### Scène R3 — Un avenant : deux prises en plus
 
 **Pourquoi** : tout travail supplémentaire passe par un avenant chiffré, accepté par le client **puis** approuvé par la
-finance ; le montant du contrat est alors mis à jour.
+finance ; il est suivi et facturé **à part** : le montant du contrat ne change jamais.
 
 **Qui** : Samuel, Paul, puis Grâce. **Où** : fiche du projet, onglet **Avenants** ; espace client, **Validations**.
 
@@ -3155,12 +3155,15 @@ finance ; le montant du contrat est alors mis à jour.
 4. Grâce : sur l'avenant, **Approuver (finance)**, **Confirmer**.
 
 **Résultat attendu** : l'**impact coût** de l'avenant vaut **45 000** (calculé à partir des lignes) ; statuts
-successifs **Brouillon → Soumis → Approuvé client → Approuvé** ; le montant du contrat du projet augmente de
-45 000 FCFA.
+successifs **Brouillon → Soumis → Approuvé client → Approuvé** ; le **montant du contrat** reste inchangé
+(« avenants non inclus ») ; **Avenants approuvés** passe à **45 000 FCFA**, affiché à part chez Paul (**Tableau de
+bord**, **Finances**, **Passeport**, site et application GLOBUS Client) et dans la fiche du projet (avec le **Total
+contrat et avenants**) ; la fin prévue du projet est décalée d'un jour ; le **Reste à appeler** ne porte que sur le
+contrat (l'avenant est facturé à part, scène F4).
 
 > **Contrôle** : Samuel ne voit pas **Approuver (finance)** (réservé à la finance et à la direction).
 
-- [ ] **R3** — Avenant chiffré, accepté par le client, approuvé, contrat mis à jour.
+- [ ] **R3** — Avenant chiffré, accepté par le client, approuvé, suivi à part du montant du contrat.
 
 ### Scène R4 — Le premier appel de fonds et son encaissement
 
@@ -4126,7 +4129,7 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 | Chapitre 11 | **T10** | Saisie hors ligne, synchronisation, arbitrage du conflit et renvoi d'un envoi refusé. | [ ] | |
 | Chapitre 12 | **R1** | Cloisonnement client respecté. | [ ] | |
 | Chapitre 12 | **R2** | Décision client validée par code. | [ ] | |
-| Chapitre 12 | **R3** | Avenant chiffré, accepté par le client, approuvé, contrat mis à jour. | [ ] | |
+| Chapitre 12 | **R3** | Avenant chiffré, accepté par le client, approuvé, suivi à part du montant du contrat. | [ ] | |
 | Chapitre 12 | **R4** | Appel de fonds, encaissement hors plateforme, double regard, reçu client. | [ ] | |
 | Chapitre 12 | **R5** | Messagerie client ↔ équipe. | [ ] | |
 | Chapitre 12 | **R6** | Dossier Tranquillité partagé. | [ ] | |

@@ -19,6 +19,8 @@ interface Dashboard {
   support: { open_tickets: number; sla_breached: number };
   finance?: {
     portfolio_value: string;
+    portfolio_contracts?: string;
+    portfolio_changes?: string;
     invoiced: string;
     receivable: string;
     overdue: string;
@@ -91,7 +93,7 @@ export default function ErpDashboardPage() {
       {f ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Stat label="CA signé (chantiers actifs)" value={money(f.portfolio_value)} icon={<Banknote className="h-5 w-5" />} tone="info" />
+            <Stat label="CA signé (chantiers actifs)" value={money(f.portfolio_value)} hint={`Contrats ${money(f.portfolio_contracts)} + avenants ${money(f.portfolio_changes)}`} icon={<Banknote className="h-5 w-5" />} tone="info" />
             <Stat label="Facturé" value={money(f.invoiced)} hint={`Encaissé ce mois : ${money(f.collected_this_month)}`} />
             <Stat label="Créances à encaisser" value={money(f.receivable)} hint={`dont en retard ${money(f.overdue)}`} tone={toNumber(f.overdue) ? "warning" : "neutral"} />
             <Stat label="Dettes fournisseurs à payer" value={money(f.payable)} />
@@ -133,7 +135,7 @@ export default function ErpDashboardPage() {
                 <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
                   <tr>
                     <th className="px-4 py-2">Chantier</th>
-                    <th className="px-4 py-2 text-right">CA</th>
+                    <th className="px-4 py-2 text-right" title="Contrat + avenants approuvés">CA (contrat + avenants)</th>
                     <th className="px-4 py-2 text-right">Budget</th>
                     <th className="px-4 py-2 text-right">Engagé</th>
                     <th className="px-4 py-2 text-right">Dépensé</th>

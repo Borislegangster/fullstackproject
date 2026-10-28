@@ -20,7 +20,6 @@ class DashboardScreen extends StatelessWidget {
           final p = d.obj('project');
           final f = d.obj('finance');
           final currency = cur(f);
-          final contractTotal = f.d('contract_amount') + f.d('approved_changes');
           final media = d.list('recent_media');
           final decisions = d.list('pending_decisions');
           final digest = d.objOrNull('digest');
@@ -76,11 +75,12 @@ class DashboardScreen extends StatelessWidget {
               StatGrid(
                 children: [
                   StatTile(
-                    label: 'Montant du contrat (avenants inclus)',
-                    value: money(contractTotal, currency),
+                    label: 'Montant du contrat (avenants non inclus)',
+                    value: money(f['contract_amount'], currency),
                     icon: Icons.account_balance_wallet_outlined,
                     tone: Tone.info,
                   ),
+                  StatTile(label: 'Avenants approuvés', value: money(f['approved_changes'], currency), hint: 'Facturés séparément du contrat'),
                   StatTile(label: 'Appelé', value: money(f['called'], currency), hint: 'Reste à appeler : ${money(f['remaining_to_call'], currency)}'),
                   StatTile(label: 'Payé', value: money(f['paid'], currency), tone: Tone.success),
                   StatTile(

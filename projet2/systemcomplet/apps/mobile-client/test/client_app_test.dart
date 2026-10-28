@@ -47,6 +47,7 @@ FakeApi clientServer({bool mfaEnrolled = true}) {
           'finance': {
             'contract_amount': '85000000',
             'approved_changes': '2500000',
+            'total_with_changes': '87500000',
             'called': '40000000',
             'paid': '35000000',
             'due': '5000000',
@@ -127,7 +128,10 @@ void main() {
     final page = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
     for (final text in [
       'Indice de confiance',
-      money(87500000),
+      'Montant du contrat (avenants non inclus)',
+      money(85000000),
+      'Avenants approuvés',
+      money(2500000),
       'Choix du carrelage de la terrasse',
       'Gros œuvre',
       'Toiture',

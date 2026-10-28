@@ -14,7 +14,7 @@ import { optionLabel } from "@/lib/labels";
 interface Dashboard {
   project: { id: string; code: string; name: string; status: string; health?: string | null; progress_pct?: string | null; start_planned?: string | null; end_planned?: string | null; city?: string | null };
   milestones: MilestoneRow[];
-  finance: { contract_amount?: string | null; approved_changes: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
+  finance: { contract_amount?: string | null; approved_changes: string; total_with_changes?: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
   alerts: { kind: string; message: string }[];
   pending_decisions: { id: string; title: string; due_date?: string | null; price_impact?: string | null; delay_impact_days?: number | null }[];
   digest?: { summary?: string | null; period_start: string; period_end: string } | null;
@@ -27,7 +27,6 @@ function DashboardContent({ projectId }: { projectId: string }) {
   if (error || !data) return <Alert tone="danger">{error}</Alert>;
   const p = data.project;
   const cur = data.finance.currency === "XAF" ? "FCFA" : data.finance.currency;
-  const contractTotal = toNumber(data.finance.contract_amount) + toNumber(data.finance.approved_changes);
   return (
     <div className="space-y-6">
       <PageTitle
@@ -63,8 +62,9 @@ function DashboardContent({ projectId }: { projectId: string }) {
         <Progress value={toNumber(p.progress_pct)} className="mt-4" tone="accent" />
       </Card>
       <TrustCard path={`/client/projects/${projectId}/trust`} />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Montant du contrat (avenants inclus)" value={money(contractTotal, cur)} icon={<Wallet className="h-5 w-5" />} tone="info" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <Stat label="Montant du contrat (avenants non inclus)" value={money(data.finance.contract_amount, cur)} icon={<Wallet className="h-5 w-5" />} tone="info" />
+        <Stat label="Avenants approuvés" value={money(data.finance.approved_changes, cur)} hint="Facturés séparément du contrat" />
         <Stat label="Appelé" value={money(data.finance.called, cur)} hint={`Reste à appeler : ${money(data.finance.remaining_to_call, cur)}`} />
         <Stat label="Payé" value={money(data.finance.paid, cur)} tone="success" />
         <Stat label="À régler" value={money(data.finance.due, cur)} tone={data.finance.overdue_count ? "danger" : "warning"} hint={data.finance.overdue_count ? `${data.finance.overdue_count} en retard` : undefined} />

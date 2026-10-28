@@ -15,7 +15,7 @@ related: [client-validations, client-documents, client-preuves]
 Menu **Passeport projet** : la fiche de référence de votre projet.
 
 - **Identité du projet** : référence, statut, univers, type, adresse, surface et niveaux.
-- **Contrat et avenants** : numéro, date de signature, montant, avenants approuvés avec leur impact prix et délai.
+- **Contrat et avenants** : numéro, date de signature, **montant du contrat (avenants non inclus)**, **avenants approuvés** (à part) et **total contrat et avenants**, puis chaque avenant avec son impact prix et délai.
 - **Budget et paiements** : appelé, payé, reste dû, nombre de paiements.
 - **Planning et jalons** : dates de début et de fin prévues, jalons.
 - **Versions de plans** : pour chaque plan, la version « en vigueur » et les versions obsolètes (avec leur date) — une version est remplacée dès la publication de la suivante.

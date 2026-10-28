@@ -13,7 +13,7 @@ interface Passport {
   identity: { code: string; name: string; universe?: string | null; type?: string | null; address?: string | null; city?: string | null; surface_m2?: string | null; levels?: number | null; status: string };
   contract?: { number: string; title: string; signed_at?: string | null; amount: string } | null;
   change_orders: { number: string; title: string; cost_impact: string; delay_impact_days: number; status: string }[];
-  finance: { contract_amount?: string | null; approved_changes: string; called: string; paid: string; due: string; currency: string };
+  finance: { contract_amount?: string | null; approved_changes: string; total_with_changes?: string; called: string; paid: string; due: string; currency: string };
   payments: { number: string; amount: string; paid_at?: string | null; method?: string | null }[];
   planning: { start_planned?: string | null; end_planned?: string | null; milestones: any[] };
   plans: { title: string; versions: { label: string; status: string; published_at?: string | null; obsolete_at?: string | null }[] }[];
@@ -66,8 +66,9 @@ function PassportContent({ projectId }: { projectId: string }) {
                 items={[
                   { label: "Contrat", value: `${data.contract.number} — ${data.contract.title}` },
                   { label: "Signé le", value: date(data.contract.signed_at) },
-                  { label: "Montant", value: money(data.contract.amount, cur) },
-                  { label: "Avenants approuvés", value: money(data.finance.approved_changes, cur) },
+                  { label: "Montant du contrat (avenants non inclus)", value: money(data.contract.amount, cur) },
+                  { label: "Avenants approuvés (à part)", value: money(data.finance.approved_changes, cur) },
+                  { label: "Total contrat et avenants", value: money(data.finance.total_with_changes, cur) },
                 ]}
               />
             ) : (

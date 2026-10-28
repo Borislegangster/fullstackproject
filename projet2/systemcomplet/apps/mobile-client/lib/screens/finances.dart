@@ -58,7 +58,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
             final d = J.of(data);
             final s = d.obj('summary');
             final c = cur(s);
-            final total = s.d('contract_amount') + s.d('approved_changes');
+            final contract = s.d('contract_amount');
             final canPay = context.can('client:pay');
             final methods = d.list('payment_methods');
             Future<void> pay(PayTarget t) async {
@@ -84,7 +84,8 @@ class _FinancesScreenState extends State<FinancesScreen> {
                 const PageHeader(title: 'Finances', subtitle: 'Budget, appels de fonds, factures, paiements et reçus.'),
                 StatGrid(
                   children: [
-                    StatTile(label: 'Contrat + avenants', value: money(total, c)),
+                    StatTile(label: 'Montant du contrat (avenants non inclus)', value: money(contract, c)),
+                    StatTile(label: 'Avenants approuvés', value: money(s['approved_changes'], c), hint: 'Facturés séparément du contrat'),
                     StatTile(label: 'Appelé', value: money(s['called'], c), hint: 'Reste à appeler ${money(s['remaining_to_call'], c)}'),
                     StatTile(label: 'Payé', value: money(s['paid'], c), tone: Tone.success),
                     StatTile(
@@ -95,7 +96,7 @@ class _FinancesScreenState extends State<FinancesScreen> {
                     ),
                   ],
                 ),
-                if (total > 0)
+                if (contract > 0)
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -104,12 +105,12 @@ class _FinancesScreenState extends State<FinancesScreen> {
                         children: [
                           Row(
                             children: [
-                              const Expanded(child: Text('Part du contrat réglée')),
-                              Text(percent(s.d('paid') / total * 100), style: const TextStyle(fontWeight: FontWeight.w700)),
+                              const Expanded(child: Text('Part du contrat réglée (avenants non inclus)')),
+                              Text(percent(s.d('paid') / contract * 100), style: const TextStyle(fontWeight: FontWeight.w700)),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          GProgress(value: s.d('paid') / total * 100, tone: Tone.success),
+                          GProgress(value: s.d('paid') / contract * 100, tone: Tone.success),
                         ],
                       ),
                     ),

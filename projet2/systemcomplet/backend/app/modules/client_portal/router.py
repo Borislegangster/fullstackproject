@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.access import Access, get_access
@@ -80,11 +80,10 @@ def _finance_summary(db: Session, project: Project) -> dict[str, Any]:
         .scalars()
         .all()
     )
-    approved_changes = db.execute(
-        select(func.coalesce(func.sum(ChangeOrder.cost_impact), 0)).where(
-            ChangeOrder.project_id == project.id, ChangeOrder.status == "approved"
-        )
-    ).scalar_one()
+    from app.modules.projects.service import approved_changes_total
+
+    contract = Decimal(project.contract_amount or 0)
+    approved_changes = approved_changes_total(db, project.id)
     paid = sum((Decimal(c.amount_paid) for c in calls), Decimal("0"))
     called = sum((Decimal(c.amount) for c in calls), Decimal("0"))
     due = sum(
@@ -97,13 +96,15 @@ def _finance_summary(db: Session, project: Project) -> dict[str, Any]:
     )
     overdue = [c for c in calls if c.status == "overdue"]
     return {
-        "contract_amount": project.contract_amount,
-        "approved_changes": money(approved_changes),
+        # Montant du contrat signé, avenants NON inclus ; les avenants approuvés sont suivis (et facturés) à part.
+        "contract_amount": money(contract),
+        "approved_changes": approved_changes,
+        "total_with_changes": money(contract + approved_changes),
         "called": money(called),
         "paid": money(paid),
         "due": money(due),
         "overdue_count": len(overdue),
-        "remaining_to_call": money(Decimal(project.contract_amount or 0) - called),
+        "remaining_to_call": money(max(contract - called, Decimal("0"))),
         "invoices": len(invoices),
         "currency": project.currency,
     }

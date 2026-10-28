@@ -105,6 +105,8 @@ interface ProjectDetail {
     remaining_to_commit: string;
     budget_consumption_pct: number;
     contract_amount: string;
+    approved_changes?: string;
+    total_with_changes?: string;
     invoiced: string;
     collected: string;
     funds_calls_due: string;
@@ -186,7 +188,9 @@ function Synthese({ p, reload }: { p: ProjectDetail; reload: () => void }) {
                 { label: "Adresse", value: [p.address, p.city, p.country].filter(Boolean).join(", ") || "—" },
                 { label: "Début prévu / réel", value: `${date(p.start_planned)} / ${date(p.start_actual)}` },
                 { label: "Fin prévue / réelle", value: `${date(p.end_planned)} / ${date(p.end_actual)}` },
-                { label: "Montant du contrat", value: money(k.contract_amount, cur) },
+                { label: "Montant du contrat (avenants non inclus)", value: money(k.contract_amount, cur) },
+                { label: "Avenants approuvés", value: money(k.approved_changes, cur) },
+                { label: "Total contrat et avenants", value: money(k.total_with_changes, cur) },
                 { label: "Facturé / encaissé", value: `${money(k.invoiced, cur)} / ${money(k.collected, cur)}` },
                 { label: "Appels de fonds dus", value: money(k.funds_calls_due, cur) },
                 { label: "Engagé", value: money(k.committed, cur) },

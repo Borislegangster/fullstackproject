@@ -38,7 +38,7 @@ Circuit : brouillon → soumis au client (OTP) → approuvé par le client → a
 ::: perm finance:approve
 ### Approuver un avenant validé par le client
 
-Ouvrez l'avenant « approuvé client » puis **Approuver (finance)** : le montant du contrat et le budget sont mis à jour. **Rejeter** le renvoie avec un motif.
+Ouvrez l'avenant « approuvé client » puis **Approuver (finance)** : il rejoint le total des **avenants approuvés** du projet, suivi à part du **montant du contrat** (qui reste celui du contrat signé) ; la fin prévue est décalée de son impact délai. Facturez-le séparément depuis la Facturation. **Rejeter** le renvoie avec un motif.
 :::
 
 ## Onglet « Budget »

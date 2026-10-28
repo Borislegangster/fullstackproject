@@ -31,7 +31,7 @@ La validation est horodatée et associée à l'empreinte du contenu validé : el
 
 ## Avenants
 
-Un avenant modifie le contrat (prix et/ou délai) : numéro, objet, montant, impact délai.
+Un avenant ajoute (ou retire) des travaux : numéro, objet, montant, impact délai. Il est suivi et facturé **à part** : le montant de votre contrat ne change pas ; son impact délai décale la date de livraison.
 
 - **Approuver** ouvre **Approuver l'avenant** : même procédure par code puis **Approuver**.
 - **Refuser** ouvre **Refuser l'avenant** : motif puis **Refuser**.

@@ -43,6 +43,7 @@ interface MarginRow {
   code: string;
   name: string;
   revenue: string;
+  contract_amount?: string;
   approved_change_orders: string;
   budget: string | null;
   committed: string;
@@ -76,7 +77,7 @@ export function FinanceDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Chiffre d'affaires contracté" value={money(totals.revenue)} tone="info" icon={<Banknote className="h-5 w-5" />} />
+        <Stat label="Chiffre d'affaires contracté" value={money(totals.revenue)} hint="Contrats + avenants approuvés" tone="info" icon={<Banknote className="h-5 w-5" />} />
         <Stat label="Marge brute prévisionnelle" value={money(totals.revenue - totals.cost)} hint={totals.revenue ? `${number(((totals.revenue - totals.cost) * 100) / totals.revenue, 1)} %` : undefined} tone={totals.revenue - totals.cost >= 0 ? "success" : "danger"} />
         <Stat label="Engagé / dépensé" value={money(totals.committed)} hint={`Dépensé ${money(totals.spent)}`} />
         <Stat label="Créances en retard" value={money(overdueTotal)} hint={`${receivables.data?.length ?? 0} appel(s) de fonds · ${awaiting.data?.total ?? 0} paiement(s) à approuver`} tone={overdueTotal > 0 ? "danger" : "neutral"} />
@@ -125,7 +126,8 @@ export function FinanceDashboard() {
                 <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
                   <tr>
                     <th className="px-3 py-2">Projet</th>
-                    <th className="px-3 py-2 text-right">Marché</th>
+                    <th className="px-3 py-2 text-right">Contrat</th>
+                    <th className="px-3 py-2 text-right">Avenants</th>
                     <th className="px-3 py-2 text-right">Budget</th>
                     <th className="px-3 py-2 text-right">Engagé</th>
                     <th className="px-3 py-2 text-right">Dépensé</th>
@@ -138,7 +140,8 @@ export function FinanceDashboard() {
                       <td className="px-3 py-2">
                         <CellLink href={`/erp/chantiers/${m.project_id}/budget`}>{m.code}</CellLink> <span className="text-muted">{m.name}</span>
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{money(m.revenue)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{money(m.contract_amount)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{money(m.approved_change_orders)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{m.budget !== null ? money(m.budget) : "—"}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{money(m.committed)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{money(m.spent)}</td>

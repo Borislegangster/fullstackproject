@@ -340,6 +340,17 @@ CO_TRANSITIONS = {
 }
 
 
+def approved_changes_total(db: Session, project_id: uuid.UUID) -> Decimal:
+    """Total des avenants approuvés d'un projet : suivi À PART du montant du contrat (jamais ajouté au contrat)."""
+    return money(
+        db.execute(
+            select(func.coalesce(func.sum(ChangeOrder.cost_impact), 0)).where(
+                ChangeOrder.project_id == project_id, ChangeOrder.status == "approved"
+            )
+        ).scalar_one()
+    )
+
+
 def transition_change_order(
     db: Session, co: ChangeOrder, target: str, *, user_id: uuid.UUID, client: bool = False
 ) -> ChangeOrder:
@@ -372,10 +383,10 @@ def transition_change_order(
         co.approved_at = utcnow()
         co.approved_by_id = user_id
         project = db.get(Project, co.project_id)
-        if project:
-            project.contract_amount = money(Decimal(project.contract_amount or 0) + Decimal(co.cost_impact or 0))
-            if co.delay_impact_days and project.end_planned:
-                project.end_planned = project.end_planned + timedelta(days=int(co.delay_impact_days))
+        # Le montant du contrat reste celui du contrat signé : les avenants sont suivis et facturés à part
+        # (total des avenants approuvés : approved_changes_total). Seul le délai est reporté sur le projet.
+        if project and co.delay_impact_days and project.end_planned:
+            project.end_planned = project.end_planned + timedelta(days=int(co.delay_impact_days))
         emit(
             db,
             "change_order.approved",
@@ -499,7 +510,8 @@ def project_kpis(db: Session, project: Project) -> dict[str, Any]:
         .all()
     )
     budget_total = Decimal(budget.total) if budget else Decimal("0")
-    revenue = Decimal(project.contract_amount or 0)
+    changes = approved_changes_total(db, project.id)
+    revenue = Decimal(project.contract_amount or 0) + changes  # chiffre d'affaires : contrat + avenants approuvés
     cost_forecast = max(Decimal(committed), Decimal(spent))
     return jsonable(
         {
@@ -512,7 +524,9 @@ def project_kpis(db: Session, project: Project) -> dict[str, Any]:
             "remaining_to_commit": budget_total - Decimal(committed),
             "remaining_to_pay": Decimal(committed) - Decimal(spent),
             "budget_consumption_pct": round(float(Decimal(spent) * 100 / budget_total), 1) if budget_total else 0,
-            "contract_amount": revenue,
+            "contract_amount": Decimal(project.contract_amount or 0),
+            "approved_changes": changes,
+            "total_with_changes": revenue,
             "invoiced": invoiced,
             "collected": collected,
             "funds_calls_due": calls_due,

@@ -18,7 +18,7 @@ Menu **Tableau de bord** (page d'accueil de votre espace). En tête : référenc
 - **Alertes** : paiement en retard, jalon en retard, décision attendue… en haut de page.
 - **Avancement global** en pourcentage et date de **Livraison prévue**.
 - **Indice de confiance** : note calculée à partir des données réelles du chantier (respect du planning, qualité, sécurité, transparence…), avec le détail par critère et son évolution.
-- Indicateurs financiers : **Montant du contrat (avenants inclus)**, **Appelé** (et reste à appeler), **Payé**, **À régler** (et nombre d'appels en retard). Détail dans [Finances](doc:client-finances).
+- Indicateurs financiers : **Montant du contrat (avenants non inclus)**, **Avenants approuvés** (suivis et facturés à part du contrat), **Appelé** (et reste à appeler sur le contrat), **Payé**, **À régler** (et nombre d'appels en retard). Détail dans [Finances](doc:client-finances).
 - **Jalons** : frise des étapes (faites, en cours, en retard) ; **Planning complet** ouvre le [planning](doc:client-planning).
 - **Décisions à valider** : choix en attente avec échéance et impact prix / délai ; **Valider** ouvre les [Validations](doc:client-validations).
 - **Résumé de la semaine** : synthèse rédigée de l'avancement de la période.

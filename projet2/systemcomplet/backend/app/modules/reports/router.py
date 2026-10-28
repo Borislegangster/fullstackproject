@@ -198,8 +198,19 @@ def dashboard(db: Session = Depends(get_db), access: Access = Depends(get_access
             )
         ).scalar_one()
         project_margins = margins(db, scope)
+        active_ids = {p.id for p in active}
+        contracts_value = money(sum((Decimal(p.contract_amount or 0) for p in active), Decimal("0")))
+        changes_value = money(
+            sum(
+                (Decimal(m["approved_change_orders"] or 0) for m in project_margins if m["project_id"] in active_ids),
+                Decimal("0"),
+            )
+        )
         out["finance"] = {
-            "portfolio_value": money(sum((Decimal(p.contract_amount or 0) for p in active), Decimal("0"))),
+            # Valeur du portefeuille : contrats signés + avenants approuvés, avec le détail des deux.
+            "portfolio_value": money(contracts_value + changes_value),
+            "portfolio_contracts": contracts_value,
+            "portfolio_changes": changes_value,
             "invoiced": invoiced,
             "receivable": receivable,
             "overdue": overdue,
@@ -218,7 +229,21 @@ def _rows_projects(db: Session, access: Access) -> tuple[list[str], list[list[An
     rows = db.execute(
         _in_scope(select(Project).where(Project.deleted_at.is_(None)), Project.id, _scope(access))
     ).scalars()
-    header = ["code", "nom", "statut", "santé", "avancement_%", "ville", "début_prévu", "fin_prévue", "montant_contrat"]
+    from app.modules.projects.service import approved_changes_total
+
+    finance = access.has("finance:read")
+    header = [
+        "code",
+        "nom",
+        "statut",
+        "santé",
+        "avancement_%",
+        "ville",
+        "début_prévu",
+        "fin_prévue",
+        "montant_contrat_avenants_non_inclus",
+        "avenants_approuvés",
+    ]
     return header, [
         [
             p.code,
@@ -229,7 +254,8 @@ def _rows_projects(db: Session, access: Access) -> tuple[list[str], list[list[An
             p.city,
             p.start_planned,
             p.end_planned,
-            p.contract_amount if access.has("finance:read") else "",
+            p.contract_amount if finance else "",
+            approved_changes_total(db, p.id) if finance else "",
         ]
         for p in rows
     ]

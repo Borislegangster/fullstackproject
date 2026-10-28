@@ -2331,7 +2331,7 @@ validation : **Enregistrer** · `schéma ProjectIn` · composant `Synthese`
 | 17 | Début réel |  | date |  |
 | 18 | Fin réelle |  | date |  |
 | 19 | Date de réception |  | date |  |
-| 20 | Montant du contrat |  | nombre |  |
+| 20 | Montant du contrat (avenants non inclus) |  | nombre |  |
 | 21 | Devise |  | liste : FCFA (XAF) · Euro (EUR) · Dollar US (USD) |  |
 | 22 | Responsable |  | liste des utilisateurs |  |
 | 23 | Directeur de projet |  | liste des utilisateurs |  |
@@ -2883,7 +2883,7 @@ Bouton **Nouveau projet** · fenêtre « Nouveau projet » · validation : **Cr�
 | 17 | Début réel |  | date |  |
 | 18 | Fin réelle |  | date |  |
 | 19 | Date de réception |  | date |  |
-| 20 | Montant du contrat |  | nombre |  |
+| 20 | Montant du contrat (avenants non inclus) |  | nombre |  |
 | 21 | Devise |  | liste : FCFA (XAF) · Euro (EUR) · Dollar US (USD) |  |
 | 22 | Responsable |  | liste des utilisateurs |  |
 | 23 | Directeur de projet |  | liste des utilisateurs |  |

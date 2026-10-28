@@ -479,3 +479,52 @@ def test_client_appointment_request_confirm_move_cancel(client: Any, db: Any) ->
         .scalars()
         .first()
     )
+
+
+def test_change_orders_are_kept_apart_from_contract_amount(client: Any, db: Any) -> None:
+    """Un avenant approuvé ne modifie jamais le montant du contrat : le client voit « Montant du contrat (avenants
+    non inclus) » et, à part, le total des avenants approuvés ; le reste à appeler ne porte que sur le contrat."""
+    from app.modules.projects.models import ChangeOrder, Project
+    from app.modules.projects.service import transition_change_order
+
+    env = _setup(client, db)
+    project = env["project"]
+    co = client.post(
+        f"{API}/change-orders",
+        headers=env["cph"],
+        json={
+            "project_id": project["id"],
+            "title": "Deux prises supplémentaires",
+            "reason": "client_request",
+            "lines": [{"designation": "Prise 16 A", "unit": "u", "quantity": 2, "unit_price": 22500}],
+        },
+    )
+    assert co.status_code == 201, co.text
+    co = co.json()
+    assert Decimal(co["cost_impact"]) == Decimal("45000")
+    assert (
+        client.post(
+            f"{API}/change-orders/{co['id']}/transition", headers=env["cph"], json={"target": "submitted"}
+        ).status_code
+        == 200
+    )
+    transition_change_order(
+        db, db.get(ChangeOrder, uuid.UUID(co["id"])), "client_approved", user_id=env["customer"].id, client=True
+    )
+    db.commit()
+    approved = client.post(f"{API}/change-orders/{co['id']}/transition", headers=env["fh"], json={"target": "approved"})
+    assert approved.status_code == 200, approved.text
+    db.expire_all()
+    assert db.get(Project, uuid.UUID(project["id"])).contract_amount == Decimal("85000000.00")
+
+    dashboard = client.get(f"{API}/client/projects/{project['id']}/dashboard", headers=env["custh"]).json()
+    finance = dashboard["finance"]
+    assert Decimal(finance["contract_amount"]) == Decimal("85000000")
+    assert Decimal(finance["approved_changes"]) == Decimal("45000")
+    assert Decimal(finance["total_with_changes"]) == Decimal("85045000")
+    assert Decimal(finance["remaining_to_call"]) == Decimal("85000000") - Decimal(finance["called"])
+    erp = client.get(f"{API}/projects/{project['id']}", headers=env["cph"]).json()["kpis"]
+    assert Decimal(erp["contract_amount"]) == Decimal("85000000") and Decimal(erp["approved_changes"]) == Decimal(
+        "45000"
+    )
+    assert Decimal(erp["total_with_changes"]) == Decimal("85045000")

@@ -16,7 +16,7 @@ import { useApi } from "@/lib/hooks";
 import { optionLabel } from "@/lib/labels";
 
 interface Finances {
-  summary: { contract_amount?: string | null; approved_changes: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
+  summary: { contract_amount?: string | null; approved_changes: string; total_with_changes?: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
   funds_calls: { id: string; number: string; label: string; amount: string; amount_paid: string; due_date?: string | null; status: string; invoice_id?: string | null }[];
   invoices: { id: string; number: string; title?: string | null; total: string; amount_paid: string; status: string; issue_date?: string | null; due_date?: string | null; pdf_url?: string | null }[];
   payments: { id: string; number: string; amount: string; status: string; method?: string | null; provider?: string | null; paid_at?: string | null; value_date?: string | null; receipt_url?: string | null }[];
@@ -125,7 +125,7 @@ function FinancesContent({ projectId }: { projectId: string }) {
   if (loading) return <Skeleton className="h-96 w-full" />;
   if (error || !data) return <Alert tone="danger">{error}</Alert>;
   const cur = data.summary.currency === "XAF" ? "FCFA" : data.summary.currency;
-  const total = toNumber(data.summary.contract_amount) + toNumber(data.summary.approved_changes);
+  const contract = toNumber(data.summary.contract_amount);
   const canPay = can("client:pay");
   const myPlans = (plans.data ?? []).filter((p) => p.project_id === projectId);
   const openPlan = (id: string) => myPlans.some((p) => p.target_id === id && ["requested", "proposed", "active"].includes(p.status));
@@ -136,15 +136,16 @@ function FinancesContent({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <PageTitle title="Finances" subtitle="Budget, appels de fonds, factures, paiements et reçus." />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Contrat + avenants" value={money(total, cur)} />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <Stat label="Montant du contrat (avenants non inclus)" value={money(contract, cur)} />
+        <Stat label="Avenants approuvés" value={money(data.summary.approved_changes, cur)} hint="Facturés séparément du contrat" />
         <Stat label="Appelé" value={money(data.summary.called, cur)} hint={`Reste à appeler ${money(data.summary.remaining_to_call, cur)}`} />
         <Stat label="Payé" value={money(data.summary.paid, cur)} tone="success" />
         <Stat label="À régler" value={money(data.summary.due, cur)} tone={data.summary.overdue_count ? "danger" : "warning"} hint={data.summary.overdue_count ? `${data.summary.overdue_count} appel(s) en retard` : undefined} />
       </div>
-      {total > 0 ? (
+      {contract > 0 ? (
         <Card className="p-5">
-          <Progress value={(toNumber(data.summary.paid) / total) * 100} label="Part du contrat réglée" tone="success" />
+          <Progress value={(toNumber(data.summary.paid) / contract) * 100} label="Part du contrat réglée (appels de fonds, avenants non inclus)" tone="success" />
         </Card>
       ) : null}
       <MyPaymentPlans plans={myPlans} onChange={refresh} />

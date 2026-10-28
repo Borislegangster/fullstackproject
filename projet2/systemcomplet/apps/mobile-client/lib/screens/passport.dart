@@ -53,8 +53,9 @@ class PassportScreen extends StatelessWidget {
                     else ...[
                       InfoRow('Contrat', '${contract.s('number')} — ${contract.s('title')}'),
                       InfoRow('Signé le', date(contract['signed_at'])),
-                      InfoRow('Montant', money(contract['amount'], c)),
-                      InfoRow('Avenants approuvés', money(f['approved_changes'], c)),
+                      InfoRow('Montant du contrat (avenants non inclus)', money(contract['amount'], c)),
+                      InfoRow('Avenants approuvés (à part)', money(f['approved_changes'], c)),
+                      InfoRow('Total contrat et avenants', money(f['total_with_changes'], c)),
                     ],
                     for (final co in d.list('change_orders'))
                       ListTile(
