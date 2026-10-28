@@ -182,7 +182,8 @@ class _Summary extends StatelessWidget {
                   icon: Icons.health_and_safety_outlined,
                 ),
                 if (canFinance) ...[
-                  StatTile(label: 'Marché', value: money(k['contract_amount']), icon: Icons.handshake_outlined),
+                  StatTile(label: 'Contrat (avenants non inclus)', value: money(k['contract_amount']), icon: Icons.handshake_outlined),
+                  StatTile(label: 'Avenants approuvés', value: money(k['approved_changes']), hint: 'Total : ${money(k['total_with_changes'])}'),
                   StatTile(
                     label: 'Marge brute prévue',
                     value: k.has('gross_margin_pct') ? percent(k['gross_margin_pct'], 1) : '—',

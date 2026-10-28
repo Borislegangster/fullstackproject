@@ -98,7 +98,13 @@ class DashboardScreen extends StatelessWidget {
     return [
       StatGrid(
         children: [
-          StatTile(label: 'CA signé (chantiers actifs)', value: money(f['portfolio_value']), icon: Icons.account_balance_outlined, tone: Tone.info),
+          StatTile(
+            label: 'CA signé (chantiers actifs)',
+            value: money(f['portfolio_value']),
+            hint: 'Contrats ${money(f['portfolio_contracts'])} + avenants ${money(f['portfolio_changes'])}',
+            icon: Icons.account_balance_outlined,
+            tone: Tone.info,
+          ),
           StatTile(label: 'Facturé', value: money(f['invoiced']), hint: 'Encaissé ce mois : ${money(f['collected_this_month'])}'),
           StatTile(
             label: 'Créances à encaisser',
@@ -128,7 +134,7 @@ class DashboardScreen extends StatelessWidget {
                   dense: true,
                   onTap: () => context.push('$base/chantiers/${m.s('project_id')}'),
                   title: Text('${m.s('code')} — ${m.s('name')}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('CA ${money(m['revenue'])} · coût prévu ${money(m['forecast_cost'])}'),
+                  subtitle: Text('CA (contrat + avenants) ${money(m['revenue'])} · coût prévu ${money(m['forecast_cost'])}'),
                   trailing: Text(
                     m.has('gross_margin_pct') ? percent(m['gross_margin_pct'], 1) : '—',
                     style: TextStyle(fontWeight: FontWeight.w700, color: toDouble(m['gross_margin_pct']) < 10 ? GlobusColors.danger : GlobusColors.success),
