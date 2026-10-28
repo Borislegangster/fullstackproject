@@ -653,8 +653,7 @@ class _AppointmentRequestScreenState extends State<AppointmentRequestScreen> {
         children: [
           const AlertBox(
             tone: Tone.info,
-            message:
-                "Proposez un créneau : votre chef de projet le confirme ou vous en propose un autre. Vous êtes prévenu par e-mail et dans l'application.",
+            message: "Proposez un créneau : votre chef de projet le confirme ou vous en propose un autre. Vous êtes prévenu par e-mail et dans l'application.",
           ),
           const SizedBox(height: 12),
           TextField(

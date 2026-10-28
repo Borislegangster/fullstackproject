@@ -294,7 +294,17 @@ void main() {
     };
     final fake = clientServer()
       ..on('GET', '/conversations', (_) => (200, [conversation]))
-      ..on('GET', '/conversations/c1/messages', (_) => (200, {'items': [message], 'has_more': false}))
+      ..on(
+        'GET',
+        '/conversations/c1/messages',
+        (_) => (
+          200,
+          {
+            'items': [message],
+            'has_more': false,
+          },
+        ),
+      )
       ..on('POST', '/conversations/c1/read', (_) => (200, {'status': 'ok'}));
     await pumpApp(tester, fake);
     await tester.enterText(find.widgetWithText(TextField, 'Adresse e-mail'), 'client@example.com');

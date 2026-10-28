@@ -918,7 +918,11 @@ class _AttachmentView extends StatelessWidget {
               Icon(_attachmentIcon(mime, name), size: 18, color: fg),
               const SizedBox(width: 6),
               Flexible(
-                child: Text(name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: fg)),
+                child: Text(
+                  name,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.5, color: fg),
+                ),
               ),
               if (a.has('size_bytes')) Text('  ${fileSize(a['size_bytes'])}', style: TextStyle(fontSize: 11, color: meta)),
               const SizedBox(width: 4),
