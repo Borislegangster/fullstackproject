@@ -24,9 +24,60 @@ from app.modules.system.models import StoredFile
 router = APIRouter(prefix="/files", tags=["Fichiers"])
 
 
-def file_response(stored: StoredFile, *, inline: bool = True, watermark_text: str | None = None) -> Response:
+PREVIEW_IMAGE_MIMES = ("image/jpeg", "image/png", "image/webp")
+
+
+def watermark_image(data: bytes, text: str, *, max_side: int = 1600) -> bytes:
+    """Aperçu d'image : réduit (au plus `max_side` px) et couvert d'un filigrane diagonal répété (JPEG)."""
+    import io
+
+    from PIL import Image, ImageDraw, ImageFont
+
+    image = Image.open(io.BytesIO(data)).convert("RGB")
+    image.thumbnail((max_side, max_side))
+    overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    size = max(14, image.width // 40)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", size)
+    except OSError:
+        font = ImageFont.load_default()
+    step_y = size * 5
+    for row, y in enumerate(range(-image.height, image.height * 2, step_y)):
+        draw.text((-(row % 2) * size * 6, y), ("   " + text) * 4, fill=(255, 255, 255, 110), font=font)
+        draw.text((-(row % 2) * size * 6 + 1, y + 1), ("   " + text) * 4, fill=(0, 0, 0, 70), font=font)
+    overlay = overlay.rotate(30, expand=False)
+    marked = Image.alpha_composite(image.convert("RGBA"), overlay).convert("RGB")
+    out = io.BytesIO()
+    marked.save(out, "JPEG", quality=70)
+    return out.getvalue()
+
+
+def file_response(
+    stored: StoredFile, *, inline: bool = True, watermark_text: str | None = None, preview: bool = False
+) -> Response:
     if stored.deleted_at is not None:
         raise NotFound("Fichier supprimé")
+    if preview:  # aperçu d'un livrable non remis : filigrane obligatoire, aucun autre format diffusé
+        if not watermark_text or stored.mime_type not in ("application/pdf", *PREVIEW_IMAGE_MIMES):
+            raise Forbidden(
+                "Aperçu indisponible pour ce format : fichier remis après règlement de la facture d'études",
+                code="DELIVERABLE_LOCKED",
+            )
+        if stored.mime_type in PREVIEW_IMAGE_MIMES:
+            try:
+                marked = watermark_image(read_private(stored), watermark_text)
+            except Exception as exc:
+                raise AppError("Image illisible : aperçu filigrané impossible", code="IMAGE_UNREADABLE") from exc
+            return Response(
+                marked,
+                media_type="image/jpeg",
+                headers={
+                    "Content-Disposition": "inline",
+                    "Cache-Control": "private, no-store",
+                    "X-Content-Type-Options": "nosniff",
+                },
+            )
     disposition = "inline" if inline else "attachment"
     headers = {
         "Content-Disposition": f'{disposition}; filename="{stored.original_name}"',
@@ -50,10 +101,20 @@ def file_response(stored: StoredFile, *, inline: bool = True, watermark_text: st
 
 
 def signed_url(
-    file_id: uuid.UUID, *, user_id: uuid.UUID | None, ttl: int | None = None, watermark_text: str | None = None
+    file_id: uuid.UUID,
+    *,
+    user_id: uuid.UUID | None,
+    ttl: int | None = None,
+    watermark_text: str | None = None,
+    preview: bool = False,
 ) -> str:
     token = sign_payload(
-        {"f": str(file_id), "u": str(user_id) if user_id else None, "w": watermark_text},
+        {
+            "f": str(file_id),
+            "u": str(user_id) if user_id else None,
+            "w": watermark_text,
+            **({"p": 1} if preview else {}),
+        },
         ttl or settings.SIGNED_URL_TTL_SECONDS,
     )
     return f"{settings.API_PREFIX}/files/signed/{token}"
@@ -68,7 +129,7 @@ def signed_download(token: str, db: Session = Depends(get_db)) -> Response:
     stored = db.get(StoredFile, uuid.UUID(data["f"]))
     if stored is None:
         raise NotFound("Fichier introuvable")
-    return file_response(stored, watermark_text=data.get("w"))
+    return file_response(stored, watermark_text=data.get("w"), preview=bool(data.get("p")))
 
 
 @router.post("/preview", dependencies=[Depends(rate_limit("file_preview", "240/hour"))])

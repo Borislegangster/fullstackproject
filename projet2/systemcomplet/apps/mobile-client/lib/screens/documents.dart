@@ -84,7 +84,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       for (final (i, d) in entry.value.indexed) ...[
                         if (i > 0) const Divider(height: 1),
                         ListTile(
-                          leading: const Icon(Icons.description_outlined, color: GlobusColors.primary),
+                          leading: Icon(_locked(d) ? Icons.lock_outline : Icons.description_outlined, color: GlobusColors.primary),
                           title: Row(
                             children: [
                               Flexible(child: Text(d.s('title'))),
@@ -94,16 +94,24 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                           ),
                           subtitle: Text(
                             [
-                              'Publié le ${date(d['published_at'])}',
-                              if (d.has('size')) fileSize(d['size']),
-                              if (d.has('discipline')) optionLabel(d.s('discipline')),
+                              if (_locked(d))
+                                "Livrable d'études : aperçu filigrané, original remis après règlement"
+                                    '${d.objOrNull('deliverable')?.str('invoice_number') != null ? ' de la facture ${d.objOrNull('deliverable')!.s('invoice_number')}' : ''}'
+                              else ...[
+                                'Publié le ${date(d['published_at'])}',
+                                if (d.has('size')) fileSize(d['size']),
+                                if (d.has('discipline')) optionLabel(d.s('discipline')),
+                              ],
                             ].join(' · '),
                           ),
-                          onTap: () => openRemoteFile(context, d.s('url'), filename: d.str('filename')),
+                          onTap: d.has('url')
+                              ? () =>
+                                    openRemoteFile(context, d.s('url'), filename: _locked(d) ? 'apercu-${d.str('filename') ?? 'livrable'}' : d.str('filename'))
+                              : () => context.toast("Aperçu indisponible pour ce format : fichier remis après règlement de la facture d'études."),
                           trailing: PopupMenuButton<String>(
                             tooltip: 'Actions',
                             onSelected: (a) {
-                              if (a == 'open') openRemoteFile(context, d.s('url'), filename: d.str('filename'));
+                              if (a == 'open' && d.has('url')) openRemoteFile(context, d.s('url'), filename: d.str('filename'));
                               if (a == 'auth') {
                                 openExternal(
                                   context,
@@ -305,3 +313,6 @@ class _ProofFileCheckState extends State<ProofFileCheck> {
     );
   }
 }
+
+/// Livrable d'études non encore réglé : aperçu filigrané seulement.
+bool _locked(J d) => d.objOrNull('deliverable')?.b('locked') ?? false;

@@ -16,6 +16,10 @@ Menu **Documents** : seule la version en vigueur de chaque document est publiée
 
 1. **Rechercher un document** par titre, ou filtrez par type (**Tous les types** : plans, contrats, PV, rapports…).
 2. **Ouvrir** affiche ou télécharge le document. Votre copie porte un filigrane à votre nom et le téléchargement est tracé.
+3. **Livrables d'études** (plans, rendus 3D, notes réalisés pendant la phase d'études) : tant que la facture d'études
+   n'est pas réglée, seul un **Aperçu filigrané** est disponible — vous pouvez les examiner et les valider (menu
+   **Validations**). Dès le règlement, ils deviennent les vôtres : **Télécharger l'original** remplace l'aperçu et vous
+   êtes notifié (« Vos livrables d'études sont disponibles »).
 3. **Authenticité** ouvre la page publique de vérification : elle confirme que le document est bien celui publié par GLOBUS (empreinte numérique), et s'il est toujours en vigueur.
 
 Sans document publié, la page indique « Aucun document publié » : plans, contrats, procès-verbaux et rapports apparaissent dès leur publication.

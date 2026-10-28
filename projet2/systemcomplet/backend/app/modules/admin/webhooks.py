@@ -69,6 +69,7 @@ PUBLIC_EVENTS: dict[str, str] = {
     "document.approval_requested": "Approbation de document demandée",
     "document.version_published": "Version de document publiée",
     "document.client_published": "Document publié au client",
+    "deliverables.released": "Livrables d'études remis au client",
     "signature.requested": "Signature demandée",
     "bim.version_ready": "Maquette BIM prête",
     "bim.version_published": "Maquette BIM publiée",

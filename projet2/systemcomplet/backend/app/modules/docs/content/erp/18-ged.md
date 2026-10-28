@@ -31,7 +31,7 @@ Cliquez un document : aperçu intégré (**Plein écran**), **Télécharger** (c
 - **Comparer** ouvre **Comparer deux versions** : choisissez deux versions pour voir leurs différences.
 
 ::: perm documents:write
-- **Propriétés** ouvre **Propriétés du document** (titre, type, discipline, dossier, confidentialité).
+- **Propriétés** ouvre **Propriétés du document** (titre, type, discipline, dossier, confidentialité). **Livrable d'études payant** : le client ne voit qu'un aperçu filigrané (PDF, images) jusqu'au règlement de la **Facture d'études qui débloque le livrable** ; l'original lui est alors remis (voir [Chantiers](doc:erp-chantiers), onglet **Études et livrables**).
 - **Nouvelle version** ouvre **Nouvelle version** : déposez le fichier mis à jour ; la version précédente est conservée.
 :::
 

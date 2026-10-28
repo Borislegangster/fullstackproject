@@ -19,13 +19,13 @@ from app.core.context import get_context
 from app.core.crud import make_crud_router, serialize
 from app.core.database import get_db
 from app.core.downloads import file_response, signed_url, watermark_label
-from app.core.errors import BusinessRuleError, NotFound
+from app.core.errors import BusinessRuleError, Forbidden, NotFound
 from app.core.files import validate_upload
 from app.core.middleware import client_ip
 from app.core.pagination import PageParams, paginate
 from app.core.ratelimit import rate_limit
 from app.core.utils import jsonable
-from app.modules.documents import service
+from app.modules.documents import deliverables, service
 from app.modules.documents.models import (
     Document,
     DocumentAccessLog,
@@ -55,6 +55,7 @@ def _doc_out(db: Session, doc: Document, *, versions: bool = False) -> dict[str,
     published = db.get(DocumentVersion, doc.published_version_id) if doc.published_version_id else None
     data["current_version"] = _version_out(current) if current else None
     data["published_version"] = _version_out(published) if published else None
+    data["deliverable"] = deliverables.state(db, doc)
     if versions:
         data["versions"] = [
             _version_out(v)
@@ -203,6 +204,8 @@ class DocumentPatch(BaseModel):
     partner_visible: bool | None = None
     tags: list[str] | None = None
     retention_until: date | None = None
+    paid_deliverable: bool | None = None
+    unlock_invoice_id: uuid.UUID | None = None
 
 
 @router.patch("/documents/{document_id}")
@@ -216,6 +219,12 @@ def update_document(
         access.require("documents:publish")
     if "confidentiality" in values and not access.can_read_confidentiality(values["confidentiality"]):
         raise BusinessRuleError("Niveau de confidentialité non autorisé")
+    if values.get("unlock_invoice_id"):
+        from app.modules.billing.models import ClientInvoice
+
+        invoice = db.get(ClientInvoice, values["unlock_invoice_id"])
+        if invoice is None or invoice.project_id != document.project_id:
+            raise BusinessRuleError("Facture d'études introuvable sur ce projet")
     before = audit.snapshot(document, list(values))
     for key, value in values.items():
         setattr(document, key, value)
@@ -309,6 +318,8 @@ def _download(db: Session, access: Access, version: DocumentVersion, *, action: 
     service.require_read(access, db, document)
     if not access.p.is_internal and version.id != document.published_version_id:
         raise NotFound("Version introuvable")
+    if not access.p.is_internal and deliverables.is_locked(db, document):
+        raise Forbidden("Livrable remis après règlement de la facture d'études", code="DELIVERABLE_LOCKED")
     stored = db.get(StoredFile, version.file_id)
     watermark = (
         watermark_label(access.p.user)
@@ -386,8 +397,97 @@ def version_signed_url(
         watermarked=False,
     )
     db.commit()
+    if not access.p.is_internal and deliverables.is_locked(db, document):
+        label = deliverables.preview_label(db, document, access.p.user)
+        return {"url": signed_url(version.file_id, user_id=access.p.id, ttl=900, watermark_text=label, preview=True)}
     wm = watermark_label(access.p.user) if document.confidentiality in ("confidential", "very_sensitive") else None
     return {"url": signed_url(version.file_id, user_id=access.p.id, ttl=900, watermark_text=wm)}
+
+
+# ---------------------------------------------------------------------------- livrables d'études
+@router.get("/projects/{project_id}/deliverables")
+def project_deliverables(
+    project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Livrables d'études du projet : validation client, facture liée, verrouillage, remise."""
+    from app.modules.billing.models import ClientInvoice
+    from app.modules.projects.models import Decision
+
+    access.require("documents:read")
+    access.require_project(project_id)
+    docs = (
+        db.execute(
+            select(Document)
+            .where(
+                Document.project_id == project_id, Document.paid_deliverable.is_(True), Document.deleted_at.is_(None)
+            )
+            .order_by(Document.doc_type, Document.title)
+        )
+        .scalars()
+        .all()
+    )
+    items = []
+    for doc in docs:
+        version_ids = [v.id for v in doc.versions]
+        decision = (
+            db.execute(
+                select(Decision)
+                .where(Decision.reference_type == "document_version", Decision.reference_id.in_(version_ids))
+                .order_by(Decision.created_at.desc())
+            )
+            .scalars()
+            .first()
+            if version_ids
+            else None
+        )
+        out = _doc_out(db, doc)
+        out["client_decision"] = (
+            {
+                "id": decision.id,
+                "number": decision.number,
+                "status": decision.status,
+                "validated_at": decision.validated_at,
+            }
+            if decision
+            else None
+        )
+        items.append(out)
+    invoices = db.execute(
+        select(ClientInvoice)
+        .where(ClientInvoice.project_id == project_id, ClientInvoice.deleted_at.is_(None))
+        .order_by(ClientInvoice.created_at.desc())
+    ).scalars()
+    return jsonable(
+        {
+            "items": items,
+            "validated": sum(1 for i in items if (i["client_decision"] or {}).get("status") == "validated"),
+            "invoices": [
+                {"id": i.id, "number": i.number, "title": i.title, "kind": i.kind, "status": i.status, "total": i.total}
+                for i in invoices
+                if i.status not in ("cancelled", "credited")
+            ],
+        }
+    )
+
+
+class LinkInvoiceIn(BaseModel):
+    invoice_id: uuid.UUID
+    document_ids: list[uuid.UUID] = Field(default_factory=list, max_length=500)
+
+
+@router.post("/projects/{project_id}/deliverables/link-invoice")
+def link_deliverables_invoice(
+    project_id: uuid.UUID, data: LinkInvoiceIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Rattacher les livrables d'études (tous ceux sans facture, ou la sélection) à la facture d'études."""
+    access.require("documents:write")
+    access.require("billing:read")
+    access.require_project(project_id)
+    count = deliverables.link_invoice(
+        db, project_id=project_id, invoice_id=data.invoice_id, user_id=access.p.id, document_ids=data.document_ids
+    )
+    db.commit()
+    return {"linked": count}
 
 
 @router.get("/documents/{document_id}/compare")

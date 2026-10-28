@@ -4,6 +4,9 @@ import { STATUS_LABELS } from "./format";
 
 export const FIELD_LABELS: Record<string, string> = {
   penalties_override: "Pénalités retenues (si différentes du calcul)",
+  nature: "Nature",
+  paid_deliverable: "Livrable d'études payant",
+  unlock_invoice_id: "Facture d'études qui débloque le livrable",
   penalties_reason: "Motif de l'ajustement des pénalités",
   accent: "Couleur d'accent",
   accept: "Accepter",
@@ -1535,6 +1538,8 @@ export const OPTION_LABELS: Record<string, string> = {
   bim_issue: "Issue BIM",
   change_order: "Avenant",
   advance: "Avance forfaitaire",
+  travaux: "Travaux",
+  studies: "Études et conception",
   provider: "Prestataire de paiement",
   retention_release: "Libération de retenue",
   // pièces administratives des fournisseurs (extranet et fiche fournisseur)

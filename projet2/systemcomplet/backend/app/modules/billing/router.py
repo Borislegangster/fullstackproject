@@ -69,7 +69,7 @@ class InvoiceIn(BaseModel):
     project_id: uuid.UUID | None = None
     organization_id: uuid.UUID | None = None
     contract_id: uuid.UUID | None = None
-    kind: str = Field(default="invoice", pattern="^(invoice|deposit|progress|final)$")
+    kind: str = Field(default="invoice", pattern="^(invoice|deposit|progress|final|studies)$")
     title: str = Field(min_length=2, max_length=250)
     issue_date: date
     due_date: date | None = None

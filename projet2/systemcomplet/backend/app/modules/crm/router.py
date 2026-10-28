@@ -7,7 +7,7 @@ import time
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import Response
@@ -911,6 +911,7 @@ class QuoteLineIn(BaseModel):
 
 class QuoteIn(BaseModel):
     title: str = Field(min_length=2, max_length=250)
+    nature: Literal["travaux", "etudes"] = "travaux"
     opportunity_id: uuid.UUID | None = None
     organization_id: uuid.UUID | None = None
     contact_id: uuid.UUID | None = None
@@ -969,11 +970,12 @@ def create_quote(
 ) -> dict[str, Any]:
     _check_schedule(data.payment_schedule)
     values = data.model_dump(exclude={"lines"})
-    if data.opportunity_id and not (data.contact_id and data.organization_id):
-        opp = db.get(Opportunity, data.opportunity_id)
-        if opp:
-            values["contact_id"] = values["contact_id"] or opp.contact_id
-            values["organization_id"] = values["organization_id"] or opp.organization_id
+    opp = db.get(Opportunity, data.opportunity_id) if data.opportunity_id else None
+    if opp:
+        values["contact_id"] = values["contact_id"] or opp.contact_id
+        values["organization_id"] = values["organization_id"] or opp.organization_id
+        # Études déjà lancées : le devis (de travaux) se rattache au projet né des études.
+        values["project_id"] = values["project_id"] or opp.project_id
     quote = Quote(number=next_number(db, "quote"), status="draft", created_by_id=principal.id, **values)
     for index, line in enumerate(data.lines):
         quote.lines.append(QuoteLine(sort_order=index, **line.model_dump()))
@@ -1158,7 +1160,15 @@ def get_contract(
             }
             if contact
             else None,
-            "project": {"id": project.id, "code": project.code, "name": project.name} if project else None,
+            "project": {
+                "id": project.id,
+                "code": project.code,
+                "name": project.name,
+                "contract_id": project.contract_id,
+                "status": project.status,
+            }
+            if project
+            else None,
         }
     )
 
@@ -1223,6 +1233,56 @@ def sign_contract(
     service.sign_contract(db, contract, signed_by_name=data.signed_by_name, proof=proof, user_id=principal.id)
     db.commit()
     return jsonable(serialize(contract))
+
+
+class StartStudiesIn(BaseModel):
+    name: str | None = Field(default=None, max_length=250)
+    manager_id: uuid.UUID | None = None
+    invite_client_email: EmailStr | None = None
+
+
+@router.post("/opportunities/{opportunity_id}/start-studies", status_code=201)
+def start_studies(
+    opportunity_id: uuid.UUID,
+    data: StartStudiesIn,
+    principal: Principal = Depends(require("crm:write")),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Démarrer les études : projet au statut « Étude » et espace client ouvert, avant tout devis de travaux (passation
+    du commercial au chef de projet désigné)."""
+    opp = db.get(Opportunity, opportunity_id)
+    if opp is None or opp.deleted_at is not None:
+        raise NotFound("Opportunité introuvable")
+    project = service.start_studies(
+        db,
+        opp,
+        user_id=principal.id,
+        name=data.name,
+        manager_id=data.manager_id,
+        auto_invite=not data.invite_client_email,
+    )
+    invitation_id = None
+    if data.invite_client_email:
+        from app.modules.identity.models import User
+        from app.modules.identity.service import invite_user
+
+        contact = db.get(Contact, opp.contact_id) if opp.contact_id else None
+        invitation, _ = invite_user(
+            db,
+            inviter=db.get(User, principal.id),
+            email=data.invite_client_email,
+            first_name=contact.first_name if contact else None,
+            last_name=contact.last_name if contact else None,
+            role_codes=["CLIENT"],
+            organization_id=opp.organization_id,
+            project_ids=[project.id],
+            message="Votre espace client GLOBUS est prêt : suivez et validez les études de votre projet.",
+            channels=["email", "whatsapp"] if contact and (contact.whatsapp or contact.phone) else ["email"],
+            phone=(contact.whatsapp or contact.phone) if contact else None,
+        )
+        invitation_id = invitation.id
+    db.commit()
+    return {"project_id": project.id, "project_code": project.code, "invitation_id": invitation_id}
 
 
 class ProjectFromContractIn(BaseModel):

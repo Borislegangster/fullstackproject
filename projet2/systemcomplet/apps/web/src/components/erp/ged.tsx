@@ -627,6 +627,12 @@ export function DocumentDetail({ id }: { id: string }) {
             tags: { widget: "tags" },
             client_visible: { help: "Publie la version en vigueur dans l'espace client (notification envoyée)." },
             retention_until: { help: "Date jusqu'à laquelle le document doit être conservé (archivage légal)." },
+            paid_deliverable: { label: "Livrable d'études payant", help: "Le client le consulte en aperçu filigrané et le valide ; l'original lui est remis après règlement de la facture d'études." },
+            unlock_invoice_id: {
+              label: "Facture d'études qui débloque le livrable",
+              ref: { ...REFS.clientInvoices, query: d.project_id ? { project_id: d.project_id } : undefined },
+              visibleIf: (v) => !!v.paid_deliverable,
+            },
           }}
           onCancel={() => setDialog(null)}
           onSuccess={(res: Row) => {

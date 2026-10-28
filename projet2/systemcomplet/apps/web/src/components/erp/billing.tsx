@@ -29,6 +29,7 @@ const INVOICE_KINDS = [
   { value: "deposit", label: "Acompte" },
   { value: "progress", label: "Situation / avancement" },
   { value: "final", label: "Décompte final" },
+  { value: "studies", label: "Études et conception" },
 ];
 
 function PaymentsMini({ payments }: { payments?: Row[] }) {

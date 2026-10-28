@@ -617,6 +617,7 @@ export function OpportunitiesBoard() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [losing, setLosing] = useState<Row | null>(null);
   const [quoting, setQuoting] = useState<Row | null>(null);
+  const [studying, setStudying] = useState<Row | null>(null);
   const router = useRouter();
   const byStage = useMemo(() => Object.fromEntries(STAGES.map((s) => [s, list.items.filter((o) => o.stage === s)])), [list.items]);
   const move = async (o: Row, stage: string, lost_reason?: string) => {
@@ -671,6 +672,15 @@ export function OpportunitiesBoard() {
                           aria-label="Étape"
                           className="h-8 text-xs"
                         />
+                        {o.project_id ? (
+                          <Button size="sm" variant="ghost" onClick={() => router.push(`/erp/chantiers/${o.project_id}`)}>
+                            Projet
+                          </Button>
+                        ) : !["won", "lost"].includes(o.stage) ? (
+                          <Button size="sm" variant="ghost" onClick={() => setStudying(o)}>
+                            Études
+                          </Button>
+                        ) : null}
                         {!["won", "lost"].includes(o.stage) ? (
                           <Button size="sm" variant="ghost" onClick={() => setQuoting(o)}>
                             Devis
@@ -725,6 +735,33 @@ export function OpportunitiesBoard() {
           if (losing) await move(losing, "lost", reason);
         }}
       />
+      <Modal open={!!studying} onClose={() => setStudying(null)} title="Démarrer les études" size="lg">
+        {studying ? (
+          <div className="space-y-4">
+            <Alert tone="info">
+              Le projet est créé au statut « Étude » et le client est invité dans son espace : il y suivra et validera plans, 3D et options. Les études sont facturées après sa validation ; le devis de travaux viendra ensuite, rattaché à ce même projet.
+            </Alert>
+            <SchemaForm
+              endpoint="POST /crm/opportunities/{opportunity_id}/start-studies"
+              params={{ opportunity_id: studying.id }}
+              initial={{ name: studying.title }}
+              fields={{
+                name: { label: "Nom du projet" },
+                manager_id: { ref: "users", label: "Chef de projet" },
+                invite_client_email: { label: "E-mail du client", help: "Laisser vide pour inviter le contact de l'opportunité." },
+              }}
+              submitLabel="Démarrer les études"
+              onCancel={() => setStudying(null)}
+              onSuccess={(res: Row) => {
+                setStudying(null);
+                toast.success("Études démarrées", `Projet ${res.project_code} créé, client invité.`);
+                router.push(`/erp/chantiers/${res.project_id}`);
+              }}
+              columns={1}
+            />
+          </div>
+        ) : null}
+      </Modal>
       <Modal open={!!quoting} onClose={() => setQuoting(null)} title="Nouveau devis" size="full">
         {quoting ? (
           <QuoteEditor
@@ -764,6 +801,7 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
   const src = quote ?? initial ?? {};
   const [head, setHead] = useState({
     title: src.title ?? "",
+    nature: src.nature ?? "travaux",
     opportunity_id: src.opportunity_id ?? null,
     organization_id: src.organization_id ?? null,
     contact_id: src.contact_id ?? null,
@@ -842,6 +880,9 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
         </Field>
         <Field label="Valable jusqu'au">
           <Input type="date" value={head.valid_until ?? ""} onChange={(e) => setHead({ ...head, valid_until: e.target.value })} />
+        </Field>
+        <Field label="Nature du devis" help="Travaux : construction (rattachée au projet d'études s'il existe). Études : honoraires de conception.">
+          <Select value={head.nature} onChange={(e) => setHead({ ...head, nature: e.target.value })} options={[{ value: "travaux", label: "Travaux" }, { value: "etudes", label: "Études et conception" }]} />
         </Field>
         <Field label="Opportunité">
           <RefSelect
@@ -1009,6 +1050,7 @@ export function QuotesList() {
           href: (r) => `/erp/crm/devis/${r.id}`,
           columns: [
             { key: "number", label: "N°", render: (r) => <CellLink href={`/erp/crm/devis/${r.id}`}>{`${r.number}${r.revision > 1 ? ` (r${r.revision})` : ""}`}</CellLink> },
+            { key: "nature", label: "Nature", format: "option" },
             { key: "title", label: "Objet" },
             { key: "total", label: "TTC", format: "money", align: "right", sortable: true },
             { key: "valid_until", label: "Validité", format: "date", hideOnMobile: true },
@@ -1250,6 +1292,7 @@ export function CrmContractsList() {
         href: (r) => `/erp/crm/contrats/${r.id}`,
         columns: [
           { key: "number", label: "N°", render: (r) => <CellLink href={`/erp/crm/contrats/${r.id}`}>{r.number}</CellLink> },
+          { key: "nature", label: "Nature", format: "option" },
           { key: "title", label: "Objet" },
           { key: "amount", label: "Montant", format: "money", align: "right", sortable: true },
           { key: "signed_at", label: "Signé le", format: "date" },
@@ -1301,16 +1344,16 @@ export function CrmContractDetail({ id }: { id: string }) {
                 <FileSignature className="h-4 w-4" /> Enregistrer la signature
               </Button>
             ) : null}
-            {can("crm:contracts") && can("projects:write") && c.status === "signed" && !c.project_id ? (
+            {can("crm:contracts") && can("projects:write") && c.status === "signed" && (!c.project_id || (c.nature !== "etudes" && c.project && c.project.contract_id !== c.id)) ? (
               <Button
                 size="sm"
                 variant="accent"
                 onClick={() => {
-                  setProj((p) => ({ ...p, name: c.title, invite_client_email: c.contact?.email ?? "" }));
+                  setProj((p) => ({ ...p, name: c.title, invite_client_email: c.project ? "" : c.contact?.email ?? "" }));
                   setDialog("project");
                 }}
               >
-                Créer le projet
+                {c.project ? `Rattacher au projet ${c.project.code}` : "Créer le projet"}
               </Button>
             ) : null}
             {c.project ? (
@@ -1413,7 +1456,7 @@ export function CrmContractDetail({ id }: { id: string }) {
       <Modal
         open={dialog === "project"}
         onClose={() => setDialog(null)}
-        title="Créer le projet à partir du contrat"
+        title={c.project ? `Rattacher le contrat de travaux au projet ${c.project.code}` : "Créer le projet à partir du contrat"}
         footer={
           <Button
             loading={busy}
@@ -1424,7 +1467,7 @@ export function CrmContractDetail({ id }: { id: string }) {
                   method: "POST",
                   body: { name: proj.name || null, manager_id: proj.manager_id, client_user_ids: proj.client_user_ids, invite_client_email: proj.invite_client_email || null },
                 });
-                toast.success(`Projet ${res.project_code} créé`, res.invitation_id ? "Le client est invité à rejoindre son espace." : undefined);
+                toast.success(c.project ? `Contrat rattaché au projet ${res.project_code}` : `Projet ${res.project_code} créé`, c.project ? "Montant, budget des travaux, lots et jalons ajoutés au projet." : res.invitation_id ? "Le client est invité à rejoindre son espace." : undefined);
                 router.push(`/erp/chantiers/${res.project_id}`);
               } catch (err) {
                 toast.error("Création impossible", errorMessage(err));
@@ -1433,24 +1476,35 @@ export function CrmContractDetail({ id }: { id: string }) {
               }
             }}
           >
-            Créer le projet
+            {c.project ? "Rattacher au projet" : "Créer le projet"}
           </Button>
         }
       >
-        <div className="space-y-4">
-          <Field label="Nom du projet">
-            <Input value={proj.name} onChange={(e) => setProj({ ...proj, name: e.target.value })} />
-          </Field>
-          <Field label="Chef de projet">
-            <RefSelect source={REFS.users} value={proj.manager_id} onChange={(v) => setProj({ ...proj, manager_id: v })} />
-          </Field>
-          <Field label="Comptes clients existants à rattacher">
-            <MultiRefSelect source={REFS.users} value={proj.client_user_ids} onChange={(v) => setProj({ ...proj, client_user_ids: v })} />
-          </Field>
-          <Field label="Inviter le client par e-mail" help="Crée son accès à l'espace client, limité à ce projet.">
-            <Input type="email" value={proj.invite_client_email} onChange={(e) => setProj({ ...proj, invite_client_email: e.target.value })} />
-          </Field>
-        </div>
+        {c.project ? (
+          <div className="space-y-4">
+            <Alert tone="info">
+              Le projet {c.project.code} est né de la phase d&apos;études : le contrat de travaux s&apos;y rattache (montant du contrat, budget des travaux, lots et jalons de paiement de l&apos;échéancier). Le client y a déjà accès.
+            </Alert>
+            <Field label="Chef de projet" help="Seulement si le projet n'en a pas encore.">
+              <RefSelect source={REFS.users} value={proj.manager_id} onChange={(v) => setProj({ ...proj, manager_id: v })} />
+            </Field>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Field label="Nom du projet">
+              <Input value={proj.name} onChange={(e) => setProj({ ...proj, name: e.target.value })} />
+            </Field>
+            <Field label="Chef de projet">
+              <RefSelect source={REFS.users} value={proj.manager_id} onChange={(v) => setProj({ ...proj, manager_id: v })} />
+            </Field>
+            <Field label="Comptes clients existants à rattacher">
+              <MultiRefSelect source={REFS.users} value={proj.client_user_ids} onChange={(v) => setProj({ ...proj, client_user_ids: v })} />
+            </Field>
+            <Field label="Inviter le client par e-mail" help="Crée son accès à l'espace client, limité à ce projet.">
+              <Input type="email" value={proj.invite_client_email} onChange={(e) => setProj({ ...proj, invite_client_email: e.target.value })} />
+            </Field>
+          </div>
+        )}
       </Modal>
     </div>
   );

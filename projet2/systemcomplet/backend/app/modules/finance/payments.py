@@ -723,6 +723,13 @@ def _allocate(db: Session, payment: Payment) -> None:
             mark_paid(db, obj)
         if isinstance(obj, (SupplierInvoice, SubcontractorInvoice)) and remaining <= 0:
             _close_after_payment(db, obj)
+        paid_invoice = obj if isinstance(obj, ClientInvoice) else None
+        if isinstance(obj, FundsCall) and obj.client_invoice_id:
+            paid_invoice = db.get(ClientInvoice, obj.client_invoice_id)
+        if paid_invoice is not None and paid_invoice.status == "paid":
+            from app.modules.documents.deliverables import deliver_for_invoice
+
+            deliver_for_invoice(db, paid_invoice)  # facture d'études réglée : remise des livrables
 
 
 def _close_after_payment(db: Session, invoice: Any) -> None:

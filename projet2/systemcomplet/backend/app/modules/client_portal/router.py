@@ -735,6 +735,7 @@ def payment_status(
 def documents(
     project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> list[dict[str, Any]]:
+    from app.modules.documents import deliverables
     from app.modules.documents.models import Document, DocumentVersion
 
     project = _project(db, access, project_id)
@@ -752,6 +753,30 @@ def documents(
         version = db.get(DocumentVersion, doc.published_version_id)
         if version is None:
             continue
+        deliverable = deliverables.state(db, doc)
+        if deliverable["locked"]:
+            # Livrable d'études non réglé : aperçu filigrané seulement (PDF, images), aucun original téléchargeable.
+            previewable = version.mime_type in deliverables.PREVIEW_MIMES
+            url = (
+                signed_url(
+                    version.file_id,
+                    user_id=access.p.id,
+                    ttl=900,
+                    watermark_text=deliverables.preview_label(db, doc, access.p.user),
+                    preview=True,
+                )
+                if previewable
+                else None
+            )
+        else:
+            url = signed_url(
+                version.file_id,
+                user_id=access.p.id,
+                ttl=900,
+                watermark_text=watermark_label(access.p.user)
+                if version.mime_type == "application/pdf" and not doc.paid_deliverable
+                else None,
+            )
         out.append(
             {
                 "id": doc.id,
@@ -764,18 +789,32 @@ def documents(
                 "mime": version.mime_type,
                 "filename": version.original_name,
                 "authenticity_url": f"/verification/{version.authenticity_token}",
-                "url": signed_url(
-                    version.file_id,
-                    user_id=access.p.id,
-                    ttl=900,
-                    watermark_text=watermark_label(access.p.user) if version.mime_type == "application/pdf" else None,
-                ),
+                "url": url,
+                "deliverable": deliverable,
             }
         )
     return jsonable(out)
 
 
 # ============================================================================ immersion
+def _immersive_url(db: Session, access: Access, file_id: uuid.UUID | None) -> str | None:
+    """Fichier d'un contenu immersif ; s'il provient d'un livrable d'études non réglé : aperçu filigrané seulement."""
+    from app.modules.documents import deliverables
+
+    if not file_id:
+        return None
+    locked = deliverables.locked_document_for_file(db, file_id)
+    if locked is None:
+        return signed_url(file_id, user_id=access.p.id, ttl=3600)
+    return signed_url(
+        file_id,
+        user_id=access.p.id,
+        ttl=900,
+        watermark_text=deliverables.preview_label(db, locked, access.p.user),
+        preview=True,
+    )
+
+
 @router.get("/projects/{project_id}/immersion")
 def immersion(
     project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
@@ -813,8 +852,7 @@ def immersion(
                     "description": c.description,
                     "captured_at": c.captured_at,
                     "comparison_group": c.comparison_group,
-                    "url": c.external_url
-                    or (signed_url(c.file_id, user_id=access.p.id, ttl=3600) if c.file_id else None),
+                    "url": c.external_url or _immersive_url(db, access, c.file_id),
                 }
                 for c in contents
             ],

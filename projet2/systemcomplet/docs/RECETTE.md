@@ -13,11 +13,13 @@ trois applications mobiles.*
 - **Mode d'emploi** — comment lire une scène, les conventions, les personnages, les services non encore activés
 - **Livre I — Les préparatifs** : chapitre 1 (le matériel), chapitre 2 (l'état de la plateforme)
 - **Livre II — Les fondations** : chapitre 3 (organisations, partenaires, comptes du personnel)
-- **Livre III — La rencontre** : chapitre 4 (le site vitrine), chapitre 5 (du prospect au contrat), chapitre 6 (l'espace client)
-- **Livre IV — Le chantier se prépare** : chapitre 7 (le projet), chapitre 8 (les achats), chapitre 9 (la sous-traitance)
-- **Livre V — La vie du chantier** : chapitres 10 à 14 (terrain, client, finances, RH-QHSE, direction mobile)
-- **Livre VI — Autour de la maison** : chapitres 15 à 17 (communication, site web, sécurité)
-- **Épilogue** — chapitre 18 (le bilan et le nettoyage)
+- **Livre III — La rencontre** : chapitre 4 (le site vitrine), chapitre 5 (du prospect aux études), chapitre 6 (l'espace client)
+- **Livre IV — Le chantier se prépare** : chapitre 7 (le projet et les études : plans, 3D, validation, facture d'études,
+  remise des livrables), chapitre 8 (le devis des travaux et le contrat), chapitre 9 (les achats), chapitre 10 (la
+  sous-traitance)
+- **Livre V — La vie du chantier** : chapitres 11 à 15 (terrain, client, finances, RH-QHSE, direction mobile)
+- **Livre VI — Autour de la maison** : chapitres 16 à 18 (communication, site web, sécurité)
+- **Épilogue** — chapitre 19 (le bilan et le nettoyage)
 - **Annexes** — A (ce qui dépend d'un service non activé), B (données de l'histoire), C (fiche d'anomalie),
   D (fichiers à préparer), E (tableau de bord de la recette), F (que faire si…), G (référence des formulaires)
 
@@ -33,6 +35,20 @@ Mballa à Douala — et chaque étape de l'histoire est une **scène** à jouer 
 
 Il est écrit pour quelqu'un qui n'est pas informaticien : chaque clic est décrit, chaque champ à remplir est nommé
 exactement comme à l'écran.
+
+### Le parcours du client chez GLOBUS
+
+L'histoire suit l'ordre réel de l'entreprise : **les études d'abord**.
+
+1. Le prospect laisse son projet sur le site (lead), le commercial le qualifie et en fait une opportunité.
+2. **Démarrer les études** : le projet naît au statut « Étude », le client reçoit son espace.
+3. GLOBUS conçoit : plans, rendus 3D, maquette, options. Le client les **consulte en aperçu filigrané** et les **valide**
+   par code.
+4. La **facture d'études** est émise ; dès qu'elle est réglée, les **originaux sont remis** au client (ils deviennent les
+   siens).
+5. Le **devis des travaux**, fondé sur ces études, est accepté par code ; le **contrat** signé se **rattache au même
+   projet** (budget, lots, jalons de paiement).
+6. Le chantier : achats, sous-traitance, terrain, appels de fonds, réception, garantie.
 
 ### Comment se présente une scène
 
@@ -119,7 +135,7 @@ Onze personnages, chacun avec son propre compte et sa propre adresse e-mail. Vou
 | TEC | **Moussa** TEST-BELLO | Électricien, SAV, pointage | « Artisan / Technicien » | « Électricité » | `Électricien` | `votre.adresse+technicien@gmail.com` |
 | FOU | **Martin** TEST-KAMGA | Gérant de *TEST Quincaillerie du Wouri* | « Fournisseur » | *(vide)* | `Gérant` | `votre.adresse+fournisseur@gmail.com` |
 | STT | **Sylvie** TEST-ABENA | Gérante de *TEST Électricité Akwa* | « Sous-traitant » | *(vide)* | `Gérante` | `votre.adresse+soustraitant@gmail.com` |
-| CLI | **Paul** TEST-MBALLA | Le client | « Client » — son compte se crée **tout seul** (scène C14) | — | — | `votre.adresse+client@gmail.com` |
+| CLI | **Paul** TEST-MBALLA | Le client | « Client » — son compte se crée **tout seul** au lancement des études (scène C8) | — | — | `votre.adresse+client@gmail.com` |
 
 > **Attention, deux mots qui se ressemblent.** Le **rôle** (cases à cocher « Rôles ») donne les droits dans la
 > plateforme : « Chef de chantier » est un rôle. Le **métier** (liste « Métier ») décrit le savoir-faire de la
@@ -494,7 +510,7 @@ l'organisation** de A3 : c'est ce lien qui permettra à Martin d'ouvrir son extr
 ### Scène A7 — La fiche sous-traitant de Sylvie
 
 **Pourquoi** : même principe pour la sous-traitance. Son entreprise n'est pas encore « qualifiée » : ce sera fait au
-chapitre 9.
+chapitre 10.
 
 **Qui** : le Gardien. **Où** : *Sous-traitance › Sous-traitants*, onglet **Sous-traitants**.
 
@@ -911,7 +927,7 @@ case cochée, le message « Merci de cocher la case de consentement » s'affiche
 3. Si l'assistant propose de laisser vos coordonnées, faites-le (adresse `+client`).
 
 **Résultat attendu** : une réponse cohérente. **Si l'IA n'est pas activée**, l'assistant répond à partir de réponses
-préparées et propose d'être recontacté : c'est normal. La conversation sera retrouvée par Jordan (scène C16).
+préparées et propose d'être recontacté : c'est normal. La conversation sera retrouvée par Jordan (scène C10).
 
 - [ ] **V9** — L'assistant répond.
 
@@ -942,10 +958,11 @@ et les conditions générales.
 
 ---
 
-## Chapitre 5 — Du prospect au contrat
+## Chapitre 5 — Du prospect aux études
 
 *Lundi matin, Jordan Nkeng ouvre l'ERP. Un certain Paul, à Douala, rêve d'une villa. Commence le travail du commercial,
-du premier appel jusqu'à la signature.*
+du premier appel jusqu'au lancement des études : chez GLOBUS, on conçoit d'abord (plans, 3D, options),
+le client valide, et seulement ensuite vient le devis des travaux.*
 
 ### Scène C1 — La règle qui distribue les prospects
 
@@ -1104,175 +1121,37 @@ devient **Contacté**.
 
 - [ ] **C7** — Le pipeline se met à jour.
 
-### Scène C8 — Le devis
+### Scène C8 — Démarrer les études
 
-**Pourquoi** : un devis clair, ligne par ligne, avec un échéancier qui totalise 100 %.
+**Pourquoi** : chez GLOBUS, la conception passe avant tout devis de travaux. Le projet naît au statut « Étude », Paul
+reçoit son espace client pour suivre et **valider** plans, 3D et options ; les études lui seront facturées après sa
+validation, et le devis des travaux viendra ensuite, sur ce même projet (chapitre 8).
 
-**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, bouton **Devis** sur la carte de Paul.
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, carte de Paul, bouton **Études**.
 
 **Méthode**
 
-1. Cliquez sur **Devis** : la fenêtre **Nouveau devis** s'ouvre, avec l'opportunité, le client et le contact déjà repris.
-2. En-tête :
+1. Sur la carte de Paul, cliquez sur **Études** : fenêtre **Démarrer les études**.
 
 | Champ | Valeur | |
 | --- | --- | --- |
-| Intitulé du devis | `Villa Mballa — construction R+1` | ★ |
-| Valable jusqu'au | dans 30 jours | |
-| Devise | « FCFA (XAF) » | |
-| TVA (%) | `19.25` (proposé) | |
-| Remise globale (montant) | `0` | |
-| Introduction | `Construction d'une villa R+1 à Bonamoussadi.` | |
+| Nom du projet | `TEST — Villa Mballa` | |
+| Chef de projet | « Samuel TEST-FOTSO » | |
+| E-mail du client | *(vide : le contact de l'opportunité, `votre.adresse+client@gmail.com`, est invité)* | |
 
-3. **Lignes chiffrées** : une ligne vide est déjà présente ; remplissez-la, puis cliquez sur **Ligne** pour chaque ligne
-   suivante. La colonne qui compte est **Désignation** ★ ; **Section** n'est qu'un titre de regroupement (facultatif).
-
-| Section | Lot | Désignation ★ | Unité | Qté ★ | PU HT ★ | Remise % |
-| --- | --- | --- | --- | --- | --- | --- |
-| `Études` | `ET` | `Études et plans` | `forfait` | `1` | `3000000` | `0` |
-| `Gros œuvre` | `GO` | `Gros œuvre` | `forfait` | `1` | `15000000` | `0` |
-| `Second œuvre` | `SO` | `Second œuvre` | `forfait` | `1` | `7000000` | `0` |
-
-4. **Échéancier de paiement** : cliquez trois fois sur **Échéance** et remplissez :
-
-| Libellé de l'échéance ★ | % du total ★ | Jalon déclencheur |
-| --- | --- | --- |
-| `Acompte à la signature` | `30` | `Signature du contrat` |
-| `Mi-chantier` | `40` | `Fin du gros œuvre` |
-| `Réception` | `30` | `Réception des travaux` |
-
-5. **Conditions particulières** : `Paiement à 15 jours.` Cliquez sur **Créer le devis**.
-6. Sur la fiche du devis, cliquez sur **PDF**.
+2. Cliquez sur **Démarrer les études** : la fiche du projet s'ouvre.
 
 **Résultat attendu**
 
-- Sous-total HT **25 000 000**, TVA 19,25 % **4 812 500**, total TTC **29 812 500** FCFA ; chaque échéance affiche son
-  montant.
-- Le PDF reprend les sections, les lignes, l'échéancier, aux couleurs de l'entreprise.
+- Le projet a un code de la forme **PRJ-AAAA-NNNNN**, au statut **Étude**, sans montant de contrat ; Samuel est membre.
+- La carte de Paul dans le pipeline affiche maintenant **Projet** (au lieu d'**Études**).
+- **Paul reçoit un e-mail d'invitation** à l'espace client sur `+client` (il l'activera au chapitre 6).
 
-> **Contrôle** : laissez une ligne sans **Désignation** et cliquez sur **Créer le devis** : la plateforme refuse avec
-> « Devis incomplet — ligne N : désignation manquante… ». Rien n'est enregistré en silence.
+> **Contrôle** : cliquez de nouveau sur **Projet** depuis la carte : c'est le même projet (aucun doublon n'est créé).
 
-- [ ] **C8** — Devis juste, PDF présentable.
+- [ ] **C8** — Études démarrées, projet créé, Paul invité, sans devis.
 
-### Scène C9 — Le devis part chez Paul
-
-**Qui** : Jordan. **Où** : fiche du devis.
-
-**Méthode** : cliquez sur **Envoyer**.
-
-**Résultat attendu** : statut **Envoyé** ; le bloc **Lien client** affiche un lien ; un e-mail arrive sur `+client` avec
-ce lien.
-
-- [ ] **C9** — Devis envoyé.
-
-### Scène C10 — Paul accepte par code
-
-**Pourquoi** : l'acceptation par code reçu par e-mail vaut signature ; la plateforme en garde la preuve.
-
-**Qui** : Paul, sans compte (profil **GLOBUS CLI**). **Où** : le lien de l'e-mail.
-
-**Méthode**
-
-1. Dans Gmail (adresse `+client`), ouvrez l'e-mail du devis et cliquez sur le lien.
-2. Lisez le devis. En bas, cliquez sur **Recevoir mon code de validation** : un code arrive par e-mail.
-3. Remplissez :
-
-| Champ | Valeur | |
-| --- | --- | --- |
-| Code reçu | le code de l'e-mail | ★ |
-| Nom et prénom du signataire | `Paul TEST-MBALLA` | ★ |
-| J'ai lu le devis et j'accepte ses conditions. | cochée | ★ |
-
-4. Cliquez sur **J'accepte le devis**.
-
-**Résultat attendu** : la page confirme l'acceptation ; chez Jordan, le devis passe **Accepté** avec la preuve (date,
-heure, moyen de réception du code) et une notification.
-
-- [ ] **C10** — Devis accepté par code.
-
-### Scène C11 — Le refus puis la révision
-
-**Pourquoi** : un devis refusé se révise sans perdre l'ancienne version.
-
-**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, puis la fiche du nouveau devis.
-
-**Méthode**
-
-1. Sur la carte de Paul, cliquez sur **Devis** ; créez un **second** devis avec une seule ligne (Désignation `Option
-   piscine`, Qté `1`, PU HT `4000000`) ; **Créer le devis**.
-2. Sur ce devis, cliquez sur **Envoyer**.
-3. Cliquez sur **Refus client** ; dans **Motif communiqué par le client**, tapez `Prix trop élevé` ; confirmez. Le devis
-   passe **Refusé**.
-4. Cliquez sur **Réviser** : une nouvelle version (même numéro, révision 2) est créée en **Brouillon**.
-
-**Résultat attendu** : la version refusée reste consultable au statut **Remplacé** ; la révision 2 est en brouillon,
-avec les mêmes lignes ; le premier devis, accepté, n'est pas touché (un devis accepté ne peut pas être révisé).
-
-- [ ] **C11** — Refus et révision fonctionnent.
-
-### Scène C12 — Le contrat
-
-**Qui** : Jordan. **Où** : fiche du devis **accepté** (C10).
-
-**Méthode** : cliquez sur **Établir le contrat**, puis confirmez dans la fenêtre **Établir le contrat**.
-
-**Résultat attendu** : la fiche du contrat s'ouvre (statut **Brouillon**), avec le montant, les conditions et le bloc
-**Échéancier contractuel** repris du devis.
-
-- [ ] **C12** — Contrat établi.
-
-### Scène C13 — La signature
-
-**Qui** : Jordan. **Où** : fiche du contrat.
-
-**Méthode**
-
-1. Cliquez sur **Enregistrer la signature**. Fenêtre **Enregistrer la signature du contrat** :
-
-| Champ | Valeur | |
-| --- | --- | --- |
-| Signataire | `Paul TEST-MBALLA` (proposé) | ★ |
-| Mode de signature | « Signature manuscrite scannée » | |
-| Date de signature | aujourd'hui | |
-| Contrat signé scanné | déposez le PDF « Contrat signé » (annexe D) | ★ avec ce mode |
-
-2. Cliquez sur **Enregistrer la signature**.
-
-**Résultat attendu** : statut **Signé** ; l'indicateur **Signature** affiche la date ; un bouton **Contrat signé** permet
-d'ouvrir le scan.
-
-- [ ] **C13** — Signature enregistrée.
-
-### Scène C14 — La naissance du projet et l'invitation de Paul
-
-**Pourquoi** : en un clic, le contrat devient un projet de chantier (budget, jalons de paiement, chef de projet), et Paul
-reçoit l'accès à son espace client.
-
-**Qui** : Jordan (ou le Gardien). **Où** : fiche du contrat signé.
-
-**Méthode**
-
-1. Cliquez sur **Créer le projet**. Fenêtre **Créer le projet à partir du contrat** :
-
-| Champ | Valeur |
-| --- | --- |
-| Nom du projet | `TEST — Villa Mballa` |
-| Chef de projet | « Samuel TEST-FOTSO » |
-| Comptes clients existants à rattacher | *(vide)* |
-| Inviter le client par e-mail | `votre.adresse+client@gmail.com` (proposé) |
-
-2. Cliquez sur **Créer le projet**, puis sur le bouton **Projet PRJ-…** de la fiche.
-
-**Résultat attendu**
-
-- Le projet a un code de la forme **PRJ-AAAA-NNNNN** ; Samuel est membre ; le budget initial et les jalons de paiement
-  (30 %, 40 %, 30 %) sont repris de l'échéancier.
-- **Paul reçoit un e-mail d'invitation** à l'espace client sur `+client`.
-
-- [ ] **C14** — Projet créé, Paul invité.
-
-### Scène C15 — La relance
+### Scène C9 — La relance
 
 **Qui** : Jordan. **Où** : *CRM*, onglet **Activités**.
 
@@ -1281,9 +1160,9 @@ tapez `Devis accepté` ; confirmez.
 
 **Résultat attendu** : la relance passe à « Fait ».
 
-- [ ] **C15** — Relance close.
+- [ ] **C9** — Relance close.
 
-### Scène C16 — La conversation de l'assistant
+### Scène C10 — La conversation de l'assistant
 
 **Qui** : Jordan. **Où** : *Commercial › Assistant et WhatsApp*.
 
@@ -1291,7 +1170,7 @@ tapez `Devis accepté` ; confirmez.
 
 **Résultat attendu** : la conversation est lisible en entier, puis close.
 
-- [ ] **C16** — Conversations consultables et clôturables.
+- [ ] **C10** — Conversations consultables et clôturables.
 
 ---
 
@@ -1379,7 +1258,7 @@ Tranquillité**, **Mon avis**, **Notifications**, **Mon compte**, **Documentatio
 **Résultat attendu**
 
 - Chaque page s'ouvre sans erreur ; une page encore vide l'explique (« Aucun document publié »…).
-- **Financement** et **Parrainage** n'apparaissent pas tant que ces programmes ne sont pas ouverts (chapitre 11).
+- **Financement** et **Parrainage** n'apparaissent pas tant que ces programmes ne sont pas ouverts (chapitre 12).
 
 - [ ] **K5** — Toutes les pages de l'espace client s'ouvrent.
 
@@ -1403,12 +1282,13 @@ Tranquillité**, **Mon avis**, **Notifications**, **Mon compte**, **Documentatio
 
 # Livre IV — Le chantier se prépare
 
-## Chapitre 7 — Samuel monte le projet
+## Chapitre 7 — Samuel monte le projet et les études
 
-*La Villa Mballa est désormais le projet de Samuel. Tout se passe dans la **fiche du projet** : menu *Projets ›
+*La Villa Mballa est désormais le projet de Samuel, encore au stade des **études** : plans, 3D et options seront
+conçus, validés par Paul, facturés et remis avant tout devis de travaux (scènes E1 à E5, en fin de chapitre). Tout se passe dans la **fiche du projet** : menu *Projets ›
 Chantiers*, ligne « TEST — Villa Mballa ». La fiche a des onglets en haut : **Synthèse**, **Confiance et preuves**,
 **Planning**, **Sites, phases, lots**, **Jalons**, **Équipe**, **Journal de chantier**, **Photos et vidéos**,
-**Décisions**, **Avenants**, **Budget**, **Risques**, **Tranquillité**, **Garanties**, **Immersion et digests**,
+**Études et livrables**, **Décisions**, **Avenants**, **Budget**, **Risques**, **Tranquillité**, **Garanties**, **Immersion et digests**,
 **Panneau connecté**.*
 
 ### Scène M1 — La carte d'identité du projet
@@ -1418,15 +1298,15 @@ Chantiers*, ligne « TEST — Villa Mballa ». La fiche a des onglets en haut : 
 **Méthode**
 
 1. Cliquez sur **Modifier** : fenêtre **Modifier le projet**.
-2. Complétez (le reste est déjà rempli depuis le contrat) :
+2. Complétez (le nom et le client sont repris de l'opportunité) :
 
 | Champ | Valeur | |
 | --- | --- | --- |
 | Nom | `TEST — Villa Mballa` (déjà rempli) | ★ |
 | Univers | « Globus Home » | |
-| Offre | l'offre choisie au devis (liste) | |
+| Offre | l'offre de l'opportunité (liste) | |
 | Type de projet | « Construction neuve » | |
-| Statut | « Préparation » | |
+| Statut | « Étude » (laissez-le : il passera à « Préparation » au chapitre 8) | |
 | Adresse | `Bonamoussadi, rue des Manguiers` | |
 | Ville | `Douala` | |
 | Latitude / Longitude | les coordonnées du terrain (*voir l'astuce*) | |
@@ -1438,7 +1318,7 @@ Chantiers*, ligne « TEST — Villa Mballa ». La fiche a des onglets en haut : 
 | Visible par le client | coché | |
 
 > **Astuce coordonnées** : sur le téléphone, ouvrez Google Maps, appuyez longuement sur l'endroit voulu : la latitude et
-> la longitude s'affichent (ex. `4.0920` et `9.7440`). Pour pouvoir **tester le pointage** (chapitre 13) sans aller à
+> la longitude s'affichent (ex. `4.0920` et `9.7440`). Pour pouvoir **tester le pointage** (chapitre 11) sans aller à
 > Bonamoussadi, mettez les coordonnées de l'endroit où vous jouez la recette.
 
 3. Cliquez sur **Enregistrer**.
@@ -1510,18 +1390,16 @@ le temps (fondations, élévation…).
 
 **Méthode**
 
-1. Vérifiez les lots créés depuis le devis (ET, GO, SO).
-2. **Nouveau lot**, **Créer** :
+1. **Nouveau lot**, pour chaque ligne, **Créer** (le devis des travaux du chapitre 8 réutilisera ces lots) :
 
-| Champ | Valeur | |
-| --- | --- | --- |
-| Code | `ELEC` | ★ |
-| Nom | `Électricité` | ★ |
-| Discipline | « Électricité » | |
-| Budget | `2000000` | |
-| Statut | « Planifié » | |
+| Code ★ | Nom ★ | Discipline | Statut |
+| --- | --- | --- | --- |
+| `ET` | `Études techniques` | *(vide)* | « Planifié » |
+| `GO` | `Gros œuvre` | *(vide)* | « Planifié » |
+| `SO` | `Second œuvre` | *(vide)* | « Planifié » |
+| `ELEC` | `Électricité` | « Électricité » | « Planifié » |
 
-3. **Nouvelle phase**, deux fois, **Créer** :
+2. **Nouvelle phase**, deux fois, **Créer** :
 
 | Champ | Phase 1 | Phase 2 | |
 | --- | --- | --- | --- |
@@ -1532,7 +1410,7 @@ le temps (fondations, élévation…).
 | Couleur | une couleur (sélecteur) | une autre | |
 | Visible par le client | coché | coché | |
 
-**Résultat attendu** : le lot « Électricité » et les deux phases apparaissent.
+**Résultat attendu** : les quatre lots et les deux phases apparaissent.
 
 - [ ] **M4** — Structure du projet en place.
 
@@ -1542,8 +1420,7 @@ le temps (fondations, élévation…).
 
 **Méthode**
 
-1. Vérifiez les trois jalons issus du contrat, avec leur **Part de paiement (%)** : 30, 40, 30.
-2. **Nouveau jalon**, **Créer** :
+1. **Nouveau jalon**, **Créer** (les trois jalons de paiement des travaux arriveront avec le contrat, scène B7) :
 
 | Champ | Valeur | |
 | --- | --- | --- |
@@ -1553,7 +1430,7 @@ le temps (fondations, élévation…).
 | Visible par le client | coché | |
 | Part de paiement (%) | *(vide)* | |
 
-**Résultat attendu** : quatre jalons, dont trois liés à un paiement.
+**Résultat attendu** : le jalon « Implantation » apparaît, visible du client.
 
 - [ ] **M5** — Jalons corrects.
 
@@ -1606,39 +1483,6 @@ analysée que si le service météo est activé.)
 
 - [ ] **M7** — Analyse des aléas fonctionnelle.
 
-### Scène M8 — Le budget de référence
-
-**Pourquoi** : le budget approuvé sert de référence pour mesurer la marge.
-
-**Qui** : Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Budget**.
-
-**Méthode**
-
-1. Rachel ouvre l'onglet **Budget** et vérifie la version issue du contrat dans **Budgets (versions)**.
-2. Rachel crée une version ajustée : **Nouvelle version**, fenêtre **Nouvelle version de budget** :
-
-| Champ | Valeur | |
-| --- | --- | --- |
-| Libellé | `Budget de référence` | ★ |
-| Chiffre d'affaires visé | `25000000` | |
-| Lignes | une ligne par lot (bouton d'ajout) — voir ci-dessous | ★ |
-
-| Lot | Catégorie | Libellé | Montant |
-| --- | --- | --- | --- |
-| GO | « Matériaux » | `Ciment, acier, agrégats` | `9000000` |
-| GO | « Main-d'œuvre » | `Équipe gros œuvre` | `3000000` |
-| ELEC | « Sous-traitance » | `Électricité` | `2000000` |
-| SO | « Matériaux » | `Second œuvre` | `5000000` |
-
-   **Enregistrer**.
-3. Rachel essaie de cliquer sur **Approuver** sur sa propre version : refusé (séparation des tâches).
-4. Grâce ouvre la même version et clique sur **Approuver**.
-
-**Résultat attendu** : étape 3, la plateforme refuse (« Séparation des tâches : un budget est approuvé par une autre
-personne que son auteur ») ; étape 4, la version passe **Approuvé** et devient la référence des marges.
-
-- [ ] **M8** — Budget de référence approuvé, séparation des tâches respectée.
-
 ### Scène M9 — Le plan du rez-de-chaussée (GED)
 
 **Pourquoi** : un plan suit un circuit : dépôt, revue, validation, publication « bon pour exécution », puis nouvelle
@@ -1674,19 +1518,21 @@ version qui rend l'ancienne périmée.
 
 - [ ] **M9** — Circuit de validation et de publication d'un plan fonctionnel.
 
-### Scène M10 — Le plan arrive chez Paul
+### Scène M10 — Le plan arrive chez Paul, en aperçu
 
 **Qui** : Samuel, puis Paul. **Où** : fiche du document « Plan RDC », puis l'espace client.
 
 **Méthode**
 
-1. Samuel clique sur **Propriétés**, coche **Visible par le client**, **Enregistrer**.
-2. Paul (**GLOBUS CLI**) : menu **Documents**, ouvrez « Plan RDC ». Puis cliquez sur **Authenticité**.
+1. Samuel clique sur **Propriétés** (fenêtre **Propriétés du document**), coche **Visible par le client** et **Livrable
+   d'études payant** (laissez **Facture d'études qui débloque le livrable** vide pour l'instant), **Enregistrer**.
+2. Paul (**GLOBUS CLI**) : menu **Documents**, ligne « Plan RDC » : cliquez sur **Aperçu filigrané**.
 
-**Résultat attendu** : Paul voit seulement la version en vigueur ; le PDF porte un filigrane à son nom ; la page
-d'authenticité confirme le document publié par GLOBUS.
+**Résultat attendu** : Paul voit seulement la version en vigueur, avec l'étiquette « Livrable d'études : remis après
+règlement de la facture d'études » ; l'aperçu porte un filigrane « APERÇU — livrable remis après règlement… » à son nom ;
+aucun bouton ne permet de télécharger l'original.
 
-- [ ] **M10** — Plan visible, filigrané et authentifié côté client.
+- [ ] **M10** — Plan consultable en aperçu filigrané seulement, original protégé.
 
 ### Scène M11 — La maquette 3D (si vous avez un fichier IFC ou RVT)
 
@@ -1726,7 +1572,7 @@ scène « non testée ».**
 
 2. Sur la zone, cliquez sur **QR de la zone**, puis **Imprimer**.
 
-**Résultat attendu** : le QR code s'imprime. Gardez-le pour le chapitre 10.
+**Résultat attendu** : le QR code s'imprime. Gardez-le pour le chapitre 11.
 
 - [ ] **M12** — QR de zone imprimé.
 
@@ -1808,9 +1654,332 @@ code** augmente.
 
 - [ ] **M15** — Panneau publié.
 
+### Scène E1 — Le rendu 3D, deuxième livrable d'études
+
+**Pourquoi** : chez GLOBUS, plans **et** visuels 3D font partie des études ; tant qu'ils ne sont pas réglés, Paul les voit
+en aperçu filigrané seulement.
+
+**Qui** : Samuel, puis Paul. **Où** : *Projets › GED* ; puis espace client, menu **Documents**.
+
+**Méthode**
+
+1. Samuel : **Déposer un document** : **Fichier** ★ l'image « Rendu façade » (JPG ou PNG, annexe D), **Titre** ★
+   `Rendu 3D façade`, **Type** ★ « Plan », **Confidentialité** ★ « Interne », **Projet** « TEST — Villa Mballa » ;
+   **Déposer**.
+2. Faites-le valider puis publier comme le plan (scène M9, étapes 2 à 4).
+3. **Propriétés** : cochez **Visible par le client** et **Livrable d'études payant** ; **Enregistrer**.
+4. Paul : **Documents**, ligne « Rendu 3D façade », **Aperçu filigrané**.
+
+**Résultat attendu** : l'image s'ouvre réduite et couverte d'un filigrane « APERÇU — livrable remis après règlement… » ;
+aucun bouton ne télécharge l'original.
+
+- [ ] **E1** — Rendu 3D publié en aperçu filigrané seulement.
+
+### Scène E2 — Paul valide le plan
+
+**Pourquoi** : le client approuve formellement chaque étude avant toute facturation ; sa validation est datée et figée.
+
+**Qui** : Samuel, puis Paul. **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet
+**Décisions** ; puis espace client, menu **Validations**.
+
+**Méthode**
+
+1. Samuel : **Demander une décision** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Type | « Plan » | |
+| Titre | `Validation du plan RDC et du rendu 3D` | ★ |
+| Description | `Plan RDC v2 et rendu de la façade` | |
+| Type de référence | « Version de document » | |
+| Pièce concernée | « Plan RDC » (version publiée) | |
+| Date d'échéance | dans 7 jours | |
+
+   **Créer**.
+2. Paul : **Validations**, onglet **Décisions**, **Valider** ; **Recevoir le code par** « E-mail », **Recevoir mon code**,
+   tapez le code, **Confirmer**.
+3. Samuel : onglet **Études et livrables**.
+
+**Résultat attendu** : la décision passe **Validé** ; dans **Études et livrables**, le « Plan RDC » affiche la validation
+et le compteur **Validés par le client** passe à 1.
+
+- [ ] **E2** — Étude validée par le client, par code.
+
+### Scène E3 — La facture d'études
+
+**Pourquoi** : les études, validées, sont facturées ; les livrables sont rattachés à cette facture, qui les débloquera.
+
+**Qui** : Rachel (profil **GLOBUS FIN**), puis Samuel. **Où** : *Finance › Facturation*, onglet **Factures clients** ;
+puis l'onglet **Études et livrables** du projet.
+
+**Méthode**
+
+1. Rachel : **Nouvelle facture** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Projet | « TEST — Villa Mballa » | |
+| Type | « Études et conception » | |
+| Titre | `Études, plans et 3D — Villa Mballa` | ★ |
+| Date d'émission | aujourd'hui | ★ |
+| Date d'échéance | dans 15 jours | |
+| Taux de TVA | `19.25` | |
+| Lignes | Désignation ★ `Études et conception (plans, 3D, notes)`, Unité `forfait`, Quantité ★ `1`, Prix unitaire ★ `3000000` | ★ |
+
+   **Créer** ; puis sur la ligne : **Valider**, **Confirmer** ; **Envoyer au client**, **Confirmer**.
+2. Samuel : onglet **Études et livrables** : **Facture d'études** = la facture `FAC-…` ; cliquez sur **Rattacher les
+   livrables sans facture**.
+
+**Résultat attendu** : facture **Envoyé**, 3 000 000 HT, **3 577 500 TTC** ; « 2 livrable(s) seront remis au règlement de
+la facture » ; chaque livrable affiche **Facture FAC-…** et **Aperçu seulement**.
+
+- [ ] **E3** — Facture d'études émise, livrables rattachés.
+
+### Scène E4 — Paul règle les études : les livrables lui sont remis
+
+**Pourquoi** : le règlement transfère les études au client : les originaux deviennent les siens.
+
+**Qui** : Paul, Rachel, Grâce. **Où** : espace client, **Finances** ; *Finance › Facturation*, la facture ; *Finance ›
+Finances*, onglet **Paiements**.
+
+**Méthode**
+
+1. Paul : **Finances** : la facture d'études apparaît ; **Payer** affiche « Aucun moyen de paiement en ligne n'est activé… »
+   (si le service n'est pas activé : annexe A) ; **Annuler**.
+2. Rachel : sur la facture, **Enregistrer un encaissement** : **Montant encaissé** *(vide : solde)*, **Mode de règlement** ★
+   « Virement bancaire », **Date de valeur** ★ hier, **Référence** `VIR-ETUDES-0001`, **Preuve de l'encaissement** ★ le
+   PDF « Avis de crédit » ; **Enregistrer un encaissement**.
+3. Grâce : onglet **Paiements**, l'encaissement **À approuver** : **Approuver**.
+4. Paul : regardez ses notifications, puis **Documents**.
+
+**Résultat attendu**
+
+- Avant l'approbation de Grâce, les livrables restent en aperçu (un encaissement non approuvé ne débloque rien).
+- Après : facture **Payé** ; Paul reçoit « Vos livrables d'études sont disponibles » (e-mail et notification) ;
+  **Documents** affiche **Livrable remis** et **Télécharger l'original** : le plan et le rendu s'ouvrent **sans
+  filigrane d'aperçu**, en pleine résolution.
+- Onglet **Études et livrables** : chaque livrable est **Remis** avec la date ; compteur **Remis au client** à 2.
+
+- [ ] **E4** — Études réglées, livrables remis au client.
+
 ---
 
-## Chapitre 8 — Le ciment de Martin (la chaîne d'achat)
+## Chapitre 8 — Le devis des travaux et le contrat
+
+*Les études sont validées et réglées : Paul a ses plans. Jordan prépare maintenant le devis de construction, fondé sur
+ces études ; une fois accepté et signé, le contrat rejoint le projet existant.*
+
+### Scène B1 — Le devis des travaux
+
+**Pourquoi** : les études validées et réglées (chapitre 7), le devis des travaux se fonde sur elles : clair, ligne par
+ligne, avec un échéancier qui totalise 100 %. Il se rattache automatiquement au projet né des études.
+
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, bouton **Devis** sur la carte de Paul.
+
+**Méthode**
+
+1. Cliquez sur **Devis** : la fenêtre **Nouveau devis** s'ouvre, avec l'opportunité, le client et le contact déjà repris
+   (le devis sera rattaché au projet « TEST — Villa Mballa »).
+2. En-tête :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Intitulé du devis | `Villa Mballa — construction R+1` | ★ |
+| Valable jusqu'au | dans 30 jours | |
+| Nature du devis | « Travaux » (proposé) | |
+| Devise | « FCFA (XAF) » | |
+| TVA (%) | `19.25` (proposé) | |
+| Remise globale (montant) | `0` | |
+| Introduction | `Construction de la villa R+1 de Bonamoussadi selon les études validées.` | |
+
+3. **Lignes chiffrées** : une ligne vide est déjà présente ; remplissez-la, puis cliquez sur **Ligne** pour chaque ligne
+   suivante. La colonne qui compte est **Désignation** ★ ; **Section** n'est qu'un titre de regroupement (facultatif).
+
+| Section | Lot | Désignation ★ | Unité | Qté ★ | PU HT ★ | Remise % |
+| --- | --- | --- | --- | --- | --- | --- |
+| `Gros œuvre` | `GO` | `Gros œuvre` | `forfait` | `1` | `15000000` | `0` |
+| `Second œuvre` | `SO` | `Second œuvre` | `forfait` | `1` | `7000000` | `0` |
+| `Électricité` | `ELEC` | `Électricité` | `forfait` | `1` | `3000000` | `0` |
+
+4. **Échéancier de paiement** : cliquez trois fois sur **Échéance** et remplissez :
+
+| Libellé de l'échéance ★ | % du total ★ | Jalon déclencheur |
+| --- | --- | --- |
+| `Acompte à la signature` | `30` | `Signature du contrat` |
+| `Mi-chantier` | `40` | `Fin du gros œuvre` |
+| `Réception` | `30` | `Réception des travaux` |
+
+5. **Conditions particulières** : `Paiement à 15 jours.` Cliquez sur **Créer le devis**.
+6. Sur la fiche du devis, cliquez sur **PDF**.
+
+**Résultat attendu**
+
+- Sous-total HT **25 000 000**, TVA 19,25 % **4 812 500**, total TTC **29 812 500** FCFA ; chaque échéance affiche son
+  montant.
+- Le PDF reprend les sections, les lignes, l'échéancier, aux couleurs de l'entreprise.
+
+> **Contrôle** : laissez une ligne sans **Désignation** et cliquez sur **Créer le devis** : la plateforme refuse avec
+> « Devis incomplet — ligne N : désignation manquante… ». Rien n'est enregistré en silence.
+
+- [ ] **B1** — Devis des travaux juste, rattaché au projet, PDF présentable.
+
+### Scène B2 — Le devis part chez Paul
+
+**Qui** : Jordan. **Où** : fiche du devis.
+
+**Méthode** : cliquez sur **Envoyer**.
+
+**Résultat attendu** : statut **Envoyé** ; le bloc **Lien client** affiche un lien ; un e-mail arrive sur `+client` avec
+ce lien.
+
+- [ ] **B2** — Devis envoyé.
+
+### Scène B3 — Paul accepte par code
+
+**Pourquoi** : l'acceptation par code reçu par e-mail vaut signature ; la plateforme en garde la preuve.
+
+**Qui** : Paul (profil **GLOBUS CLI**). **Où** : le lien de l'e-mail (aucune connexion n'est nécessaire pour accepter).
+
+**Méthode**
+
+1. Dans Gmail (adresse `+client`), ouvrez l'e-mail du devis et cliquez sur le lien.
+2. Lisez le devis. En bas, cliquez sur **Recevoir mon code de validation** : un code arrive par e-mail.
+3. Remplissez :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Code reçu | le code de l'e-mail | ★ |
+| Nom et prénom du signataire | `Paul TEST-MBALLA` | ★ |
+| J'ai lu le devis et j'accepte ses conditions. | cochée | ★ |
+
+4. Cliquez sur **J'accepte le devis**.
+
+**Résultat attendu** : la page confirme l'acceptation ; chez Jordan, le devis passe **Accepté** avec la preuve (date,
+heure, moyen de réception du code) et une notification.
+
+- [ ] **B3** — Devis accepté par code.
+
+### Scène B4 — Le refus puis la révision
+
+**Pourquoi** : un devis refusé se révise sans perdre l'ancienne version.
+
+**Qui** : Jordan. **Où** : *Commercial › CRM*, onglet **Pipeline**, puis la fiche du nouveau devis.
+
+**Méthode**
+
+1. Sur la carte de Paul, cliquez sur **Devis** ; créez un **second** devis avec une seule ligne (Désignation `Option
+   piscine`, Qté `1`, PU HT `4000000`) ; **Créer le devis**.
+2. Sur ce devis, cliquez sur **Envoyer**.
+3. Cliquez sur **Refus client** ; dans **Motif communiqué par le client**, tapez `Prix trop élevé` ; confirmez. Le devis
+   passe **Refusé**.
+4. Cliquez sur **Réviser** : une nouvelle version (même numéro, révision 2) est créée en **Brouillon**.
+
+**Résultat attendu** : la version refusée reste consultable au statut **Remplacé** ; la révision 2 est en brouillon,
+avec les mêmes lignes ; le premier devis, accepté, n'est pas touché (un devis accepté ne peut pas être révisé).
+
+- [ ] **B4** — Refus et révision fonctionnent.
+
+### Scène B5 — Le contrat
+
+**Qui** : Jordan. **Où** : fiche du devis **accepté** (B3).
+
+**Méthode** : cliquez sur **Établir le contrat**, puis confirmez dans la fenêtre **Établir le contrat**.
+
+**Résultat attendu** : la fiche du contrat s'ouvre (statut **Brouillon**), avec le montant, les conditions et le bloc
+**Échéancier contractuel** repris du devis.
+
+- [ ] **B5** — Contrat établi.
+
+### Scène B6 — La signature
+
+**Qui** : Jordan. **Où** : fiche du contrat.
+
+**Méthode**
+
+1. Cliquez sur **Enregistrer la signature**. Fenêtre **Enregistrer la signature du contrat** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Signataire | `Paul TEST-MBALLA` (proposé) | ★ |
+| Mode de signature | « Signature manuscrite scannée » | |
+| Date de signature | aujourd'hui | |
+| Contrat signé scanné | déposez le PDF « Contrat signé » (annexe D) | ★ avec ce mode |
+
+2. Cliquez sur **Enregistrer la signature**.
+
+**Résultat attendu** : statut **Signé** ; l'indicateur **Signature** affiche la date ; un bouton **Contrat signé** permet
+d'ouvrir le scan.
+
+- [ ] **B6** — Signature enregistrée.
+
+### Scène B7 — Le contrat de travaux rejoint le projet
+
+**Pourquoi** : le projet existe depuis les études ; le contrat de travaux s'y **rattache** (montant du contrat, budget des
+travaux, lots et jalons de paiement) au lieu d'en créer un second. Paul a déjà son espace : rien à refaire de son côté.
+
+**Qui** : Grâce (profil **GLOBUS DIR** : le rattachement crée le budget des travaux), puis Samuel. **Où** : *Commercial
+› CRM*, onglet **Contrats**, le contrat signé ; puis la fiche du projet.
+
+**Méthode**
+
+1. Grâce : sur le contrat signé, cliquez sur **Rattacher au projet PRJ-…** ; fenêtre **Rattacher le contrat de travaux au
+   projet PRJ-…** : laissez **Chef de projet** vide (Samuel l'est déjà), cliquez sur **Rattacher au projet**.
+2. Samuel : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Synthèse**, **Modifier** :
+   **Statut** « Préparation », **Enregistrer**.
+3. Samuel : onglets **Sites, phases, lots** et **Jalons**.
+
+**Résultat attendu**
+
+- Message « Contrat rattaché au projet PRJ-… » ; le contrat passe **Actif** et son bouton **Projet PRJ-…** ouvre le même
+  projet.
+- **Synthèse** : montant du contrat **29 812 500 FCFA** TTC ; le projet passe **Préparation**.
+- **Sites, phases, lots** : les lots GO, SO et ELEC créés pendant les études sont **réutilisés** (pas de doublon), avec le
+  montant du devis.
+- **Jalons** : aux côtés d'« Implantation », les trois jalons de paiement de l'échéancier : **Acompte à la signature**
+  (30 %), **Mi-chantier** (40 %), **Réception** (30 %).
+- **Budget** : une version « Budget des travaux (contrat) ».
+
+> **Contrôle** : Jordan (commercial) ne voit pas le bouton **Rattacher au projet** : il faut aussi le droit de gérer les
+> projets.
+
+- [ ] **B7** — Contrat de travaux rattaché au projet d'études (montant, budget, lots, jalons).
+
+### Scène B8 — Le budget de référence des travaux
+
+**Pourquoi** : le budget approuvé sert de référence pour mesurer la marge.
+
+**Qui** : Rachel (profil **GLOBUS FIN**), puis Grâce (profil **GLOBUS DIR**). **Où** : fiche du projet (*Projets › Chantiers*, ligne « TEST — Villa Mballa »), onglet **Budget**.
+
+**Méthode**
+
+1. Rachel ouvre l'onglet **Budget** et vérifie la version « Budget des travaux (contrat) » dans **Budgets (versions)**.
+2. Rachel crée une version ajustée : **Nouvelle version**, fenêtre **Nouvelle version de budget** :
+
+| Champ | Valeur | |
+| --- | --- | --- |
+| Libellé | `Budget de référence` | ★ |
+| Chiffre d'affaires visé | `25000000` | |
+| Lignes | une ligne par lot (bouton d'ajout) — voir ci-dessous | ★ |
+
+| Lot | Catégorie | Libellé | Montant |
+| --- | --- | --- | --- |
+| GO | « Matériaux » | `Ciment, acier, agrégats` | `9000000` |
+| GO | « Main-d'œuvre » | `Équipe gros œuvre` | `3000000` |
+| ELEC | « Sous-traitance » | `Électricité` | `2000000` |
+| SO | « Matériaux » | `Second œuvre` | `5000000` |
+
+   **Enregistrer**.
+3. Rachel essaie de cliquer sur **Approuver** sur sa propre version : refusé (séparation des tâches).
+4. Grâce ouvre la même version et clique sur **Approuver**.
+
+**Résultat attendu** : étape 3, la plateforme refuse (« Séparation des tâches : un budget est approuvé par une autre
+personne que son auteur ») ; étape 4, la version passe **Approuvé** et devient la référence des marges.
+
+- [ ] **B8** — Budget de référence approuvé, séparation des tâches respectée.
+
+---
+
+## Chapitre 9 — Le ciment de Martin (la chaîne d'achat)
 
 *Cent sacs de ciment pour les fondations. Ce chapitre suit leur voyage : demande d'Ernest, approbations, commande de
 Linda, livraison, réception, stock, facture, paiement. Chacun joue son rôle ; personne ne peut tout faire seul.*
@@ -2178,7 +2347,7 @@ fournisseur et dans l'extranet de Martin.
 
 ---
 
-## Chapitre 9 — L'électricité de Sylvie (la sous-traitance)
+## Chapitre 10 — L'électricité de Sylvie (la sous-traitance)
 
 *Le lot électricité est confié à l'entreprise de Sylvie. Ce chapitre suit tout le circuit : qualification, appel
 d'offres sous pli scellé, négociation, attribution, signature, mobilisation, situation de travaux, contrôle terrain,
@@ -2619,7 +2788,7 @@ jour (ils serviront au critère « Historique avec GLOBUS » des prochaines cons
 
 # Livre V — La vie du chantier
 
-## Chapitre 10 — Une journée sur le chantier (l'application GLOBUS Terrain)
+## Chapitre 11 — Une journée sur le chantier (l'application GLOBUS Terrain)
 
 *Ernest et Moussa travaillent avec le téléphone : pointage, tâches, journal, photos, rapport vocal, plans, et même sans
 réseau. Les mêmes écrans existent aussi dans l'ERP web (menu* Chantier *de l'application = rubrique* Projets *de l'ERP).*
@@ -2692,7 +2861,7 @@ marquée **En retard**.
 
 **Méthode** : sur la ligne de Moussa, **Valider**, puis **Confirmer**.
 
-**Résultat attendu** : le pointage est validé ; il comptera dans la paie (chapitre 13).
+**Résultat attendu** : le pointage est validé ; il comptera dans la paie (chapitre 14).
 
 - [ ] **T4** — Pointage validé.
 
@@ -2757,7 +2926,7 @@ onglet **Journal de chantier**.
 3. Une deuxième photo, **sans** cocher **Publier au client**.
 
 **Résultat attendu** : les deux photos sont dans l'ERP (onglet **Photos et vidéos** du projet) ; **seule la première**
-apparaît dans l'espace de Paul (vérifié au chapitre 11).
+apparaît dans l'espace de Paul (vérifié au chapitre 12).
 
 - [ ] **T7** — Photos publiées ou internes selon le choix.
 
@@ -2814,7 +2983,7 @@ propose **Garder le bureau**, **Garder ma version** ou **Fusionner**. Choisissez
 
 ---
 
-## Chapitre 11 — Paul suit sa maison (l'espace client pendant les travaux)
+## Chapitre 12 — Paul suit sa maison (l'espace client pendant les travaux)
 
 *Paul ne vient pas tous les jours sur le chantier : la plateforme lui montre ce qui est public, lui demande ses décisions,
 lui soumet les avenants et lui présente ses appels de fonds.*
@@ -2913,7 +3082,7 @@ successifs **Brouillon → Soumis → Approuvé client → Approuvé** ; le mont
 | Champ | Valeur | |
 | --- | --- | --- |
 | Projet | « TEST — Villa Mballa » | ★ |
-| Jalon | le premier jalon de paiement du contrat (30 %, scène M5) | |
+| Jalon | « Acompte à la signature » (30 %, jalon du contrat de travaux, scène B7) | |
 | Libellé | `Appel de fonds n° 1 — démarrage des fondations` | ★ |
 | Montant | `5000000` | ★ |
 | Devise | « FCFA (XAF) » | |
@@ -2990,7 +3159,7 @@ Tranquillité**.
 
 ---
 
-## Chapitre 12 — Les comptes du chantier (finances)
+## Chapitre 13 — Les comptes du chantier (finances)
 
 *Rachel tient la trésorerie : compte bancaire, petite caisse, relevé, factures client et suivi du budget. Chaque
 mouvement d'argent est vu par deux personnes.*
@@ -3065,11 +3234,12 @@ caisse**.
 **Qui** : Rachel. **Où** : *Finance › Finances*, onglet **Banque**, le compte `TEST Compte courant`.
 
 **Avant** : préparez le fichier `releve-test.csv` (annexe D), en remplaçant les dates par celles où vous avez joué les
-scènes H14, R4 et S12 :
+scènes H14, E4, R4 et S12 :
 
 ```
 date;libellé;référence;montant
 JJ/MM/AAAA;Virement Quincaillerie du Wouri;VIR-TEST-0001;-490000
+JJ/MM/AAAA;Versement Paul Mballa etudes;VIR-ETUDES-0001;3577500
 JJ/MM/AAAA;Versement Paul Mballa;VIR-CLIENT-0001;2000000
 JJ/MM/AAAA;Virement Electricite Akwa;VIR-TEST-0002;-831915
 JJ/MM/AAAA;Frais de tenue de compte;FRAIS-10;-5000
@@ -3081,8 +3251,8 @@ JJ/MM/AAAA;Frais de tenue de compte;FRAIS-10;-5000
 2. Filtre « Non rapprochées » : il ne reste que les frais de tenue de compte.
 3. Réimportez le même fichier.
 
-**Résultat attendu** : message « 4 ligne(s) importée(s) · 3 rapprochée(s) automatiquement · 0 doublon(s) ignoré(s) »
-(même référence et même montant que les paiements) ; au second import : « 0 ligne(s) importée(s) · … · 4 doublon(s)
+**Résultat attendu** : message « 5 ligne(s) importée(s) · 4 rapprochée(s) automatiquement · 0 doublon(s) ignoré(s) »
+(même référence et même montant que les paiements) ; au second import : « 0 ligne(s) importée(s) · … · 5 doublon(s)
 ignoré(s) ».
 
 - [ ] **F3** — Relevé importé, rapprochement automatique, doublons écartés.
@@ -3124,7 +3294,7 @@ n'est plus modifiable (seul un avoir peut la corriger).
 validées) et le **Reste à engager**.
 
 **Résultat attendu** : on retrouve le ciment (matériaux), le marché d'électricité (sous-traitance), le carburant (frais
-généraux) ; la trésorerie du **Pilotage** reflète les encaissements et décaissements des chapitres 8 à 12.
+généraux) ; la trésorerie du **Pilotage** reflète les encaissements et décaissements des chapitres 9 à 13.
 
 - [ ] **F5** — Budget et trésorerie cohérents avec l'histoire.
 
@@ -3149,7 +3319,7 @@ généraux) ; la trésorerie du **Pilotage** reflète les encaissements et déca
 
 ---
 
-## Chapitre 13 — Les hommes et la sécurité (RH et QHSE)
+## Chapitre 14 — Les hommes et la sécurité (RH et QHSE)
 
 *Congés, paie, équipements de protection, causerie sécurité, inspection, incident : chaque circuit est tracé et vérifié
 par une autre personne que celle qui l'a lancé.*
@@ -3300,7 +3470,7 @@ personne que son responsable.
 
 ---
 
-## Chapitre 14 — Grâce pilote depuis son téléphone (l'application GLOBUS Direction)
+## Chapitre 15 — Grâce pilote depuis son téléphone (l'application GLOBUS Direction)
 
 *La direction n'a pas toujours un ordinateur : l'application Direction réunit les indicateurs, les validations et le
 rapport hebdomadaire.*
@@ -3329,7 +3499,7 @@ chantier**, **Livraisons attendues (7 jours)**. Les chiffres sont ceux de l'ERP 
 
 1. Ernest crée une nouvelle demande d'achat comme à la scène H2, mais de **6 000 000 FCFA** (par exemple 1 000 sacs à
    6 000), justification `Stock pour l'élévation`, **Soumettre immédiatement** coché. Au-delà de 5 000 000, la direction
-   intervient (rappel en tête du chapitre 8).
+   intervient (rappel en tête du chapitre 9).
 2. Samuel approuve le niveau 1 (comme à la scène H3) ; au-delà de 5 000 000, le niveau 2 revient à la direction (et
    non à l'acheteur).
 3. Grâce : onglet **Validations** : la demande apparaît dans **Commandes à approuver** ; ouvrez-la, **Approuver**.
@@ -3370,7 +3540,7 @@ compte de la direction ni de la finance.
 
 # Livre VI — Autour de la maison
 
-## Chapitre 15 — Se parler (notifications, messagerie, appels, agenda)
+## Chapitre 16 — Se parler (notifications, messagerie, appels, agenda)
 
 ### Scène N1 — Choisir ses notifications
 
@@ -3423,7 +3593,7 @@ Mballa », participants Paul et Ernest ; **Créer**.
 
 ---
 
-## Chapitre 16 — Le site web (CMS)
+## Chapitre 17 — Le site web (CMS)
 
 ### Scène W1 — Un article, de la rédaction à la publication
 
@@ -3478,7 +3648,7 @@ profil **Visiteur**, ouvrez `https://globus-engineering-sarl.com/test-ancienne-p
 
 ---
 
-## Chapitre 17 — La sécurité
+## Chapitre 18 — La sécurité
 
 ### Scène X1 — Le mot de passe oublié
 
@@ -3549,7 +3719,7 @@ l'approbation du paiement (H13), le verrouillage de Linda (X2).
 
 # Épilogue
 
-## Chapitre 18 — Le bilan et le nettoyage
+## Chapitre 19 — Le bilan et le nettoyage
 
 ### Scène Z1 — La fin du marché d'électricité
 
@@ -3615,10 +3785,10 @@ une fois les comptes ouverts chez les prestataires. **Aucun n'est nécessaire po
 
 | Service | Sans le service (recette actuelle) | Quand il sera activé, rejouez |
 | --- | --- | --- |
-| Paiement en ligne (MTN MoMo, Orange Money, carte) | « Aucun moyen de paiement en ligne n'est activé… » ; encaissement saisi avec preuve (R4) | R4 avec **Payer** : le paiement arrive tout seul, **Réussi**, reçu émis |
+| Paiement en ligne (MTN MoMo, Orange Money, carte) | « Aucun moyen de paiement en ligne n'est activé… » ; encaissement saisi avec preuve (E4, R4) | E4 et R4 avec **Payer** : le paiement arrive tout seul, **Réussi**, reçu émis |
 | WhatsApp Business | bons de commande et codes envoyés par e-mail (H5, R2) | H5 avec le canal « WhatsApp », R2 avec « WhatsApp » |
 | SMS | codes par e-mail | R2 avec « SMS » |
-| Assistants IA | les écrans d'assistance indiquent que l'assistant n'est pas disponible ; tout le reste fonctionne | C16, V9, lecture de documents |
+| Assistants IA | les écrans d'assistance indiquent que l'assistant n'est pas disponible ; tout le reste fonctionne | C10, V9, lecture de documents |
 | Transcription vocale | **déjà active** (service interne au serveur, aucune clé à saisir) | — |
 
 ## Annexe B — Les données de l'histoire
@@ -3629,7 +3799,7 @@ une fois les comptes ouverts chez les prestataires. **Aucun n'est nécessaire po
 | Lots | ET, GO, SO (issus du devis) et ELEC |
 | Fournisseur | `TEST Quincaillerie du Wouri` (Martin) — ciment `CIM-425` à 5 200 FCFA |
 | Sous-traitant | `TEST Électricité Akwa` (Sylvie) — marché 1 330 000 HT, TVA 19,25 % |
-| Références de paiement | `VIR-TEST-0001` (490 000), `VIR-CLIENT-0001` (2 000 000), `VIR-TEST-0002` (831 915) |
+| Références de paiement | `VIR-TEST-0001` (490 000), `VIR-ETUDES-0001` (3 577 500, facture d'études), `VIR-CLIENT-0001` (2 000 000), `VIR-TEST-0002` (831 915) |
 | Dépôt | `DEP-S1` |
 | Zone | `Z-SEJOUR` |
 
@@ -3653,6 +3823,7 @@ Placez-les dans un dossier `Recette GLOBUS` sur l'ordinateur et sur le télépho
 | Fichier | Sert à |
 | --- | --- |
 | `Plan RDC.pdf`, `Plan RDC v2.pdf` | M9, DCE (S2) |
+| `Rendu façade.jpg` (une image JPG ou PNG de la villa, même une photo) | E1 |
 | `Attestation d'assurance.pdf` | S1 |
 | `Mémoire technique.pdf` | S4 |
 | `Facture fournisseur.pdf`, `Facture sous-traitant.pdf` | H10, S12 |
@@ -3665,7 +3836,7 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 
 ## Annexe E — Le tableau de bord de la recette
 
-144 scènes. Cochez « OK » ou notez le n° de la fiche d'anomalie (annexe C).
+149 scènes. Cochez « OK » ou notez le n° de la fiche d'anomalie (annexe C).
 
 | Chapitre | Scène | Ce qui est vérifié | OK | Anomalie |
 | --- | --- | --- | --- | --- |
@@ -3704,15 +3875,9 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 | Chapitre 5 | **C5** | Prospect qualifié. | [ ] | |
 | Chapitre 5 | **C6** | Opportunité créée. | [ ] | |
 | Chapitre 5 | **C7** | Le pipeline se met à jour. | [ ] | |
-| Chapitre 5 | **C8** | Devis juste, PDF présentable. | [ ] | |
-| Chapitre 5 | **C9** | Devis envoyé. | [ ] | |
-| Chapitre 5 | **C10** | Devis accepté par code. | [ ] | |
-| Chapitre 5 | **C11** | Refus et révision fonctionnent. | [ ] | |
-| Chapitre 5 | **C12** | Contrat établi. | [ ] | |
-| Chapitre 5 | **C13** | Signature enregistrée. | [ ] | |
-| Chapitre 5 | **C14** | Projet créé, Paul invité. | [ ] | |
-| Chapitre 5 | **C15** | Relance close. | [ ] | |
-| Chapitre 5 | **C16** | Conversations consultables et clôturables. | [ ] | |
+| Chapitre 5 | **C8** | Études démarrées, projet créé, Paul invité, sans devis. | [ ] | |
+| Chapitre 5 | **C9** | Relance close. | [ ] | |
+| Chapitre 5 | **C10** | Conversations consultables et clôturables. | [ ] | |
 | Chapitre 6 | **K1** | Compte de Paul activé. | [ ] | |
 | Chapitre 6 | **K2** | Double authentification du client active. | [ ] | |
 | Chapitre 6 | **K3** | Déconnexion et reconnexion fonctionnent. | [ ] | |
@@ -3726,93 +3891,104 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 | Chapitre 7 | **M5** | Jalons corrects. | [ ] | |
 | Chapitre 7 | **M6** | Planning construit et figé. | [ ] | |
 | Chapitre 7 | **M7** | Analyse des aléas fonctionnelle. | [ ] | |
-| Chapitre 7 | **M8** | Budget de référence approuvé, séparation des tâches respectée. | [ ] | |
 | Chapitre 7 | **M9** | Circuit de validation et de publication d'un plan fonctionnel. | [ ] | |
-| Chapitre 7 | **M10** | Plan visible, filigrané et authentifié côté client. | [ ] | |
+| Chapitre 7 | **M10** | Plan consultable en aperçu filigrané seulement, original protégé. | [ ] | |
 | Chapitre 7 | **M11** | Maquette publiée (ou « non testée »). | [ ] | |
 | Chapitre 7 | **M12** | QR de zone imprimé. | [ ] | |
 | Chapitre 7 | **M13** | Agenda et invitations fonctionnels. | [ ] | |
 | Chapitre 7 | **M14** | Registre des risques fonctionnel. | [ ] | |
 | Chapitre 7 | **M15** | Panneau publié. | [ ] | |
-| Chapitre 8 | **H1** | Dépôt et article créés. | [ ] | |
-| Chapitre 8 | **H2** | Demande d'achat soumise. | [ ] | |
-| Chapitre 8 | **H3** | Circuit à deux niveaux et séparation des tâches respectés. | [ ] | |
-| Chapitre 8 | **H4** | Bon de commande créé. | [ ] | |
-| Chapitre 8 | **H5** | Commande envoyée. | [ ] | |
-| Chapitre 8 | **H6** | Contre-offre et confirmation fonctionnent. | [ ] | |
-| Chapitre 8 | **H7** | Expédition annoncée. | [ ] | |
-| Chapitre 8 | **H8** | Réception faite, écart signalé, stock à jour. | [ ] | |
-| Chapitre 8 | **H9** | Mouvements de stock et imputation des coûts corrects. | [ ] | |
-| Chapitre 8 | **H10** | Facture fournisseur déposée. | [ ] | |
-| Chapitre 8 | **H11** | Le rapprochement des trois pièces protège des erreurs. | [ ] | |
-| Chapitre 8 | **H12** | Ordre de paiement créé. | [ ] | |
-| Chapitre 8 | **H13** | Double regard fonctionnel. | [ ] | |
-| Chapitre 8 | **H14** | Paiement exécuté, visible du fournisseur. | [ ] | |
-| Chapitre 8 | **H15** | Notation et clôture fonctionnent. | [ ] | |
-| Chapitre 8 | **H16** | Documents légaux du fournisseur gérés. | [ ] | |
-| Chapitre 9 | **S1** | Sous-traitant qualifié, score correct. | [ ] | |
-| Chapitre 9 | **S2** | Consultation créée avec son bordereau et son DCE. | [ ] | |
-| Chapitre 9 | **S3** | Invitation et publication (avec le contrôle). | [ ] | |
-| Chapitre 9 | **S4** | Offre déposée depuis l'extranet. | [ ] | |
-| Chapitre 9 | **S5** | Offres scellées puis ouvertes, comparatif et évaluation. | [ ] | |
-| Chapitre 9 | **S6** | Négociation à trois tours historisée. | [ ] | |
-| Chapitre 9 | **S7** | Attribution réservée à la direction, prix négociés repris. | [ ] | |
-| Chapitre 9 | **S8** | Signature électronique par code fonctionnelle. | [ ] | |
-| Chapitre 9 | **S9** | Mobilisation et avance. | [ ] | |
-| Chapitre 9 | **S10** | Situation déclarée avec preuves. | [ ] | |
-| Chapitre 9 | **S11** | Constat, validation et calculs exacts. | [ ] | |
-| Chapitre 9 | **S12** | Facture conforme, validée, payée. | [ ] | |
-| Chapitre 9 | **S13** | Réclamation et litige menés jusqu'à la résolution. | [ ] | |
-| Chapitre 9 | **S14** | Notation enregistrée. | [ ] | |
-| Chapitre 10 | **T1** | Fiches employés liées aux comptes. | [ ] | |
-| Chapitre 10 | **T2** | QR du chantier généré. | [ ] | |
-| Chapitre 10 | **T3** | Auto-pointage par QR et géolocalisation. | [ ] | |
-| Chapitre 10 | **T4** | Pointage validé. | [ ] | |
-| Chapitre 10 | **T5** | Avancement saisi sur le terrain. | [ ] | |
-| Chapitre 10 | **T6** | Journal soumis depuis le terrain et validé. | [ ] | |
-| Chapitre 10 | **T7** | Photos publiées ou internes selon le choix. | [ ] | |
-| Chapitre 10 | **T8** | Rapport vocal transcrit et validé. | [ ] | |
-| Chapitre 10 | **T9** | Un seul scanner pour tous les QR du chantier. | [ ] | |
-| Chapitre 10 | **T10** | Saisie hors ligne, synchronisation et arbitrage du conflit. | [ ] | |
-| Chapitre 11 | **R1** | Cloisonnement client respecté. | [ ] | |
-| Chapitre 11 | **R2** | Décision client validée par code. | [ ] | |
-| Chapitre 11 | **R3** | Avenant chiffré, accepté par le client, approuvé, contrat mis à jour. | [ ] | |
-| Chapitre 11 | **R4** | Appel de fonds, encaissement hors plateforme, double regard, reçu client. | [ ] | |
-| Chapitre 11 | **R5** | Messagerie client ↔ équipe. | [ ] | |
-| Chapitre 11 | **R6** | Dossier Tranquillité partagé. | [ ] | |
-| Chapitre 12 | **F1** | Compte bancaire créé, numéro protégé. | [ ] | |
-| Chapitre 12 | **F2** | Petite caisse : déclaration par le gestionnaire, reçu, double regard, imputation au budget. | [ ] | |
-| Chapitre 12 | **F3** | Relevé importé, rapprochement automatique, doublons écartés. | [ ] | |
-| Chapitre 12 | **F4** | Facture client émise et visible par le client. | [ ] | |
-| Chapitre 12 | **F5** | Budget et trésorerie cohérents avec l'histoire. | [ ] | |
-| Chapitre 12 | **F6** | Prévision de trésorerie prise en compte. | [ ] | |
-| Chapitre 13 | **Q1** | Demande de congé depuis le terrain, décision RH. | [ ] | |
-| Chapitre 13 | **Q2** | Paie calculée, ajustée, validation protégée. | [ ] | |
-| Chapitre 13 | **Q3** | Catalogue et remise d'EPI tracés. | [ ] | |
-| Chapitre 13 | **Q4** | Causerie sécurité enregistrée. | [ ] | |
-| Chapitre 13 | **Q5** | Inspection menée avec la grille. | [ ] | |
-| Chapitre 13 | **Q6** | Incident déclaré, analysé, corrigé, vérifié, clos. | [ ] | |
-| Chapitre 14 | **D1** | Tableau de bord direction cohérent avec l'ERP. | [ ] | |
-| Chapitre 14 | **D2** | Approbation mobile, séparation des tâches respectée. | [ ] | |
-| Chapitre 14 | **D3** | Rapport hebdomadaire généré. | [ ] | |
-| Chapitre 14 | **D4** | Supervision de la sécurité depuis le mobile. | [ ] | |
-| Chapitre 15 | **N1** | Préférences de notification respectées. | [ ] | |
-| Chapitre 15 | **N2** | Messagerie interne. | [ ] | |
-| Chapitre 15 | **N3** | Appels internes. | [ ] | |
-| Chapitre 15 | **N4** | Agenda partagé avec le client. | [ ] | |
-| Chapitre 16 | **W1** | Circuit de publication d'un article. | [ ] | |
-| Chapitre 16 | **W2** | Commentaire modéré. | [ ] | |
-| Chapitre 16 | **W3** | Redirection active. | [ ] | |
-| Chapitre 16 | **W4** | Médiathèque. | [ ] | |
-| Chapitre 17 | **X1** | Réinitialisation du mot de passe. | [ ] | |
-| Chapitre 17 | **X2** | Verrouillage et déverrouillage. | [ ] | |
-| Chapitre 17 | **X3** | Mot de passe et sessions maîtrisés. | [ ] | |
-| Chapitre 17 | **X4** | Cloisonnement des accès. | [ ] | |
-| Chapitre 17 | **X5** | Traçabilité complète. | [ ] | |
-| Chapitre 18 | **Z1** | Clôture du marché et libération de la retenue. | [ ] | |
-| Chapitre 18 | **Z2** | Avis client recueilli. | [ ] | |
-| Chapitre 18 | **Z3** | Bilan établi. | [ ] | |
-| Chapitre 18 | **Z4** | Plateforme prête pour l'exploitation. | [ ] | |
+| Chapitre 7 | **E1** | Rendu 3D publié en aperçu filigrané seulement. | [ ] | |
+| Chapitre 7 | **E2** | Étude validée par le client, par code. | [ ] | |
+| Chapitre 7 | **E3** | Facture d'études émise, livrables rattachés. | [ ] | |
+| Chapitre 7 | **E4** | Études réglées, livrables remis au client. | [ ] | |
+| Chapitre 8 | **B1** | Devis des travaux juste, rattaché au projet, PDF présentable. | [ ] | |
+| Chapitre 8 | **B2** | Devis envoyé. | [ ] | |
+| Chapitre 8 | **B3** | Devis accepté par code. | [ ] | |
+| Chapitre 8 | **B4** | Refus et révision fonctionnent. | [ ] | |
+| Chapitre 8 | **B5** | Contrat établi. | [ ] | |
+| Chapitre 8 | **B6** | Signature enregistrée. | [ ] | |
+| Chapitre 8 | **B7** | Contrat de travaux rattaché au projet d'études (montant, budget, lots, jalons). | [ ] | |
+| Chapitre 8 | **B8** | Budget de référence approuvé, séparation des tâches respectée. | [ ] | |
+| Chapitre 9 | **H1** | Dépôt et article créés. | [ ] | |
+| Chapitre 9 | **H2** | Demande d'achat soumise. | [ ] | |
+| Chapitre 9 | **H3** | Circuit à deux niveaux et séparation des tâches respectés. | [ ] | |
+| Chapitre 9 | **H4** | Bon de commande créé. | [ ] | |
+| Chapitre 9 | **H5** | Commande envoyée. | [ ] | |
+| Chapitre 9 | **H6** | Contre-offre et confirmation fonctionnent. | [ ] | |
+| Chapitre 9 | **H7** | Expédition annoncée. | [ ] | |
+| Chapitre 9 | **H8** | Réception faite, écart signalé, stock à jour. | [ ] | |
+| Chapitre 9 | **H9** | Mouvements de stock et imputation des coûts corrects. | [ ] | |
+| Chapitre 9 | **H10** | Facture fournisseur déposée. | [ ] | |
+| Chapitre 9 | **H11** | Le rapprochement des trois pièces protège des erreurs. | [ ] | |
+| Chapitre 9 | **H12** | Ordre de paiement créé. | [ ] | |
+| Chapitre 9 | **H13** | Double regard fonctionnel. | [ ] | |
+| Chapitre 9 | **H14** | Paiement exécuté, visible du fournisseur. | [ ] | |
+| Chapitre 9 | **H15** | Notation et clôture fonctionnent. | [ ] | |
+| Chapitre 9 | **H16** | Documents légaux du fournisseur gérés. | [ ] | |
+| Chapitre 10 | **S1** | Sous-traitant qualifié, score correct. | [ ] | |
+| Chapitre 10 | **S2** | Consultation créée avec son bordereau et son DCE. | [ ] | |
+| Chapitre 10 | **S3** | Invitation et publication (avec le contrôle). | [ ] | |
+| Chapitre 10 | **S4** | Offre déposée depuis l'extranet. | [ ] | |
+| Chapitre 10 | **S5** | Offres scellées puis ouvertes, comparatif et évaluation. | [ ] | |
+| Chapitre 10 | **S6** | Négociation à trois tours historisée. | [ ] | |
+| Chapitre 10 | **S7** | Attribution réservée à la direction, prix négociés repris. | [ ] | |
+| Chapitre 10 | **S8** | Signature électronique par code fonctionnelle. | [ ] | |
+| Chapitre 10 | **S9** | Mobilisation et avance. | [ ] | |
+| Chapitre 10 | **S10** | Situation déclarée avec preuves. | [ ] | |
+| Chapitre 10 | **S11** | Constat, validation et calculs exacts. | [ ] | |
+| Chapitre 10 | **S12** | Facture conforme, validée, payée. | [ ] | |
+| Chapitre 10 | **S13** | Réclamation et litige menés jusqu'à la résolution. | [ ] | |
+| Chapitre 10 | **S14** | Notation enregistrée. | [ ] | |
+| Chapitre 11 | **T1** | Fiches employés liées aux comptes. | [ ] | |
+| Chapitre 11 | **T2** | QR du chantier généré. | [ ] | |
+| Chapitre 11 | **T3** | Auto-pointage par QR et géolocalisation. | [ ] | |
+| Chapitre 11 | **T4** | Pointage validé. | [ ] | |
+| Chapitre 11 | **T5** | Avancement saisi sur le terrain. | [ ] | |
+| Chapitre 11 | **T6** | Journal soumis depuis le terrain et validé. | [ ] | |
+| Chapitre 11 | **T7** | Photos publiées ou internes selon le choix. | [ ] | |
+| Chapitre 11 | **T8** | Rapport vocal transcrit et validé. | [ ] | |
+| Chapitre 11 | **T9** | Un seul scanner pour tous les QR du chantier. | [ ] | |
+| Chapitre 11 | **T10** | Saisie hors ligne, synchronisation et arbitrage du conflit. | [ ] | |
+| Chapitre 12 | **R1** | Cloisonnement client respecté. | [ ] | |
+| Chapitre 12 | **R2** | Décision client validée par code. | [ ] | |
+| Chapitre 12 | **R3** | Avenant chiffré, accepté par le client, approuvé, contrat mis à jour. | [ ] | |
+| Chapitre 12 | **R4** | Appel de fonds, encaissement hors plateforme, double regard, reçu client. | [ ] | |
+| Chapitre 12 | **R5** | Messagerie client ↔ équipe. | [ ] | |
+| Chapitre 12 | **R6** | Dossier Tranquillité partagé. | [ ] | |
+| Chapitre 13 | **F1** | Compte bancaire créé, numéro protégé. | [ ] | |
+| Chapitre 13 | **F2** | Petite caisse : déclaration par le gestionnaire, reçu, double regard, imputation au budget. | [ ] | |
+| Chapitre 13 | **F3** | Relevé importé, rapprochement automatique, doublons écartés. | [ ] | |
+| Chapitre 13 | **F4** | Facture client émise et visible par le client. | [ ] | |
+| Chapitre 13 | **F5** | Budget et trésorerie cohérents avec l'histoire. | [ ] | |
+| Chapitre 13 | **F6** | Prévision de trésorerie prise en compte. | [ ] | |
+| Chapitre 14 | **Q1** | Demande de congé depuis le terrain, décision RH. | [ ] | |
+| Chapitre 14 | **Q2** | Paie calculée, ajustée, validation protégée. | [ ] | |
+| Chapitre 14 | **Q3** | Catalogue et remise d'EPI tracés. | [ ] | |
+| Chapitre 14 | **Q4** | Causerie sécurité enregistrée. | [ ] | |
+| Chapitre 14 | **Q5** | Inspection menée avec la grille. | [ ] | |
+| Chapitre 14 | **Q6** | Incident déclaré, analysé, corrigé, vérifié, clos. | [ ] | |
+| Chapitre 15 | **D1** | Tableau de bord direction cohérent avec l'ERP. | [ ] | |
+| Chapitre 15 | **D2** | Approbation mobile, séparation des tâches respectée. | [ ] | |
+| Chapitre 15 | **D3** | Rapport hebdomadaire généré. | [ ] | |
+| Chapitre 15 | **D4** | Supervision de la sécurité depuis le mobile. | [ ] | |
+| Chapitre 16 | **N1** | Préférences de notification respectées. | [ ] | |
+| Chapitre 16 | **N2** | Messagerie interne. | [ ] | |
+| Chapitre 16 | **N3** | Appels internes. | [ ] | |
+| Chapitre 16 | **N4** | Agenda partagé avec le client. | [ ] | |
+| Chapitre 17 | **W1** | Circuit de publication d'un article. | [ ] | |
+| Chapitre 17 | **W2** | Commentaire modéré. | [ ] | |
+| Chapitre 17 | **W3** | Redirection active. | [ ] | |
+| Chapitre 17 | **W4** | Médiathèque. | [ ] | |
+| Chapitre 18 | **X1** | Réinitialisation du mot de passe. | [ ] | |
+| Chapitre 18 | **X2** | Verrouillage et déverrouillage. | [ ] | |
+| Chapitre 18 | **X3** | Mot de passe et sessions maîtrisés. | [ ] | |
+| Chapitre 18 | **X4** | Cloisonnement des accès. | [ ] | |
+| Chapitre 18 | **X5** | Traçabilité complète. | [ ] | |
+| Chapitre 19 | **Z1** | Clôture du marché et libération de la retenue. | [ ] | |
+| Chapitre 19 | **Z2** | Avis client recueilli. | [ ] | |
+| Chapitre 19 | **Z3** | Bilan établi. | [ ] | |
+| Chapitre 19 | **Z4** | Plateforme prête pour l'exploitation. | [ ] | |
 
 ## Annexe F — Que faire si…
 

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { ProjectPanelTab, ProjectReviewsTab, ProjectTrustTab } from "@/components/erp/innovations";
 import { ProjectBuildingTab, ProjectEnergyTab, ProjectEscrowTab, ProjectTwinTab } from "@/components/erp/innovations-lot3";
 import { ScheduleRisksPanel } from "@/components/erp/schedule-risks";
+import { ProjectStudiesTab } from "@/components/erp/studies-deliverables";
 import { TimelapseAdmin } from "@/components/innovations/timelapse";
 import { OfferSelect } from "@/components/erp/crm";
 import { ResourceView, type Row } from "@/components/erp/resource";
@@ -125,6 +126,7 @@ export const PROJECT_TABS = [
   { key: "equipe", label: "Équipe" },
   { key: "journal", label: "Journal de chantier" },
   { key: "medias", label: "Photos et vidéos" },
+  { key: "etudes", label: "Études et livrables" },
   { key: "decisions", label: "Décisions" },
   { key: "avenants", label: "Avenants" },
   { key: "budget", label: "Budget" },
@@ -682,6 +684,7 @@ export function ProjectWorkspace({ projectId, tab, onTab }: { projectId: string;
       <Tabs value={tab} onChange={onTab} tabs={PROJECT_TABS.map((t) => ({ key: t.key, label: t.label }))} />
       {tab === "synthese" ? <Synthese p={p} reload={() => void project.reload()} /> : null}
       {tab === "confiance" ? <ProjectTrustTab projectId={projectId} /> : null}
+      {tab === "etudes" ? <ProjectStudiesTab projectId={projectId} /> : null}
       {tab === "panneau" ? <ProjectPanelTab projectId={projectId} /> : null}
       {tab === "avis" ? <ProjectReviewsTab projectId={projectId} /> : null}
       {tab === "jumeau" ? <ProjectTwinTab projectId={projectId} /> : null}

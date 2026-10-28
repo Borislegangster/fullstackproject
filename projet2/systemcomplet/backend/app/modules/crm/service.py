@@ -810,6 +810,7 @@ def revise_quote(db: Session, quote: Quote, *, user_id: uuid.UUID) -> Quote:
         organization_id=quote.organization_id,
         contact_id=quote.contact_id,
         project_id=quote.project_id,
+        nature=quote.nature,
         title=quote.title,
         introduction=quote.introduction,
         terms=quote.terms,
@@ -910,6 +911,7 @@ def contract_from_quote(db: Session, quote: Quote, *, user_id: uuid.UUID) -> Con
         organization_id=quote.organization_id,
         contact_id=quote.contact_id,
         project_id=quote.project_id,
+        nature=quote.nature,
         title=quote.title,
         amount=quote.total,
         currency=quote.currency,
@@ -985,37 +987,51 @@ def project_from_contract(
 
     if contract.status not in ("signed", "active"):
         raise BusinessRuleError("Le contrat doit être signé avant de créer le projet")
-    if contract.project_id:
-        project = db.get(Project, contract.project_id)
-        if project:
-            return project
     opp = db.get(Opportunity, contract.opportunity_id) if contract.opportunity_id else None
-    project = Project(
-        code=next_number(db, "project"),
-        name=name or contract.title,
-        client_organization_id=contract.organization_id,
-        universe=opp.universe if opp else None,
-        offer_code=opp.offer_slug if opp else None,
-        status="etude",
-        contract_amount=contract.amount,
-        currency=contract.currency,
-        manager_id=manager_id,
-        commercial_id=opp.owner_id if opp else None,
-        contract_id=contract.id,
-        opportunity_id=contract.opportunity_id,
-        is_diaspora=bool(opp and opp.lead_id and (db.get(Lead, opp.lead_id) or Lead()).is_diaspora),
-    )
-    db.add(project)
-    db.flush()
+    existing_id = contract.project_id or (opp.project_id if opp else None)
+    project = db.get(Project, existing_id) if existing_id else None
+    if project is not None and (project.contract_id == contract.id or contract.nature == "etudes"):
+        if contract.project_id is None:
+            contract.project_id = project.id
+        return project  # contrat déjà appliqué, ou contrat d'études : le projet existe déjà
+    created = project is None
+    if project is not None:
+        # Projet né de la phase d'études : le contrat de travaux s'y rattache (montant, budget, lots, jalons).
+        project.contract_id = contract.id
+        project.contract_amount = contract.amount
+        project.currency = contract.currency
+        if manager_id and not project.manager_id:
+            project.manager_id = manager_id
+    else:
+        project = Project(
+            code=next_number(db, "project"),
+            name=name or contract.title,
+            client_organization_id=contract.organization_id,
+            universe=opp.universe if opp else None,
+            offer_code=opp.offer_slug if opp else None,
+            status="etude",
+            contract_amount=contract.amount,
+            currency=contract.currency,
+            manager_id=manager_id,
+            commercial_id=opp.owner_id if opp else None,
+            contract_id=contract.id,
+            opportunity_id=contract.opportunity_id,
+            is_diaspora=bool(opp and opp.lead_id and (db.get(Lead, opp.lead_id) or Lead()).is_diaspora),
+        )
+        db.add(project)
+        db.flush()
     contract.project_id = project.id
     contract.status = "active"
     if opp:
         opp.project_id = project.id
     quote = db.get(Quote, contract.quote_id) if contract.quote_id else None
+    previous_versions = db.execute(
+        select(func.coalesce(func.max(Budget.version_number), 0)).where(Budget.project_id == project.id)
+    ).scalar_one()
     budget = Budget(
         project_id=project.id,
-        version_number=1,
-        label="Budget initial (contrat)",
+        version_number=int(previous_versions or 0) + 1,
+        label="Budget initial (contrat)" if created else "Budget des travaux (contrat)",
         status="draft",
         currency=contract.currency,
         revenue_target=contract.amount,
@@ -1023,7 +1039,11 @@ def project_from_contract(
     )
     db.add(budget)
     db.flush()
-    lots: dict[str, Lot] = {}
+    lots: dict[str, Lot] = (
+        {}
+        if created
+        else {lot.code: lot for lot in db.execute(select(Lot).where(Lot.project_id == project.id)).scalars()}
+    )
     if quote:
         for line in quote.lines:
             code = line.lot_code or "LOT-00"
@@ -1049,6 +1069,88 @@ def project_from_contract(
                 client_visible=True,
             )
         )
+    already = {
+        m for m in db.execute(select(ProjectMember.user_id).where(ProjectMember.project_id == project.id)).scalars()
+    }
+    if manager_id and manager_id not in already:
+        db.add(
+            ProjectMember(
+                project_id=project.id,
+                user_id=manager_id,
+                project_role="chef_projet",
+                can_view_finance=True,
+                added_by_id=user_id,
+            )
+        )
+    for uid in [u for u in client_user_ids if u not in already]:
+        db.add(
+            ProjectMember(
+                project_id=project.id, user_id=uid, project_role="client", can_view_finance=True, added_by_id=user_id
+            )
+        )
+    if created and not client_user_ids and auto_invite:  # projet né des études : le client a déjà son accès
+        ensure_client_access(db, project, contract, inviter_id=user_id)
+    audit.record(
+        db,
+        family="business",
+        module="projects",
+        action="CREATE" if created else "WORKS_CONTRACT_ATTACHED",
+        resource_type="project",
+        resource_id=project.id,
+        project_id=project.id,
+        diff={"contract": contract.number, "lots": len(lots)},
+    )
+    if created:
+        emit(
+            db,
+            "project.created",
+            {"id": project.id, "code": project.code, "name": project.name},
+            aggregate_type="project",
+            aggregate_id=project.id,
+            project_id=project.id,
+        )
+    return project
+
+
+def start_studies(
+    db: Session,
+    opp: Opportunity,
+    *,
+    user_id: uuid.UUID,
+    name: str | None,
+    manager_id: uuid.UUID | None,
+    auto_invite: bool = True,
+) -> Any:
+    """Phase d'études avant tout devis de travaux : le projet naît au statut « Étude » depuis l'opportunité, le
+    client est invité dans son espace pour suivre et valider plans, 3D et options ; les études sont facturées après
+    validation, puis le devis de travaux se rattache à ce même projet."""
+    from app.modules.projects.models import Project, ProjectMember
+
+    if opp.stage in ("won", "lost"):
+        raise BusinessRuleError("Opportunité close : études impossibles")
+    if opp.project_id:
+        project = db.get(Project, opp.project_id)
+        if project is not None:
+            return project
+    lead = db.get(Lead, opp.lead_id) if opp.lead_id else None
+    project = Project(
+        code=next_number(db, "project"),
+        name=name or opp.title,
+        client_organization_id=opp.organization_id,
+        universe=opp.universe,
+        offer_code=opp.offer_slug,
+        status="etude",
+        currency=opp.currency,
+        manager_id=manager_id,
+        commercial_id=opp.owner_id,
+        opportunity_id=opp.id,
+        city=lead.city if lead else None,
+        country=(lead.country if lead and lead.country else None) or "Cameroun",
+        is_diaspora=bool(lead and lead.is_diaspora),
+    )
+    db.add(project)
+    db.flush()
+    opp.project_id = project.id
     if manager_id:
         db.add(
             ProjectMember(
@@ -1059,23 +1161,17 @@ def project_from_contract(
                 added_by_id=user_id,
             )
         )
-    for uid in client_user_ids:
-        db.add(
-            ProjectMember(
-                project_id=project.id, user_id=uid, project_role="client", can_view_finance=True, added_by_id=user_id
-            )
-        )
-    if not client_user_ids and auto_invite:
-        ensure_client_access(db, project, contract, inviter_id=user_id)
+    if auto_invite:
+        ensure_client_access(db, project, opp, inviter_id=user_id)
     audit.record(
         db,
         family="business",
         module="projects",
-        action="CREATE",
+        action="START_STUDIES",
         resource_type="project",
         resource_id=project.id,
         project_id=project.id,
-        diff={"contract": contract.number, "lots": len(lots)},
+        diff={"opportunity": opp.number},
     )
     emit(
         db,
@@ -1200,7 +1296,7 @@ def ensure_valid_transition(current: str, target: str, allowed: dict[str, set[st
         raise AppError(f"Transition {current} → {target} interdite", code="INVALID_TRANSITION")
 
 
-def ensure_client_access(db: Session, project: Any, contract: Contract, *, inviter_id: uuid.UUID) -> dict[str, Any]:
+def ensure_client_access(db: Session, project: Any, contract: Any, *, inviter_id: uuid.UUID) -> dict[str, Any]:
     """Accès client automatique une fois le parcours commercial validé (devis accepté → contrat signé → projet) :
     le contact signataire est rattaché au projet ; s'il n'a pas encore de compte, une invitation à usage unique
     lui est envoyée par e-mail et WhatsApp (mot de passe choisi à l'activation, double authentification imposée)."""

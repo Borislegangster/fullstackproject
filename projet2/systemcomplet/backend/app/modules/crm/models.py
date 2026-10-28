@@ -27,6 +27,7 @@ from app.core.database import (
 )
 
 LEAD_STATUSES = ("new", "contacted", "qualified", "nurturing", "unqualified", "converted", "lost")
+NATURES = ("travaux", "etudes")  # devis / contrat : travaux, ou études et conception
 OPPORTUNITY_STAGES = ("qualification", "discovery", "proposal", "negotiation", "won", "lost")
 
 
@@ -194,6 +195,7 @@ class Quote(UUIDPk, Timestamps, SoftDelete, Base):
     project_id: Mapped[uuid.UUID | None] = fk("projects.id")
     title: Mapped[str] = str_col(250, nullable=False)
     introduction: Mapped[str | None] = text_col()
+    nature: Mapped[str] = str_col(20, nullable=False, default="travaux", choices=NATURES)
     terms: Mapped[str | None] = text_col()
     subtotal: Mapped[Decimal] = money_col()
     discount_amount: Mapped[Decimal] = money_col()
@@ -251,6 +253,7 @@ class Contract(UUIDPk, Timestamps, SoftDelete, Base):
     project_id: Mapped[uuid.UUID | None] = fk("projects.id")
     title: Mapped[str] = str_col(250, nullable=False)
     amount: Mapped[Decimal] = money_col()
+    nature: Mapped[str] = str_col(20, nullable=False, default="travaux", choices=NATURES)
     currency: Mapped[str] = str_col(3, nullable=False, default="XAF")
     status: Mapped[str] = str_col(20, nullable=False, default="draft", index=True)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)

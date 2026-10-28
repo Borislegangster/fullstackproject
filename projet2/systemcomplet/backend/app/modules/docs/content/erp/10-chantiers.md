@@ -41,6 +41,7 @@ Cliquez un projet pour ouvrir sa fiche. En-tête : code, nom, ville, dates, stat
 | Équipe | membres du projet | cette page |
 | Journal de chantier | rapports quotidiens | [Suivi du chantier](doc:erp-chantier-suivi) |
 | Photos et vidéos | médias, time-lapse, caméras | [Suivi du chantier](doc:erp-chantier-suivi) |
+| Études et livrables | livrables d'études payants, validation client, facture d'études, remise | cette page |
 | Décisions, Avenants, Budget, Risques | engagements et finances du projet | [Décisions, avenants et budget](doc:erp-chantier-decisions-budget) |
 | Tranquillité, Garanties | dossier foncier et garanties | [Patrimoine du client](doc:erp-chantier-patrimoine) |
 | Immersion et digests, Panneau connecté, Avis client | contenus client et image | [Suivi du chantier](doc:erp-chantier-suivi) |
@@ -48,6 +49,23 @@ Cliquez un projet pour ouvrir sa fiche. En-tête : code, nom, ville, dates, stat
 | Bâtiment et maintenance, Énergie | passeport du bâtiment, études énergie | [Patrimoine du client](doc:erp-chantier-patrimoine) |
 
 L'onglet affiché est repris dans l'adresse de la page : vous pouvez partager un lien direct vers un onglet.
+
+## Onglet « Études et livrables »
+
+La phase d'études précède le devis de travaux : plans, rendus 3D, notes de calcul sont réalisés, validés par le client,
+facturés, puis remis.
+
+1. Dans la [GED](doc:erp-ged), publiez chaque livrable au client et cochez **Livrable d'études payant** (fenêtre
+   **Propriétés du document**) : le client le consulte en **aperçu filigrané** (PDF et images), sans pouvoir télécharger
+   l'original.
+2. Demandez sa validation dans l'onglet **Décisions** (type « Plan », **Type de référence** « Version de document »).
+3. Émettez la facture d'études ([Facturation](doc:erp-facturation), type « Études et conception »).
+4. Dans **Études et livrables**, choisissez la **Facture d'études** puis **Rattacher les livrables sans facture**.
+5. Dès que la facture est entièrement réglée (paiement en ligne ou encaissement approuvé), les originaux sont **remis** au
+   client : téléchargement sans filigrane, date de remise tracée, notification « Vos livrables d'études sont disponibles ».
+
+Le tableau indique pour chaque livrable la validation du client, la facture liée et l'état **Aperçu seulement** ou
+**Remis**. Le devis de travaux se fait ensuite depuis l'opportunité : il se rattache à ce projet.
 
 ## Onglet « Synthèse »
 

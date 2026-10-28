@@ -3,7 +3,7 @@
 > Généré automatiquement depuis le code (`node apps/web/scripts/forms-inventory.mjs`) — ne pas modifier à la main.
 > Chaque formulaire : où il se trouve, le bouton qui l'ouvre, le titre de la fenêtre, puis ses champs **dans l'ordre affiché**, avec leur libellé exact. **Oui** = champ obligatoire (marqué d'un astérisque rouge à l'écran).
 
-309 formulaires.
+311 formulaires.
 
 ## `/activation`
 
@@ -1490,9 +1490,9 @@ validation : **Nouveau prescripteur · Valider · Refuser · Initier le paiement
 
 ## Commercial › CRM (`/erp/crm/contrats/[id]`)
 
-### Enregistrer la signature du contrat / Créer le projet à partir du contrat
+### Enregistrer la signature du contrat
 
-validation : **Enregistrer la signature · Créer le projet · Enregistrer** · `/crm/files` · composant `CrmContractDetail`
+validation : **Enregistrer la signature · Rattacher au projet … / Créer le projet · Enregistrer · Rattacher au projet / Créer le projet** · `/crm/files` · composant `CrmContractDetail`
 
 | # | Champ | Obligatoire | Saisie | Aide affichée |
 | --- | --- | --- | --- | --- |
@@ -1500,10 +1500,11 @@ validation : **Enregistrer la signature · Créer le projet · Enregistrer** · 
 | 2 | Mode de signature |  | liste : Signature manuscrite scannée · Code OTP · Signature électronique |  |
 | 3 | Date de signature |  | date |  |
 | 4 | Contrat signé scanné | **Oui** | fichier(s) à déposer |  |
-| 5 | Nom du projet |  | texte |  |
-| 6 | Chef de projet |  | liste des utilisateurs |  |
-| 7 | Comptes clients existants à rattacher |  | sélection multiple dans une liste |  |
-| 8 | Inviter le client par e-mail |  | adresse e-mail | Crée son accès à l'espace client, limité à ce projet. |
+| 5 | Chef de projet |  | liste des utilisateurs | Seulement si le projet n'en a pas encore. |
+| 6 | Nom du projet |  | texte |  |
+| 7 | Chef de projet |  | liste des utilisateurs |  |
+| 8 | Comptes clients existants à rattacher |  | sélection multiple dans une liste |  |
+| 9 | Inviter le client par e-mail |  | adresse e-mail | Crée son accès à l'espace client, limité à ce projet. |
 
 ## Commercial › CRM (`/erp/crm/devis/[id]`)
 
@@ -1517,14 +1518,15 @@ Aussi dans : Commercial › CRM (`/erp/crm`)
 | --- | --- | --- | --- | --- |
 | 1 | Intitulé du devis | **Oui** | texte |  |
 | 2 | Valable jusqu'au |  | date |  |
-| 3 | Opportunité |  | liste des opportunités |  |
-| 4 | Client (organisation) |  | liste des organisations |  |
-| 5 | Contact |  | liste des contacts |  |
-| 6 | Devise |  | liste : FCFA (XAF) · Euro · Dollar US |  |
-| 7 | TVA (%) |  | nombre | 19,25 % au Cameroun ; 0 si exonéré. |
-| 8 | Remise globale (montant) |  | nombre | Montant déduit du sous-total HT ; 0 si aucune. |
-| 9 | Introduction |  | texte long | Texte d'accueil affiché en tête du devis (contexte, objet des travaux). |
-| 10 | Conditions particulières |  | texte long |  |
+| 3 | Nature du devis |  | liste : Travaux · Études et conception | Travaux : construction (rattachée au projet d'études s'il existe). Études : honoraires de conception. |
+| 4 | Opportunité |  | liste des opportunités |  |
+| 5 | Client (organisation) |  | liste des organisations |  |
+| 6 | Contact |  | liste des contacts |  |
+| 7 | Devise |  | liste : FCFA (XAF) · Euro · Dollar US |  |
+| 8 | TVA (%) |  | nombre | 19,25 % au Cameroun ; 0 si exonéré. |
+| 9 | Remise globale (montant) |  | nombre | Montant déduit du sous-total HT ; 0 si aucune. |
+| 10 | Introduction |  | texte long | Texte d'accueil affiché en tête du devis (contexte, objet des travaux). |
+| 11 | Conditions particulières |  | texte long |  |
 
 ## Commercial › CRM (`/erp/crm/leads/[id]`)
 
@@ -1634,6 +1636,16 @@ validation : **Enregistrer** · `PATCH /crm/opportunities/{item_id}` · composan
 | 8 | Date de signature prévue |  | date |  |
 | 9 | Responsable |  | liste des utilisateurs |  |
 | 10 | Notes |  | texte long |  |
+
+### Démarrer les études
+
+validation : **Démarrer les études** · `POST /crm/opportunities/{opportunity_id}/start-studies` · composant `OpportunitiesBoard`
+
+| # | Champ | Obligatoire | Saisie | Aide affichée |
+| --- | --- | --- | --- | --- |
+| 1 | Nom du projet |  | texte (250 car. max) |  |
+| 2 | Chef de projet |  | liste des utilisateurs |  |
+| 3 | E-mail du client |  | adresse e-mail | Laisser vide pour inviter le contact de l'opportunité. |
 
 ### Contacts — Création
 
@@ -1959,7 +1971,7 @@ Bouton **Nouvelle facture** · fenêtre « Nouvelle facture » · validation : *
 | 1 | Projet |  | liste des projets |  |
 | 2 | Client (organisation) |  | liste des organisations clientes |  |
 | 3 | Contrat |  | liste |  |
-| 4 | Type |  | liste : Facture · Acompte · Situation / avancement · Décompte final |  |
+| 4 | Type |  | liste : Facture · Acompte · Situation / avancement · Décompte final · Études et conception |  |
 | 5 | Titre | **Oui** | texte (250 car. max, 2 car. min) |  |
 | 6 | Date d'émission | **Oui** | date |  |
 | 7 | Date d'échéance |  | date |  |
@@ -2821,6 +2833,14 @@ validation : **Analyser maintenant · Replanifier · Écarter · Ne pas préveni
 | 1 | Message au client (à relire) |  | texte long |  |
 | 2 | Motif | **Oui** | texte long | Ex. « bâches installées », « équipier remplacé », « livraison avancée » |
 
+### formulaire
+
+validation : **Rattacher les livrables sans facture** · `/projects/${projectId}/deliverables/link-invoice` · composant `ProjectStudiesTab`
+
+| # | Champ | Obligatoire | Saisie | Aide affichée |
+| --- | --- | --- | --- | --- |
+| 1 | Facture d'études |  | liste : Choisir une facture du projet |  |
+
 ## Projets › Chantiers (`/erp/chantiers`)
 
 ### Chantiers — Création
@@ -2980,6 +3000,8 @@ validation : **Enregistrer** · `PATCH /documents/{document_id}` · composant `D
 | 8 | Visible par les partenaires |  | case à cocher |  |
 | 9 | Étiquettes |  | mots-clés (taper puis Entrée) |  |
 | 10 | Conservation jusqu'au |  | date | Date jusqu'à laquelle le document doit être conservé (archivage légal). |
+| 11 | Livrable d'études payant |  | case à cocher | Le client le consulte en aperçu filigrané et le valide ; l'original lui est remis après règlement de la facture d'études. |
+| 12 | Facture d'études qui débloque le livrable |  | liste des factures clients (affiché seulement si : condition) |  |
 
 ### Droit spécifique
 

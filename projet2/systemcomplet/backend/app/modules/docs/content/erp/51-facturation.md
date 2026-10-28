@@ -21,7 +21,7 @@ Menu **Finance › Facturation** : clients (appels de fonds, factures, avoirs, r
 Circuit : brouillon → validation → envoi (notification espace client) → règlement en ligne ou manuel → avoir éventuel. Filtre **Statut** ; **Exporter** selon vos droits.
 
 ::: perm billing:write
-- **Nouvelle facture** : **Titre**, **Date d'émission** et lignes obligatoires ; projet, organisation, contrat, type (facture, acompte, situation, solde), échéance, taux de TVA (19,25 % par défaut), devise, notes.
+- **Nouvelle facture** : **Titre**, **Date d'émission** et lignes obligatoires ; projet, organisation, contrat, type (facture, acompte, situation, solde, **Études et conception** : facture des études, dont le règlement remet au client les livrables d'études liés), échéance, taux de TVA (19,25 % par défaut), devise, notes.
 - **Modifier le brouillon** tant qu'elle n'est pas validée.
 - **Envoyer au client** : il est notifié dans son espace et peut régler en ligne.
 - **Relancer le client** : relance de paiement (espace client, e-mail, notification). Des relances graduées partent aussi automatiquement.

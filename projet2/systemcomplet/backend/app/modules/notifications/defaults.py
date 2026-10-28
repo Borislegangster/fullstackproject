@@ -223,6 +223,12 @@ _IN_APP: list[tuple[str, str, str, str]] = [
         "/erp/ged/documents/{{ document_id }}",
     ),
     (
+        "deliverables.released",
+        "Vos livrables d'études sont disponibles",
+        "Facture {{ number }} réglée : {{ count }} livrable(s) vous sont remis ({{ titles }}). Téléchargez les originaux dans votre espace.",
+        "/espace-client/documents",
+    ),
+    (
         "document.client_published",
         "Nouveau document disponible",
         "« {{ title }} » ({{ label }}) est disponible dans votre espace.",
@@ -982,6 +988,13 @@ DEFAULT_RULES: list[dict[str, Any]] = [
         "audience": {"client": True},
         "channels": ["in_app", "push", "email"],
         "category": "documents",
+    },
+    {
+        "event": "deliverables.released",
+        "audience": {"client": True},
+        "channels": ["in_app", "push", "email"],
+        "category": "documents",
+        "priority": "high",
     },
     {
         "event": "signature.requested",

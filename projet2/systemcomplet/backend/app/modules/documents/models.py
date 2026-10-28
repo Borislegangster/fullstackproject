@@ -83,6 +83,11 @@ class Document(UUIDPk, Timestamps, SoftDelete, Base):
     retention_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     archived_at: Mapped[datetime | None] = dt_col()
     locked: Mapped[bool] = bool_col(False)
+    # Livrable d'études payant : le client le consulte en aperçu filigrané et le valide ; l'original ne lui est remis
+    # (téléchargement) qu'une fois la facture d'études liée réglée.
+    paid_deliverable: Mapped[bool] = bool_col(False)
+    unlock_invoice_id: Mapped[uuid.UUID | None] = fk("client_invoices.id")
+    delivered_at: Mapped[datetime | None] = dt_col()
     created_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)
     deleted_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)
     deletion_reason: Mapped[str | None] = text_col()

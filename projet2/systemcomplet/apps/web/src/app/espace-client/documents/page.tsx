@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Download, FileText, Search } from "lucide-react";
+import { BadgeCheck, Download, Eye, FileText, Lock, Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -23,7 +23,8 @@ interface ClientDocument {
   mime?: string | null;
   filename?: string | null;
   authenticity_url: string;
-  url: string;
+  url: string | null;
+  deliverable?: { paid_deliverable: boolean; locked: boolean; invoice_number?: string | null; delivered_at?: string | null };
 }
 
 const DOC_TYPES: Record<string, string> = {
@@ -79,15 +80,33 @@ function DocumentsContent({ projectId }: { projectId: string }) {
                       </span>
                     </span>
                   </span>
-                  <span className="flex items-center gap-2">
-                    <Link href={d.authenticity_url} target="_blank" className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:underline">
-                      <BadgeCheck className="h-4 w-4" /> Authenticité
-                    </Link>
-                    {canPreview(d.filename ?? d.title, d.mime) ? <PreviewButton source={{ url: d.url, name: d.filename ?? d.title, mime: d.mime, size: d.size }} /> : null}
-                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600">
-                      <Download className="h-3.5 w-3.5" /> Ouvrir
-                    </a>
-                  </span>
+                  {d.deliverable?.locked ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <Badge tone="warning">
+                        <Lock className="mr-1 inline h-3 w-3" /> Livrable d&apos;études : remis après règlement {d.deliverable.invoice_number ? `de la facture ${d.deliverable.invoice_number}` : "de la facture d'études"}
+                      </Badge>
+                      {d.url ? (
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-brand-700 ring-1 ring-line hover:bg-brand-50">
+                          <Eye className="h-3.5 w-3.5" /> Aperçu filigrané
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted">Aperçu indisponible pour ce format</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {d.deliverable?.paid_deliverable ? <Badge tone="success">Livrable remis</Badge> : null}
+                      <Link href={d.authenticity_url} target="_blank" className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:underline">
+                        <BadgeCheck className="h-4 w-4" /> Authenticité
+                      </Link>
+                      {d.url && canPreview(d.filename ?? d.title, d.mime) ? <PreviewButton source={{ url: d.url, name: d.filename ?? d.title, mime: d.mime, size: d.size }} /> : null}
+                      {d.url ? (
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600">
+                          <Download className="h-3.5 w-3.5" /> {d.deliverable?.paid_deliverable ? "Télécharger l'original" : "Ouvrir"}
+                        </a>
+                      ) : null}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

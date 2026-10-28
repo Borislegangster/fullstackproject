@@ -28,6 +28,7 @@ if CHROME is None:
     sys.exit("Chrome, Edge ou Chromium introuvable")
 
 text = SRC.read_text(encoding="utf-8")
+SCENES = len(re.findall(r"^- \[ \] \*\*[A-Z]+\d+\*\*", text, re.M))
 # Cases à cocher : « - [ ] » et « [ ] » des tableaux deviennent des cases imprimées.
 text = text.replace("- [ ] ", "- ☐ ").replace("| [ ] |", "| ☐ |")
 
@@ -127,7 +128,7 @@ page = f"""<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rec
   <div class="brand">GLOBUS ENGINEERING</div>
   <h1>La Villa Mballa</h1>
   <div class="sub">Manuel de recette de la plateforme<br>site vitrine · ERP · espace client · extranet · applications mobiles</div>
-  <div class="meta">144 scènes · méthode, champs exacts, résultats attendus<br>Tableau de bord de la recette en annexe E</div>
+  <div class="meta">{SCENES} scènes · méthode, champs exacts, résultats attendus<br>Tableau de bord de la recette en annexe E</div>
 </section>
 <section class="toc"><h2>Sommaire</h2><ul>{toc_html}</ul></section>
 {body}

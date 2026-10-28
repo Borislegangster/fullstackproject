@@ -14,7 +14,7 @@ related: [erp-ambassadeurs, erp-assistant, erp-chantiers, erp-newsletter]
 
 ## Le parcours
 
-Lead → qualification → opportunité → devis (accepté par code OTP) → contrat → projet : aucun prospect sans réponse dans les délais. Menu **Commercial › CRM** ; onglets **Tableau de bord**, **Leads**, **Pipeline**, **Devis**, **Contrats**, **Contacts**, **Activités**, **Réglages**.
+Lead → qualification → opportunité → **études** (projet au statut « Étude », espace client ouvert, plans, 3D et options validés par le client, facture d'études, remise des livrables après règlement) → devis de travaux (accepté par code OTP) → contrat → travaux sur ce même projet. Sans phase d'études, le contrat signé crée directement le projet. Aucun prospect sans réponse dans les délais. Menu **Commercial › CRM** ; onglets **Tableau de bord**, **Leads**, **Pipeline**, **Devis**, **Contrats**, **Contacts**, **Activités**, **Réglages**.
 
 ## Onglet « Tableau de bord »
 
@@ -49,12 +49,13 @@ Les **Leads** arrivent du site (« Décrire mon projet », estimation instantan�
 
 ## Onglet « Pipeline »
 
-Les opportunités par étape. Glissez une carte pour la faire avancer.
+Les opportunités par étape. La liste **Étape** de chaque carte fait avancer l'affaire.
 
 ::: perm crm:write
 - **Opportunité** ouvre **Nouvelle opportunité**.
 - Une affaire perdue s'enregistre via **Opportunité perdue** (motif : prix, délai, concurrent, projet abandonné) : précieux pour l'analyse.
-- **Devis** depuis une opportunité crée le devis associé.
+- **Devis** depuis une opportunité crée le devis associé (rattaché au projet d'études s'il existe).
+- **Études** ouvre **Démarrer les études** : **Nom du projet**, **Chef de projet**, **E-mail du client** (laisser vide pour inviter le contact de l'opportunité) ; **Démarrer les études** crée le projet au statut « Étude » et invite le client dans son espace, sans devis. La carte affiche ensuite **Projet**, qui ouvre la fiche du projet (onglet **Études et livrables** : voir [Chantiers](doc:erp-chantiers)).
 :::
 
 ## Onglet « Devis »
@@ -62,7 +63,7 @@ Les opportunités par étape. Glissez une carte pour la faire avancer.
 Les **Devis** : envoi d'un lien sécurisé, suivi de consultation, acceptation par code OTP avec preuve, révisions. Filtre **Statut**. La fiche (**Détail estimatif**, **Échéancier**) propose **PDF**.
 
 ::: perm crm:write
-1. **Nouveau devis** ouvre **Nouveau devis** : intitulé, opportunité (le client et le contact en sont repris), client, contact, devise, **TVA (%)**, **Remise globale (montant)**, introduction ; lignes chiffrées (**Ligne** : section facultative de regroupement, lot, **Désignation**, unité, **Qté** et **PU HT** obligatoires, remise %) ; **Échéancier de paiement** facultatif (**Échéance** : libellé, % du total — le montant est calculé —, jalon ; total 100 %) ; conditions particulières ; **Valable jusqu'au**. Une ligne ou une échéance incomplète est signalée et bloque l'enregistrement.
+1. **Nouveau devis** ouvre **Nouveau devis** : intitulé, **Nature du devis** (« Travaux » ou « Études et conception »), opportunité (le client et le contact en sont repris), client, contact, devise, **TVA (%)**, **Remise globale (montant)**, introduction ; lignes chiffrées (**Ligne** : section facultative de regroupement, lot, **Désignation**, unité, **Qté** et **PU HT** obligatoires, remise %) ; **Échéancier de paiement** facultatif (**Échéance** : libellé, % du total — le montant est calculé —, jalon ; total 100 %) ; conditions particulières ; **Valable jusqu'au**. Une ligne ou une échéance incomplète est signalée et bloque l'enregistrement.
 2. **Modifier** (brouillon) ouvre **Modifier le devis**.
 3. **Envoyer** (ou **Renvoyer**) : le client reçoit un lien sécurisé et accepte par code ; **Copier** copie ce lien.
 4. **Réviser** crée une nouvelle révision (l'ancienne reste consultable).
@@ -83,7 +84,7 @@ Les **Contrats clients** (filtre **Statut**) avec leur **Échéancier contractue
 
 ::: perm crm:contracts
 ::: perm projects:write
-2. **Créer le projet** ouvre **Créer le projet à partir du contrat** : le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche.
+2. **Créer le projet** ouvre **Créer le projet à partir du contrat** : le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche. Si les études ont été lancées depuis l'opportunité, le bouton devient **Rattacher au projet PRJ-…** (fenêtre **Rattacher le contrat de travaux au projet …**) : le contrat de travaux **se rattache au projet existant** (montant du contrat, budget des travaux, lots et jalons ajoutés) au lieu d'en créer un nouveau ; le client y a déjà accès.
 :::
 :::
 

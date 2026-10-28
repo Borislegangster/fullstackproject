@@ -34,7 +34,7 @@ class ClientInvoice(UUIDPk, Timestamps, SoftDelete, Base):
     project_id: Mapped[uuid.UUID | None] = fk("projects.id")
     organization_id: Mapped[uuid.UUID | None] = fk("organizations.id")
     contract_id: Mapped[uuid.UUID | None] = fk("contracts.id")
-    kind: Mapped[str] = str_col(20, nullable=False, default="invoice")  # invoice / deposit / progress / final
+    kind: Mapped[str] = str_col(20, nullable=False, default="invoice")  # invoice / deposit / progress / final / studies
     title: Mapped[str] = str_col(250, nullable=False)
     issue_date: Mapped[date] = mapped_column(Date, nullable=False)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
