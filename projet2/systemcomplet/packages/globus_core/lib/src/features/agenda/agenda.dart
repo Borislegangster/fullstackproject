@@ -34,11 +34,13 @@ Color agendaColor(String kind) => kAgendaKindColors[kind] ?? GlobusTokens.brand5
 DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 DateTime _monday(DateTime d) => _day(d).subtract(Duration(days: d.weekday - 1));
 
-/// Agenda partagé : mois / liste, invitations, réponses, visio, export iCalendar, création (selon droits).
+/// Agenda partagé : mois / liste, invitations, réponses, visio, export iCalendar, création (selon droits) ;
+/// `canRequest` : demande de rendez-vous du client (créneau confirmé ou déplacé par l'équipe du projet).
 class AgendaScreen extends StatefulWidget {
-  const AgendaScreen({super.key, this.projectId, this.canCreate = true, this.openEventId});
+  const AgendaScreen({super.key, this.projectId, this.canCreate = true, this.canRequest = false, this.openEventId});
   final String? projectId;
   final bool canCreate;
+  final bool canRequest;
   final String? openEventId;
 
   @override
@@ -114,6 +116,24 @@ class _AgendaScreenState extends State<AgendaScreen> {
     unawaited(_load());
   }
 
+  Future<void> _request() async {
+    final created = await Navigator.of(context, rootNavigator: true).push<J>(
+      MaterialPageRoute(
+        builder: (_) => AppointmentRequestScreen(projectId: widget.projectId!, day: _selected),
+      ),
+    );
+    if (created == null || !mounted) return;
+    final start = created.date('starts_at')?.toLocal();
+    if (start != null) {
+      setState(() {
+        _cursor = _day(start);
+        _selected = _day(start);
+      });
+    }
+    await _load();
+    if (mounted) unawaited(_openEvent(created.s('id')));
+  }
+
   Future<void> _openEvent(String id) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -129,9 +149,17 @@ class _AgendaScreenState extends State<AgendaScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final canCreate = widget.canCreate && context.can('agenda:write');
+    final canRequest = !canCreate && widget.canRequest && widget.projectId != null;
     final label = _list ? 'À partir du ${date(_cursor)}' : '${monthLong(_cursor.month)} ${_cursor.year}';
     return Scaffold(
-      floatingActionButton: canCreate
+      floatingActionButton: canRequest
+          ? FloatingActionButton.extended(
+              heroTag: 'agenda-request',
+              onPressed: _request,
+              icon: const Icon(Icons.event_available),
+              label: const Text('Demander un rendez-vous'),
+            )
+          : canCreate
           ? FloatingActionButton.extended(
               heroTag: 'agenda-new',
               onPressed: () async {
@@ -165,18 +193,23 @@ class _AgendaScreenState extends State<AgendaScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _cursor = _day(DateTime.now());
-                      _selected = _cursor;
-                    });
-                    unawaited(_load());
-                  },
-                  child: const Text("Aujourd'hui"),
+                Flexible(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _cursor = _day(DateTime.now());
+                        _selected = _cursor;
+                      });
+                      unawaited(_load());
+                    },
+                    child: const Text("Aujourd'hui", overflow: TextOverflow.ellipsis),
+                  ),
                 ),
                 const Spacer(),
                 SegmentedButton<bool>(
+                  // Sans coche ni marges larges : la barre tient sur les petits écrans (360 px).
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
                   segments: const [
                     ButtonSegment(value: false, label: Text('Mois')),
                     ButtonSegment(value: true, label: Text('Liste')),
@@ -442,6 +475,25 @@ class _EventSheetState extends State<EventSheet> {
             ),
           ),
         if (e.has('description')) Padding(padding: const EdgeInsets.only(top: 10), child: Text(e.s('description'))),
+        if (e.s('status') == 'tentative')
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: context.can('agenda:write')
+                ? AlertBox(
+                    tone: Tone.warning,
+                    title: 'Demande de rendez-vous en attente',
+                    message: 'Confirmez le créneau, ou déplacez-le pour en proposer un autre (le demandeur est prévenu).',
+                    action: FilledButton.icon(
+                      onPressed: () => _apply(
+                        () => context.api.post('/agenda/events/${widget.eventId}/confirm'),
+                        success: 'Rendez-vous confirmé : le demandeur est prévenu',
+                      ),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Confirmer le rendez-vous'),
+                    ),
+                  )
+                : const AlertBox(tone: Tone.info, message: "En attente de confirmation par l'équipe du projet : vous serez prévenu."),
+          ),
         const GroupTitle('Participants'),
         for (final a in attendees)
           Padding(
@@ -525,6 +577,146 @@ Future<DateTime?> pickDateTime(BuildContext context, DateTime initial, {bool wit
   final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(initial));
   if (t == null) return null;
   return DateTime(d.year, d.month, d.day, t.hour, t.minute);
+}
+
+/// Demande de rendez-vous du client (miroir du web) : objet, type, créneau souhaité, durée, lieu, message.
+class AppointmentRequestScreen extends StatefulWidget {
+  const AppointmentRequestScreen({super.key, required this.projectId, required this.day});
+  final String projectId;
+  final DateTime day;
+  @override
+  State<AppointmentRequestScreen> createState() => _AppointmentRequestScreenState();
+}
+
+const kRequestKinds = [('appointment', 'Rendez-vous (bureau GLOBUS)'), ('site_visit', 'Visite de chantier'), ('call', 'Appel ou visio')];
+
+class _AppointmentRequestScreenState extends State<AppointmentRequestScreen> {
+  final _subject = TextEditingController();
+  final _location = TextEditingController();
+  final _message = TextEditingController();
+  String _kind = 'appointment';
+  int _duration = 60;
+  late DateTime _start = _firstSlot();
+  bool _busy = false;
+  String? _error;
+
+  DateTime _firstSlot() {
+    final tomorrow = _day(DateTime.now()).add(const Duration(days: 1));
+    final day = widget.day.isAfter(tomorrow) ? widget.day : tomorrow;
+    return DateTime(day.year, day.month, day.day, 10);
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_subject, _location, _message]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final res = await context.api.post(
+        '/agenda/requests',
+        body: {
+          'project_id': widget.projectId,
+          'kind': _kind,
+          'subject': _subject.text.trim(),
+          'starts_at': _start.toUtc().toIso8601String(),
+          'duration_minutes': _duration,
+          'location': _location.text.trim().isEmpty ? null : _location.text.trim(),
+          'message': _message.text.trim().isEmpty ? null : _message.text.trim(),
+        },
+      );
+      if (!mounted) return;
+      context.toast("Demande envoyée : l'équipe du projet vous confirme le créneau.");
+      Navigator.pop(context, J.of(res));
+    } catch (e) {
+      setState(() => _error = errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final future = _start.isAfter(DateTime.now());
+    final valid = _subject.text.trim().length >= 2 && future;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Demander un rendez-vous')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const AlertBox(
+            tone: Tone.info,
+            message:
+                "Proposez un créneau : votre chef de projet le confirme ou vous en propose un autre. Vous êtes prévenu par e-mail et dans l'application.",
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _subject,
+            maxLength: 200,
+            decoration: const InputDecoration(labelText: 'Objet *', hintText: "Ex. Point sur l'avancement, choix des finitions"),
+            onChanged: (_) => setState(() {}),
+          ),
+          DropdownButtonFormField<String>(
+            isExpanded: true,
+            initialValue: _kind,
+            decoration: const InputDecoration(labelText: 'Type'),
+            items: [for (final (k, label) in kRequestKinds) DropdownMenuItem(value: k, child: Text(label))],
+            onChanged: (v) => setState(() => _kind = v ?? 'appointment'),
+          ),
+          const SizedBox(height: 4),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Date et heure souhaitées *'),
+            subtitle: Text(dateTime(_start.toUtc()), style: TextStyle(color: future ? null : GlobusColors.danger)),
+            trailing: const Icon(Icons.edit_calendar),
+            onTap: () async {
+              final d = await pickDateTime(context, _start);
+              if (d != null) setState(() => _start = d);
+            },
+          ),
+          DropdownButtonFormField<int>(
+            isExpanded: true,
+            initialValue: _duration,
+            decoration: const InputDecoration(labelText: 'Durée'),
+            items: const [
+              DropdownMenuItem(value: 30, child: Text('30 minutes')),
+              DropdownMenuItem(value: 60, child: Text('1 heure')),
+              DropdownMenuItem(value: 90, child: Text('1 h 30')),
+              DropdownMenuItem(value: 120, child: Text('2 heures')),
+            ],
+            onChanged: (v) => setState(() => _duration = v ?? 60),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _location,
+            maxLength: 300,
+            decoration: const InputDecoration(labelText: 'Lieu', hintText: 'Chantier, bureau, visio…'),
+          ),
+          TextField(
+            controller: _message,
+            minLines: 3,
+            maxLines: 6,
+            maxLength: 2000,
+            decoration: const InputDecoration(labelText: 'Message', hintText: 'Ce que vous souhaitez voir ou aborder'),
+          ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: AlertBox(tone: Tone.danger, message: _error!),
+            ),
+          const SizedBox(height: 16),
+          BusyButton(label: 'Envoyer la demande', expand: true, busy: _busy, onPressed: valid ? _save : null),
+        ],
+      ),
+    );
+  }
 }
 
 /// Création d'un événement (droit agenda:write).
@@ -613,6 +805,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _kind,
             decoration: const InputDecoration(labelText: 'Type'),
             items: [for (final k in kAgendaKinds) DropdownMenuItem(value: k, child: Text(optionLabel(k)))],
@@ -656,6 +849,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _rrule,
             decoration: const InputDecoration(labelText: 'Récurrence'),
             items: const [

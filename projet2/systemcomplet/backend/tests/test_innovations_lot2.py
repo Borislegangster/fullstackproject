@@ -309,6 +309,40 @@ def test_instant_estimate_without_ai_uses_declared_values(client: Any, db: Any) 
     assert data["ai_used"] is False and Decimal(data["estimate"]["min"]) == Decimal("27000000.00")
 
 
+def test_instant_estimate_voice_note_from_browsers(client: Any, db: Any) -> None:
+    """Note vocale du visiteur : WebM (Chrome, Android) et MP4 (Safari, iPhone) — conteneurs reconnus comme
+    « vidéo » — acceptés comme audio, conservés avec la demande et signalés dans la réponse."""
+    from app.modules.crm.models import Lead, ProjectBrief
+    from app.modules.system.models import StoredFile
+
+    webm = bytes.fromhex("1a45dfa3") + b"\x9f\x42\x86\x81\x01\x42\xf7\x81\x01\x42\x82\x84webm" + b"\x00" * 300
+    mp4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"\x00" * 300
+    for name, data, mime, expected in (
+        ("note-vocale.webm", webm, "audio/webm;codecs=opus", "audio/webm"),
+        ("note-vocale.m4a", mp4, "audio/mp4", "audio/mp4"),
+        ("note-vocale.webm", mp4, "audio/mp4", "audio/mp4"),  # ancienne version du site : extension fixe
+    ):
+        resp = client.post(
+            f"{API}/public/instant-estimate",
+            data={
+                "first_name": "Inès",
+                "phone": "+237655000999",
+                "consent_contact": "true",
+                "universe": "HOME",
+                "transcript": "Une maison de trois chambres avec garage.",
+                "rendered_at": str(int(time.time()) - 60),
+            },
+            files={"audio": (name, data, mime)},
+        )
+        assert resp.status_code == 201, resp.text
+        result = resp.json()
+        assert result["voice_note"] is True and "garage" in result["transcript"]
+        lead = db.execute(select(Lead).where(Lead.number == result["reference"])).scalar_one()
+        brief = db.execute(select(ProjectBrief).where(ProjectBrief.lead_id == lead.id)).scalar_one()
+        stored = db.get(StoredFile, uuid.UUID(brief.file_ids[0]))
+        assert stored.mime_type == expected and "garage" in lead.message
+
+
 # ============================================================================ R2 — time-lapse et caméras
 def test_weekly_timelapse_from_published_photos_and_camera_ingestion(client: Any, db: Any) -> None:
     from app.modules.identity.models import User

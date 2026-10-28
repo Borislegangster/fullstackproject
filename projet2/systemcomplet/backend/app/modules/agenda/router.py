@@ -4,7 +4,7 @@ réunion visio rattachée."""
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -18,7 +18,7 @@ from app.core.access import Access, get_access
 from app.core.crud import serialize
 from app.core.database import get_db
 from app.core.errors import BusinessRuleError, Forbidden, NotFound
-from app.core.utils import jsonable
+from app.core.utils import jsonable, utcnow
 from app.modules.agenda import service
 from app.modules.agenda.models import CalendarEvent, EventAttendee
 from app.modules.identity.models import User
@@ -131,6 +131,112 @@ def create_event(data: EventIn, db: Session = Depends(get_db), access: Access = 
     return _event_out(db, event)
 
 
+REQUEST_KINDS = {"appointment": "un rendez-vous", "site_visit": "une visite de chantier", "call": "un appel"}
+
+
+class RequestIn(BaseModel):
+    project_id: uuid.UUID
+    kind: str = Field(default="appointment", pattern="^(appointment|site_visit|call)$")
+    subject: str = Field(min_length=2, max_length=200)
+    starts_at: datetime
+    duration_minutes: int = Field(default=60, ge=15, le=480)
+    location: str | None = Field(default=None, max_length=300)
+    message: str | None = Field(default=None, max_length=2000)
+
+
+@router.post("/agenda/requests", status_code=201)
+def request_appointment(
+    data: RequestIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Demande de rendez-vous (espace client, partenaire) : créneau souhaité, en attente de confirmation par l'équipe
+    du projet (chef de projet, chargé d'affaires, conducteur de travaux), qui est prévenue."""
+    from app.modules.projects.models import Project, ProjectMember
+
+    access.require_project(data.project_id)
+    project = db.get(Project, data.project_id)
+    if project is None:
+        raise NotFound("Projet introuvable")
+    if data.starts_at <= utcnow() + timedelta(hours=1):
+        raise BusinessRuleError("Choisissez un créneau à venir (au moins une heure à l'avance)")
+    leads = db.execute(
+        select(ProjectMember.user_id).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.project_role.in_(("chef_projet", "conducteur_travaux")),
+        )
+    ).scalars()
+    team = [uid for uid in (project.manager_id, project.commercial_id, *leads) if uid]
+    if not team and project.director_id:
+        team = [project.director_id]
+    team = [uid for uid in dict.fromkeys(team) if uid != access.p.id]
+    if not team:
+        raise BusinessRuleError(
+            "Aucun interlocuteur n'est encore désigné pour ce projet : écrivez à l'équipe depuis la messagerie"
+        )
+    at = service.when(data.starts_at)
+    event = service.create_event(
+        db,
+        organizer=access.p.user,
+        data={
+            "title": data.subject.strip(),
+            "kind": data.kind,
+            "description": (data.message or "").strip() or None,
+            "starts_at": data.starts_at,
+            "ends_at": data.starts_at + timedelta(minutes=data.duration_minutes),
+            "location": (data.location or "").strip() or None,
+            "project_id": data.project_id,
+            "client_visible": True,
+            "status": "tentative",
+            "reminders": [60],
+        },
+        attendee_ids=team,
+        external=[],
+        invitation=(
+            f"Demande de rendez-vous : {data.subject.strip()}",
+            f"{access.p.user.full_name} demande {REQUEST_KINDS[data.kind]} le {at} ({project.name}). "
+            "Confirmez ou proposez un autre créneau depuis l'agenda.",
+        ),
+    )
+    db.commit()
+    return _event_out(db, event)
+
+
+@router.post("/agenda/events/{event_id}/confirm")
+def confirm_event(
+    event_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Confirmation d'une demande de rendez-vous (créneau accepté tel quel ; sinon « Déplacer » puis confirmer)."""
+    access.require("agenda:write")
+    event = _event(db, access, event_id)
+    if event.status != "tentative":
+        raise BusinessRuleError("Seule une demande en attente peut être confirmée")
+    event.status = "confirmed"
+    mine = next((a for a in event.attendees if a.user_id == access.p.id), None)
+    if mine is None:
+        event.attendees.append(EventAttendee(user_id=access.p.id, response="accepted"))
+    else:
+        mine.response = "accepted"
+    event.reminder_sent_at = None
+    service.notify_change(
+        db,
+        event,
+        actor_id=access.p.id,
+        title=f"Rendez-vous confirmé : {event.title}",
+        body=f"{service.when(event.starts_at)} — {event.location or 'lieu à préciser'}",
+        event_type="agenda.confirmed",
+    )
+    audit.record(
+        db,
+        family="business",
+        module="agenda",
+        action="EVENT_CONFIRM",
+        resource_type="calendar_event",
+        resource_id=event.id,
+        project_id=event.project_id,
+    )
+    db.commit()
+    return _event_out(db, event)
+
+
 @router.get("/agenda/events/{event_id}")
 def get_event(
     event_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
@@ -156,12 +262,37 @@ def update_event(
     if event.organizer_id != access.p.id and not access.has("agenda:write"):
         raise Forbidden("Modification réservée à l'organisateur")
     values = data.model_dump(exclude_unset=True)
+    if values.get("status") == "confirmed" and event.status != "confirmed" and not access.has("agenda:write"):
+        raise Forbidden("La confirmation d'un rendez-vous revient à l'équipe du projet")
+    moved = any(key in values and values[key] != getattr(event, key) for key in ("starts_at", "ends_at", "location"))
+    cancelled = values.get("status") == "cancelled" and event.status != "cancelled"
     for key, value in values.items():
         setattr(event, key, value)
     if event.ends_at <= event.starts_at:
         raise BusinessRuleError("Fin antérieure au début")
     if {"starts_at", "ends_at"} & set(values):
         event.reminder_sent_at = None
+    if moved and not cancelled and not access.has("agenda:write") and event.status == "confirmed":
+        event.status = "tentative"  # nouveau créneau demandé par le client : l'équipe le confirme de nouveau
+    # Les participants sont prévenus d'un déplacement ou d'une annulation (e-mail, application, notification).
+    if cancelled:
+        service.notify_change(
+            db,
+            event,
+            actor_id=access.p.id,
+            title=f"Annulé : {event.title}",
+            body=f"L'événement du {service.when(event.starts_at)} est annulé.",
+            event_type="agenda.cancelled",
+        )
+    elif moved:
+        service.notify_change(
+            db,
+            event,
+            actor_id=access.p.id,
+            title=f"Nouveau créneau : {event.title}",
+            body=f"{service.when(event.starts_at)} — {event.location or 'lieu à préciser'}",
+            event_type="agenda.moved",
+        )
     audit.record(
         db,
         family="business",

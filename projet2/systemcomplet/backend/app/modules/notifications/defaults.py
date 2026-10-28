@@ -301,7 +301,7 @@ _IN_APP: list[tuple[str, str, str, str]] = [
     ("ticket.assigned", "Ticket SAV {{ number }} affecté", "{{ subject }}", "/erp/sav/{{ id }}"),
     ("ticket.client_update", "Votre demande {{ number }}", "{{ message }}", "/espace-client/sav/{{ id }}"),
     ("ticket.sla_breached", "SLA SAV dépassé : {{ number }}", "{{ subject }}", "/erp/sav/{{ id }}"),
-    ("call.missed", "Appel manqué", "{{ caller }} a tenté de vous joindre.", "/erp/appels"),
+    ("call.missed", "Appel manqué", "{{ caller }} a tenté de vous joindre.", "/appels"),
     ("message.new", "Nouveau message — {{ conversation }}", "{{ sender }} : {{ preview }}", "{{ link }}"),
     ("client.digest", "Votre point hebdomadaire — {{ project_name }}", "{{ summary }}", "/espace-client/dashboard"),
     (
@@ -323,10 +323,16 @@ _IN_APP: list[tuple[str, str, str, str]] = [
         "/espace-client/tranquillite",
     ),
     (
+        "voice_report.received",
+        "Rapport vocal à valider — {{ project_name }}",
+        "{{ author }}{% if is_critical %} (point critique){% endif %} : {{ summary }}",
+        "/erp/ia?onglet=vocal",
+    ),
+    (
         "security.new_device",
         "Nouvelle connexion",
         "Connexion depuis un nouvel appareil ({{ device }}).",
-        "/erp/securite",
+        "/compte?onglet=sessions",
     ),
     ("system.alert", "Alerte système : {{ title }}", "{{ message }}", "/erp/parametres/systeme"),
     ("anomaly.detected", "Anomalie détectée : {{ kind }}", "{{ description }}", "/erp/rapports/anomalies"),
@@ -1413,6 +1419,21 @@ DEFAULT_RULES: list[dict[str, Any]] = [
         "audience": {"client": True},
         "channels": ["in_app"],
         "category": "projects",
+    },
+    # Ajouts : toujours en fin de liste (le nom des règles système dépend de leur rang).
+    {
+        "event": "voice_report.received",
+        "audience": {"payload_users": ["manager_id"], "project_roles": ["chef_projet", "conducteur_travaux"]},
+        "channels": ["in_app", "push", "email"],
+        "category": "projects",
+    },
+    {
+        "event": "voice_report.received",
+        "audience": {"roles": ["DIRECTION"], "project_scoped": True},
+        "conditions": {"is_critical": True},
+        "channels": ["in_app", "push"],
+        "category": "projects",
+        "priority": "high",
     },
 ]
 

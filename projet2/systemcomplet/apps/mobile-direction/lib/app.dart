@@ -166,7 +166,7 @@ final pages = <AppPage>[
   AppPage('$base/securite', 'Sécurité', (_, _) => const SecurityScreen()),
   _resource('$base/securite/sessions', sessions),
   _resource('$base/audit', auditLog),
-  AppPage('$base/compte', 'Mon compte', (_, s) => AccountScreen(initialTab: _q(s, 'mfa') != null ? 1 : 0, mfaRequired: _q(s, 'mfa') == 'obligatoire')),
+  AppPage('$base/compte', 'Mon compte', (_, s) => AccountScreen(initialTab: accountTabFor(s.uri.queryParameters), mfaRequired: _q(s, 'mfa') == 'obligatoire')),
   AppPage('$base/documentation', 'Documentation', (_, s) => DocsScreen(space: 'erp', docId: _q(s, 'doc'), route: _q(s, 'route'))),
   AppPage('$base/menu', 'Plus', (_, _) => const MenuGrid(sections: sections), top: true),
 ];

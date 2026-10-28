@@ -18,6 +18,13 @@ import '../../widgets/dialogs.dart';
 import '../../widgets/primitives.dart';
 import 'password_rules.dart';
 
+/// Onglet de « Mon compte » demandé par un lien (`?onglet=securite|sessions`, ou `?mfa=…` pour la sécurité).
+int accountTabFor(Map<String, String> query) => switch (query['onglet']) {
+  'securite' => 1,
+  'sessions' => 2,
+  _ => query['mfa'] != null ? 1 : 0,
+};
+
 /// « Mon compte » commun aux applications : profil, sécurité (MFA, mot de passe), sessions et appareils,
 /// préférences de notification, confiance et confidentialité (client). Miroir de components/account/account-view.tsx.
 class AccountScreen extends StatelessWidget {

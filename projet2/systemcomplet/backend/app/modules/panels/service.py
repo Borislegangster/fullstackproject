@@ -424,7 +424,7 @@ def panel_pdf(db: Session, panel: SitePanel) -> bytes:
     from reportlab.lib.utils import ImageReader, simpleSplit
     from reportlab.pdfgen import canvas as rl_canvas
 
-    from app.core.pdf import ACCENT, PRIMARY, brand_fonts
+    from app.core.pdf import ACCENT, PRIMARY, brand_fonts, brand_logo
     from app.modules.projects.models import Project
 
     project = db.get(Project, panel.project_id)
@@ -436,18 +436,28 @@ def panel_pdf(db: Session, panel: SitePanel) -> bytes:
     c.setTitle(f"Panneau de chantier — {panel.title}")
     c.setAuthor("GLOBUS ENGINEERING")
 
-    # bandeau de marque
+    # filigrane : grand logo estompé au centre, puis bandeau de marque (logo officiel sur fond blanc)
+    faded, logo = brand_logo(faded=True), brand_logo()
+    if faded is not None:
+        iw, ih = faded.getSize()
+        lw = width * 0.8
+        c.drawImage(faded, (width - lw) / 2, (height - lw * ih / iw) / 2, lw, lw * ih / iw, mask="auto")
+    if logo is not None:
+        iw, ih = logo.getSize()
+        c.drawImage(logo, 18 * mm, height - 58 * mm, 48 * mm * iw / ih, 48 * mm, mask="auto")
+    else:
+        c.setFillColor(PRIMARY)
+        c.setFont(fonts.title, 34)
+        c.drawString(20 * mm, height - 30 * mm, "GLOBUS ENGINEERING")
     c.setFillColor(PRIMARY)
-    c.rect(0, height - 62 * mm, width, 62 * mm, fill=1, stroke=0)
+    c.rect(0, height - 62 * mm, width, 2 * mm, fill=1, stroke=0)
     c.setFillColor(ACCENT)
     c.rect(0, height - 64 * mm, width, 2 * mm, fill=1, stroke=0)
-    c.setFillColor(colors.white)
-    c.setFont(fonts.title, 34)
-    c.drawString(20 * mm, height - 30 * mm, "GLOBUS ENGINEERING")
-    c.setFont(fonts.body, 14)
-    c.drawString(20 * mm, height - 42 * mm, t("Concevoir. Calculer. Construire. Contrôler."))
-    c.setFont(fonts.subtitle, 16)
+    c.setFillColor(PRIMARY)
+    c.setFont(fonts.subtitle, 18)
     c.drawRightString(width - 20 * mm, height - 30 * mm, t("CHANTIER EN COURS"))
+    c.setFont(fonts.body, 12)
+    c.drawRightString(width - 20 * mm, height - 40 * mm, t("Concevoir. Calculer. Construire. Contrôler."))
 
     y = height - 86 * mm
     c.setFillColor(colors.HexColor("#111827"))

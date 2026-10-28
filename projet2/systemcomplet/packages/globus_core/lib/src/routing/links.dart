@@ -25,11 +25,16 @@ class AppLinks {
       if (uri.host != o.host) return null;
     }
     final path = uri.path + (uri.hasQuery ? '?${uri.query}' : '');
+    // « Mon compte » de l'application (alerte de nouvelle connexion, y compris les anciennes notifications).
+    if (RegExp(r'^/compte(\?|$)').hasMatch(path)) return '$base$path';
+    if (path == '/erp/securite' && base != '/erp') return '$base/compte?onglet=sessions';
+    if (path == '/erp/appels' && base != '/erp') return '$base/appels';
     if (RegExp(r'^/(erp|espace-client|extranet)(/|$)').hasMatch(path)) return path;
-    final m = RegExp(r'^/(agenda|appels|messagerie)/([^/?]+)').firstMatch(path);
+    final m = RegExp(r'^/(agenda|appels|messagerie)(?:/([^/?]+))?(?:\?|$)').firstMatch(path);
     if (m != null) {
       const params = {'agenda': 'event', 'appels': 'call', 'messagerie': 'c'};
-      return '$base/${m.group(1)}?${params[m.group(1)]}=${m.group(2)}';
+      final id = m.group(2);
+      return id == null ? '$base/${m.group(1)}' : '$base/${m.group(1)}?${params[m.group(1)]}=$id';
     }
     if (path.startsWith('/notifications')) return '$base/notifications';
     return path;

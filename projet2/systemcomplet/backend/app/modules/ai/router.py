@@ -80,6 +80,7 @@ async def upload_voice_report(
     db.add(report)
     db.flush()
     service.process_voice_report(db, report, transcript=transcript, user_id=access.p.id)
+    service.announce_voice_report(db, report, author_name=access.p.user.full_name)
     db.commit()
     return jsonable(serialize(report))
 

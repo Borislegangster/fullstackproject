@@ -211,4 +211,107 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Connexion'), findsOneWidget);
   });
+  testWidgets('Mes rendez-vous : le client demande un créneau, en attente de confirmation par l’équipe', (tester) async {
+    final start = DateTime.now().add(const Duration(days: 2)).toUtc();
+    final created = {
+      'id': 'ev1',
+      'title': 'Choix des finitions',
+      'kind': 'appointment',
+      'status': 'tentative',
+      'client_visible': true,
+      'project_id': 'p1',
+      'organizer_id': 'u-1',
+      'starts_at': start.toIso8601String(),
+      'ends_at': start.add(const Duration(hours: 1)).toIso8601String(),
+      'attendees': [
+        {'id': 'a1', 'user_id': 'u-1', 'name': 'Awa Ngono', 'response': 'accepted'},
+        {'id': 'a2', 'user_id': 'u-2', 'name': 'Chef de projet', 'response': 'pending'},
+      ],
+    };
+    final fake = clientServer()
+      ..on('GET', '/agenda/events', (_) => (200, <Object>[]))
+      ..on('POST', '/agenda/requests', (_) => (201, created))
+      ..on('GET', '/agenda/events/ev1', (_) => (200, created));
+    await pumpApp(tester, fake);
+    await tester.enterText(find.widgetWithText(TextField, 'Adresse e-mail'), 'client@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Mot de passe'), 'Globus!Test2026');
+    await tester.pump();
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Plus'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Mes rendez-vous'), 200, scrollable: find.byType(Scrollable).last);
+    await tester.tap(find.text('Mes rendez-vous'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demander un rendez-vous'), findsOneWidget);
+
+    await tester.tap(find.text('Demander un rendez-vous'));
+    await tester.pumpAndSettle();
+    expect(find.text('Envoyer la demande'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Objet *'), 'Choix des finitions');
+    await tester.pump();
+    await tester.tap(find.text('Envoyer la demande'));
+    await tester.pumpAndSettle();
+
+    final post = fake.requests.firstWhere((r) => r.method == 'POST' && r.path == '/agenda/requests');
+    final body = post.body! as Map;
+    expect(body['project_id'], 'p1');
+    expect(body['subject'], 'Choix des finitions');
+    expect(body['kind'], 'appointment');
+    expect(body['duration_minutes'], 60);
+    expect(DateTime.parse(body['starts_at'] as String).isAfter(DateTime.now()), isTrue);
+    // Le rendez-vous s'ouvre : le client voit qu'il attend la confirmation de l'équipe (pas de bouton « Confirmer »).
+    expect(find.text("En attente de confirmation par l'équipe du projet : vous serez prévenu."), findsOneWidget);
+    expect(find.text('Confirmer le rendez-vous'), findsNothing);
+  });
+  testWidgets('Messagerie : conversation directe listée, photo en vignette et PDF joint', (tester) async {
+    final at = DateTime.now().toUtc().toIso8601String();
+    final conversation = {
+      'id': 'c1',
+      'kind': 'direct',
+      'title': 'Chef de projet',
+      'project_id': null,
+      'members': [
+        {'user_id': 'u-1', 'name': 'Awa Ngono'},
+        {'user_id': 'u-2', 'name': 'Chef de projet'},
+      ],
+      'unread': 0,
+      'last_message': {'body': 'Voici le plan', 'at': at, 'sender_id': 'u-2', 'kind': 'file'},
+      'last_message_at': at,
+    };
+    final message = {
+      'id': 'm1',
+      'conversation_id': 'c1',
+      'sender': {'id': 'u-2', 'name': 'Chef de projet'},
+      'body': 'Voici le plan',
+      'kind': 'file',
+      'created_at': at,
+      'attachments': [
+        {'id': 'att1', 'name': 'photo-chantier.jpg', 'mime_type': 'image/jpeg', 'size_bytes': 120000},
+        {'id': 'att2', 'name': 'plan-rdc.pdf', 'mime_type': 'application/pdf', 'size_bytes': 250000},
+      ],
+    };
+    final fake = clientServer()
+      ..on('GET', '/conversations', (_) => (200, [conversation]))
+      ..on('GET', '/conversations/c1/messages', (_) => (200, {'items': [message], 'has_more': false}))
+      ..on('POST', '/conversations/c1/read', (_) => (200, {'status': 'ok'}));
+    await pumpApp(tester, fake);
+    await tester.enterText(find.widgetWithText(TextField, 'Adresse e-mail'), 'client@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Mot de passe'), 'Globus!Test2026');
+    await tester.pump();
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Messages'));
+    await tester.pumpAndSettle();
+    // Conversation directe (hors projet) affichée dans la messagerie du projet : pas besoin de la recréer.
+    expect(fake.requests.lastWhere((r) => r.path == '/conversations').query['project_id'], 'p1');
+    expect(find.text('Chef de projet'), findsWidgets);
+    await tester.tap(find.text('Voici le plan').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(AuthImage), findsOneWidget);
+    expect(find.text('plan-rdc.pdf'), findsOneWidget);
+    expect(find.byIcon(Icons.picture_as_pdf_outlined), findsOneWidget);
+  });
 }

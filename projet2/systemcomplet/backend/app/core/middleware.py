@@ -143,8 +143,14 @@ class SecurityHeadersMiddleware:
                         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com",
                     )
                 else:
-                    add("content-security-policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
-                    add("x-frame-options", "DENY")
+                    content_type = next((v.decode().lower() for k, v in headers if k.lower() == b"content-type"), "")
+                    if content_type.startswith(("application/pdf", "image/", "video/", "audio/", "text/plain")):
+                        # Fichiers (PDF, images, vidéos…) : aperçu dans un cadre de la plateforme, jamais ailleurs.
+                        add("content-security-policy", "frame-ancestors 'self'")
+                        add("x-frame-options", "SAMEORIGIN")
+                    else:
+                        add("content-security-policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+                        add("x-frame-options", "DENY")
                 if settings.is_production:
                     add("strict-transport-security", "max-age=63072000; includeSubDomains; preload")
                 message["headers"] = headers

@@ -405,6 +405,32 @@ def process_voice_report(
     return report
 
 
+def announce_voice_report(db: Session, report: VoiceReport, *, author_name: str) -> None:
+    """Prévient le chef de projet et le conducteur de travaux (la direction aussi si le rapport est critique) qu'un
+    rapport vocal attend leur validation dans « Assistants IA › Rapports vocaux »."""
+    from app.modules.projects.models import Project
+
+    project = db.get(Project, report.project_id)
+    text = (report.reformulated or report.transcript or "").strip()
+    emit(
+        db,
+        "voice_report.received",
+        {
+            "id": str(report.id),
+            "project_id": report.project_id,
+            "project_name": project.name if project else "",
+            "manager_id": project.manager_id if project else None,
+            "author": author_name,
+            "summary": (text[:200] + ("…" if len(text) > 200 else "")) if text else "transcription en cours",
+            "is_critical": bool(report.is_critical),
+            "status": report.status,
+        },
+        aggregate_type="voice_report",
+        aggregate_id=report.id,
+        project_id=report.project_id,
+    )
+
+
 def validate_voice_report(db: Session, report: VoiceReport, *, user_id: uuid.UUID, edited_text: str | None) -> Any:
     """Validation humaine → rapport journalier (brouillon) ; alerte si critique."""
     from app.modules.projects.models import DailyLog

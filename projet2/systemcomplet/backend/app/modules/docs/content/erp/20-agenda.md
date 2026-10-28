@@ -29,6 +29,14 @@ Menu **Projets › Agenda**. Vue par semaine ou par mois ; **Aujourd'hui** revie
 Pour un événement lié à un projet, cochez **Visible par le client** : il apparaît dans le planning de son espace (réunions et rendez-vous).
 :::
 
+## Demandes de rendez-vous des clients
+
+Un client peut proposer un créneau depuis son espace (fenêtre **Demander un rendez-vous**) : le chef de projet, le chargé d'affaires et le conducteur de travaux du projet sont notifiés, et l'événement apparaît **À confirmer**.
+
+::: perm agenda:write
+Ouvrez l'événement : **Confirmer le rendez-vous** prévient le client ; pour proposer un autre horaire, **Déplacer** puis confirmez.
+:::
+
 ## Modifier ou annuler
 
 L'organisateur (et les gestionnaires d'agenda) peut **Enregistrer** des modifications, **Déplacer** l'événement ou **Annuler l'événement** : les participants sont prévenus.

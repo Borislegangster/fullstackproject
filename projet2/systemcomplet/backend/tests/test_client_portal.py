@@ -374,3 +374,108 @@ def test_after_sales_ticket_lifecycle(client: Any, db: Any) -> None:
     assert closed["status"] == "closed" and closed["satisfaction_rating"] == 5
     draft = client.post(f"{API}/support/tickets/{ticket['id']}/ai-draft", headers=savh)
     assert draft.status_code == 200 and ticket["number"] in draft.json()["draft"]
+
+
+def test_client_appointment_request_confirm_move_cancel(client: Any, db: Any) -> None:
+    """« Mes rendez-vous » : le client demande un créneau, l'équipe du projet est prévenue et le confirme ; un
+    nouveau créneau proposé par le client repasse en attente ; l'annulation prévient l'équipe."""
+    from app.modules.notifications.models import Notification
+
+    env = _setup(client, db)
+    project, chef, custh = env["project"], env["chef"], env["custh"]
+    start = (datetime.now(UTC) + timedelta(days=3)).replace(microsecond=0)
+    body = {
+        "project_id": project["id"],
+        "kind": "site_visit",
+        "subject": "Visite des fondations",
+        "starts_at": start.isoformat(),
+        "duration_minutes": 90,
+        "message": "Je souhaite voir le ferraillage avant coulage.",
+    }
+    # Projet sans chef de projet ni conducteur de travaux : demande refusée avec un message clair.
+    orphan = client.post(
+        f"{API}/projects",
+        headers=env["ah"],
+        json={"name": "Annexe Mbappe", "client_organization_id": str(env["org"].id), "status": "execution"},
+    ).json()
+    none = client.post(f"{API}/agenda/requests", headers=custh, json={**body, "project_id": orphan["id"]})
+    assert none.status_code == 422 and "Aucun interlocuteur" in none.json()["error"]["message"]
+
+    too_soon = client.post(
+        f"{API}/agenda/requests", headers=custh, json={**body, "starts_at": datetime.now(UTC).isoformat()}
+    )
+    assert too_soon.status_code == 422
+    stranger = client.post(f"{API}/agenda/requests", headers=env["strh"], json=body)
+    assert stranger.status_code in (403, 404)
+
+    created = client.post(f"{API}/agenda/requests", headers=custh, json=body)
+    assert created.status_code == 201, created.text
+    event = created.json()
+    assert event["status"] == "tentative" and event["client_visible"] is True and event["kind"] == "site_visit"
+    assert {a["user_id"] for a in event["attendees"]} == {str(env["customer"].id), str(chef.id)}
+    assert datetime.fromisoformat(event["ends_at"]) - datetime.fromisoformat(event["starts_at"]) == timedelta(
+        minutes=90
+    )
+    asked = (
+        db.execute(
+            select(Notification).where(Notification.user_id == chef.id, Notification.event_type == "agenda.invitation")
+        )
+        .scalars()
+        .all()
+    )
+    assert any(n.title == "Demande de rendez-vous : Visite des fondations" for n in asked)
+
+    # Le client ne peut pas confirmer lui-même ; l'équipe confirme.
+    self_confirm = client.patch(f"{API}/agenda/events/{event['id']}", headers=custh, json={"status": "confirmed"})
+    assert self_confirm.status_code == 403
+    confirmed = client.post(f"{API}/agenda/events/{event['id']}/confirm", headers=env["cph"])
+    assert confirmed.status_code == 200, confirmed.text
+    assert confirmed.json()["status"] == "confirmed"
+    assert client.post(f"{API}/agenda/events/{event['id']}/confirm", headers=env["cph"]).status_code == 422
+    told = (
+        db.execute(
+            select(Notification).where(
+                Notification.user_id == env["customer"].id, Notification.event_type == "agenda.confirmed"
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert told and told[0].link == f"/agenda/{event['id']}"
+
+    # Nouveau créneau demandé par le client : de nouveau en attente, l'équipe est prévenue.
+    later = start + timedelta(days=1)
+    moved = client.patch(
+        f"{API}/agenda/events/{event['id']}",
+        headers=custh,
+        json={"starts_at": later.isoformat(), "ends_at": (later + timedelta(hours=1)).isoformat()},
+    )
+    assert moved.status_code == 200 and moved.json()["status"] == "tentative"
+    assert (
+        db.execute(
+            select(Notification).where(Notification.user_id == chef.id, Notification.event_type == "agenda.moved")
+        )
+        .scalars()
+        .first()
+    )
+
+    listed = client.get(
+        f"{API}/agenda/events",
+        headers=custh,
+        params={
+            "start": datetime.now(UTC).isoformat(),
+            "end": (datetime.now(UTC) + timedelta(days=10)).isoformat(),
+            "project_id": project["id"],
+        },
+    )
+    assert [e["id"] for e in listed.json()] == [event["id"]]
+
+    cancelled = client.patch(f"{API}/agenda/events/{event['id']}", headers=custh, json={"status": "cancelled"})
+    assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
+    assert (
+        db.execute(
+            select(Notification).where(Notification.user_id == chef.id, Notification.event_type == "agenda.cancelled")
+        )
+        .scalars()
+        .first()
+    )

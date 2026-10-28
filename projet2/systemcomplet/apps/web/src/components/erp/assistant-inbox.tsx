@@ -50,7 +50,11 @@ function Thread({ id, onChange }: { id: string; onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
   useInterval(() => void conv.reload(), 15000);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [conv.data?.messages.length]);
+  // Bloc explicite : scrollIntoView renvoie une promesse dans les navigateurs récents ; renvoyée par l'effet, React la
+  // prenait pour une fonction de nettoyage et plantait en changeant de conversation (« destroy is not a function »).
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [conv.data?.messages?.length]);
   if (conv.loading && !conv.data) return <Skeleton className="h-[32rem] w-full" />;
   if (!conv.data) return <Alert tone="danger">{conv.error}</Alert>;
   const c = conv.data;
@@ -88,9 +92,9 @@ function Thread({ id, onChange }: { id: string; onChange: () => void }) {
             ) : null}
           </p>
         </div>
-        {can("crm:write") && c.channel === "whatsapp" ? (
+        {can("crm:write") ? (
           <div className="flex gap-2">
-            {human ? (
+            {human && c.channel === "whatsapp" ? (
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => void act("release", undefined, "L'assistant reprend la conversation")}>
                 <Bot className="h-4 w-4" /> Rendre la main
               </Button>
@@ -104,14 +108,14 @@ function Thread({ id, onChange }: { id: string; onChange: () => void }) {
         ) : null}
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 px-5 py-4">
-        {c.messages.map((m, i) => (
+        {(Array.isArray(c.messages) ? c.messages : []).map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}>
             <div
               className={`max-w-[80%] whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
                 m.role === "user" ? "bg-white text-ink ring-1 ring-line" : m.role === "agent" ? "bg-accent-500 text-white" : "bg-brand-600 text-white"
               } ${m.failed ? "opacity-60 ring-2 ring-red-400" : ""}`}
             >
-              {m.content}
+              {typeof m.content === "string" ? m.content : JSON.stringify(m.content ?? "")}
               <p className={`mt-1 text-[10px] ${m.role === "user" ? "text-muted" : "text-white/70"}`}>
                 {m.role === "agent" ? `${m.by ?? "Conseiller"} · ` : m.role === "assistant" ? "Assistant · " : ""}
                 {dateTime(m.at)}

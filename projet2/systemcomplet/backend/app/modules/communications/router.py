@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -95,7 +95,9 @@ def my_conversations(
         .where(ConversationMember.user_id == access.p.id, Conversation.is_archived.is_(False))
     )
     if project_id:
-        stmt = stmt.where(Conversation.project_id == project_id)
+        # Messagerie d'un projet (espace client, application terrain) : ses fils, plus les échanges directs et groupes
+        # hors projet de l'utilisateur — sinon une conversation directe « disparaît » et doit être recréée à chaque visite.
+        stmt = stmt.where(or_(Conversation.project_id == project_id, Conversation.project_id.is_(None)))
     if kind:
         stmt = stmt.where(Conversation.kind == kind)
     conversations = (

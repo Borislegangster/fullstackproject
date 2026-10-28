@@ -1,13 +1,14 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowLeft, Check, CheckCheck, Paperclip, Pencil, Phone, Plus, Reply, Search, Send, Trash2, Users, Video, X } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Eye, Paperclip, Pencil, Phone, Plus, Reply, Search, Send, Trash2, Users, Video, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 
 import { useCalls } from "@/components/calls/call-provider";
 import { RefSelect } from "@/components/forms/ref-select";
 import { PersonTradeSelect } from "@/components/forms/trade-select";
+import { FilePreviewModal, previewKind, type PreviewSource } from "@/components/ui/file-preview";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
 import { Modal, Tabs } from "@/components/ui/overlay";
 import { Alert, Avatar, Button, EmptyState, Skeleton } from "@/components/ui/primitives";
@@ -227,6 +228,45 @@ function NewConversation({ open, onClose, onCreated, projectId }: { open: boolea
   );
 }
 
+/** Pièce jointe d'un message : image et vidéo en vignette, audio lisible sur place, PDF et autres fichiers ouverts
+ * dans l'aperçu intégré (Ctrl / clic du milieu : nouvel onglet). */
+function AttachmentView({ attachment, mine, onPreview }: { attachment: Attachment; mine: boolean; onPreview: (source: PreviewSource) => void }) {
+  const url = apiUrl(`/chat/attachments/${attachment.id}`);
+  const name = attachment.name ?? "Pièce jointe";
+  const kind = previewKind(name, attachment.mime_type);
+  const open = (e: MouseEvent) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onPreview({ url, name, mime: attachment.mime_type, size: attachment.size_bytes });
+  };
+  if (kind === "image")
+    return (
+      <a href={url} onClick={open} data-no-preview className="mt-1.5 block w-fit overflow-hidden rounded-xl" title={`Aperçu : ${name}`}>
+        <img src={url} alt={name} loading="lazy" className="max-h-64 w-auto max-w-full rounded-xl bg-white/40 object-contain" />
+      </a>
+    );
+  if (kind === "audio") return <audio src={url} controls preload="metadata" className="mt-1.5 w-64 max-w-full" aria-label={name} />;
+  if (kind === "video") return <video src={url} controls preload="metadata" className="mt-1.5 max-h-64 max-w-full rounded-xl bg-black" aria-label={name} />;
+  return (
+    <a
+      href={url}
+      onClick={open}
+      data-no-preview
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Aperçu : ${name}`}
+      className={clsx("mt-1.5 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs", mine ? "bg-white/15 hover:bg-white/25" : "bg-slate-50 hover:bg-slate-100")}
+    >
+      <Paperclip className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">{name}</span>
+      {attachment.size_bytes ? <span className="shrink-0 opacity-70">{fileSize(attachment.size_bytes)}</span> : null}
+      <Eye className="h-3.5 w-3.5 shrink-0 opacity-70" />
+    </a>
+  );
+}
+
+const lastKey = (projectId?: string) => `globus.chat.last.${projectId ?? "all"}`;
+
 /** Messagerie sécurisée temps réel (§13) : conversations directes, de groupe et de projet, pièces jointes, appels. */
 export function Messaging({ projectId, canCall = true }: { projectId?: string; canCall?: boolean }) {
   const { user } = useAuth();
@@ -243,15 +283,17 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editing, setEditing] = useState<Message | null>(null);
-  const [pending, setPending] = useState<{ file_id: string; name: string; mime_type: string; size_bytes: number }[]>([]);
+  const [pending, setPending] = useState<{ file_id: string; name: string; mime_type: string; size_bytes: number; thumb?: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [typing, setTyping] = useState<Record<string, string>>({});
   const [newOpen, setNewOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<Message[] | null>(null);
+  const [preview, setPreview] = useState<PreviewSource | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoredFor = useRef<string | null>(null);
 
   const loadConversations = useCallback(() => {
     api<Conversation[]>("/conversations", { query: { project_id: projectId } })
@@ -262,7 +304,54 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
       });
   }, [projectId, toast]);
 
-  useEffect(() => loadConversations(), [loadConversations]);
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  /** Conversation ouverte : gardée dans l'adresse (?c=) et mémorisée, pour la retrouver en revenant sur l'écran. */
+  const selectConversation = useCallback(
+    (id: string | null) => {
+      setActiveId(id);
+      const url = new URL(window.location.href);
+      if (id) url.searchParams.set("c", id);
+      else url.searchParams.delete("c");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      try {
+        if (id) window.localStorage.setItem(lastKey(projectId), id);
+        else window.localStorage.removeItem(lastKey(projectId));
+      } catch {
+        // stockage indisponible (navigation privée) : seule l'adresse garde la conversation
+      }
+    },
+    [projectId],
+  );
+
+  // Retour sur l'écran (ordinateur) : la dernière conversation ouverte est rouverte.
+  useEffect(() => {
+    const key = projectId ?? "all";
+    if (!conversations || restoredFor.current === key) return;
+    restoredFor.current = key;
+    if (activeId || !window.matchMedia("(min-width: 768px)").matches) return;
+    let last: string | null = null;
+    try {
+      last = window.localStorage.getItem(lastKey(projectId));
+    } catch {
+      last = null;
+    }
+    if (last && conversations.some((c) => c.id === last)) selectConversation(last);
+  }, [conversations, activeId, projectId, selectConversation]);
+
+  // Conversation demandée (lien, notification, recherche) absente de la liste (autre projet, groupe) : elle est
+  // chargée ; introuvable ou non autorisée, la liste reste affichée au lieu d'un écran vide.
+  const fetched = useRef<string | null>(null);
+  useEffect(() => {
+    if (!conversations || !activeId || conversations.some((c) => c.id === activeId) || fetched.current === activeId) return;
+    fetched.current = activeId;
+    const id = activeId;
+    api<Conversation>(`/conversations/${id}`)
+      .then((c) => setConversations((list) => [c, ...(list ?? []).filter((x) => x.id !== c.id)]))
+      .catch(() => selectConversation(null));
+  }, [conversations, activeId, selectConversation]);
 
   const active = useMemo(() => conversations?.find((c) => c.id === activeId) ?? null, [conversations, activeId]);
   useRoom(activeId ? `conversation:${activeId}` : null);
@@ -307,6 +396,8 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
       setTimeout(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), 30);
       if (m.sender?.id !== user?.id && document.visibilityState === "visible") markRead(m.conversation_id, m);
     }
+    // Nouvelle conversation ouverte par un interlocuteur : elle apparaît aussitôt dans la liste.
+    if (conversations && !conversations.some((c) => c.id === m.conversation_id)) loadConversations();
     setConversations((list) =>
       list
         ? [...list]
@@ -340,15 +431,15 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
     typingTimer.current = setTimeout(() => send("typing", { conversation_id: activeId, typing: false }), 2500);
   };
 
-  const upload = async (files: FileList | null) => {
-    if (!files?.length) return;
+  const upload = async (files: File[]) => {
+    if (!files.length) return;
     setUploading(true);
     try {
-      for (const file of Array.from(files).slice(0, 10 - pending.length)) {
+      for (const file of files.slice(0, 10 - pending.length)) {
         const form = new FormData();
         form.append("file", file);
         const res = await api<{ file_id: string; name: string; mime_type: string; size_bytes: number }>("/chat/files", { method: "POST", form });
-        setPending((p) => [...p, res]);
+        setPending((p) => [...p, { ...res, thumb: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined }]);
       }
     } catch (err) {
       toast.error("Envoi du fichier impossible", errorMessage(err));
@@ -389,9 +480,18 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
     setReplyTo(null);
     send("typing", { conversation_id: activeId, typing: false });
     setTimeout(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), 30);
+    pending.forEach((p) => p.thumb && URL.revokeObjectURL(p.thumb));
     try {
       const saved = await api<Message>(`/conversations/${activeId}/messages`, { method: "POST", body });
       setMessages((list) => list.map((x) => (x.client_message_id === clientId ? saved : x)));
+      // Liste à jour même sans temps réel (dernier message, ordre).
+      setConversations((list) =>
+        list
+          ? list
+              .map((c) => (c.id === saved.conversation_id ? { ...c, last_message: { body: saved.body ?? "📎", at: saved.created_at, sender_id: saved.sender?.id ?? "", kind: saved.kind }, last_message_at: saved.created_at } : c))
+              .sort((a, b) => (b.last_message_at ?? "").localeCompare(a.last_message_at ?? ""))
+          : list,
+      );
     } catch (err) {
       setMessages((list) => list.filter((x) => x.client_message_id !== clientId));
       setText(body.body ?? "");
@@ -458,7 +558,7 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
             <ul className="divide-y divide-line">
               {searchResults.map((m) => (
                 <li key={m.id}>
-                  <button type="button" className="w-full px-3 py-2.5 text-left hover:bg-slate-50" onClick={() => setActiveId(m.conversation_id)}>
+                  <button type="button" className="w-full px-3 py-2.5 text-left hover:bg-slate-50" onClick={() => selectConversation(m.conversation_id)}>
                     <p className="text-xs text-muted">
                       {m.sender?.name} · {dateTime(m.created_at)}
                     </p>
@@ -482,7 +582,7 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
               const isOnline = peer ? online.has(String(peer.user_id)) || peer.online : false;
               return (
                 <li key={c.id}>
-                  <button type="button" onClick={() => setActiveId(c.id)} className={clsx("flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-slate-50", c.id === activeId && "bg-brand-50")}>
+                  <button type="button" onClick={() => selectConversation(c.id)} className={clsx("flex w-full items-center gap-3 px-3 py-3 text-left hover:bg-slate-50", c.id === activeId && "bg-brand-50")}>
                     <span className="relative">
                       {c.kind === "direct" ? (
                         <Avatar name={c.title} size={40} />
@@ -519,7 +619,7 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
           <>
             <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
-                <button type="button" className="rounded-lg p-1 hover:bg-slate-100 md:hidden" onClick={() => setActiveId(null)} aria-label="Retour">
+                <button type="button" className="rounded-lg p-1 hover:bg-slate-100 md:hidden" onClick={() => selectConversation(null)} aria-label="Retour">
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div className="min-w-0">
@@ -560,17 +660,7 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
                       {parent ? <p className={clsx("mb-1 border-l-2 pl-2 text-xs", mine ? "border-white/50 text-brand-100" : "border-brand-200 text-muted")}>{parent.body?.slice(0, 120) ?? "Pièce jointe"}</p> : null}
                       {m.deleted_at ? <p className="text-sm italic opacity-70">Message supprimé</p> : m.body ? <p className="whitespace-pre-wrap break-words text-sm">{m.body}</p> : null}
                       {m.attachments.map((a) => (
-                        <a
-                          key={a.id}
-                          href={apiUrl(`/chat/attachments/${a.id}`)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={clsx("mt-1.5 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs", mine ? "bg-white/15 hover:bg-white/25" : "bg-slate-50 hover:bg-slate-100")}
-                        >
-                          <Paperclip className="h-3.5 w-3.5" />
-                          <span className="truncate">{a.name ?? "Pièce jointe"}</span>
-                          {a.size_bytes ? <span className="opacity-70">{fileSize(a.size_bytes)}</span> : null}
-                        </a>
+                        <AttachmentView key={a.id} attachment={a} mine={mine} onPreview={setPreview} />
                       ))}
                       <div className={clsx("mt-1 flex items-center justify-end gap-1 text-[10px]", mine ? "text-brand-100" : "text-muted")}>
                         {m.edited_at ? <span>modifié ·</span> : null}
@@ -628,9 +718,22 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
               {pending.length ? (
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   {pending.map((p) => (
-                    <span key={p.file_id} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs">
-                      <Paperclip className="h-3 w-3" /> {p.name}
-                      <button type="button" onClick={() => setPending((list) => list.filter((x) => x.file_id !== p.file_id))} aria-label="Retirer">
+                    <span key={p.file_id} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-1.5 pr-2.5 text-xs">
+                      {p.thumb ? (
+                        <img src={p.thumb} alt="" className="h-8 w-8 rounded-full object-cover" />
+                      ) : (
+                        <Paperclip className="ml-1 h-3 w-3" />
+                      )}
+                      <span className="max-w-[12rem] truncate">{p.name}</span>
+                      <span className="opacity-60">{fileSize(p.size_bytes)}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (p.thumb) URL.revokeObjectURL(p.thumb);
+                          setPending((list) => list.filter((x) => x.file_id !== p.file_id));
+                        }}
+                        aria-label="Retirer"
+                      >
                         <X className="h-3 w-3" />
                       </button>
                     </span>
@@ -638,7 +741,17 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
                 </div>
               ) : null}
               <div className="flex items-end gap-2">
-                <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => void upload(e.target.files)} />
+                <input
+                  ref={fileInput}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    e.target.value = ""; // le même fichier peut être choisi de nouveau
+                    void upload(files);
+                  }}
+                />
                 <Button variant="ghost" size="sm" onClick={() => fileInput.current?.click()} loading={uploading} aria-label="Joindre un fichier" title="Joindre un fichier">
                   {!uploading ? <Paperclip className="h-4 w-4" /> : null}
                 </Button>
@@ -673,9 +786,10 @@ export function Messaging({ projectId, canCall = true }: { projectId?: string; c
         projectId={projectId}
         onCreated={(c) => {
           setConversations((list) => [c, ...(list ?? []).filter((x) => x.id !== c.id)]);
-          setActiveId(c.id);
+          selectConversation(c.id);
         }}
       />
+      <FilePreviewModal source={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }

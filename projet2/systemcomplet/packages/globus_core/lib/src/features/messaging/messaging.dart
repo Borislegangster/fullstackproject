@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,6 +16,7 @@ import '../../format/labels.dart';
 import '../../realtime/realtime.dart';
 import '../../theme/globus_theme.dart';
 import '../../widgets/dialogs.dart';
+import '../../widgets/media.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/ref_picker.dart';
 import '../../widgets/states.dart';
@@ -81,8 +84,16 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
       final initial = widget.openConversationId;
       if (initial != null && !_openedInitial) {
         _openedInitial = true;
-        final conv = _conversations!.where((c) => c.s('id') == initial).firstOrNull;
-        if (conv != null) unawaited(_open(conv));
+        var conv = _conversations!.where((c) => c.s('id') == initial).firstOrNull;
+        // Lien de notification vers une conversation hors de la liste (autre projet, groupe) : chargée directement.
+        if (conv == null) {
+          try {
+            conv = J.of(await context.api.get('/conversations/$initial'));
+          } catch (_) {
+            conv = null;
+          }
+        }
+        if (conv != null && mounted) unawaited(_open(conv));
       }
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -94,6 +105,11 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     final me = context.auth.user?.id;
     final list = _conversations;
     if (list == null) return;
+    // Conversation ouverte par un interlocuteur : elle apparaît aussitôt dans la liste.
+    if (!list.any((c) => c.s('id') == m.s('conversation_id'))) {
+      unawaited(_load());
+      return;
+    }
     setState(() {
       _conversations = [
         for (final c in list)
@@ -456,8 +472,9 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _uploading = true);
     try {
       for (final f in files.take(10 - _pending.length)) {
-        final res = await _api.upload('/chat/files', files: [f]);
-        setState(() => _pending.add(J.of(res)));
+        final res = J.of(await _api.upload('/chat/files', files: [f]));
+        // Chemin local gardé pour la vignette avant envoi (non transmis au serveur).
+        setState(() => _pending.add(J({...res.raw, 'local_path': f.path})));
       }
     } catch (e) {
       if (mounted) context.toastError(e);
@@ -703,8 +720,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       for (final p in _pending)
                         InputChip(
-                          avatar: const Icon(Icons.attach_file, size: 16),
-                          label: Text(p.s('name'), overflow: TextOverflow.ellipsis),
+                          avatar: !kIsWeb && p.has('local_path') && p.s('mime_type').startsWith('image/')
+                              ? CircleAvatar(backgroundImage: FileImage(File(p.s('local_path'))))
+                              : Icon(_attachmentIcon(p.s('mime_type'), p.s('name')), size: 16),
+                          label: Text('${p.s('name')} · ${fileSize(p['size_bytes'])}', overflow: TextOverflow.ellipsis),
                           onDeleted: () => setState(() => _pending.remove(p)),
                         ),
                     ],
@@ -813,35 +832,7 @@ class _Bubble extends StatelessWidget {
                 )
               else if (m.has('body'))
                 Text(m.s('body'), style: TextStyle(color: fg)),
-              for (final a in m.list('attachments'))
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: InkWell(
-                    onTap: () => openRemoteFile(context, '/chat/attachments/${a.s('id')}', filename: a.str('name')),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: mine ? Colors.white.withValues(alpha: 0.15) : theme.colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(a.s('mime_type').startsWith('image/') ? Icons.image_outlined : Icons.attach_file, size: 16, color: fg),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              a.str('name') ?? 'Pièce jointe',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 12.5, color: fg),
-                            ),
-                          ),
-                          if (a.has('size_bytes')) Text('  ${fileSize(a['size_bytes'])}', style: TextStyle(fontSize: 11, color: meta)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+              for (final a in m.list('attachments')) _AttachmentView(attachment: a, mine: mine, fg: fg, meta: meta),
               const SizedBox(height: 2),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -856,6 +847,82 @@ class _Bubble extends StatelessWidget {
                   ],
                 ],
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final _mediaName = RegExp(r'\.(mp4|mov|m4v|webm|m4a|mp3|aac|ogg|oga|opus|wav)$', caseSensitive: false);
+
+bool _isImage(String mime) => mime.startsWith('image/') && mime != 'image/svg+xml';
+bool _isMedia(String mime, String name) => mime.startsWith('video/') || mime.startsWith('audio/') || _mediaName.hasMatch(name);
+
+IconData _attachmentIcon(String mime, String name) {
+  if (_isImage(mime)) return Icons.image_outlined;
+  if (mime.startsWith('audio/')) return Icons.graphic_eq;
+  if (_isMedia(mime, name)) return Icons.play_circle_outline;
+  if (mime == 'application/pdf' || name.toLowerCase().endsWith('.pdf')) return Icons.picture_as_pdf_outlined;
+  return Icons.attach_file;
+}
+
+/// Pièce jointe d'un message : photo en vignette (plein écran avec zoom au toucher), vidéo et audio lus dans
+/// l'application, autres fichiers (PDF, plans, tableurs) téléchargés puis ouverts avec l'application adaptée.
+class _AttachmentView extends StatelessWidget {
+  const _AttachmentView({required this.attachment, required this.mine, required this.fg, required this.meta});
+  final J attachment;
+  final bool mine;
+  final Color fg;
+  final Color meta;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = attachment;
+    final path = '/chat/attachments/${a.s('id')}';
+    final name = a.str('name') ?? 'Pièce jointe';
+    final mime = a.s('mime_type');
+    if (_isImage(mime)) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Semantics(
+          button: true,
+          label: 'Agrandir $name',
+          child: GestureDetector(
+            onTap: () => GalleryScreen.open(context, [GalleryItem(url: path, caption: name)]),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: AuthImage(path, width: 220, height: 160, semanticLabel: name),
+            ),
+          ),
+        ),
+      );
+    }
+    final media = _isMedia(mime, name);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: InkWell(
+        onTap: media
+            ? () => GalleryScreen.open(context, [GalleryItem(url: path, caption: name, isVideo: true)])
+            : () => openRemoteFile(context, path, filename: name),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: mine ? Colors.white.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(_attachmentIcon(mime, name), size: 18, color: fg),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: fg)),
+              ),
+              if (a.has('size_bytes')) Text('  ${fileSize(a['size_bytes'])}', style: TextStyle(fontSize: 11, color: meta)),
+              const SizedBox(width: 4),
+              Icon(media ? Icons.play_arrow : Icons.visibility_outlined, size: 16, color: meta),
             ],
           ),
         ),

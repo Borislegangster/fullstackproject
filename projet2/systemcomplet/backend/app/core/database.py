@@ -176,7 +176,7 @@ engine = create_engine(
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
     future=True,
-    connect_args={"options": "-c timezone=GMT"},
+    connect_args={"options": "-c timezone=GMT", "connect_timeout": 10},
 )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)

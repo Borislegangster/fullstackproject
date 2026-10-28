@@ -29,11 +29,15 @@ export function resolveLink(link: string | null | undefined, base: string): stri
     const url = new URL(link, "http://local");
     if (url.origin !== "http://local" && typeof window !== "undefined" && url.origin !== window.location.origin) return null;
     const path = url.pathname + url.search;
+    // « Mon compte » de l'espace courant (alerte de nouvelle connexion, y compris les anciennes notifications).
+    if (/^\/compte(\?|$)/.test(path)) return `${base}${path}`;
+    if (path === "/erp/securite" && base !== "/erp") return `${base}/compte?onglet=sessions`;
+    if (path === "/erp/appels" && base !== "/erp") return `${base}/appels`;
     if (/^\/(erp|espace-client|extranet)(\/|$)/.test(path)) return path;
-    const m = path.match(/^\/(agenda|appels|messagerie)\/([^/?]+)/);
+    const m = path.match(/^\/(agenda|appels|messagerie)(?:\/([^/?]+))?(?:\?|$)/);
     if (m) {
       const param = { agenda: "event", appels: "call", messagerie: "c" }[m[1] as "agenda" | "appels" | "messagerie"];
-      return `${base}/${m[1]}?${param}=${m[2]}`;
+      return m[2] ? `${base}/${m[1]}?${param}=${m[2]}` : `${base}/${m[1]}`;
     }
     if (path.startsWith("/notifications")) return `${base}/notifications`;
     return path;

@@ -313,6 +313,44 @@ def test_ai_rules_mode_voice_and_ocr(client: Any, db: Any) -> None:
     validated = client.post(f"{API}/ai/voice-reports/{report['id']}/validate", headers=cch, json={}).json()
     assert validated["daily_log"]["source"] == "voice_ai" and "ciment" in validated["daily_log"]["needs"]
 
+    # Application Terrain : enregistrement AAC (.m4a, conteneur MP4 reconnu comme « vidéo ») accepté comme audio ;
+    # le chef de projet est prévenu qu'un rapport attend sa validation.
+    from sqlalchemy import select
+
+    from app.modules.system.models import OutboxEvent
+
+    lead, _lh = as_role(client, db, "CHEF_PROJET")
+    client.post(
+        f"{API}/projects/{project['id']}/members",
+        headers=ah,
+        json={"user_id": str(lead.id), "project_role": "chef_projet"},
+    )
+    m4a = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"\x00" * 200
+    field = client.post(
+        f"{API}/ai/voice-reports",
+        headers=cch,
+        data={"project_id": project["id"], "client_mutation_id": "voice-0002", "transcript": "Ferraillage posé."},
+        files={"file": ("rapport-vocal.m4a", m4a, "audio/mp4")},
+    )
+    assert field.status_code == 201, field.text
+    stored = client.get(f"{API}/ai/voice-reports/{field.json()['id']}/audio", headers=cch)
+    assert stored.headers["content-type"].startswith("audio/mp4")
+    event = db.execute(
+        select(OutboxEvent).where(
+            OutboxEvent.event_type == "voice_report.received", OutboxEvent.aggregate_id == field.json()["id"]
+        )
+    ).scalar_one()
+    assert event.payload["author"] == chef.full_name and event.payload["summary"].startswith("Ferraillage")
+    from app.modules.notifications.service import handle_event
+
+    assert handle_event(db, event) >= 1
+    from app.modules.notifications.models import Notification
+
+    told = db.execute(
+        select(Notification).where(Notification.user_id == lead.id, Notification.event_type == "voice_report.received")
+    ).scalar_one()
+    assert told.title == "Rapport vocal à valider — Entrepôt Bassa" and told.link == "/erp/ia?onglet=vocal"
+
     pdf = render(
         PdfDocument(
             title="FACTURE",

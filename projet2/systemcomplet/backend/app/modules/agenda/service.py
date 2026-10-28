@@ -11,9 +11,21 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core import audit
+from app.core.config import settings
 from app.core.errors import BusinessRuleError
 from app.core.utils import utcnow
 from app.modules.agenda.models import CalendarEvent, EventAttendee
+
+
+def when(value: datetime, fmt: str = "%d/%m/%Y %H:%M") -> str:
+    """Date et heure dans le fuseau de la plateforme (messages, notifications) — les dates sont stockées en UTC."""
+    try:
+        from zoneinfo import ZoneInfo
+
+        value = value.astimezone(ZoneInfo(settings.TIMEZONE))
+    except Exception:  # noqa: BLE001 — fuseau indisponible : heure UTC
+        pass
+    return value.strftime(fmt)
 
 
 def ics(event: CalendarEvent, *, organizer_email: str | None = None) -> str:
@@ -50,7 +62,13 @@ def ics(event: CalendarEvent, *, organizer_email: str | None = None) -> str:
 
 
 def create_event(
-    db: Session, *, organizer: Any, data: dict[str, Any], attendee_ids: list[uuid.UUID], external: list[dict[str, str]]
+    db: Session,
+    *,
+    organizer: Any,
+    data: dict[str, Any],
+    attendee_ids: list[uuid.UUID],
+    external: list[dict[str, str]],
+    invitation: tuple[str, str] | None = None,
 ) -> CalendarEvent:
     if data["ends_at"] <= data["starts_at"]:
         raise BusinessRuleError("Fin antérieure au début")
@@ -62,7 +80,7 @@ def create_event(
         event.attendees.append(EventAttendee(external_email=ext["email"].lower(), external_name=ext.get("name")))
     db.add(event)
     db.flush()
-    _invite(db, event, organizer)
+    _invite(db, event, organizer, invitation)
     audit.record(
         db,
         family="business",
@@ -77,19 +95,20 @@ def create_event(
     return event
 
 
-def _invite(db: Session, event: CalendarEvent, organizer: Any) -> None:
+def _invite(db: Session, event: CalendarEvent, organizer: Any, invitation: tuple[str, str] | None = None) -> None:
     from app.core.files import store_generated
     from app.modules.notifications.service import notify_users, queue_external
 
     internal = [a.user_id for a in event.attendees if a.user_id and a.user_id != organizer.id]
-    when = event.starts_at.strftime("%d/%m/%Y %H:%M")
+    at = when(event.starts_at)
     if internal:
+        title, body = invitation or (f"Invitation : {event.title}", f"{at} — {event.location or 'lieu à préciser'}")
         notify_users(
             db,
             internal,
             category="general",
-            title=f"Invitation : {event.title}",
-            body=f"{when} — {event.location or 'lieu à préciser'}",
+            title=title,
+            body=body,
             link=f"/agenda/{event.id}",
             channels=("in_app", "push", "email"),
             entity_type="calendar_event",
@@ -116,11 +135,37 @@ def _invite(db: Session, event: CalendarEvent, organizer: Any) -> None:
                 template_code="generic.notification",
                 context={
                     "title": f"Invitation : {event.title}",
-                    "body": f"{organizer.full_name} vous invite le {when} ({event.location or 'visio'}).",
+                    "body": f"{organizer.full_name} vous invite le {at} ({event.location or 'visio'}).",
                     "link": None,
                 },
                 attachments_file_ids=[str(stored.id)],
             )
+
+
+def notify_change(
+    db: Session, event: CalendarEvent, *, actor_id: uuid.UUID, title: str, body: str, event_type: str
+) -> None:
+    """Prévient les participants (et l'organisateur) d'un changement : déplacement, annulation, confirmation."""
+    from app.modules.notifications.service import notify_users
+
+    users = {a.user_id for a in event.attendees if a.user_id and a.response != "declined"}
+    if event.organizer_id:
+        users.add(event.organizer_id)
+    users.discard(actor_id)
+    if users:
+        notify_users(
+            db,
+            sorted(users, key=str),
+            category="general",
+            title=title,
+            body=body,
+            link=f"/agenda/{event.id}",
+            channels=("in_app", "push", "email"),
+            entity_type="calendar_event",
+            entity_id=str(event.id),
+            project_id=event.project_id,
+            event_type=event_type,
+        )
 
 
 def respond(db: Session, event: CalendarEvent, *, user_id: uuid.UUID, response: str) -> EventAttendee:
@@ -156,7 +201,7 @@ def send_reminders(db: Session) -> dict[str, Any]:
                 users,
                 category="general",
                 title=f"Rappel : {event.title}",
-                body=f"Début à {event.starts_at:%H:%M} — {event.location or ''}".strip(" —"),
+                body=f"Début à {when(event.starts_at, '%H:%M')} — {event.location or ''}".strip(" —"),
                 link=f"/agenda/{event.id}",
                 channels=("in_app", "push"),
                 entity_type="calendar_event",

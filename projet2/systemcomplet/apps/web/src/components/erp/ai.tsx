@@ -2,6 +2,7 @@
 
 import { Bot, FileSearch, Mic, Radar, Sparkles, Square, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { ResourceView, type Row } from "@/components/erp/resource";
 import { RefSelect } from "@/components/forms/ref-select";
@@ -219,7 +220,7 @@ function VoiceRecorder({ projectId, onDone }: { projectId: string; onDone: () =>
     recorder.current?.stop();
     setRecording(false);
   };
-  const audio = blob ? new File([blob], `rapport-${Date.now()}.webm`, { type: blob.type }) : files[0];
+  const audio = blob ? new File([blob], `rapport-${Date.now()}.${blob.type.includes("ogg") ? "ogg" : blob.type.includes("mp4") || blob.type.includes("aac") ? "m4a" : "webm"}`, { type: blob.type }) : files[0];
   const preview = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
   useEffect(() => () => {
     if (preview) URL.revokeObjectURL(preview);
@@ -672,7 +673,9 @@ export function AiUsage() {
 export function AiHub() {
   const { can, canAny } = useAuth();
   const status = useApi<Row>("/ai/status");
-  const [tab, setTab] = useState("documents");
+  // Onglet demandé par un lien (notification « Rapport vocal à valider » : ?onglet=vocal).
+  const asked = useSearchParams().get("onglet");
+  const [tab, setTab] = useState(asked && ["documents", "synthese", "vocal", "ocr", "previsions", "usage"].includes(asked) ? asked : "documents");
   return (
     <div className="space-y-5">
       <PageTitle

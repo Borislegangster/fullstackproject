@@ -9,7 +9,7 @@ export default function ClientAgendaPage() {
   const { project } = useClientProject();
   return (
     <Suspense>
-      <AgendaView projectId={project?.id} canCreate={false} title="Mes rendez-vous" />
+      <AgendaView projectId={project?.id} canCreate={false} canRequest title="Mes rendez-vous" />
     </Suspense>
   );
 }

@@ -838,7 +838,7 @@ def _unpaid_from_item(employee: Employee, item: PayrollItem, divisor: Decimal) -
 
 
 def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
-    from app.core.pdf import PdfDocument, fmt_money, render
+    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_money, render
 
     employee = db.get(Employee, item.employee_id)
     rows = [
@@ -856,8 +856,11 @@ def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
         number=f"{run.number}-{employee.matricule}",
         issued_on=date.today(),
         parties=[
-            ("Employeur", ["GLOBUS ENGINEERING", "Douala, Cameroun"]),
-            ("Salarié", [employee.full_name, f"Matricule {employee.matricule}", employee.job_title]),
+            company_party("Employeur"),
+            (
+                "Salarié",
+                [f"<b>{employee.full_name}</b>", f"Matricule {employee.matricule}", employee.job_title or ""],
+            ),
         ],
         meta=[
             ("Période", run.period),
@@ -870,6 +873,9 @@ def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
         col_widths=[330, 150],
         rows=rows,
         totals=[("Total retenues", fmt_money(item.deductions)), ("NET À PAYER", fmt_money(item.net))],
+        amount_words=amount_in_words(item.net),
+        amount_words_label="Net à payer",
+        signature_blocks=["Pour l'employeur", "Le salarié"],
         footer_note="Document confidentiel — à conserver sans limitation de durée.",
     )
     return render(doc)

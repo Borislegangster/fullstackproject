@@ -76,6 +76,8 @@ def file_response(
                     "Content-Disposition": "inline",
                     "Cache-Control": "private, no-store",
                     "X-Content-Type-Options": "nosniff",
+                    "X-Frame-Options": "SAMEORIGIN",
+                    "Content-Security-Policy": "frame-ancestors 'self'",
                 },
             )
     disposition = "inline" if inline else "attachment"
@@ -83,9 +85,13 @@ def file_response(
         "Content-Disposition": f'{disposition}; filename="{stored.original_name}"',
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
+        # Aperçu intégré (GED, messagerie, espace client) : affichable dans un cadre de la plateforme (même origine),
+        # jamais sur un site tiers. Sans cela le PDF reste une page grise « document bloqué ».
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self'",
     }
     if stored.mime_type == "image/svg+xml":
-        headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'"
+        headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'"
     if watermark_text and stored.mime_type == "application/pdf":
         from app.core.pdf import watermark
 

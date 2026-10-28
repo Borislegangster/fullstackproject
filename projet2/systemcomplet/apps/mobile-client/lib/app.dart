@@ -93,7 +93,7 @@ final pages = <AppPage>[
   AppPage(
     '$base/compte',
     'Mon compte',
-    (_, s) => AccountScreen(withPrivacy: true, initialTab: _q(s, 'mfa') != null ? 1 : 0, mfaRequired: _q(s, 'mfa') == 'obligatoire'),
+    (_, s) => AccountScreen(withPrivacy: true, initialTab: accountTabFor(s.uri.queryParameters), mfaRequired: _q(s, 'mfa') == 'obligatoire'),
   ),
   AppPage('$base/documentation', 'Documentation', (_, s) => DocsScreen(space: 'client', docId: _q(s, 'doc'), route: _q(s, 'route'))),
   AppPage('$base/menu', 'Plus', (_, _) => const MenuGrid(sections: sections), top: true),
@@ -138,6 +138,6 @@ class _ProjectAgenda extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final project = context.watch<ClientProjects>().project;
-    return AgendaScreen(projectId: project?.s('id'), canCreate: false, openEventId: openEventId);
+    return AgendaScreen(projectId: project?.s('id'), canCreate: false, canRequest: true, openEventId: openEventId);
   }
 }

@@ -682,10 +682,20 @@ def compute_quote(quote: Quote) -> None:
 
 
 def quote_pdf(db: Session, quote: Quote) -> bytes:
-    from app.core.pdf import PdfDocument, fmt_money, fmt_qty, render
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_date,
+        fmt_money,
+        fmt_qty,
+        organization_lines,
+        render,
+    )
 
     org = db.get(Organization, quote.organization_id) if quote.organization_id else None
     contact = db.get(Contact, quote.contact_id) if quote.contact_id else None
+    person = f"{contact.first_name} {contact.last_name or ''}".strip() if contact else None
     rows = [
         [
             line.designation + (f"<br/><font size=7>{line.description}</font>" if line.description else ""),
@@ -706,18 +716,20 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         parties=[
             (
                 "Client",
-                [
-                    org.name if org else "",
-                    f"{contact.first_name} {contact.last_name or ''}" if contact else "",
-                    contact.email if contact else "",
-                    contact.phone if contact else "",
-                ],
+                organization_lines(
+                    org,
+                    person=person,
+                    email=contact.email if contact else None,
+                    phone=contact.phone if contact else None,
+                ),
             ),
-            ("GLOBUS ENGINEERING", ["Bureau d'études & construction", settings.PUBLIC_BASE_URL]),
+            company_party(),
         ],
         meta=[
             ("Objet", quote.title),
-            ("Validité", quote.valid_until.strftime("%d/%m/%Y") if quote.valid_until else "—"),
+            ("Nature", "Études et conception" if getattr(quote, "nature", "travaux") == "etudes" else "Travaux"),
+            ("Validité de l'offre", fmt_date(quote.valid_until)),
+            ("Devise", "Franc CFA (XAF)" if quote.currency == "XAF" else quote.currency),
         ],
         columns=["Désignation", "Unité", "Qté", "PU", "Total HT"],
         col_widths=[82 * 2.83465, 18 * 2.83465, 18 * 2.83465, 30 * 2.83465, 32 * 2.83465],
@@ -725,7 +737,7 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         totals=[
             ("Total HT", fmt_money(quote.subtotal, quote.currency)),
             ("Remise", fmt_money(quote.discount_amount, quote.currency)),
-            (f"TVA {quote.tax_rate} %", fmt_money(quote.tax_amount, quote.currency)),
+            (f"TVA {fmt_qty(quote.tax_rate)} %", fmt_money(quote.tax_amount, quote.currency)),
             ("Total TTC", fmt_money(quote.total, quote.currency)),
         ],
         paragraphs=[
@@ -738,6 +750,9 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
             if v
         ],
         signature_blocks=["Pour le client — « Bon pour accord »", "Pour GLOBUS ENGINEERING"],
+        amount_words=amount_in_words(quote.total, quote.currency),
+        amount_words_label="Arrêté le présent devis à la somme de",
+        footer_note=f"Devis valable jusqu'au {fmt_date(quote.valid_until)} — acceptation en ligne depuis le lien reçu.",
     )
     return render(doc)
 

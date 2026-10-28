@@ -20,6 +20,8 @@ interface EstimateResult {
   confidence?: string | null;
   ai_used: boolean;
   message: string;
+  voice_note?: boolean;
+  transcript?: string | null;
 }
 
 type SpeechRecognitionLike = { lang: string; continuous: boolean; interimResults: boolean; start(): void; stop(): void; onresult: ((e: any) => void) | null };
@@ -47,6 +49,15 @@ export function InstantEstimate() {
     setPreviews(urls);
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, [images]);
+  // Lien d'écoute créé une seule fois par enregistrement (sinon la lecture repart à zéro à chaque saisie).
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const url = audio ? URL.createObjectURL(audio) : null;
+    setAudioUrl(url);
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [audio]);
 
   const set = (k: keyof typeof values, v: string) => setValues((cur) => ({ ...cur, [k]: v }));
 
@@ -114,7 +125,7 @@ export function InstantEstimate() {
     form.set("rendered_at", String(renderedAt));
     if (honeypot) form.set("website", honeypot);
     images.forEach((f) => form.append("images", f));
-    if (audio) form.set("audio", new File([audio], `note-vocale.${audio.type.includes("ogg") ? "ogg" : "webm"}`, { type: audio.type }));
+    if (audio) form.set("audio", new File([audio], `note-vocale.${audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") || audio.type.includes("aac") ? "m4a" : "webm"}`, { type: audio.type }));
     try {
       const res = await api<EstimateResult>("/public/instant-estimate", { method: "POST", form });
       setResult(res);
@@ -167,6 +178,15 @@ export function InstantEstimate() {
             <ul className="mt-2 space-y-1 text-sm">{(result.to_verify.length ? result.to_verify : ["Nature du sol", "Accès et réseaux"]).map((o) => <li key={o}>• {o}</li>)}</ul>
           </div>
         </div>
+        {result.voice_note ? (
+          <div className="flex items-start gap-3 rounded-2xl bg-surface p-4 ring-1 ring-line">
+            <Mic className="mt-0.5 h-5 w-5 shrink-0 text-accent-600" />
+            <div className="text-sm">
+              <p className="font-semibold text-ink">Note vocale reçue et transmise à l&apos;ingénieur</p>
+              {result.transcript ? <p className="mt-1 italic text-muted">« {result.transcript} »</p> : null}
+            </div>
+          </div>
+        ) : null}
         <p className="text-sm text-muted">Un ingénieur GLOBUS valide ou ajuste cette fourchette et vous recontacte (e-mail{whatsapp ? " ou WhatsApp" : ""}).</p>
       </div>
     );
@@ -225,7 +245,7 @@ export function InstantEstimate() {
             {recording ? <span className="flex items-center gap-1.5 text-sm text-red-600"><span className="h-2 w-2 animate-pulse rounded-full bg-red-600" /> Enregistrement…</span> : null}
             {audio && !recording ? (
               <>
-                <audio controls src={URL.createObjectURL(audio)} className="h-9 max-w-[12rem]" />
+                {audioUrl ? <audio controls src={audioUrl} className="h-9 max-w-[12rem]" /> : null}
                 <button type="button" aria-label="Supprimer la note" onClick={() => { setAudio(null); setTranscript(""); }} className="rounded-lg p-1.5 text-muted hover:bg-white">
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -233,6 +253,7 @@ export function InstantEstimate() {
             ) : null}
           </div>
           {transcript ? <p className="mt-2 rounded-xl bg-white p-2 text-xs italic text-ink">« {transcript} »</p> : null}
+          {audio && !recording && !transcript ? <p className="mt-2 text-xs text-muted">Votre note vocale sera transcrite et transmise à l&apos;ingénieur avec votre demande.</p> : null}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-4">

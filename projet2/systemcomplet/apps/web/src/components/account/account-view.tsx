@@ -719,7 +719,8 @@ export function AccountView({ withPrivacy = false }: { withPrivacy?: boolean }) 
   const params = useSearchParams();
   const { user } = useAuth();
   const mfaRequired = params.get("mfa") === "obligatoire" || !!user?.mfa_required;
-  const [tab, setTab] = useState(params.get("mfa") ? "securite" : "profil");
+  const asked = params.get("onglet");
+  const [tab, setTab] = useState(asked && ["profil", "securite", "sessions", "notifications", "confidentialite"].includes(asked) ? asked : params.get("mfa") ? "securite" : "profil");
   return (
     <div>
       <PageTitle title="Mon compte" subtitle={user?.email} eyebrow={<span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> Compte sécurisé</span>} />

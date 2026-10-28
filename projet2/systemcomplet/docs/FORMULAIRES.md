@@ -3,7 +3,7 @@
 > Généré automatiquement depuis le code (`node apps/web/scripts/forms-inventory.mjs`) — ne pas modifier à la main.
 > Chaque formulaire : où il se trouve, le bouton qui l'ouvre, le titre de la fenêtre, puis ses champs **dans l'ordre affiché**, avec leur libellé exact. **Oui** = champ obligatoire (marqué d'un astérisque rouge à l'écran).
 
-311 formulaires.
+312 formulaires.
 
 ## `/activation`
 
@@ -2277,6 +2277,21 @@ Aussi dans : `/espace-client/agenda`
 | 12 | Journée entière |  | case à cocher |  |
 | 13 | Créer la visioconférence |  | case à cocher |  |
 | 14 | Visible par le client |  | case à cocher |  |
+
+### formulaire
+
+validation : **Annuler · Envoyer la demande** · `/agenda/requests` · composant `AppointmentRequestForm`
+
+Aussi dans : `/espace-client/agenda`
+
+| # | Champ | Obligatoire | Saisie | Aide affichée |
+| --- | --- | --- | --- | --- |
+| 1 | Objet | **Oui** | texte |  |
+| 2 | Type |  | liste : Rendez-vous (bureau GLOBUS) · Visite de chantier · Appel ou visio |  |
+| 3 | Durée |  | liste : 30 minutes · 1 heure · 1 h 30 · 2 heures |  |
+| 4 | Date et heure souhaitées | **Oui** | date et heure |  |
+| 5 | Lieu |  | texte |  |
+| 6 | Message |  | texte long |  |
 
 ## Projets › Chantiers (`/erp/chantiers/[id]`)
 

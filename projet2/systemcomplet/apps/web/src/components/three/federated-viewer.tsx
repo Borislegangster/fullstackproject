@@ -74,7 +74,7 @@ export const FederatedViewer = forwardRef<
   };
 
   return (
-    <div className="space-y-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex items-center gap-1 text-xs font-semibold text-muted">
           <Layers className="h-3.5 w-3.5" /> Disciplines

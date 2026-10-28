@@ -37,6 +37,7 @@ PUBLIC_EVENTS: dict[str, str] = {
     "change_order.submitted": "Avenant soumis",
     "change_order.approved": "Avenant approuvé",
     "daily_log.critical": "Journal de chantier critique",
+    "voice_report.received": "Rapport vocal de chantier reçu",
     "purchase_request.submitted": "Demande d'achat soumise",
     "purchase_request.approved": "Demande d'achat approuvée",
     "purchase_request.rejected": "Demande d'achat refusée",

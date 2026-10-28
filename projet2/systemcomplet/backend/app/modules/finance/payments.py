@@ -784,28 +784,57 @@ def _allocation_text(db: Session, allocation: PaymentAllocation) -> str:
     return f"{label} ({reference})" if reference else label
 
 
+def _counterparty_lines(db: Session, payment: Payment) -> list[str]:
+    """Coordonnées du payeur (ou du bénéficiaire) : organisation du client, fournisseur ou sous-traitant si connue."""
+    from app.core.pdf import organization_lines
+    from app.modules.identity.models import Organization
+
+    org = None
+    if payment.counterparty_id and payment.counterparty_type == "client":
+        org = db.get(Organization, payment.counterparty_id)
+    elif payment.counterparty_id and payment.counterparty_type in ("supplier", "subcontractor"):
+        from app.modules.suppliers.models import Supplier
+
+        supplier = db.get(Supplier, payment.counterparty_id)
+        org = db.get(Organization, supplier.organization_id) if supplier and supplier.organization_id else None
+    lines = organization_lines(org) if org else []
+    return lines or [f"<b>{payment.counterparty_label or '—'}</b>"]
+
+
 def _receipt(db: Session, payment: Payment) -> None:
     from app.core.files import store_generated
-    from app.core.pdf import PdfDocument, fmt_date, fmt_money, render
+    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_date, fmt_money, project_label, render
+    from app.modules.projects.models import Project
 
     offline = payment.direction == "in" and payment.provider == "manual"
+    incoming = payment.direction == "in"
+    project = db.get(Project, payment.project_id) if payment.project_id else None
     meta = [
         ("Montant", fmt_money(payment.amount, payment.currency)),
-        ("Moyen", METHOD_LABELS.get(payment.method, payment.method)),
+        ("Moyen de paiement", METHOD_LABELS.get(payment.method, payment.method)),
         ("Prestataire", "Encaissement vérifié par GLOBUS" if offline else _provider_label(payment.provider)),
         ("Référence", payment.provider_reference or "—"),
+        ("Date du paiement", fmt_date(payment.paid_at)),
     ]
     if payment.value_date:
         meta.append(("Date de valeur", fmt_date(payment.value_date)))
+    if project is not None:
+        meta.append(("Projet", project_label(project)))
+    party = ("Reçu de" if incoming else "Bénéficiaire", _counterparty_lines(db, payment))
     doc = PdfDocument(
-        title="REÇU DE PAIEMENT",
+        title="REÇU DE PAIEMENT" if incoming else "AVIS DE PAIEMENT",
         number=payment.number,
         issued_on=(payment.paid_at or utcnow()).date(),
-        parties=[("Payeur" if payment.direction == "in" else "Bénéficiaire", [payment.counterparty_label or ""])],
+        parties=[party, company_party()] if incoming else [company_party("Payeur"), party],
         meta=meta,
         columns=["Pièce réglée", "Montant"],
         rows=[[_allocation_text(db, a), fmt_money(a.amount, payment.currency)] for a in payment.allocations],
-        footer_note="Reçu émis automatiquement après confirmation du paiement.",
+        col_widths=[130 * 2.83465, 50 * 2.83465],
+        totals=[("Total réglé", fmt_money(payment.amount, payment.currency))],
+        amount_words=amount_in_words(payment.amount, payment.currency),
+        amount_words_label="Reçu la somme de" if incoming else "Payé la somme de",
+        signature_blocks=["Pour GLOBUS ENGINEERING — le Service financier"],
+        footer_note="Reçu émis automatiquement après confirmation du paiement — à conserver comme justificatif.",
     )
     stored = store_generated(
         db,

@@ -210,6 +210,8 @@ def submit(
             "to_verify": (ai or {}).get("to_verify", []),
             "confidence": (ai or {}).get("confidence"),
             "ai_used": ai is not None,
+            "voice_note": audio_upload is not None,
+            "transcript": transcript,
             "message": "Estimation indicative, non contractuelle : un ingénieur la valide et vous recontacte."
             if estimate
             else "Merci ! Un ingénieur étudie vos éléments et vous envoie une première fourchette très vite.",

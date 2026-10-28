@@ -122,6 +122,89 @@ function EventForm({ projectId, initialStart, onDone, onCancel }: { projectId?: 
   );
 }
 
+const REQUEST_KINDS = [
+  { value: "appointment", label: "Rendez-vous (bureau GLOBUS)" },
+  { value: "site_visit", label: "Visite de chantier" },
+  { value: "call", label: "Appel ou visio" },
+];
+
+/** Demande de rendez-vous du client : créneau souhaité, confirmé (ou déplacé) par l'équipe du projet. */
+function AppointmentRequestForm({ projectId, onDone, onCancel }: { projectId: string; onDone: (e: Row) => void; onCancel: () => void }) {
+  const tomorrow = addDays(startOfDay(new Date()), 1);
+  const [v, setV] = useState({ subject: "", kind: "appointment", starts_at: toLocalInput(new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 10, 0)), duration_minutes: "60", location: "", message: "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted">Proposez un créneau : votre chef de projet le confirme ou vous en propose un autre. Vous êtes prévenu par e-mail et dans l&apos;application.</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Objet" required className="sm:col-span-2">
+          <Input value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} placeholder="Ex. Point sur l'avancement, choix des finitions" maxLength={200} />
+        </Field>
+        <Field label="Type">
+          <Select value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })} options={REQUEST_KINDS} />
+        </Field>
+        <Field label="Durée">
+          <Select
+            value={v.duration_minutes}
+            onChange={(e) => setV({ ...v, duration_minutes: e.target.value })}
+            options={[
+              { value: "30", label: "30 minutes" },
+              { value: "60", label: "1 heure" },
+              { value: "90", label: "1 h 30" },
+              { value: "120", label: "2 heures" },
+            ]}
+          />
+        </Field>
+        <Field label="Date et heure souhaitées" required>
+          <Input type="datetime-local" value={v.starts_at} min={toLocalInput(new Date())} onChange={(e) => setV({ ...v, starts_at: e.target.value })} />
+        </Field>
+        <Field label="Lieu">
+          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} placeholder="Chantier, bureau, visio…" maxLength={300} />
+        </Field>
+        <Field label="Message" className="sm:col-span-2">
+          <Textarea value={v.message} onChange={(e) => setV({ ...v, message: e.target.value })} rows={3} maxLength={2000} placeholder="Ce que vous souhaitez voir ou aborder" />
+        </Field>
+      </div>
+      {error ? <Alert tone="danger">{error}</Alert> : null}
+      <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <Button variant="secondary" onClick={onCancel}>
+          Annuler
+        </Button>
+        <Button
+          loading={busy}
+          disabled={v.subject.trim().length < 2 || !v.starts_at}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              const event = await api<Row>("/agenda/requests", {
+                method: "POST",
+                body: {
+                  project_id: projectId,
+                  kind: v.kind,
+                  subject: v.subject.trim(),
+                  starts_at: new Date(v.starts_at).toISOString(),
+                  duration_minutes: Number(v.duration_minutes),
+                  location: v.location.trim() || null,
+                  message: v.message.trim() || null,
+                },
+              });
+              onDone(event);
+            } catch (err) {
+              setError(errorMessage(err));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Envoyer la demande
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function EventPanel({ eventId, onChanged, onClose }: { eventId: string; onChanged: () => void; onClose: () => void }) {
   const { user, can } = useAuth();
   const toast = useToast();
@@ -151,6 +234,15 @@ function EventPanel({ eventId, onChanged, onClose }: { eventId: string; onChange
       toast.error("Modification impossible", errorMessage(err));
     }
   };
+  const confirm = async () => {
+    try {
+      event.setData(await api(`/agenda/events/${eventId}/confirm`, { method: "POST" }));
+      onChanged();
+      toast.success("Rendez-vous confirmé : le demandeur est prévenu");
+    } catch (err) {
+      toast.error("Confirmation impossible", errorMessage(err));
+    }
+  };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -172,6 +264,20 @@ function EventPanel({ eventId, onChanged, onClose }: { eventId: string; onChange
         ) : null}
       </p>
       {e.description ? <p className="whitespace-pre-line text-sm">{e.description}</p> : null}
+      {e.status === "tentative" ? (
+        can("agenda:write") ? (
+          <Alert tone="warning" title="Demande de rendez-vous en attente">
+            Confirmez le créneau, ou déplacez-le pour en proposer un autre (le demandeur est prévenu).
+            <div className="mt-2">
+              <Button size="sm" onClick={() => void confirm()}>
+                Confirmer le rendez-vous
+              </Button>
+            </div>
+          </Alert>
+        ) : (
+          <Alert tone="info">En attente de confirmation par l&apos;équipe du projet : vous serez prévenu.</Alert>
+        )
+      ) : null}
       <div>
         <p className="mb-1 text-xs font-semibold uppercase text-muted">Participants</p>
         <ul className="space-y-1 text-sm">
@@ -241,13 +347,14 @@ function EventPanel({ eventId, onChanged, onClose }: { eventId: string; onChange
 }
 
 /** Agenda partagé : vue mois / semaine / liste, invitations, réponses, visio, export iCalendar. */
-export function AgendaView({ projectId, canCreate = true, title = "Agenda" }: { projectId?: string | null; canCreate?: boolean; title?: string }) {
+export function AgendaView({ projectId, canCreate = true, canRequest = false, title = "Agenda" }: { projectId?: string | null; canCreate?: boolean; canRequest?: boolean; title?: string }) {
   const { can } = useAuth();
   const params = useSearchParams();
   const router = useRouter();
   const [view, setView] = useState<"month" | "week" | "list">("month");
   const [cursor, setCursor] = useState(() => startOfDay(new Date()));
   const [creating, setCreating] = useState<Date | null>(null);
+  const [requesting, setRequesting] = useState(false);
   const selected = params.get("event");
   const range = useMemo(() => {
     if (view === "week") {
@@ -290,6 +397,10 @@ export function AgendaView({ projectId, canCreate = true, title = "Agenda" }: { 
           canCreate && can("agenda:write") ? (
             <Button onClick={() => setCreating(today)}>
               <CalendarPlus className="h-4 w-4" /> Nouvel événement
+            </Button>
+          ) : canRequest && projectId ? (
+            <Button onClick={() => setRequesting(true)}>
+              <CalendarPlus className="h-4 w-4" /> Demander un rendez-vous
             </Button>
           ) : null
         }
@@ -378,6 +489,20 @@ export function AgendaView({ projectId, canCreate = true, title = "Agenda" }: { 
       )}
       <Modal open={!!selected} onClose={() => open(null)} title={(events.data ?? []).find((e) => e.id === selected)?.title ?? "Événement"}>
         {selected ? <EventPanel eventId={selected} onChanged={() => void events.reload()} onClose={() => open(null)} /> : null}
+      </Modal>
+      <Modal open={requesting} onClose={() => setRequesting(false)} title="Demander un rendez-vous" size="lg">
+        {requesting && projectId ? (
+          <AppointmentRequestForm
+            projectId={projectId}
+            onCancel={() => setRequesting(false)}
+            onDone={(e) => {
+              setRequesting(false);
+              setCursor(startOfDay(new Date(e.starts_at)));
+              void events.reload();
+              open(e.id);
+            }}
+          />
+        ) : null}
       </Modal>
       <Modal open={!!creating} onClose={() => setCreating(null)} title="Nouvel événement" size="lg">
         {creating ? (

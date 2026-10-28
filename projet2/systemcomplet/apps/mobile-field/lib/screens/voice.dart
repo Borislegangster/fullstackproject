@@ -121,7 +121,7 @@ class _RecorderSheetState extends State<RecorderSheet> {
     if (path == null) return;
     setState(() => _busy = true);
     final queue = context.read<OfflineQueue>();
-    await queue.enqueueUpload(
+    final op = await queue.enqueueUpload(
       label: 'Rapport vocal du ${dateTime(DateTime.now().toUtc())}',
       path: '/ai/voice-reports',
       sourceFile: path,
@@ -135,12 +135,17 @@ class _RecorderSheetState extends State<RecorderSheet> {
     );
     final report = await queue.sync();
     if (!mounted) return;
-    context.toast(
-      report.offline
-          ? 'Hors ligne : rapport conservé sur le téléphone, envoi automatique au retour du réseau.'
-          : 'Rapport envoyé : transcription et reformulation en cours.',
-      success: !report.offline,
-    );
+    if (op.status == 'rejected') {
+      // Refus du serveur (format, droits…) : le dire clairement, l'envoi reste dans « Synchronisation » (Renvoyer).
+      context.toast('Rapport refusé par le serveur : ${op.error ?? 'motif inconnu'}. Voir Synchronisation.', error: true);
+    } else {
+      context.toast(
+        report.offline || op.status == 'pending'
+            ? 'Hors ligne : rapport conservé sur le téléphone, envoi automatique au retour du réseau.'
+            : 'Rapport envoyé : transcription en cours, le chef de projet est prévenu.',
+        success: !report.offline && op.status != 'pending',
+      );
+    }
     Navigator.pop(context, true);
   }
 
@@ -253,7 +258,8 @@ class _VoiceReportScreenState extends State<VoiceReportScreen> {
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
-            onPressed: () => openRemoteFile(context, '/ai/voice-reports/$id/audio', filename: 'rapport-vocal.m4a'),
+            // Lecture dans l'application (sans téléchargement ni application externe).
+            onPressed: () => GalleryScreen.open(context, [GalleryItem(url: '/ai/voice-reports/$id/audio', caption: 'Rapport vocal', isVideo: true)]),
             icon: const Icon(Icons.play_arrow),
             label: Text("Écouter l'enregistrement${_r.has('duration_seconds') ? ' (${duration(Duration(seconds: _r.i('duration_seconds')))})' : ''}"),
           ),

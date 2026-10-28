@@ -460,7 +460,16 @@ def po_from_request(
 
 
 def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
-    from app.core.pdf import PdfDocument, fmt_money, fmt_qty, render
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_money,
+        fmt_qty,
+        organization_lines,
+        project_label,
+        render,
+    )
 
     supplier = db.get(Supplier, po.supplier_id)
     project = db.get(Project, po.project_id)
@@ -469,25 +478,19 @@ def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
         number=po.number,
         issued_on=(po.sent_at or utcnow()).date(),
         parties=[
-            (
-                "Fournisseur",
-                [
-                    supplier.legal_name if supplier else "",
-                    supplier.address or "" if supplier else "",
-                    supplier.tax_id or "" if supplier else "",
-                ],
-            ),
+            company_party("Donneur d'ordre"),
+            ("Fournisseur", organization_lines(supplier)),
             (
                 "Livraison",
                 [
-                    project.name if project else "",
+                    f"<b>{project.name}</b>" if project else "",
                     po.delivery_address or "",
                     f"Souhaitée le {po.expected_date:%d/%m/%Y}" if po.expected_date else "",
                 ],
             ),
         ],
         meta=[
-            ("Projet", f"{project.code} — {project.name}" if project else ""),
+            ("Projet", project_label(project)),
             ("Conditions de paiement", po.payment_terms or "—"),
             ("Urgence", "OUI" if po.urgent else "Non"),
         ],
@@ -516,6 +519,9 @@ def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
             )
         ]
         + ([("Notes", po.notes)] if po.notes else []),
+        amount_words=amount_in_words(po.total, po.currency),
+        amount_words_label="Arrêté le présent bon de commande à la somme de",
+        signature_blocks=["Pour GLOBUS ENGINEERING — le Service achats", "Le fournisseur — « Bon pour accord »"],
         footer_note=f"BC {po.number} — confirmation via le lien sécurisé transmis.",
     )
     return render(doc)

@@ -409,6 +409,18 @@ class OfflineQueue extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Renvoi d'une opération refusée (après correction côté serveur ou de la saisie) : elle repasse en attente, puis la
+  /// synchronisation est relancée. L'identifiant unique est conservé : aucun doublon possible.
+  Future<SyncReport> retry(PendingOp op) async {
+    op
+      ..status = 'pending'
+      ..error = null
+      ..attempts = 0;
+    await _save();
+    notifyListeners();
+    return sync();
+  }
+
   /// Abandon d'une opération refusée (après lecture du motif).
   Future<void> discard(PendingOp op) async {
     items.remove(op);

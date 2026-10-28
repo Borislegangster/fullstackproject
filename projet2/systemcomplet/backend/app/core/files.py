@@ -41,6 +41,33 @@ AUDIO_MIMES = {
     "audio/aac",
     "video/webm",
 }
+# Conteneurs audio que la détection de contenu classe « vidéo » → type audio retenu et extension réelle.
+AUDIO_CONTAINER = {
+    "video/webm": ("audio/webm", ".webm"),
+    "video/x-matroska": ("audio/webm", ".webm"),
+    "video/mp4": ("audio/mp4", ".m4a"),
+    "video/quicktime": ("audio/mp4", ".m4a"),
+    "audio/x-m4a": ("audio/mp4", ".m4a"),
+    "video/ogg": ("audio/ogg", ".ogg"),
+}
+AUDIO_EXTENSIONS = {
+    "audio/webm": (".webm", ".weba"),
+    "audio/mp4": (".m4a", ".mp4", ".aac"),
+    "audio/ogg": (".ogg", ".oga", ".opus"),
+}
+_FAMILIES = (
+    {"video/webm", "audio/webm", "video/x-matroska"},
+    {"video/mp4", "audio/mp4", "audio/x-m4a", "audio/aac", "video/quicktime"},
+    {"audio/ogg", "video/ogg"},
+    {"audio/wav", "audio/x-wav"},
+)
+
+
+def _same_container(expected: str, mime: str) -> bool:
+    """Même conteneur audio/vidéo (ex. .webm annoncé, contenu audio/webm) : extension cohérente."""
+    return any(expected in family and mime in family for family in _FAMILIES)
+
+
 DOC_MIMES = {
     "application/pdf",
     "application/msword",
@@ -233,6 +260,14 @@ def validate_upload(
             mime = EXT_MIME[ext]
         else:
             raise AppError("Type de fichier non reconnu ou non autorisé", code="UNSUPPORTED_FILE_TYPE")
+        # Note vocale : navigateurs (WebM, MP4 sous Safari) et téléphones (AAC dans un conteneur MP4) produisent des
+        # conteneurs que la détection classe « vidéo » ; pour un fichier audio, type audio du conteneur et extension
+        # réelle du contenu (jamais de refus pour un nom de fichier deviné par l'enregistreur).
+        if category == "audio" and mime in AUDIO_CONTAINER:
+            mime, real_ext = AUDIO_CONTAINER[mime]
+            if ext not in AUDIO_EXTENSIONS.get(mime, ()):
+                name = str(PurePath(name).with_suffix(real_ext))
+                ext = real_ext
         allowed = CATEGORY_MIMES.get(category, CATEGORY_MIMES["any"])
         if mime not in allowed:
             raise AppError(f"Type de fichier non autorisé ({mime})", code="UNSUPPORTED_FILE_TYPE")
@@ -242,6 +277,7 @@ def validate_upload(
             and expected != mime
             and not (expected.startswith("image/") and mime.startswith("image/"))
             and not (ext in (".doc", ".xls", ".ppt") and mime == "application/x-cfb")
+            and not _same_container(expected, mime)
         ):
             raise AppError("Extension incohérente avec le contenu du fichier", code="MIME_MISMATCH")
         if mime == "image/svg+xml":

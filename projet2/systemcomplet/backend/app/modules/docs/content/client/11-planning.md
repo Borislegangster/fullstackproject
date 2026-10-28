@@ -21,7 +21,7 @@ Menu **Planning** : calendrier des travaux, jalons et rendez-vous de votre proje
 
 ## Mes rendez-vous
 
-La page **Mes rendez-vous** (ouverte depuis une notification d'invitation) présente vos rendez-vous en vue **Mois**, **Semaine** ou **Liste** ; **Aujourd'hui** et les flèches changent de période.
+Menu **Mes rendez-vous** (également ouvert depuis une notification d'invitation) : vos rendez-vous en vue **Mois**, **Semaine** ou **Liste** ; **Aujourd'hui** et les flèches changent de période.
 
 1. Ouvrez un rendez-vous : horaire, lieu, **Participants** et leurs réponses.
 2. Répondez **J'accepte**, **Peut-être** ou **Je décline** : l'organisateur est prévenu.
@@ -29,5 +29,13 @@ La page **Mes rendez-vous** (ouverte depuis une notification d'invitation) prés
 
 Vous recevez un rappel avant chaque rendez-vous.
 
+## Demander un rendez-vous
+
+1. **Demander un rendez-vous** ouvre la fenêtre **Demander un rendez-vous** : **Objet**, **Type** (rendez-vous au bureau GLOBUS, visite de chantier, appel ou visio), **Durée**, **Date et heure souhaitées**, **Lieu** et **Message**.
+2. **Envoyer la demande** : votre chef de projet est prévenu ; le rendez-vous apparaît **À confirmer** dans votre calendrier.
+3. Dès qu'il le confirme, vous êtes prévenu (e-mail et application) et le rendez-vous passe **Confirmé**. Il peut aussi vous proposer un autre créneau.
+
+Vous pouvez **Déplacer** votre demande (elle redevient **À confirmer**) ou l'**Annuler** : l'équipe est prévenue.
+
 > [!NOTE]
-> Les rendez-vous sont fixés par votre chef de projet. Pour en demander un, écrivez-lui depuis la [messagerie](doc:client-messagerie).
+> Le créneau doit être au moins une heure à l'avance. Pour une question rapide, écrivez plutôt à votre chef de projet depuis la [messagerie](doc:client-messagerie).

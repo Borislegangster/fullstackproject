@@ -119,6 +119,7 @@ export const STATUS_LABELS: Record<string, string> = {
   pending_approval: "À approuver",
   sent: "Envoyé",
   confirmed: "Confirmé",
+  tentative: "À confirmer",
   refused: "Refusé",
   countered: "Contre-offre",
   shipped: "Expédié",
@@ -269,7 +270,7 @@ const DANGER = new Set([
   "ESCALADE", "terminated", "missed", "absent", "frozen", "escalated", "expired", "withdrawn", "declined", "defaulted",
 ]);
 const WARNING = new Set([
-  "pending", "submitted", "awaiting_approval", "in_review", "pending_client", "at_risk", "countered", "partially_paid",
+  "pending", "tentative", "submitted", "awaiting_approval", "in_review", "pending_client", "at_risk", "countered", "partially_paid",
   "partially_received", "field_checked", "EN_ANALYSE", "EN_NEGOCIATION", "DECISION", "on_order", "diagnosis",
   "pending_approval", "proposed", "matching", "unmatched", "partially_released", "partially_consumed",
   "release_requested", "pending_partner", "awaiting_payment",

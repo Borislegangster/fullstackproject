@@ -141,7 +141,7 @@ final pages = <AppPage>[
   AppPage('$base/appels', 'Appels', (_, s) => CallsScreen(openCallId: _q(s, 'call'))),
   AppPage('$base/agenda', 'Agenda', (_, s) => _SiteAgenda(openEventId: _q(s, 'event'))),
   AppPage('$base/notifications', 'Notifications', (_, _) => const NotificationsScreen()),
-  AppPage('$base/compte', 'Mon compte', (_, s) => AccountScreen(initialTab: _q(s, 'mfa') != null ? 1 : 0, mfaRequired: _q(s, 'mfa') == 'obligatoire')),
+  AppPage('$base/compte', 'Mon compte', (_, s) => AccountScreen(initialTab: accountTabFor(s.uri.queryParameters), mfaRequired: _q(s, 'mfa') == 'obligatoire')),
   AppPage('$base/documentation', 'Documentation', (_, s) => DocsScreen(space: 'erp', docId: _q(s, 'doc'), route: _q(s, 'route'))),
   AppPage('$base/menu', 'Plus', (_, _) => const MenuGrid(sections: sections), top: true),
 ];

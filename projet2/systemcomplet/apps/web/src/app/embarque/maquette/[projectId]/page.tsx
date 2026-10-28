@@ -20,5 +20,5 @@ export default function EmbeddedModelPage({ params, searchParams }: { params: Pr
   }
   if (!federation.models.length)
     return <p className="flex h-full items-center justify-center px-6 text-center text-sm text-brand-200">La maquette 3D sera publiée par votre équipe de conception.</p>;
-  return <FederatedViewer federation={federation} className="h-full w-full" />;
+  return <FederatedViewer federation={federation} className="min-h-0 w-full flex-1" />;
 }

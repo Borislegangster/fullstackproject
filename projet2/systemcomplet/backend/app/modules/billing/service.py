@@ -44,23 +44,56 @@ def compute_invoice(invoice: ClientInvoice) -> None:
     invoice.total = money(subtotal + invoice.tax_amount)
 
 
+INVOICE_TITLES = {
+    "deposit": "FACTURE D'ACOMPTE",
+    "progress": "FACTURE DE SITUATION",
+    "final": "FACTURE DE SOLDE",
+    "studies": "FACTURE D'ÉTUDES",
+}
+
+
 def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
     from app.core.files import store_generated
-    from app.core.pdf import PdfDocument, fmt_money, fmt_qty, render
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_date,
+        fmt_money,
+        fmt_qty,
+        organization_lines,
+        project_label,
+        render,
+    )
+    from app.modules.crm.models import Contract
     from app.modules.identity.models import Organization
+    from app.modules.projects.models import Project
 
     org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
+    project = db.get(Project, invoice.project_id) if invoice.project_id else None
+    contract = db.get(Contract, invoice.contract_id) if invoice.contract_id else None
+    settled = Decimal(invoice.amount_paid or 0) + Decimal(invoice.amount_credited or 0)
+    balance = [
+        ("Déjà réglé", fmt_money(invoice.amount_paid, invoice.currency)),
+        *(
+            [("Avoirs imputés", fmt_money(invoice.amount_credited, invoice.currency))]
+            if invoice.amount_credited
+            else []
+        ),
+        ("Reste à payer", fmt_money(max(Decimal(invoice.total or 0) - settled, Decimal(0)), invoice.currency)),
+    ]
     doc = PdfDocument(
-        title="FACTURE" if invoice.kind != "deposit" else "FACTURE D'ACOMPTE",
+        title=INVOICE_TITLES.get(invoice.kind, "FACTURE"),
         number=invoice.number,
         issued_on=invoice.issue_date,
-        parties=[
-            ("Client", [org.name if org else "", org.address if org else "", org.tax_id if org else ""]),
-            ("Émetteur", ["GLOBUS ENGINEERING"]),
-        ],
+        parties=[("Client", organization_lines(org)), company_party()],
         meta=[
             ("Objet", invoice.title),
-            ("Échéance", invoice.due_date.strftime("%d/%m/%Y") if invoice.due_date else "—"),
+            ("Projet", project_label(project)),
+            *([("Contrat", f"{contract.number} — {contract.title}")] if contract else []),
+            ("Date d'émission", fmt_date(invoice.issue_date)),
+            ("Échéance", fmt_date(invoice.due_date)),
+            ("Devise", "Franc CFA (XAF)" if invoice.currency == "XAF" else invoice.currency),
         ],
         columns=["Désignation", "Unité", "Qté", "PU HT", "Total HT"],
         col_widths=[230, 50, 40, 80, 90],
@@ -76,11 +109,24 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
         ],
         totals=[
             ("Total HT", fmt_money(invoice.subtotal, invoice.currency)),
-            (f"TVA {invoice.tax_rate} %", fmt_money(invoice.tax_amount, invoice.currency)),
+            (f"TVA {fmt_qty(invoice.tax_rate)} %", fmt_money(invoice.tax_amount, invoice.currency)),
             ("Total TTC", fmt_money(invoice.total, invoice.currency)),
+            *(balance if settled else []),
         ],
+        amount_words=amount_in_words(invoice.total, invoice.currency),
+        amount_words_label="Arrêtée la présente facture à la somme de",
+        paragraphs=[
+            (
+                "Modalités de paiement",
+                f"Règlement avant le {fmt_date(invoice.due_date)} en rappelant la référence {invoice.number} : "
+                "paiement en ligne (Mobile Money, carte) depuis votre espace client GLOBUS, ou virement bancaire. "
+                "Un reçu vous est remis à chaque règlement.",
+            ),
+            *([("Observations", invoice.notes)] if invoice.notes else []),
+        ],
+        signature_blocks=["Pour GLOBUS ENGINEERING — la Direction financière"],
         verify_token=invoice.authenticity_token,
-        footer_note="Paiement en ligne disponible depuis votre espace client GLOBUS.",
+        footer_note="Facture authentifiable : scannez le QR code ou saisissez la référence sur notre site.",
     )
     stored = store_generated(
         db,

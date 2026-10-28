@@ -71,14 +71,33 @@ class SyncScreen extends StatelessWidget {
                 title: Text(op.label),
                 subtitle: Text('${op.error ?? 'Refusé'}\nsaisi le ${dateTime(op.createdAt.toUtc())}'),
                 isThreeLine: true,
-                trailing: IconButton(
-                  tooltip: 'Abandonner',
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () async {
-                    if (await confirmDialog(context, title: 'Abandonner cette saisie ?', message: op.label, confirm: 'Abandonner', danger: true)) {
-                      await queue.discard(op);
-                    }
-                  },
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Renvoyer',
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () async {
+                        final report = await queue.retry(op);
+                        if (context.mounted) {
+                          context.toast(
+                            report.rejected > 0 ? 'Toujours refusé : ${op.error ?? 'voir le motif'}' : 'Saisie renvoyée',
+                            error: report.rejected > 0,
+                            success: report.rejected == 0,
+                          );
+                        }
+                      },
+                    ),
+                    IconButton(
+                      tooltip: 'Abandonner',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () async {
+                        if (await confirmDialog(context, title: 'Abandonner cette saisie ?', message: op.label, confirm: 'Abandonner', danger: true)) {
+                          await queue.discard(op);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

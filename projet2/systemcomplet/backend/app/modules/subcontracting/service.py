@@ -665,7 +665,17 @@ def compute_contract(contract: Subcontract) -> None:
 
 
 def contract_pdf(db: Session, contract: Subcontract) -> bytes:
-    from app.core.pdf import PdfDocument, fmt_money, fmt_qty, render
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_date,
+        fmt_money,
+        fmt_qty,
+        organization_lines,
+        project_label,
+        render,
+    )
 
     sub = db.get(Subcontractor, contract.subcontractor_id)
     project = db.get(Project, contract.project_id)
@@ -673,21 +683,11 @@ def contract_pdf(db: Session, contract: Subcontract) -> bytes:
         title="MARCHÉ DE SOUS-TRAITANCE",
         number=contract.number,
         issued_on=date.today(),
-        parties=[
-            ("Entreprise principale", ["GLOBUS ENGINEERING", "Douala, Cameroun"]),
-            (
-                "Sous-traitant",
-                [
-                    sub.legal_name if sub else "",
-                    sub.address or "" if sub else "",
-                    f"NIU {sub.tax_id}" if sub and sub.tax_id else "",
-                ],
-            ),
-        ],
+        parties=[company_party("Entreprise principale"), ("Sous-traitant", organization_lines(sub))],
         meta=[
-            ("Projet", f"{project.code} — {project.name}" if project else ""),
+            ("Projet", project_label(project)),
             ("Objet", contract.title),
-            ("Période", f"{contract.start_date or '—'} → {contract.end_date or '—'}"),
+            ("Période", f"du {fmt_date(contract.start_date)} au {fmt_date(contract.end_date)}"),
             ("Retenue de garantie", f"{contract.retention_pct} %"),
             ("Avance", fmt_money(contract.advance_amount, contract.currency)),
             ("Récupération de l'avance", f"{contract.advance_recovery_pct} % par situation"),
@@ -719,7 +719,9 @@ def contract_pdf(db: Session, contract: Subcontract) -> bytes:
                 "un avenant ou une dérogation écrite.",
             )
         ],
-        signature_blocks=["GLOBUS ENGINEERING", sub.legal_name if sub else "Sous-traitant"],
+        amount_words=amount_in_words(contract.amount, contract.currency),
+        amount_words_label="Arrêté le présent marché à la somme hors taxes de",
+        signature_blocks=["Pour GLOBUS ENGINEERING", f"Pour {sub.legal_name}" if sub else "Le sous-traitant"],
     )
     return render(doc)
 
