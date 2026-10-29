@@ -81,7 +81,11 @@ Bouton **Modifier** (bloc Informations) : la fenêtre **Modifier le projet** rep
 
 ### Archiver le projet
 
-Bouton **Archiver** puis confirmation dans **Archiver le projet** : le projet disparaît des listes actives mais reste consultable et ses données sont conservées (rien n'est supprimé).
+Bouton **Archiver** puis confirmation dans **Archiver le projet** (motif obligatoire) : le projet disparaît des listes actives ; ses données sont conservées intégralement (rien n'est supprimé).
+
+### Archives et restauration
+
+En bas de **Projets › Chantiers**, **Voir les archives** liste les chantiers archivés avec la date, l'auteur et le motif. **Restaurer** ouvre **Restaurer le chantier** (motif obligatoire) : le chantier retrouve les listes, ses données et ses accès, à l'identique ; l'opération est journalisée.
 :::
 
 ## Onglet « Équipe »

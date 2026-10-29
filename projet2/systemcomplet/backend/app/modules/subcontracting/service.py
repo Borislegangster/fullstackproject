@@ -674,14 +674,17 @@ def contract_pdf(db: Session, contract: Subcontract) -> bytes:
         fmt_qty,
         organization_lines,
         project_label,
-        render,
     )
+    from app.modules.documents.seals import sealed_pdf
 
     sub = db.get(Subcontractor, contract.subcontractor_id)
     project = db.get(Project, contract.project_id)
     doc = PdfDocument(
         title="MARCHÉ DE SOUS-TRAITANCE",
         number=contract.number,
+        stamp="PROJET DE MARCHÉ"
+        if contract.status in ("draft", "sent")
+        else ("RÉSILIÉ" if contract.status == "terminated" else None),
         issued_on=date.today(),
         parties=[company_party("Entreprise principale"), ("Sous-traitant", organization_lines(sub))],
         meta=[
@@ -723,7 +726,19 @@ def contract_pdf(db: Session, contract: Subcontract) -> bytes:
         amount_words_label="Arrêté le présent marché à la somme hors taxes de",
         signature_blocks=["Pour GLOBUS ENGINEERING", f"Pour {sub.legal_name}" if sub else "Le sous-traitant"],
     )
-    return render(doc)
+    return sealed_pdf(
+        db,
+        doc,
+        kind="subcontract",
+        entity_type="subcontract",
+        entity_id=contract.id,
+        reference=contract.number,
+        title=contract.title,
+        issued_on=doc.issued_on,
+        amount=contract.amount,
+        currency=contract.currency,
+        party=sub.legal_name if sub else None,
+    )
 
 
 def send_contract(db: Session, contract: Subcontract, *, user_id: uuid.UUID) -> Subcontract:
@@ -1194,12 +1209,24 @@ def validate_situation(
     user_id: uuid.UUID,
     penalties_override: Decimal | None = None,
     penalties_reason: str | None = None,
+    principal: Any = None,
 ) -> Situation:
     """Validation (55) : bloquée au-delà du marché sans dérogation (V4-SUB-15) ; retenue et coût projet constatés."""
+    from app.core.sod import require_other_person
     from app.modules.finance.service import record_expense
 
     if situation.status != "field_checked":
         raise BusinessRuleError("Le constat terrain doit précéder la validation", code="FIELD_CHECK_REQUIRED")
+    if principal is not None:
+        require_other_person(
+            db,
+            principal,
+            situation.field_checked_by_id,
+            "Double regard : la situation est validée par une autre personne que celle qui a fait le constat",
+            resource_type="situation",
+            resource_id=situation.id,
+            project_id=contract.project_id,
+        )
     if penalties_override is not None and not (penalties_reason or "").strip():
         raise BusinessRuleError("Motif requis pour modifier les pénalités")
     compute_situation(db, situation, contract, penalties_override=penalties_override)

@@ -908,6 +908,7 @@ const Map<String, ({String type, String? schema})> kBodies = {
   'POST /projects/{project_id}/media': (type: 'multipart', schema: 'Body_upload_site_media_api_v1_projects__project_id__media_post'),
   'POST /projects/{project_id}/members': (type: 'json', schema: 'MemberIn'),
   'POST /projects/{project_id}/panel/messages/{message_id}/handle': (type: 'json', schema: 'HandleIn'),
+  'POST /projects/{project_id}/restore': (type: 'json', schema: null),
   'POST /projects/{project_id}/review-invitations': (type: 'json', schema: 'app__modules__reviews__router__InviteIn'),
   'POST /projects/{project_id}/tasks': (type: 'json', schema: 'TaskIn'),
   'POST /projects/{project_id}/timelapses': (type: 'json', schema: 'GenerateIn'),

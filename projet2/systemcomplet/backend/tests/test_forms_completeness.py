@@ -356,10 +356,34 @@ def test_a_budget_is_approved_by_someone_else_than_its_author(client: Any, db: A
         },
     )
     assert budget.status_code == 201, budget.text
-    own = client.post(f"{API}/budgets/{budget.json()['id']}/approve", headers=ah)
+    # Le super administrateur peut saisir puis approuver lui-même (tracé au journal d'audit).
+    own_admin = client.post(f"{API}/budgets/{budget.json()['id']}/approve", headers=ah)
+    assert own_admin.status_code == 200, own_admin.text
+    from sqlalchemy import select
+
+    from app.core.audit import AuditEvent
+
+    assert db.execute(
+        select(AuditEvent).where(
+            AuditEvent.action == "ADMIN_SELF_APPROVAL", AuditEvent.resource_id == budget.json()["id"]
+        )
+    ).scalar_one_or_none()
+    # Tout autre profil suit le circuit : l'auteur ne valide pas sa saisie.
+    _author, fh = as_role(client, db, "FINANCE")
+    second = client.post(
+        f"{API}/budgets",
+        headers=fh,
+        json={
+            "project_id": project["id"],
+            "label": "Budget révisé",
+            "lines": [{"label": "Gros œuvre", "amount": 1200000}],
+        },
+    )
+    assert second.status_code == 201, second.text
+    own = client.post(f"{API}/budgets/{second.json()['id']}/approve", headers=fh)
     assert own.status_code == 422 and own.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
     _director, dh = as_role(client, db, "DIRECTION")
-    other = client.post(f"{API}/budgets/{budget.json()['id']}/approve", headers=dh)
+    other = client.post(f"{API}/budgets/{second.json()['id']}/approve", headers=dh)
     assert other.status_code == 200, other.text
 
 

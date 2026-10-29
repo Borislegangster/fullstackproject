@@ -202,11 +202,11 @@ réellement exister et consommer de vrais numéros. Il faut décider dès mainte
 - **Premier chemin — garder les traces.** Tout ce que vous créez porte « TEST » dans son nom ; à la fin, vous archivez le
   projet et désactivez les comptes (scène Z2). Les numéros consommés (code projet, factures) ne reviennent pas.
 - **Second chemin — effacer l'essai (recommandé avant la mise en service).** À la fin, le Gardien lance la **remise à
-  zéro des données d'exploitation** (scène Z3) : comptes, projets et données métier sont supprimés ; le **site, le CMS,
+  zéro des données d'exploitation** (scène Z6) : comptes, projets et données métier sont supprimés ; le **site, le CMS,
   la médiathèque, les paramètres et les intégrations sont conservés** ; la numérotation repart de zéro.
 
 > **Partir d'une base propre.** Si la plateforme contient déjà des données d'essais précédents, faites la remise à zéro
-> (scène Z3) **avant** de commencer.
+> (scène Z6) **avant** de commencer.
 
 - [ ] J'ai choisi mon chemin et je m'y tiens.
 
@@ -1749,8 +1749,8 @@ et le compteur **Validés par le client** passe à 1.
 
 **Pourquoi** : les études, validées, sont facturées ; les livrables sont rattachés à cette facture, qui les débloquera.
 
-**Qui** : Rachel (profil **GLOBUS FIN**), puis Samuel. **Où** : *Finance › Facturation*, onglet **Factures clients** ;
-puis l'onglet **Études et livrables** du projet.
+**Qui** : Rachel (profil **GLOBUS FIN**), Grâce, puis Samuel. **Où** : *Finance › Facturation*, onglet **Factures
+clients** ; puis l'onglet **Études et livrables** du projet.
 
 **Méthode**
 
@@ -1766,7 +1766,12 @@ puis l'onglet **Études et livrables** du projet.
 | Taux de TVA | `19.25` | |
 | Lignes | Désignation ★ `Études et conception (plans, 3D, notes)`, Unité `forfait`, Quantité ★ `1`, Prix unitaire ★ `3000000` | ★ |
 
-   **Créer** ; puis sur la ligne : **Valider**, **Confirmer** ; **Envoyer au client**, **Confirmer**.
+   **Créer** : la facture est une **proforma** (colonne **Catégorie** « Proforma (brouillon) ») ; sur la ligne,
+   **Proforma (PDF)** ouvre un PDF marqué « FACTURE PROFORMA » avec le tampon **PROFORMA**. Rachel essaie
+   **Valider (facture définitive)** : refus « Double regard : la facture est validée par une autre personne que celle
+   qui l'a préparée ».
+
+   Grâce : sur la ligne, **Valider (facture définitive)**, **Confirmer** ; Rachel : **Envoyer au client**, **Confirmer**.
 
 2. Samuel : onglet **Études et livrables** : **Facture d'études** = la facture `FAC-…` ; cliquez sur **Rattacher les
    livrables sans facture**.
@@ -2740,7 +2745,8 @@ validation, statut **Validé** et ces montants :
 | Pénalités | aucun retard | 0 |
 | **Net à payer** | brut − retenue − avance | **678 300** |
 
-> **Contrôles** : valider avant le constat est refusé (« Le constat terrain doit précéder la validation ») ; si vous
+> **Contrôles** : Ernest ne peut pas valider sa propre situation constatée (double regard) ; valider avant le constat
+> est refusé (« Le constat terrain doit précéder la validation ») ; si vous
 > saisissez des pénalités différentes, le **Motif** devient obligatoire.
 
 - [ ] **S11** — Constat, validation et calculs exacts.
@@ -3186,7 +3192,9 @@ contrat (l'avenant est facturé à part, scène F4).
 | Devise | « FCFA (XAF) » | |
 | Date d'échéance | dans 10 jours | |
 
-   **Créer**, puis sur la ligne **Émettre**, **Confirmer**.
+   **Créer**. Rachel essaie **Émettre** : refus (« Double regard : l'appel de fonds est émis par une autre personne
+   que celle qui l'a préparé ») ; Grâce : sur la ligne, **Émettre**, **Confirmer** (facture d'appel de fonds
+   définitive, PDF et QR).
 
 2. Paul : **Finances** : l'appel apparaît avec **Payer**. Cliquez sur **Payer** :
    - **si le paiement en ligne n'est pas activé** : la fenêtre **Paiement en ligne** affiche « Aucun moyen de paiement
@@ -3392,10 +3400,13 @@ facture**.
 
    **Créer**.
 
-2. Rachel : sur la ligne de la facture, **Valider**, **Confirmer** (le PDF définitif est produit, avec son code
-   d'authenticité) ; puis **Envoyer au client**, **Confirmer**.
+2. Rachel : **Proforma (PDF)** (tampon « PROFORMA ») ; puis Grâce : **Valider (facture définitive)**, **Confirmer**
+   (le PDF définitif est produit, avec son QR d'authenticité) ; Rachel : **Envoyer au client**, **Confirmer**.
 
 3. Paul : **Finances** : la facture apparaît (45 000 HT, TVA 8 662,50, TTC 53 662,50), avec **Payer** et le PDF.
+
+4. Grâce : sur la facture, **Émettre une facture d'avoir** : **Montant** `5000`, **Motif** `Geste commercial` ;
+   **Enregistrer**. Paul : **Finances**, bloc **Factures d'avoir** : l'avoir et son PDF « FACTURE D'AVOIR ».
 
 **Résultat attendu** : facture **Brouillon → Validé → Envoyé** ; Paul est notifié par e-mail ; une facture validée
 n'est plus modifiable (seul un avoir peut la corriger). Le PDF respecte l'annexe H (TVA « 19,25 % », « Arrêtée la
@@ -3486,8 +3497,9 @@ de cotisation revus par l'expert-comptable.
    **Référence** `PAIE-TEST-10`, **Preuve (ordre de virement, état signé)** ★ un PDF ; **Confirmer**. Moussa ouvre
    **Mon espace RH › Mes bulletins de paie** et télécharge son bulletin.
 
-**Résultat attendu** : calcul cohérent avec les pointages ; aucune validation sans paramètres revus ; bulletin visible
-du seul salarié concerné.
+**Résultat attendu** : calcul cohérent avec les pointages ; aucune validation sans paramètres revus ; la personne qui
+a calculé la paie ne peut pas la valider (double regard) ; chaque bulletin PDF porte un QR d'authenticité ; bulletin
+visible du seul salarié concerné.
 
 - [ ] **Q2** — Paie calculée, ajustée, validation protégée.
 
@@ -3926,7 +3938,47 @@ l'application Direction.
 
 - [ ] **Z2** — Avis client recueilli.
 
-### Scène Z3 — Le tableau de bord de la recette
+### Scène Z3 — L'exception du super administrateur
+
+**Pourquoi** : partout, celui qui saisit ne valide pas lui-même (factures, appels de fonds, encaissements, paiements,
+budgets, petite caisse, paie, congés, avenants, situations, commandes…). Seul le super administrateur peut saisir puis
+valider seul ; chaque cas est tracé au journal d'audit.
+
+**Qui** : le Gardien (profil **GLOBUS ADM**), puis Rachel. **Où** : *Finance › Finances*, onglet **Petites caisses**,
+la caisse « Caisse Villa Mballa » ; *Administration › Journal d'audit*.
+
+**Méthode**
+
+1. Le Gardien : **Déclarer un mouvement** : **Type** « Entrée (réapprovisionnement) », **Montant** `5000`, **Objet**
+   `Appoint de fin de recette`, **Date de l'opération** aujourd'hui ; **Enregistrer** ; puis, sur ce mouvement,
+   **Valider**.
+2. Rachel : déclarez un mouvement identique (`Appoint Rachel`), puis essayez de le **Valider** vous-même.
+3. Le Gardien : *Journal d'audit*, filtre **Action** « ADMIN_SELF_APPROVAL ».
+
+**Résultat attendu** : le mouvement du Gardien est validé par lui seul ; celui de Rachel est refusé (« Séparation des
+tâches : validation par une autre personne ») et attend une autre personne ; le journal d'audit trace l'auto-validation
+du Gardien.
+
+- [ ] **Z3** — Double regard partout, sauf pour le super administrateur (tracé).
+
+### Scène Z4 — Archiver puis restaurer un chantier
+
+**Qui** : le Gardien. **Où** : *Projets › Chantiers*.
+
+**Méthode**
+
+1. **Nouveau projet** : **Nom** ★ `TEST — Projet à archiver` ; **Créer**.
+2. Dans la fiche du projet, **Archiver** ; **Motif** `Projet créé pour la recette des archives` ; **Archiver**.
+3. *Projets › Chantiers* : le projet n'apparaît plus ; en bas de la page, **Voir les archives** : il y figure avec la
+   date, votre nom et le motif.
+4. **Restaurer** ; **Motif de la restauration** `Vérification de la restauration` ; **Restaurer**.
+
+**Résultat attendu** : le projet rouvre à l'identique et retrouve la liste des chantiers ; archivage et restauration
+sont tracés au journal d'audit. (Archivez-le de nouveau pour ne pas encombrer la liste.)
+
+- [ ] **Z4** — Archives consultables et restauration d'un chantier.
+
+### Scène Z5 — Le tableau de bord de la recette
 
 **Qui** : vous. **Où** : annexe E.
 
@@ -3934,9 +3986,9 @@ l'application Direction.
 
 **Résultat attendu** : toutes les scènes jouées sont cochées ou ont une fiche d'anomalie.
 
-- [ ] **Z3** — Bilan établi.
+- [ ] **Z5** — Bilan établi.
 
-### Scène Z4 — Remettre la plateforme à zéro (facultatif)
+### Scène Z6 — Remettre la plateforme à zéro (facultatif)
 
 **Pourquoi** : après la recette, les données « TEST » peuvent être effacées pour démarrer l'exploitation.
 
@@ -3949,7 +4001,7 @@ authentification.
 **Résultat attendu** : projets, prospects, achats, paiements de test supprimés ; le site, le CMS, la médiathèque, les
 paramètres et les comptes du personnel sont conservés.
 
-- [ ] **Z4** — Plateforme prête pour l'exploitation.
+- [ ] **Z6** — Plateforme prête pour l'exploitation.
 
 ---
 
@@ -4013,7 +4065,7 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 
 ## Annexe E — Le tableau de bord de la recette
 
-150 scènes. Cochez « OK » ou notez le n° de la fiche d'anomalie (annexe C).
+152 scènes. Cochez « OK » ou notez le n° de la fiche d'anomalie (annexe C).
 
 | Chapitre | Scène | Ce qui est vérifié | OK | Anomalie |
 | --- | --- | --- | --- | --- |
@@ -4165,8 +4217,10 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 | Chapitre 18 | **X5** | Traçabilité complète. | [ ] | |
 | Chapitre 19 | **Z1** | Clôture du marché et libération de la retenue. | [ ] | |
 | Chapitre 19 | **Z2** | Avis client recueilli. | [ ] | |
-| Chapitre 19 | **Z3** | Bilan établi. | [ ] | |
-| Chapitre 19 | **Z4** | Plateforme prête pour l'exploitation. | [ ] | |
+| Chapitre 19 | **Z3** | Double regard partout, sauf pour le super administrateur (tracé). | [ ] | |
+| Chapitre 19 | **Z4** | Archives consultables et restauration d'un chantier. | [ ] | |
+| Chapitre 19 | **Z5** | Bilan établi. | [ ] | |
+| Chapitre 19 | **Z6** | Plateforme prête pour l'exploitation. | [ ] | |
 
 ## Annexe F — Que faire si…
 
@@ -4185,7 +4239,7 @@ N'importe quel PDF d'une page convient : seul le dépôt est testé, pas le cont
 
 ## Annexe G — La référence des formulaires
 
-Le document `docs/FORMULAIRES.md` liste **tous** les formulaires de la plateforme (312), écran par écran, avec pour
+Le document `docs/FORMULAIRES.md` liste **tous** les formulaires de la plateforme (313), écran par écran, avec pour
 chacun : le bouton qui l'ouvre, le titre de la fenêtre, chaque champ dans l'ordre, s'il est obligatoire, le type de
 saisie (liste, date, nombre et ses limites), le texte d'aide affiché et le bouton de validation. Il est généré à partir
 du code de la plateforme (`npm run doc:forms`) : il est donc toujours à jour.
@@ -4205,6 +4259,8 @@ chantier) doit présenter :
 | Rubriques | objet, projet (code, nom, ville), dates (émission, échéance, validité), devise |
 | Montants | lignes lisibles, totaux HT / TVA / TTC (TVA écrite « 19,25 % »), « Déjà réglé » et « Reste à payer » s'il y a eu des règlements, et le **montant en toutes lettres** (« Arrêtée la présente facture à la somme de : … francs CFA ») |
 | Signatures | les cadres « Date et signature » attendus (ex. « Pour le client — Bon pour accord » et « Pour GLOBUS ENGINEERING ») |
-| Pied de page | la note du document, la raison sociale et les immatriculations, « N° — page x / y » ; pour les factures, le **QR d'authenticité** |
+| Pied de page | la note du document, la raison sociale et les immatriculations, « N° — page x / y » et le **QR d'authenticité** |
+| QR d'authenticité | sur **tous** les documents (facture, proforma, avoir, reçu, devis, bon de commande, marché, bulletin, rapport, passeport) : scanné, il ouvre la page « Document authentique » du site avec la nature, le numéro, la date, le montant, la partie concernée (masquée) et le **statut à jour** (un document annulé est signalé « non valable ») |
+| Tampon | **PROFORMA** sur une facture en brouillon, **BROUILLON** / **À APPROUVER** sur un devis ou un bon de commande non validé, **ANNULÉE** sur une facture annulée |
 
 Un aperçu filigrané à votre nom (livrables d'études non réglés, plans sensibles) s'ajoute au grand logo central.

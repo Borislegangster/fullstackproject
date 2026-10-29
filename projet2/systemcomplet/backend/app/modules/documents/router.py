@@ -790,4 +790,9 @@ def verify_authenticity(
     proof = db.execute(select(Proof).where(Proof.public_code == token)).scalar_one_or_none()
     if proof is not None:
         return public_payload(proof)
+    from app.modules.documents.seals import public_payload as sealed_payload
+
+    sealed = sealed_payload(db, token)  # reçus, devis, proformas, avoirs, bons de commande, marchés, bulletins…
+    if sealed is not None:
+        return sealed
     return {"valid": False, "message": "Aucun document GLOBUS ne correspond à ce code."}

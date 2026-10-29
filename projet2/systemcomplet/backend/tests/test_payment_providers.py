@@ -29,7 +29,7 @@ def _funds_call(client: Any, env: dict[str, Any], amount: int = 750000) -> dict[
             "due_date": (date.today() + timedelta(days=10)).isoformat(),
         },
     ).json()
-    issued = client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["fh"], json={})
+    issued = client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["vh"], json={})
     assert issued.status_code == 200, issued.text
     return call
 

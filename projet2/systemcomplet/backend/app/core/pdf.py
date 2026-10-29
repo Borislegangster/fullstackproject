@@ -347,6 +347,7 @@ class PdfDocument:
     footer_note: str | None = None
     amount_words: str | None = None  # montant en toutes lettres (arrêté du document)
     amount_words_label: str = "Arrêté le présent document à la somme de"
+    stamp: str | None = None  # tampon diagonal sur chaque page : PROFORMA, BROUILLON, ANNULÉ…
 
 
 def _qr_image(data: str) -> ImageReader:
@@ -433,6 +434,7 @@ def render(doc: PdfDocument) -> bytes:
         canvas.restoreState()
 
     number = doc.number
+    stamp = doc.stamp
 
     class _NumberedCanvas(rl_canvas.Canvas):
         """Deux passes : « page x / y » sur chaque page une fois le nombre total connu."""
@@ -454,6 +456,15 @@ def render(doc: PdfDocument) -> bytes:
                     iw, ih = faded.getSize()
                     wm_h = wm_w * ih / iw
                     self.drawImage(faded, (A4[0] - wm_w) / 2, (A4[1] - wm_h) / 2, wm_w, wm_h, mask="auto")
+                if stamp:  # nature provisoire ou annulée du document, impossible à confondre avec l'original
+                    self.saveState()
+                    self.setFillColor(colors.HexColor("#DC2626"))
+                    self.setFillAlpha(0.14)
+                    self.setFont(fonts.title, 58 if len(stamp) <= 12 else 40)
+                    self.translate(A4[0] / 2, A4[1] / 2)
+                    self.rotate(35)
+                    self.drawCentredString(0, -20, t(stamp, fonts.title))
+                    self.restoreState()
                 self.setFillColor(colors.HexColor("#6B7280"))
                 self.setFont(fonts.body, 7)
                 self.drawRightString(A4[0] - 15 * mm, 10 * mm, t(f"{number} — page {self._pageNumber} / {total}"))

@@ -626,7 +626,7 @@ def decide_leave(
     leave = db.get(LeaveRequest, leave_id)
     if leave is None:
         raise NotFound("Demande introuvable")
-    service.decide_leave(db, leave, approve=data.approve, user_id=access.p.id)
+    service.decide_leave(db, leave, approve=data.approve, user_id=access.p.id, principal=access.p)
     db.commit()
     return jsonable(serialize(leave))
 
@@ -800,7 +800,7 @@ def validate_run(
 ) -> dict[str, Any]:
     """Validation par la finance (contrôle à quatre yeux : RH calcule, finance valide)."""
     access.require("hr:payroll", "finance:approve")
-    run = service.validate_run(db, _run(db, run_id), user_id=access.p.id)
+    run = service.validate_run(db, _run(db, run_id), user_id=access.p.id, principal=access.p)
     db.commit()
     return _run_out(db, run)
 

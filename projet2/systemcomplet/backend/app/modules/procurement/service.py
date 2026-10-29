@@ -174,10 +174,17 @@ def decide_request(
             "Approbation réservée au(x) rôle(s) " + ", ".join(sorted({a.approver_role or "" for a in current})),
             code="APPROVAL_ROLE_REQUIRED",
         )
-    if pr.requested_by_id == principal.id and "ADMIN" not in principal.roles:
-        raise Forbidden(
-            "Séparation des tâches : le demandeur ne peut pas approuver sa demande", code="SEGREGATION_OF_DUTIES"
-        )
+    from app.core.sod import require_other_person
+
+    require_other_person(
+        db,
+        principal,
+        pr.requested_by_id,
+        "Séparation des tâches : le demandeur ne peut pas approuver sa demande",
+        resource_type="purchase_request",
+        resource_id=pr.id,
+        project_id=pr.project_id,
+    )
     mine.status = "approved" if approve else "rejected"
     mine.decided_by_id = principal.id
     mine.decided_at = utcnow()
@@ -468,14 +475,16 @@ def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
         fmt_qty,
         organization_lines,
         project_label,
-        render,
     )
+    from app.modules.documents.seals import sealed_pdf
 
     supplier = db.get(Supplier, po.supplier_id)
     project = db.get(Project, po.project_id)
+    stamps = {"draft": "BROUILLON", "pending_approval": "À APPROUVER", "cancelled": "ANNULÉ", "refused": "REFUSÉ"}
     doc = PdfDocument(
         title="BON DE COMMANDE",
         number=po.number,
+        stamp=stamps.get(po.status),
         issued_on=(po.sent_at or utcnow()).date(),
         parties=[
             company_party("Donneur d'ordre"),
@@ -524,7 +533,19 @@ def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
         signature_blocks=["Pour GLOBUS ENGINEERING — le Service achats", "Le fournisseur — « Bon pour accord »"],
         footer_note=f"BC {po.number} — confirmation via le lien sécurisé transmis.",
     )
-    return render(doc)
+    return sealed_pdf(
+        db,
+        doc,
+        kind="purchase_order",
+        entity_type="purchase_order",
+        entity_id=po.id,
+        reference=po.number,
+        title=f"Bon de commande — {supplier.legal_name}" if supplier else "Bon de commande",
+        issued_on=doc.issued_on,
+        amount=po.total,
+        currency=po.currency,
+        party=supplier.legal_name if supplier else None,
+    )
 
 
 def send_po(db: Session, po: PurchaseOrder, *, user_id: uuid.UUID, channel: str | None = None) -> dict[str, Any]:

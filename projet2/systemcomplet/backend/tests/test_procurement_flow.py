@@ -497,7 +497,7 @@ def test_procurement_exceptions(client: Any, db: Any) -> None:
     refused = client.post(
         f"{API}/procurement/requests/{own.json()['id']}/decision", headers=env["cph"], json={"approve": True}
     )
-    assert refused.status_code == 403 and refused.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
+    assert refused.status_code == 422 and refused.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
 
     # Refus fournisseur via le portail (motif obligatoire)
     pr = _approved_request(client, env, quantity=100)

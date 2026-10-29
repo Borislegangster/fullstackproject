@@ -118,7 +118,7 @@ def test_whatsapp_client_progress_pay_link_receipt_handoff_and_agent_takeover(cl
             "due_date": (date.today() + timedelta(days=7)).isoformat(),
         },
     ).json()
-    assert client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["fh"], json={}).status_code == 200
+    assert client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["vh"], json={}).status_code == 200
     drain_outbox()
     DEV_WHATSAPP_OUTBOX.clear()  # notifications d'appel de fonds déjà parties : on ne garde que la conversation
 

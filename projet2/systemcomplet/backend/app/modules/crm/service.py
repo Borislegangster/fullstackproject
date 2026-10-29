@@ -690,8 +690,8 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         fmt_money,
         fmt_qty,
         organization_lines,
-        render,
     )
+    from app.modules.documents.seals import sealed_pdf
 
     org = db.get(Organization, quote.organization_id) if quote.organization_id else None
     contact = db.get(Contact, quote.contact_id) if quote.contact_id else None
@@ -709,9 +709,17 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
     schedule = "\n".join(
         f"• {s.get('label', 'Échéance')} : {s.get('pct', 0)} %" for s in (quote.payment_schedule or [])
     )
+    studies = getattr(quote, "nature", "travaux") == "etudes"
+    stamps = {"draft": "BROUILLON", "rejected": "REFUSÉ", "expired": "EXPIRÉ", "superseded": "REMPLACÉ"}
+    accepted = (
+        [("Accepté", f"le {fmt_date(quote.accepted_at)} par {quote.accepted_by_name or 'le client'}")]
+        if quote.accepted_at
+        else []
+    )
     doc = PdfDocument(
-        title="DEVIS",
+        title="DEVIS D'ÉTUDES" if studies else "DEVIS DE TRAVAUX",
         number=f"{quote.number} (rév. {quote.revision})",
+        stamp=stamps.get(quote.status),
         issued_on=(quote.sent_at or utcnow()).date(),
         parties=[
             (
@@ -730,6 +738,7 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
             ("Nature", "Études et conception" if getattr(quote, "nature", "travaux") == "etudes" else "Travaux"),
             ("Validité de l'offre", fmt_date(quote.valid_until)),
             ("Devise", "Franc CFA (XAF)" if quote.currency == "XAF" else quote.currency),
+            *accepted,
         ],
         columns=["Désignation", "Unité", "Qté", "PU", "Total HT"],
         col_widths=[82 * 2.83465, 18 * 2.83465, 18 * 2.83465, 30 * 2.83465, 32 * 2.83465],
@@ -754,7 +763,19 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         amount_words_label="Arrêté le présent devis à la somme de",
         footer_note=f"Devis valable jusqu'au {fmt_date(quote.valid_until)} — acceptation en ligne depuis le lien reçu.",
     )
-    return render(doc)
+    return sealed_pdf(
+        db,
+        doc,
+        kind="quote",
+        entity_type="quote",
+        entity_id=quote.id,
+        reference=f"{quote.number} rév. {quote.revision}",
+        title=quote.title,
+        issued_on=doc.issued_on,
+        amount=quote.total,
+        currency=quote.currency,
+        party=(org.name if org else person),
+    )
 
 
 def send_quote(db: Session, quote: Quote, *, user_id: uuid.UUID) -> str:

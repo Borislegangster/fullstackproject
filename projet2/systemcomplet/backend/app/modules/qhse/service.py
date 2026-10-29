@@ -416,12 +416,25 @@ def complete_action(
 
 
 def verify_action(
-    db: Session, action: CorrectiveAction, *, accept: bool, comment: str | None, user_id: uuid.UUID
+    db: Session,
+    action: CorrectiveAction,
+    *,
+    accept: bool,
+    comment: str | None,
+    user_id: uuid.UUID,
+    principal: Any = None,
 ) -> CorrectiveAction:
+    from app.core.sod import require_other_person
+
     if action.status != "done":
         raise BusinessRuleError("Action non réalisée")
-    if action.responsible_id == user_id:
-        raise BusinessRuleError("Vérification par une personne distincte du responsable", code="SEGREGATION_OF_DUTIES")
+    message = "Vérification par une personne distincte du responsable"
+    if principal is not None:
+        require_other_person(
+            db, principal, action.responsible_id, message, resource_type="corrective_action", resource_id=action.id
+        )
+    elif action.responsible_id == user_id:
+        raise BusinessRuleError(message, code="SEGREGATION_OF_DUTIES")
     if accept:
         action.status = "verified"
         action.verified_by_id = user_id

@@ -31,6 +31,7 @@ def _setup(client: Any, db: Any) -> dict[str, Any]:
     ah = login(client, admin.email)
     chef, cph = as_role(client, db, "CHEF_PROJET")
     _finance, fh = as_role(client, db, "FINANCE")
+    _validator, vh = as_role(client, db, "FINANCE")  # double regard : émet ou valide ce que l'autre a préparé
     org = Organization(name="Famille Mbappe", kind="client")
     other_org = Organization(name="Autre client", kind="client")
     db.add_all([org, other_org])
@@ -60,6 +61,7 @@ def _setup(client: Any, db: Any) -> dict[str, Any]:
         "chef": chef,
         "cph": cph,
         "fh": fh,
+        "vh": vh,
         "customer": customer,
         "custh": custh,
         "strh": strh,
@@ -93,7 +95,9 @@ def test_client_dashboard_payment_decision_passport(client: Any, db: Any, operat
             "due_date": (date.today() + timedelta(days=10)).isoformat(),
         },
     ).json()
-    issued = client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["fh"], json={})
+    own = client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["fh"], json={})
+    assert own.status_code == 422 and own.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
+    issued = client.post(f"{API}/funds-calls/{call['id']}/issue", headers=env["vh"], json={})
     assert issued.status_code == 200, issued.text
 
     dashboard = client.get(f"{API}/client/projects/{project['id']}/dashboard", headers=env["custh"])

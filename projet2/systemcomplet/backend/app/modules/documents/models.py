@@ -23,6 +23,7 @@ from app.core.database import (
     fk,
     int_col,
     json_col,
+    money_col,
     str_col,
     text_col,
 )
@@ -219,6 +220,30 @@ class DocumentAccessLog(UUIDPk, Base):
     created_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now())
 
 
+class DocumentSeal(UUIDPk, Base):
+    """Sceau d'authenticité d'un document émis par la plateforme (reçu, devis, proforma, avoir, bon de commande,
+    marché, bulletin, rapport…) : le QR code du PDF renvoie vers /verification/{token}, qui affiche les données
+    essentielles du document et son statut à jour."""
+
+    __tablename__ = "document_seals"
+    __table_args__ = (UniqueConstraint("entity_type", "entity_id", "kind", name="uq_document_seals_entity_kind"),)
+
+    token: Mapped[str] = str_col(64, nullable=False, unique=True)
+    kind: Mapped[str] = str_col(40, nullable=False)
+    entity_type: Mapped[str] = str_col(40, nullable=False)
+    entity_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    reference: Mapped[str | None] = str_col(80)
+    title: Mapped[str | None] = str_col(250)
+    issued_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    amount: Mapped[Any] = money_col(nullable=True, default=None)
+    currency: Mapped[str | None] = str_col(3)
+    party: Mapped[str | None] = str_col(250)
+    sha256: Mapped[str | None] = str_col(64)
+    revoked_at: Mapped[datetime | None] = dt_col()
+    created_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now(), onupdate=utcnow)
+
+
 __all__ = [
     "DOC_TYPES",
     "VERSION_STATUSES",
@@ -227,6 +252,7 @@ __all__ = [
     "DocumentApprovalStep",
     "DocumentLink",
     "DocumentPermission",
+    "DocumentSeal",
     "DocumentVersion",
     "Folder",
     "Signature",

@@ -700,6 +700,7 @@ export const BODIES: Record<string, BodyDef> = {
   "POST /projects": {"type":"json","schema":"ProjectIn"},
   "PATCH /projects/{project_id}": {"type":"json","schema":null},
   "POST /projects/{project_id}/archive": {"type":"json","schema":null},
+  "POST /projects/{project_id}/restore": {"type":"json","schema":null},
   "POST /projects/{project_id}/members": {"type":"json","schema":"MemberIn"},
   "POST /sites": {"type":"json","schema":"SiteCreate"},
   "PATCH /sites/{item_id}": {"type":"json","schema":"SiteUpdate"},

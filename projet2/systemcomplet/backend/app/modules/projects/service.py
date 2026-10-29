@@ -352,10 +352,22 @@ def approved_changes_total(db: Session, project_id: uuid.UUID) -> Decimal:
 
 
 def transition_change_order(
-    db: Session, co: ChangeOrder, target: str, *, user_id: uuid.UUID, client: bool = False
+    db: Session, co: ChangeOrder, target: str, *, user_id: uuid.UUID, client: bool = False, principal: Any = None
 ) -> ChangeOrder:
     if target not in CO_TRANSITIONS.get(co.status, set()):
         raise BusinessRuleError(f"Transition {co.status} → {target} interdite", code="INVALID_TRANSITION")
+    if target == "approved" and principal is not None:
+        from app.core.sod import require_other_person
+
+        require_other_person(
+            db,
+            principal,
+            co.created_by_id,
+            "Double regard : l'avenant est approuvé par une autre personne que celle qui l'a établi",
+            resource_type="change_order",
+            resource_id=co.id,
+            project_id=co.project_id,
+        )
     if client and target not in ("client_approved", "rejected"):
         raise BusinessRuleError("Action non permise au client")
     previous = co.status

@@ -23,7 +23,7 @@ from app.core.errors import BusinessRuleError, NotFound
 from app.core.idempotency import Idempotency, idempotency
 from app.core.middleware import client_ip
 from app.core.utils import jsonable, money
-from app.modules.billing.models import ClientInvoice
+from app.modules.billing.models import ClientInvoice, CreditNote
 from app.modules.finance.models import FundsCall, Payment, PaymentAllocation
 from app.modules.projects.models import (
     ChangeOrder,
@@ -599,9 +599,32 @@ def finances(
                     "status": i.status,
                     "issue_date": i.issue_date,
                     "due_date": i.due_date,
+                    "kind": i.kind,
                     "pdf_url": signed_url(i.pdf_file_id, user_id=access.p.id, ttl=900) if i.pdf_file_id else None,
                 }
                 for i in invoices
+            ],
+            # Factures d'avoir (notes de crédit) émises sur mes factures.
+            "credit_notes": [
+                {
+                    "id": n.id,
+                    "number": n.number,
+                    "amount": n.amount,
+                    "currency": n.currency,
+                    "issue_date": n.issue_date,
+                    "reason": n.reason,
+                    "invoice_number": next((i.number for i in invoices if i.id == n.client_invoice_id), None),
+                    "pdf_url": f"/api/v1/credit-notes/{n.id}/pdf",
+                }
+                for n in db.execute(
+                    select(CreditNote)
+                    .where(
+                        CreditNote.project_id == project.id,
+                        CreditNote.side == "client",
+                        CreditNote.status != "cancelled",
+                    )
+                    .order_by(CreditNote.issue_date)
+                ).scalars()
             ],
             "payments": [
                 {

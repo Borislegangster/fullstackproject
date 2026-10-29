@@ -523,9 +523,23 @@ def request_leave(
     return row
 
 
-def decide_leave(db: Session, leave: LeaveRequest, *, approve: bool, user_id: uuid.UUID) -> LeaveRequest:
+def decide_leave(
+    db: Session, leave: LeaveRequest, *, approve: bool, user_id: uuid.UUID, principal: Any = None
+) -> LeaveRequest:
+    from app.core.sod import require_other_person
+
     if leave.status != "pending":
         raise BusinessRuleError("Demande déjà traitée")
+    if principal is not None:
+        employee = db.get(Employee, leave.employee_id)
+        require_other_person(
+            db,
+            principal,
+            employee.user_id if employee else None,
+            "Double regard : une demande de congé est décidée par une autre personne que le salarié",
+            resource_type="leave_request",
+            resource_id=leave.id,
+        )
     leave.status = "approved" if approve else "rejected"
     leave.decided_by_id = user_id
     leave.decided_at = utcnow()
@@ -764,6 +778,7 @@ def compute_run(db: Session, run: PayrollRun, *, user_id: uuid.UUID) -> PayrollR
     run.parameters = params
     run.status = "computed"
     run.computed_at = utcnow()
+    run.computed_by_id = user_id
     db.flush()
     audit.record(
         db,
@@ -838,7 +853,8 @@ def _unpaid_from_item(employee: Employee, item: PayrollItem, divisor: Decimal) -
 
 
 def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
-    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_money, render
+    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_money
+    from app.modules.documents.seals import sealed_pdf
 
     employee = db.get(Employee, item.employee_id)
     rows = [
@@ -878,16 +894,38 @@ def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
         signature_blocks=["Pour l'employeur", "Le salarié"],
         footer_note="Document confidentiel — à conserver sans limitation de durée.",
     )
-    return render(doc)
+    return sealed_pdf(
+        db,
+        doc,
+        kind="payslip",
+        entity_type="payroll_item",
+        entity_id=item.id,
+        reference=f"{run.number}-{employee.matricule}",
+        title=f"Bulletin de paie — période {run.period}",
+        issued_on=doc.issued_on,
+        amount=item.net,
+        currency="XAF",
+        party=employee.full_name,
+    )
 
 
-def validate_run(db: Session, run: PayrollRun, *, user_id: uuid.UUID) -> PayrollRun:
+def validate_run(db: Session, run: PayrollRun, *, user_id: uuid.UUID, principal: Any = None) -> PayrollRun:
     """Validation : bulletins PDF chiffrés, documents RH, coûts main d'œuvre imputés aux projets."""
     from app.core.files import store_generated
+    from app.core.sod import require_other_person
     from app.modules.finance.service import record_expense
 
     if run.status != "computed":
         raise BusinessRuleError("La paie doit être calculée avant validation")
+    if principal is not None:
+        require_other_person(
+            db,
+            principal,
+            run.computed_by_id,
+            "Double regard : la paie est validée par une autre personne que celle qui l'a calculée",
+            resource_type="payroll_run",
+            resource_id=run.id,
+        )
     if not (run.parameters or {}).get("reviewed"):
         raise BusinessRuleError(
             "Paramètres de paie non revus par le cabinet comptable (Paramètres → Paie)",

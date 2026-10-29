@@ -671,10 +671,17 @@ def approve_order(
     access.require_project(po.project_id, "procurement:approve")
     if po.status != "pending_approval":
         raise BusinessRuleError("Bon de commande non soumis à approbation")
-    if po.created_by_id == access.p.id and "ADMIN" not in access.p.roles:
-        raise Forbidden(
-            "Séparation des tâches : l'émetteur ne peut pas approuver sa commande", code="SEGREGATION_OF_DUTIES"
-        )
+    from app.core.sod import require_other_person
+
+    require_other_person(
+        db,
+        access.p,
+        po.created_by_id,
+        "Séparation des tâches : l'émetteur ne peut pas approuver sa commande",
+        resource_type="purchase_order",
+        resource_id=po.id,
+        project_id=po.project_id,
+    )
     po.status = "approved"
     po.approved_by_id = access.p.id
     po.approved_at = utcnow()

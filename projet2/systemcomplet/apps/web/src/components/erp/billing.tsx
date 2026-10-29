@@ -26,11 +26,19 @@ const SUPPLIER_INVOICE_STATUSES = ["received", "matching", "matched", "exception
 const FUNDS_CALL_STATUSES = ["draft", "issued", "partially_paid", "paid", "overdue", "cancelled"];
 const INVOICE_KINDS = [
   { value: "invoice", label: "Facture" },
-  { value: "deposit", label: "Acompte" },
-  { value: "progress", label: "Situation / avancement" },
-  { value: "final", label: "Décompte final" },
-  { value: "studies", label: "Études et conception" },
+  { value: "deposit", label: "Facture d'acompte" },
+  { value: "progress", label: "Facture de situation (appel de fonds)" },
+  { value: "final", label: "Facture de solde (décompte final)" },
+  { value: "studies", label: "Facture d'études" },
 ];
+
+/** Catégorie d'une facture client : proforma tant qu'elle est en brouillon, définitive une fois validée. */
+function invoiceCategory(r: Row): string {
+  if (r.status === "draft") return "Proforma (brouillon)";
+  if (r.status === "cancelled") return "Annulée";
+  const kind = INVOICE_KINDS.find((k) => k.value === r.kind)?.label ?? "Facture";
+  return `${kind} définitive`;
+}
 
 function PaymentsMini({ payments }: { payments?: Row[] }) {
   if (!payments?.length) return <p className="text-sm text-muted">Aucun règlement imputé.</p>;
@@ -101,14 +109,14 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
       embedded
       config={{
         title: "Factures clients",
-        subtitle: "Brouillon → validation → envoi (notification espace client) → règlement en ligne ou manuel → avoir éventuel.",
+        subtitle: "Proforma (brouillon) → validation par une autre personne (facture définitive, PDF et QR) → envoi → règlement → facture d'avoir éventuelle.",
         path: "/client-invoices",
         query: { project_id: projectId },
         exportDataset: "client_invoices",
         columns: [
           { key: "number", label: "N°" },
           { key: "title", label: "Objet" },
-          { key: "kind", label: "Type", render: (r) => INVOICE_KINDS.find((k) => k.value === r.kind)?.label ?? optionLabel(r.kind), hideOnMobile: true },
+          { key: "kind", label: "Catégorie", render: (r) => invoiceCategory(r), hideOnMobile: true },
           { key: "issue_date", label: "Émise le", format: "date", sortable: true },
           { key: "due_date", label: "Échéance", format: "date" },
           { key: "total", label: "TTC", format: "money", align: "right", sortable: true },
@@ -135,7 +143,7 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
             <DescriptionList
               items={[
                 { label: "Objet", value: r.title },
-                { label: "Type", value: INVOICE_KINDS.find((k) => k.value === r.kind)?.label ?? r.kind },
+                { label: "Catégorie", value: invoiceCategory(r) },
                 { label: "Émise / échéance", value: `${date(r.issue_date)} · ${date(r.due_date)}` },
                 { label: "HT / TVA / TTC", value: `${money(r.subtotal)} / ${money(r.tax_amount)} / ${money(r.total)}` },
                 { label: "Payé", value: money(r.amount_paid) },
@@ -144,9 +152,9 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
                 { label: "Statut", value: <StatusBadge status={r.status} /> },
               ]}
             />
-            {r.pdf_file_id ? (
+            {r.pdf_file_id || r.status === "draft" ? (
               <a href={apiUrl(`/client-invoices/${r.id}/pdf`)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline">
-                <Download className="h-4 w-4" /> Facture PDF
+                <Download className="h-4 w-4" /> {r.status === "draft" ? "Facture proforma (PDF)" : "Facture définitive (PDF)"}
               </a>
             ) : null}
             <table className="min-w-full text-sm">
@@ -187,10 +195,13 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
             ) : null}
             {((r.credit_notes ?? []) as Row[]).length ? (
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase text-muted">Avoirs</p>
+                <p className="mb-1 text-xs font-semibold uppercase text-muted">Factures d&apos;avoir</p>
                 {(r.credit_notes as Row[]).map((n) => (
                   <p key={n.id} className="text-sm">
-                    {n.number} · {money(n.amount)} · {n.reason}
+                    {n.number} · {money(n.amount)} · {n.reason} ·{" "}
+                    <a href={apiUrl(`/credit-notes/${n.id}/pdf`)} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
+                      PDF
+                    </a>
                   </p>
                 ))}
               </div>
@@ -215,9 +226,18 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
             fields: { lines: { columns: ["designation", "unit", "quantity", "unit_price"] }, notes: { widget: "textarea" } },
             success: "Brouillon mis à jour",
           },
-          { key: "validate", label: "Valider", path: (r) => `/client-invoices/${r.id}/validate`, when: (r) => r.status === "draft", perms: ["billing:validate"], confirm: "Valider cette facture ? Elle ne sera plus modifiable et son PDF sera généré.", success: "Facture validée" },
+          {
+            key: "validate",
+            label: "Valider (facture définitive)",
+            path: (r) => `/client-invoices/${r.id}/validate`,
+            when: (r) => r.status === "draft",
+            perms: ["billing:validate"],
+            confirm: "Valider cette proforma ? Elle devient la facture définitive (non modifiable, PDF et QR d'authenticité). Double regard : une autre personne que celle qui l'a préparée doit valider.",
+            success: "Facture validée",
+          },
           { key: "send", label: "Envoyer au client", path: (r) => `/client-invoices/${r.id}/send`, when: (r) => r.status === "validated", perms: ["billing:write"], confirm: "Envoyer la facture ? Le client est notifié dans son espace et peut régler en ligne.", success: "Facture envoyée" },
-          { key: "pdf", label: "PDF", when: (r) => !!r.pdf_file_id, run: (r) => window.open(apiUrl(`/client-invoices/${r.id}/pdf`), "_blank", "noopener") },
+          { key: "pdf", label: "PDF", when: (r) => !!r.pdf_file_id && r.status !== "draft", run: (r) => window.open(apiUrl(`/client-invoices/${r.id}/pdf`), "_blank", "noopener") },
+          { key: "proforma", label: "Proforma (PDF)", when: (r) => r.status === "draft", run: (r) => window.open(apiUrl(`/client-invoices/${r.id}/pdf`), "_blank", "noopener") },
           {
             key: "remind",
             label: "Relancer le client",
@@ -245,7 +265,7 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
             fields: RECEIPT_FIELDS,
             success: RECEIPT_SUCCESS,
           },
-          { key: "credit", label: "Émettre un avoir", endpoint: "POST /client-invoices/{invoice_id}/credit-notes", when: (r) => ["validated", "sent", "partially_paid", "overdue", "paid"].includes(r.status), perms: ["billing:validate"], tone: "danger", success: "Avoir émis" },
+          { key: "credit", label: "Émettre une facture d'avoir", endpoint: "POST /client-invoices/{invoice_id}/credit-notes", when: (r) => ["validated", "sent", "partially_paid", "overdue", "paid"].includes(r.status), perms: ["billing:validate"], tone: "danger", success: "Facture d'avoir émise (PDF disponible)" },
           { key: "cancel", label: "Annuler la facture", endpoint: "POST /client-invoices/{invoice_id}/cancel", when: (r) => ["draft", "validated"].includes(r.status), perms: ["billing:validate"], tone: "danger", fields: { reason: { widget: "textarea", label: "Motif de l'annulation" } }, success: "Facture annulée" },
         ],
       }}
@@ -301,7 +321,7 @@ export function FundsCallsList({ projectId }: { projectId?: string }) {
             path: (r) => `/funds-calls/${r.id}/issue`,
             when: (r) => r.status === "draft",
             perms: ["billing:write"],
-            confirm: "Émettre l'appel de fonds ? Une facture d'acompte (TVA 19,25 %) est générée et le client est notifié.",
+            confirm: "Émettre l'appel de fonds ? Sa facture définitive (TVA 19,25 %, PDF et QR) est générée et le client est notifié. Double regard : une autre personne que celle qui l'a préparé doit l'émettre.",
             body: () => ({ tax_rate: 19.25 }),
             success: "Appel de fonds émis",
           },
@@ -759,10 +779,22 @@ export function CreditNotesList() {
     <ResourceView
       embedded
       config={{
-        title: "Avoirs",
+        title: "Factures d'avoir (notes de crédit)",
         path: "/credit-notes",
         columns: [
           { key: "number", label: "N°" },
+          {
+            key: "pdf",
+            label: "PDF",
+            render: (r) =>
+              r.side === "client" ? (
+                <a href={apiUrl(`/credit-notes/${r.id}/pdf`)} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
+                  Facture d&apos;avoir
+                </a>
+              ) : (
+                "—"
+              ),
+          },
           { key: "side", label: "Côté", render: (r) => (r.side === "client" ? "Client" : "Fournisseur") },
           { key: "issue_date", label: "Date", format: "date" },
           { key: "amount", label: "Montant", format: "money", align: "right" },

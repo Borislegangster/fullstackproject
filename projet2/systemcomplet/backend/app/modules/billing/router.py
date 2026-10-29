@@ -148,7 +148,7 @@ def validate_invoice(
     if invoice is None:
         raise NotFound("Facture introuvable")
     _require_project_finance(access, invoice.project_id, "billing:validate")
-    service.validate_invoice(db, invoice, user_id=access.p.id)
+    service.validate_invoice(db, invoice, user_id=access.p.id, principal=access.p)
     db.commit()
     return _client_invoice_out(invoice)
 
@@ -197,6 +197,11 @@ def cancel_invoice(
     invoice = _load(db, ClientInvoice, invoice_id, "Facture")
     _require_project_finance(access, invoice.project_id, "billing:validate")
     lifecycle.cancel_invoice(db, invoice, reason=data.reason, user_id=access.p.id)
+    from app.modules.documents.seals import revoke
+
+    revoke(db, entity_type="client_invoice", entity_id=invoice.id)  # proforma éventuelle : n'est plus valable
+    if invoice.pdf_file_id:
+        service.invoice_pdf(db, invoice)  # PDF définitif réédité avec le tampon « ANNULÉE »
     db.commit()
     return _client_invoice_out(invoice)
 
@@ -229,13 +234,29 @@ def invoice_reminders(
 
 @router.get("/client-invoices/{invoice_id}/pdf")
 def invoice_pdf(invoice_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)) -> Response:
+    """PDF de la facture : définitive une fois validée ; tant qu'elle est en brouillon, facture PROFORMA (équipe)."""
     invoice = db.get(ClientInvoice, invoice_id)
-    if invoice is None or not invoice.pdf_file_id:
+    if invoice is None or invoice.deleted_at is not None:
         raise NotFound("PDF indisponible")
     if access.p.is_client:
         access.require_project(invoice.project_id)
+        if invoice.status == "draft" or not invoice.pdf_file_id:
+            raise NotFound("PDF indisponible")
     else:
         _require_project_finance(access, invoice.project_id, "billing:read")
+    if invoice.status == "draft":
+        data = service.proforma_pdf(db, invoice)
+        db.commit()
+        return Response(
+            data,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'inline; filename="proforma-{invoice.number}.pdf"',
+                "Cache-Control": "private, no-store",
+            },
+        )
+    if not invoice.pdf_file_id:
+        raise NotFound("PDF indisponible")
     return file_response(db.get(StoredFile, invoice.pdf_file_id))
 
 
@@ -286,8 +307,29 @@ def credit_client_invoice(
     note = service.issue_credit_note(
         db, side="client", amount=data.amount, reason=data.reason, user_id=access.p.id, client_invoice=invoice
     )
+    service.credit_note_pdf(db, note)  # facture d'avoir : PDF scellé (QR d'authenticité)
     db.commit()
     return jsonable(serialize(note))
+
+
+@router.get("/credit-notes/{note_id}/pdf")
+def credit_note_pdf(
+    note_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> Response:
+    """Facture d'avoir (côté client) : équipe finance, ou client du projet concerné."""
+    note = db.get(CreditNote, note_id)
+    if note is None or note.side != "client":
+        raise NotFound("Avoir introuvable")
+    if access.p.is_client:
+        access.require_project(note.project_id)
+    else:
+        _require_project_finance(access, note.project_id, "billing:read")
+    if not note.file_id:
+        service.credit_note_pdf(db, note)  # avoir émis avant la génération des PDF d'avoir
+        db.commit()
+    if not note.file_id:
+        raise NotFound("PDF indisponible")
+    return file_response(db.get(StoredFile, note.file_id))
 
 
 @router.get("/credit-notes")

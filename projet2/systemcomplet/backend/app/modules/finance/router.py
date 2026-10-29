@@ -113,7 +113,7 @@ def approve_budget(
     if budget is None:
         raise NotFound("Budget introuvable")
     _require_project_finance(access, budget.project_id, "finance:approve")
-    service.approve_budget(db, budget, user_id=access.p.id)
+    service.approve_budget(db, budget, user_id=access.p.id, principal=access.p)
     db.commit()
     return _budget_out(budget)
 
@@ -369,7 +369,9 @@ def validate_cash_tx(
         raise NotFound("Opération introuvable")
     fund = db.get(PettyCashFund, tx.fund_id)
     _require_project_finance(access, fund.project_id if fund else None, "finance:approve")
-    service.validate_petty_cash(db, tx, user_id=access.p.id, approve=bool(data.get("approve", True)))
+    service.validate_petty_cash(
+        db, tx, user_id=access.p.id, approve=bool(data.get("approve", True)), principal=access.p
+    )
     db.commit()
     return jsonable(serialize(tx))
 
@@ -447,6 +449,7 @@ def issue_funds_call(
         call,
         user_id=access.p.id,
         tax_rate=data.tax_rate if data.tax_rate is not None else Decimal(str(settings.VAT_RATE)),
+        principal=access.p,
     )
     db.commit()
     return jsonable(serialize(call))

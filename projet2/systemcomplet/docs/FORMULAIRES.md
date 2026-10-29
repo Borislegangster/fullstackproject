@@ -3,7 +3,7 @@
 > Généré automatiquement depuis le code (`node apps/web/scripts/forms-inventory.mjs`) — ne pas modifier à la main.
 > Chaque formulaire : où il se trouve, le bouton qui l'ouvre, le titre de la fenêtre, puis ses champs **dans l'ordre affiché**, avec leur libellé exact. **Oui** = champ obligatoire (marqué d'un astérisque rouge à l'écran).
 
-312 formulaires.
+313 formulaires.
 
 ## `/activation`
 
@@ -1971,7 +1971,7 @@ Bouton **Nouvelle facture** · fenêtre « Nouvelle facture » · validation : *
 | 1 | Projet |  | liste des projets |  |
 | 2 | Client (organisation) |  | liste des organisations clientes |  |
 | 3 | Contrat |  | liste |  |
-| 4 | Type |  | liste : Facture · Acompte · Situation / avancement · Décompte final · Études et conception |  |
+| 4 | Type |  | liste : Facture · Facture d'acompte · Facture de situation (appel de fonds) · Facture de solde (décompte final) · Facture d'études |  |
 | 5 | Titre | **Oui** | texte (250 car. max, 2 car. min) |  |
 | 6 | Date d'émission | **Oui** | date |  |
 | 7 | Date d'échéance |  | date |  |
@@ -1995,7 +1995,7 @@ Bouton **Modifier le brouillon (dans la fiche)** · fenêtre « Modifier le brou
 
 ### Factures clients — Action avec confirmation
 
-Bouton **Valider (dans la fiche)** · fenêtre « confirmation » · validation : **Confirmer** · `(r) => `/client-invoices/${r.id}/validate`` · composant `ClientInvoicesList`
+Bouton **Valider (facture définitive) (dans la fiche)** · fenêtre « confirmation » · validation : **Confirmer** · `(r) => `/client-invoices/${r.id}/validate`` · composant `ClientInvoicesList`
 
 _Aucun champ à saisir (confirmation simple)._
 
@@ -2008,6 +2008,12 @@ _Aucun champ à saisir (confirmation simple)._
 ### Factures clients — Action avec confirmation
 
 Bouton **PDF (dans la fiche)** · fenêtre « confirmation » · validation : **Confirmer** · composant `ClientInvoicesList`
+
+_Aucun champ à saisir (confirmation simple)._
+
+### Factures clients — Action avec confirmation
+
+Bouton **Proforma (PDF) (dans la fiche)** · fenêtre « confirmation » · validation : **Confirmer** · composant `ClientInvoicesList`
 
 _Aucun champ à saisir (confirmation simple)._
 
@@ -2038,7 +2044,7 @@ Bouton **Enregistrer un encaissement (dans la fiche)** · fenêtre « Enregistre
 
 ### Factures clients — Action
 
-Bouton **Émettre un avoir (dans la fiche)** · fenêtre « Émettre un avoir » · validation : **Émettre un avoir** · `POST /client-invoices/{invoice_id}/credit-notes` · composant `ClientInvoicesList`
+Bouton **Émettre une facture d'avoir (dans la fiche)** · fenêtre « Émettre une facture d'avoir » · validation : **Émettre une facture d'avoir** · `POST /client-invoices/{invoice_id}/credit-notes` · composant `ClientInvoicesList`
 
 | # | Champ | Obligatoire | Saisie | Aide affichée |
 | --- | --- | --- | --- | --- |

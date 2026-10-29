@@ -359,7 +359,8 @@ def generate(
 
 def _pdf(db: Session, report: ExecutiveReport) -> Any:
     from app.core.files import store_generated
-    from app.core.pdf import PdfDocument, render
+    from app.core.pdf import PdfDocument
+    from app.modules.documents.seals import sealed_pdf
 
     d, n = report.data, report.narrative
     f, c, p = d["finance"], d["commercial"], d["projects"]
@@ -394,7 +395,16 @@ def _pdf(db: Session, report: ExecutiveReport) -> Any:
     )
     return store_generated(
         db,
-        render(doc),
+        sealed_pdf(
+            db,
+            doc,
+            kind="executive_report",
+            entity_type="executive_report",
+            entity_id=report.id,
+            reference=report.number,
+            title=f"Rapport de direction du {report.period_start:%d/%m/%Y} au {report.period_end:%d/%m/%Y}",
+            issued_on=doc.issued_on,
+        ),
         filename=f"{report.number}.pdf",
         mime="application/pdf",
         purpose="executive_reports",

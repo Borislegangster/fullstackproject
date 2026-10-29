@@ -17,7 +17,8 @@ Menu **Finances** : budget, appels de fonds, factures, paiements et reçus.
 
 - Indicateurs : **Montant du contrat (avenants non inclus)**, **Avenants approuvés** (facturés séparément), **Appelé** (et reste à appeler sur le contrat), **Payé**, **À régler** (et appels en retard), barre **Part du contrat réglée**.
 - **Appels de fonds** : numéro, **Objet**, **Échéance**, **Montant**, **Payé**, **Statut**.
-- **Factures** : numéro, montant, échéance, statut ; l'icône de téléchargement ouvre le PDF.
+- **Factures** : numéro, catégorie (facture, facture d'acompte, facture d'appel de fonds, facture de solde, facture d'études), montant, échéance, statut ; l'icône de téléchargement ouvre le PDF définitif. Les **Factures d'avoir** (notes de crédit) émises sur vos factures sont listées dessous, chacune avec son PDF.
+- Chaque document (facture, reçu, avoir, devis…) porte un **QR code d'authenticité** : scannez-le pour vérifier sur le site GLOBUS qu'il est authentique et voir son statut à jour.
 - **Paiements et reçus** : chaque paiement avec son moyen, sa date, son statut ; **Reçu** télécharge le reçu. Un règlement fait hors ligne (virement, chèque, espèces, dépôt Mobile Money direct) y apparaît, avec son reçu, dès que GLOBUS l'a vérifié ; l'appel de fonds ou la facture passe alors « Payé » (ou « Partiellement payé »).
 
 ::: perm client:pay

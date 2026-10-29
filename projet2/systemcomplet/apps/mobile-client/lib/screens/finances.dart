@@ -165,7 +165,8 @@ class _FinancesScreenState extends State<FinancesScreen> {
                             return _PieceTile(
                               icon: Icons.description_outlined,
                               title: '${i.s('number')}${i.has('title') ? ' — ${i.s('title')}' : ''}',
-                              subtitle: '${money(i['total'], c)} · émise le ${date(i['issue_date'])} · échéance ${date(i['due_date'])}',
+                              subtitle:
+                                  '${_invoiceCategories[i.s('kind')] ?? 'Facture'} · ${money(i['total'], c)} · émise le ${date(i['issue_date'])} · échéance ${date(i['due_date'])}',
                               status: i.s('status'),
                               actions: [
                                 if (i.has('pdf_url'))
@@ -185,6 +186,29 @@ class _FinancesScreenState extends State<FinancesScreen> {
                     ],
                   ),
                 ),
+                if (d.list('credit_notes').isNotEmpty)
+                  SectionCard(
+                    title: "Factures d'avoir",
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        for (final n in d.list('credit_notes'))
+                          _PieceTile(
+                            icon: Icons.assignment_return_outlined,
+                            title: '${n.s('number')} — avoir sur la facture ${n.str('invoice_number') ?? '—'}',
+                            subtitle: '− ${money(n['amount'], c)} · le ${date(n['issue_date'])} · ${n.s('reason')}',
+                            status: 'issued',
+                            actions: [
+                              IconButton(
+                                tooltip: "Télécharger la facture d'avoir",
+                                onPressed: () => openRemoteFile(context, n.s('pdf_url'), filename: 'avoir-${n.s('number')}.pdf'),
+                                icon: const Icon(Icons.download_outlined),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
                 SectionCard(
                   title: 'Paiements et reçus',
                   padding: EdgeInsets.zero,
@@ -232,6 +256,15 @@ class _PlanButton extends StatelessWidget {
     return TextButton(onPressed: onTap, child: const Text('Échelonner'));
   }
 }
+
+/// Catégories des factures définitives remises au client.
+const _invoiceCategories = {
+  'invoice': 'Facture',
+  'deposit': "Facture d'acompte",
+  'progress': "Facture d'appel de fonds",
+  'final': 'Facture de solde',
+  'studies': "Facture d'études",
+};
 
 class _PieceTile extends StatelessWidget {
   const _PieceTile({required this.icon, required this.title, required this.subtitle, required this.status, this.actions = const []});

@@ -353,9 +353,17 @@ def on_contract_signed(db: Session, contract: Any) -> Referral | None:
 def approve(db: Session, referral: Referral, *, principal: Any) -> Referral:
     if referral.status != "signed":
         raise BusinessRuleError("Prime non validable (statut)", code="REFERRAL_STATUS")
+    from app.core.sod import require_other_person
+
     ambassador = db.get(Ambassador, referral.ambassador_id)
-    if ambassador and ambassador.user_id == principal.id:
-        raise BusinessRuleError("Séparation des tâches : un ambassadeur ne valide pas sa propre prime")
+    require_other_person(
+        db,
+        principal,
+        ambassador.user_id if ambassador else None,
+        "Séparation des tâches : un ambassadeur ne valide pas sa propre prime",
+        resource_type="referral",
+        resource_id=referral.id,
+    )
     referral.status = "approved"
     referral.approved_by_id = principal.id
     referral.approved_at = utcnow()

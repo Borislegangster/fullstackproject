@@ -642,7 +642,7 @@ def verify_action(
 ) -> dict[str, Any]:
     access.require("qhse:write")
     action = _action(db, access, action_id)
-    service.verify_action(db, action, accept=data.accept, comment=data.comment, user_id=access.p.id)
+    service.verify_action(db, action, accept=data.accept, comment=data.comment, user_id=access.p.id, principal=access.p)
     db.commit()
     return jsonable(serialize(action))
 

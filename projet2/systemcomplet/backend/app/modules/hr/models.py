@@ -141,6 +141,7 @@ class PayrollRun(UUIDPk, Timestamps, Base):
     total_net: Mapped[Decimal] = money_col()
     parameters: Mapped[dict[str, Any]] = json_col(dict)  # taux de cotisations utilisés (traçabilité)
     computed_at: Mapped[datetime | None] = dt_col()
+    computed_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)  # double regard : calcul ≠ validation
     validated_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)
     validated_at: Mapped[datetime | None] = dt_col()
     paid_at: Mapped[datetime | None] = dt_col()

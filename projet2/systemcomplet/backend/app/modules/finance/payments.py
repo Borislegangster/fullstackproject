@@ -380,13 +380,18 @@ def approve_offline_receipt(db: Session, payment: Payment, *, principal: Any) ->
     """Double regard : une autre personne que l'auteur de la saisie confirme l'encaissement ; mêmes effets qu'un
     paiement en ligne confirmé (pièce réglée, séquestre, reçu PDF, notification client, événements)."""
     from app.core.pdf import fmt_money
+    from app.core.sod import require_other_person
 
     _offline_receipt(payment)
-    if payment.initiated_by_id == principal.id:
-        raise BusinessRuleError(
-            "Double regard : l'encaissement doit être approuvé par une autre personne que celle qui l'a saisi",
-            code="SEGREGATION_OF_DUTIES",
-        )
+    require_other_person(
+        db,
+        principal,
+        payment.initiated_by_id,
+        "Double regard : l'encaissement doit être approuvé par une autre personne que celle qui l'a saisi",
+        resource_type="payment",
+        resource_id=payment.id,
+        project_id=payment.project_id,
+    )
     for allocation in payment.allocations:
         obj = _target(db, allocation.target_type, allocation.target_id)
         if obj.status in ("cancelled", "credited"):
@@ -803,7 +808,8 @@ def _counterparty_lines(db: Session, payment: Payment) -> list[str]:
 
 def _receipt(db: Session, payment: Payment) -> None:
     from app.core.files import store_generated
-    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_date, fmt_money, project_label, render
+    from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_date, fmt_money, project_label
+    from app.modules.documents.seals import sealed_pdf
     from app.modules.projects.models import Project
 
     offline = payment.direction == "in" and payment.provider == "manual"
@@ -836,9 +842,22 @@ def _receipt(db: Session, payment: Payment) -> None:
         signature_blocks=["Pour GLOBUS ENGINEERING — le Service financier"],
         footer_note="Reçu émis automatiquement après confirmation du paiement — à conserver comme justificatif.",
     )
+    data = sealed_pdf(
+        db,
+        doc,
+        kind="receipt" if incoming else "payment_notice",
+        entity_type="payment",
+        entity_id=payment.id,
+        reference=payment.number,
+        title=doc.title.capitalize(),
+        issued_on=doc.issued_on,
+        amount=payment.amount,
+        currency=payment.currency,
+        party=payment.counterparty_label,
+    )
     stored = store_generated(
         db,
-        render(doc),
+        data,
         filename=f"recu-{payment.number}.pdf",
         mime="application/pdf",
         purpose="receipts",
@@ -973,10 +992,17 @@ def approve_outgoing(db: Session, payment: Payment, *, principal: Any, override_
     role = required_approval_role(db, Decimal(payment.amount))
     if role and role not in principal.roles and "ADMIN" not in principal.roles:
         raise BusinessRuleError(f"Approbation réservée au rôle {role}", code="APPROVAL_ROLE_REQUIRED")
-    if payment.initiated_by_id == principal.id and "ADMIN" not in principal.roles:
-        raise BusinessRuleError(
-            "Séparation des tâches : l'initiateur ne peut pas approuver son paiement", code="SEGREGATION_OF_DUTIES"
-        )
+    from app.core.sod import require_other_person
+
+    require_other_person(
+        db,
+        principal,
+        payment.initiated_by_id,
+        "Séparation des tâches : l'initiateur ne peut pas approuver son paiement",
+        resource_type="payment",
+        resource_id=payment.id,
+        project_id=payment.project_id,
+    )
     from app.modules.ai.controls import clear_payment
 
     clear_payment(db, payment, principal=principal, override_reason=override_reason)  # contrôle interne (A5)

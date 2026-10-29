@@ -141,7 +141,7 @@ def test_studies_first_then_paid_deliverables_then_works_contract_on_same_projec
     )
     assert invoice.status_code == 201, invoice.text
     invoice = invoice.json()
-    client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=fh)
+    client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=ah)  # super administrateur
     linked = client.post(
         f"{API}/projects/{project_id}/deliverables/link-invoice", headers=ah, json={"invoice_id": invoice["id"]}
     )

@@ -10,7 +10,14 @@ export const metadata: Metadata = { title: "Vérification d'authenticité", robo
 
 interface VerifyResult {
   valid: boolean;
-  type?: "document" | "invoice" | "proof";
+  type?: "document" | "invoice" | "proof" | "sealed";
+  // document scellé (reçu, devis, proforma, avoir, bon de commande, marché, bulletin…)
+  kind?: string;
+  kind_label?: string;
+  issued_on?: string | null;
+  amount?: string | null;
+  party?: string | null;
+  note?: string | null;
   message?: string | null;
   code?: string | null;
   title?: string;
@@ -72,6 +79,7 @@ export default async function VerificationPage({ params }: { params: Promise<{ t
   const { token } = await params;
   const r = await publicGetSafe<VerifyResult>(`/public/verify/${encodeURIComponent(token)}`, { valid: false, message: "Vérification momentanément indisponible." }, undefined, { fresh: true });
   if (r.type === "proof") return <ProofView r={r} code={token} />;
+  if (r.type === "sealed") return <SealedView r={r} />;
   return (
     <section className="bg-surface py-16 lg:py-24">
       <div className="container-page max-w-2xl">
@@ -126,6 +134,34 @@ export default async function VerificationPage({ params }: { params: Promise<{ t
           ) : null}
           {r.is_obsolete ? <p className="mt-6 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Une version plus récente de ce document a été publiée : ne l'utilisez plus pour l'exécution.</p> : null}
           {r.valid && r.type === "document" && r.sha256 ? <ProofFileCheck sha256={r.sha256} leaves={[]} /> : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Document émis par GLOBUS et scellé (QR) : nature, numéro, date, montant, partie (masquée) et statut à jour. */
+function SealedView({ r }: { r: VerifyResult }) {
+  const revoked = Boolean(r.revoked);
+  return (
+    <section className="bg-surface py-16 lg:py-24">
+      <div className="container-page max-w-2xl">
+        <div className="rounded-2xl bg-white p-8 text-center shadow-[var(--shadow-card)] ring-1 ring-line">
+          {revoked ? <XCircle className="mx-auto h-14 w-14 text-red-600" /> : <BadgeCheck className="mx-auto h-14 w-14 text-emerald-600" />}
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">{r.kind_label ?? "Document GLOBUS"}</p>
+          <h1 className="mt-2 text-2xl font-bold text-brand-800">{revoked ? "Document annulé : il n'est plus valable" : "Document authentique"}</h1>
+          <dl className="mt-6 space-y-3 text-left text-sm">
+            <Row label="Nature" value={r.kind_label} />
+            <Row label="Numéro" value={r.number} />
+            {r.title ? <Row label="Objet" value={r.title} /> : null}
+            <Row label="Émis le" value={dateLong(r.issued_on)} />
+            {r.amount ? <Row label="Montant" value={money(r.amount, r.currency === "XAF" ? "FCFA" : r.currency)} /> : null}
+            {r.party ? <Row label="Concerne" value={r.party} /> : null}
+            {r.status ? <Row label="Statut actuel" value={optionLabel(r.status)} /> : null}
+            {r.sha256 ? <Row label="Empreinte SHA-256" value={<code className="break-all text-xs">{r.sha256}</code>} /> : null}
+          </dl>
+          {r.note ? <p className="mt-6 rounded-xl bg-amber-50 p-3 text-left text-sm text-amber-900">{r.note}</p> : null}
+          <p className="mt-6 text-xs text-muted">Comparez ces informations avec le document en votre possession : toute différence signale une falsification.</p>
         </div>
       </div>
     </section>

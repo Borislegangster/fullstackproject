@@ -18,10 +18,20 @@ import { optionLabel } from "@/lib/labels";
 interface Finances {
   summary: { contract_amount?: string | null; approved_changes: string; total_with_changes?: string; called: string; paid: string; due: string; overdue_count: number; remaining_to_call: string; currency: string };
   funds_calls: { id: string; number: string; label: string; amount: string; amount_paid: string; due_date?: string | null; status: string; invoice_id?: string | null }[];
-  invoices: { id: string; number: string; title?: string | null; total: string; amount_paid: string; status: string; issue_date?: string | null; due_date?: string | null; pdf_url?: string | null }[];
+  invoices: { id: string; number: string; title?: string | null; total: string; amount_paid: string; status: string; issue_date?: string | null; due_date?: string | null; kind?: string; pdf_url?: string | null }[];
+  credit_notes?: { id: string; number: string; amount: string; issue_date?: string | null; reason: string; invoice_number?: string | null; pdf_url: string }[];
   payments: { id: string; number: string; amount: string; status: string; method?: string | null; provider?: string | null; paid_at?: string | null; value_date?: string | null; receipt_url?: string | null }[];
   payment_methods: { provider: string; method: string; label: string; flow: "redirect" | "push"; requires_phone: boolean }[];
 }
+
+/** Catégories des factures définitives remises au client. */
+const INVOICE_CATEGORIES: Record<string, string> = {
+  invoice: "Facture",
+  deposit: "Facture d'acompte",
+  progress: "Facture d'appel de fonds",
+  final: "Facture de solde",
+  studies: "Facture d'études",
+};
 
 interface PayTarget {
   type: "funds_call" | "client_invoice";
@@ -219,7 +229,7 @@ function FinancesContent({ projectId }: { projectId: string }) {
                     <span>
                       <span className="font-medium">{i.number}</span> {i.title ? `— ${i.title}` : ""}
                       <span className="block text-xs text-muted">
-                        {money(i.total, cur)} · émise le {date(i.issue_date)} · échéance {date(i.due_date)}
+                        {INVOICE_CATEGORIES[i.kind ?? "invoice"] ?? "Facture"} · {money(i.total, cur)} · émise le {date(i.issue_date)} · échéance {date(i.due_date)}
                       </span>
                     </span>
                   </span>
@@ -248,6 +258,26 @@ function FinancesContent({ projectId }: { projectId: string }) {
             })}
             {!data.invoices.length ? <li className="px-5 py-4 text-sm text-muted">Aucune facture.</li> : null}
           </ul>
+          {data.credit_notes?.length ? (
+            <>
+              <p className="border-t border-line px-5 pb-1 pt-3 text-xs font-semibold uppercase text-muted">Factures d&apos;avoir</p>
+              <ul className="divide-y divide-line">
+                {data.credit_notes.map((n) => (
+                  <li key={n.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm">
+                    <span>
+                      <span className="font-medium">{n.number}</span> — avoir sur la facture {n.invoice_number ?? "—"}
+                      <span className="block text-xs text-muted">
+                        − {money(n.amount, cur)} · le {date(n.issue_date)} · {n.reason}
+                      </span>
+                    </span>
+                    <a href={n.pdf_url} target="_blank" rel="noopener noreferrer" className="rounded-lg p-1.5 text-brand-600 hover:bg-brand-50" aria-label="Télécharger la facture d'avoir">
+                      <Download className="h-4 w-4" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
         </Card>
         <Card>
           <CardHeader title="Paiements et reçus" />

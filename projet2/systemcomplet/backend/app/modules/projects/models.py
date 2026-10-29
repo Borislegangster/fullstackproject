@@ -111,6 +111,8 @@ class Project(UUIDPk, Timestamps, SoftDelete, Versioned, Base):
     is_diaspora: Mapped[bool] = bool_col(False)
     tags: Mapped[list[Any]] = json_col(list)
     settings: Mapped[dict[str, Any]] = json_col(dict)  # politique de publication client, sous-traitants visibles…
+    archived_by_id: Mapped[uuid.UUID | None] = fk("users.id", index=False)  # archive = deleted_at renseigné
+    archive_reason: Mapped[str | None] = text_col()
 
     sites: Mapped[list[Site]] = relationship(back_populates="project", lazy="selectin", order_by="Site.code")
 

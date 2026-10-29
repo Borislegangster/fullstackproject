@@ -1439,6 +1439,7 @@ def validate_situation(
             user_id=access.p.id,
             penalties_override=data.penalties_override if data else None,
             penalties_reason=data.penalties_reason if data else None,
+            principal=access.p,
         )
     except BusinessRuleError as exc:
         if exc.code == "SITUATION_EXCEEDS_CONTRACT":

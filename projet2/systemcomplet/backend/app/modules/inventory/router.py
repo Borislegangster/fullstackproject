@@ -769,10 +769,16 @@ def validate_count(
     count = db.get(InventoryCount, count_id)
     if count is None:
         raise NotFound("Inventaire introuvable")
-    if count.counted_by_id == access.p.id and "ADMIN" not in access.p.roles and not access.has("procurement:approve"):
-        raise BusinessRuleError(
-            "Validation par une personne distincte du compteur (ou responsable)", code="SEGREGATION_OF_DUTIES"
-        )
+    from app.core.sod import require_other_person
+
+    require_other_person(
+        db,
+        access.p,
+        count.counted_by_id,
+        "Double regard : l'inventaire est validé par une autre personne que celle qui a compté",
+        resource_type="inventory_count",
+        resource_id=count.id,
+    )
     result = service.validate_count(db, count, user_id=access.p.id)
     db.commit()
     return {**_count_out(db, count), **jsonable(result)}

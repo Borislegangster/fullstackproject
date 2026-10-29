@@ -303,7 +303,7 @@ def daily_job(db: Session) -> dict[str, Any]:
 
 # ---------------------------------------------------------------------------- passeport PDF
 def passport_pdf(db: Session, project: Any) -> bytes:
-    from app.core.pdf import PdfDocument, fmt_date, render
+    from app.core.pdf import PdfDocument, fmt_date
     from app.modules.documents.models import Document
     from app.modules.projects.models import Warranty
     from app.modules.proofs.models import Proof
@@ -411,7 +411,18 @@ def passport_pdf(db: Session, project: Any) -> bytes:
         paragraphs=paragraphs,
         footer_note="Passeport du bâtiment GLOBUS ENGINEERING — à conserver et à transmettre en cas de vente.",
     )
-    return render(doc)
+    from app.modules.documents.seals import sealed_pdf
+
+    return sealed_pdf(
+        db,
+        doc,
+        kind="building_passport",
+        entity_type="project",
+        entity_id=project.id,
+        reference=project.code,
+        title=f"Passeport du bâtiment — {project.name}",
+        issued_on=doc.issued_on,
+    )
 
 
 def certified_passport(db: Session, project: Any, *, actor_id: uuid.UUID | None) -> tuple[bytes, Any]:

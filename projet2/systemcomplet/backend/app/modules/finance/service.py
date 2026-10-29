@@ -82,14 +82,24 @@ def new_budget_version(
     return budget
 
 
-def approve_budget(db: Session, budget: Budget, *, user_id: uuid.UUID) -> Budget:
+def approve_budget(db: Session, budget: Budget, *, user_id: uuid.UUID, principal: Any = None) -> Budget:
+    from app.core.sod import require_other_person
+
     if budget.status != "draft":
         raise BusinessRuleError("Seul un budget en brouillon peut être approuvé")
-    if budget.created_by_id and budget.created_by_id == user_id:
-        raise BusinessRuleError(
-            "Séparation des tâches : un budget est approuvé par une autre personne que son auteur",
-            code="SEGREGATION_OF_DUTIES",
+    message = "Séparation des tâches : un budget est approuvé par une autre personne que son auteur"
+    if principal is not None:
+        require_other_person(
+            db,
+            principal,
+            budget.created_by_id,
+            message,
+            resource_type="budget",
+            resource_id=budget.id,
+            project_id=budget.project_id,
         )
+    elif budget.created_by_id and budget.created_by_id == user_id:
+        raise BusinessRuleError(message, code="SEGREGATION_OF_DUTIES")
     for previous in db.execute(
         select(Budget).where(Budget.project_id == budget.project_id, Budget.status == "approved")
     ).scalars():
@@ -255,14 +265,19 @@ def petty_cash_movement(
 
 
 def validate_petty_cash(
-    db: Session, tx: PettyCashTransaction, *, user_id: uuid.UUID, approve: bool
+    db: Session, tx: PettyCashTransaction, *, user_id: uuid.UUID, approve: bool, principal: Any = None
 ) -> PettyCashTransaction:
+    from app.core.sod import require_other_person
+
     if tx.status != "pending":
         raise BusinessRuleError("Opération déjà traitée")
-    if tx.created_by_id == user_id:
-        raise BusinessRuleError(
-            "Séparation des tâches : validation par une autre personne", code="SEGREGATION_OF_DUTIES"
+    message = "Séparation des tâches : validation par une autre personne"
+    if principal is not None:
+        require_other_person(
+            db, principal, tx.created_by_id, message, resource_type="petty_cash_transaction", resource_id=tx.id
         )
+    elif tx.created_by_id == user_id:
+        raise BusinessRuleError(message, code="SEGREGATION_OF_DUTIES")
     fund = db.get(PettyCashFund, tx.fund_id)
     tx.status = "validated" if approve else "rejected"
     tx.validated_by_id = user_id
@@ -304,12 +319,27 @@ def validate_petty_cash(
 # ---------------------------------------------------------------------------- appels de fonds
 
 
-def issue_funds_call(db: Session, call: FundsCall, *, user_id: uuid.UUID, tax_rate: Decimal) -> FundsCall:
+def issue_funds_call(
+    db: Session, call: FundsCall, *, user_id: uuid.UUID, tax_rate: Decimal, principal: Any = None
+) -> FundsCall:
+    """Émission (double regard) : une autre personne que l'auteur de l'appel de fonds l'émet ; la facture
+    définitive et son PDF sont produits à cette étape."""
+    from app.core.sod import require_other_person
     from app.modules.billing.service import compute_invoice, invoice_pdf
     from app.modules.projects.models import Project
 
     if call.status != "draft":
         raise BusinessRuleError("Appel de fonds déjà émis")
+    if principal is not None:
+        require_other_person(
+            db,
+            principal,
+            call.created_by_id,
+            "Double regard : l'appel de fonds est émis par une autre personne que celle qui l'a préparé",
+            resource_type="funds_call",
+            resource_id=call.id,
+            project_id=call.project_id,
+        )
     project = db.get(Project, call.project_id)
     if project is None:
         raise NotFound("Projet introuvable")

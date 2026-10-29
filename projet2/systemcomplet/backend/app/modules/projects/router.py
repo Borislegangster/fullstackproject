@@ -95,11 +95,35 @@ class ProjectIn(BaseModel):
     settings: dict[str, Any] = Field(default_factory=dict)
 
 
-def _project_out(db: Session, project: Project, *, with_kpis: bool = False) -> dict[str, Any]:
+FINANCE_KPIS = (
+    "budget",
+    "committed",
+    "spent",
+    "remaining_to_commit",
+    "remaining_to_pay",
+    "gross_margin",
+    "gross_margin_pct",
+    "contract_amount",
+    "approved_changes",
+    "total_with_changes",
+    "invoiced",
+    "collected",
+    "funds_calls_due",
+)
+
+
+def _project_out(
+    db: Session, project: Project, *, with_kpis: bool = False, access: Access | None = None
+) -> dict[str, Any]:
+    """Fiche projet ; sans droit de lecture financière sur le projet, montants et marges sont retirés."""
+    finance = access is None or access.can_view_project_finance(project.id)
     data = serialize(project)
     data["sites"] = [serialize(s) for s in project.sites if s.deleted_at is None]
+    if not finance:
+        data.pop("contract_amount", None)
     if with_kpis:
-        data["kpis"] = service.project_kpis(db, project)
+        kpis = service.project_kpis(db, project)
+        data["kpis"] = kpis if finance else {k: v for k, v in kpis.items() if k not in FINANCE_KPIS}
     return jsonable(data)
 
 
@@ -131,8 +155,38 @@ def list_projects(
         },
         default_sort=Project.created_at.desc(),
         search_columns=[Project.name, Project.code, Project.city],
-        transform=lambda p: _project_out(db, p),
+        transform=lambda p: _project_out(db, p, access=access),
     )
+
+
+@router.get("/projects/archived")
+def archived_projects(db: Session = Depends(get_db), access: Access = Depends(get_access)) -> list[dict[str, Any]]:
+    """Chantiers archivés (lecture seule, hors des listes) : date, auteur et motif ; restaurables."""
+    from app.modules.identity.models import User
+
+    access.require("projects:read")
+    stmt = access.filter_by_project(
+        select(Project).where(Project.deleted_at.is_not(None)), Project.id, allow_null=False
+    )
+    out = []
+    for p in db.execute(stmt.order_by(Project.deleted_at.desc()).limit(500)).scalars():
+        by = db.get(User, p.archived_by_id) if p.archived_by_id else None
+        out.append(
+            jsonable(
+                {
+                    "id": p.id,
+                    "code": p.code,
+                    "name": p.name,
+                    "city": p.city,
+                    "status": p.status,
+                    "archived_at": p.deleted_at,
+                    "archived_by": by.full_name if by else None,
+                    "archive_reason": p.archive_reason,
+                    "can_restore": access.has("projects:delete"),
+                }
+            )
+        )
+    return out
 
 
 @router.post("/projects", status_code=201)
@@ -182,14 +236,14 @@ def create_project(
         project_id=project.id,
     )
     db.commit()
-    return _project_out(db, project, with_kpis=True)
+    return _project_out(db, project, with_kpis=True, access=access)
 
 
 @router.get("/projects/{project_id}")
 def get_project(
     project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, Any]:
-    return _project_out(db, _project(db, access, project_id, "projects:read"), with_kpis=True)
+    return _project_out(db, _project(db, access, project_id, "projects:read"), with_kpis=True, access=access)
 
 
 @router.get("/projects/{project_id}/trust")
@@ -250,7 +304,7 @@ def update_project(
             project_id=project.id,
         )
     db.commit()
-    return _project_out(db, project, with_kpis=True)
+    return _project_out(db, project, with_kpis=True, access=access)
 
 
 @router.post("/projects/{project_id}/archive")
@@ -262,6 +316,8 @@ def archive_project(
     if len(reason) < 10:
         raise BusinessRuleError("Justification requise (10 caractères minimum)")
     project.deleted_at = utcnow()
+    project.archived_by_id = access.p.id
+    project.archive_reason = reason.strip()
     audit.record(
         db,
         family="business",
@@ -277,6 +333,36 @@ def archive_project(
     return {"status": "archived"}
 
 
+@router.post("/projects/{project_id}/restore")
+def restore_project(
+    project_id: uuid.UUID, data: dict[str, str], db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Restauration d'un chantier archivé : il retrouve les listes, ses données et ses accès, à l'identique."""
+    project = db.get(Project, project_id)
+    if project is None or project.deleted_at is None:
+        raise NotFound("Chantier archivé introuvable")
+    access.require_project(project.id, "projects:delete")
+    reason = (data or {}).get("reason", "")
+    if len(reason.strip()) < 10:
+        raise BusinessRuleError("Justification requise (10 caractères minimum)")
+    project.deleted_at = None
+    project.archived_by_id = None
+    project.archive_reason = None
+    audit.record(
+        db,
+        family="business",
+        module="projects",
+        action="RESTORE",
+        resource_type="project",
+        resource_id=project.id,
+        project_id=project.id,
+        reason=reason.strip(),
+        criticality="HIGH",
+    )
+    db.commit()
+    return _project_out(db, project, with_kpis=True, access=access)
+
+
 @router.get("/projects/{project_id}/kpis")
 def project_kpis(
     project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
@@ -284,19 +370,7 @@ def project_kpis(
     project = _project(db, access, project_id, "projects:read")
     kpis = service.project_kpis(db, project)
     if not access.can_view_project_finance(project.id):
-        for key in (
-            "budget",
-            "committed",
-            "spent",
-            "remaining_to_commit",
-            "remaining_to_pay",
-            "gross_margin",
-            "gross_margin_pct",
-            "contract_amount",
-            "invoiced",
-            "collected",
-            "funds_calls_due",
-        ):
+        for key in FINANCE_KPIS:
             kpis.pop(key, None)
     return kpis
 
@@ -1102,7 +1176,7 @@ def change_order_transition(
         raise NotFound("Avenant introuvable")
     target = data.get("target", "")
     access.require_project(co.project_id, "finance:approve" if target == "approved" else "projects:write")
-    service.transition_change_order(db, co, target, user_id=access.p.id)
+    service.transition_change_order(db, co, target, user_id=access.p.id, principal=access.p)
     db.commit()
     return jsonable(serialize(co))
 

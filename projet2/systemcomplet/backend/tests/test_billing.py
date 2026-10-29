@@ -77,7 +77,13 @@ def test_client_invoice_lifecycle_and_cancellation(client: Any, db: Any) -> None
     assert updated.status_code == 200 and Decimal(updated.json()["subtotal"]) == Decimal("1500000.00"), updated.text
     assert client.post(f"{API}/client-invoices/{invoice['id']}/send", headers=fh).status_code == 422
 
-    validated = client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=fh)
+    # Proforma : PDF provisoire scellé, puis double regard (la personne qui l'a préparée ne la valide pas)
+    proforma = client.get(f"{API}/client-invoices/{invoice['id']}/pdf", headers=fh)
+    assert proforma.status_code == 200 and proforma.content[:4] == b"%PDF"
+    own = client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=fh)
+    assert own.status_code == 422 and own.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
+    _validator, vh = as_role(client, db, "FINANCE")
+    validated = client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=vh)
     assert validated.status_code == 200 and validated.json()["status"] == "validated"
     frozen = client.patch(f"{API}/client-invoices/{invoice['id']}", headers=fh, json={"title": "Modifiée"})
     assert frozen.status_code == 422, "une facture validée se corrige par un avoir"
@@ -107,7 +113,8 @@ def test_payment_reminders_stages_and_escalation(client: Any, db: Any) -> None:
     project, _ah, org = _project_and_client(client, db)
     _finance, fh = as_role(client, db, "FINANCE")
     invoice = _invoice(client, fh, project, org)
-    client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=fh)
+    _validator, vh = as_role(client, db, "FINANCE")
+    client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=vh)
     client.post(f"{API}/client-invoices/{invoice['id']}/send", headers=fh)
     row = db.get(ClientInvoice, uuid.UUID(invoice["id"]))
     due = row.due_date
@@ -155,7 +162,8 @@ def test_supplier_credit_note_aging_summary_and_export(client: Any, db: Any) -> 
     _site, sh = as_role(client, db, "CHEF_CHANTIER")
 
     late = _invoice(client, fh, project, org, title="Situation n°1")
-    client.post(f"{API}/client-invoices/{late['id']}/validate", headers=fh)
+    _validator, vh = as_role(client, db, "FINANCE")
+    client.post(f"{API}/client-invoices/{late['id']}/validate", headers=vh)
     client.post(f"{API}/client-invoices/{late['id']}/send", headers=fh)
     row = db.get(ClientInvoice, uuid.UUID(late["id"]))
     row.due_date = date.today() - timedelta(days=45)

@@ -50,10 +50,14 @@ INVOICE_TITLES = {
     "final": "FACTURE DE SOLDE",
     "studies": "FACTURE D'ÉTUDES",
 }
+# Catégories des factures clients (libellés des documents et des écrans) :
+#  brouillon = facture PROFORMA (provisoire, sans valeur comptable, tampon « PROFORMA ») ;
+#  validée = facture DÉFINITIVE (numéro, QR d'authenticité) : facture, d'acompte, de situation, de solde, d'études,
+#            d'appel de fonds ; annulée = tampon « ANNULÉE » ; correction = facture d'AVOIR (note de crédit).
 
 
-def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
-    from app.core.files import store_generated
+def invoice_document(db: Session, invoice: ClientInvoice, *, proforma: bool = False) -> Any:
+    """Contenu du PDF d'une facture client : proforma (brouillon) ou définitive (validée)."""
     from app.core.pdf import (
         PdfDocument,
         amount_in_words,
@@ -63,11 +67,11 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
         fmt_qty,
         organization_lines,
         project_label,
-        render,
     )
     from app.modules.crm.models import Contract
+    from app.modules.finance.models import FundsCall
     from app.modules.identity.models import Organization
-    from app.modules.projects.models import Project
+    from app.modules.projects.models import Milestone, Project
 
     org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
     project = db.get(Project, invoice.project_id) if invoice.project_id else None
@@ -82,15 +86,23 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
         ),
         ("Reste à payer", fmt_money(max(Decimal(invoice.total or 0) - settled, Decimal(0)), invoice.currency)),
     ]
+    call = db.execute(select(FundsCall).where(FundsCall.client_invoice_id == invoice.id)).scalars().first()
+    milestone = db.get(Milestone, call.milestone_id) if call is not None and call.milestone_id else None
+    title = "FACTURE D'APPEL DE FONDS" if call is not None else INVOICE_TITLES.get(invoice.kind, "FACTURE")
+    if proforma:
+        title = title.replace("FACTURE", "FACTURE PROFORMA", 1)
     doc = PdfDocument(
-        title=INVOICE_TITLES.get(invoice.kind, "FACTURE"),
-        number=invoice.number,
+        title=title,
+        number=f"{invoice.number} (proforma)" if proforma else invoice.number,
         issued_on=invoice.issue_date,
+        stamp="PROFORMA" if proforma else ("ANNULÉE" if invoice.status == "cancelled" else None),
         parties=[("Client", organization_lines(org)), company_party()],
         meta=[
             ("Objet", invoice.title),
             ("Projet", project_label(project)),
             *([("Contrat", f"{contract.number} — {contract.title}")] if contract else []),
+            *([("Appel de fonds", f"{call.number} — {call.label}")] if call is not None else []),
+            *([("Jalon", milestone.name)] if milestone is not None else []),
             ("Date d'émission", fmt_date(invoice.issue_date)),
             ("Échéance", fmt_date(invoice.due_date)),
             ("Devise", "Franc CFA (XAF)" if invoice.currency == "XAF" else invoice.currency),
@@ -114,7 +126,9 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
             *(balance if settled else []),
         ],
         amount_words=amount_in_words(invoice.total, invoice.currency),
-        amount_words_label="Arrêtée la présente facture à la somme de",
+        amount_words_label=(
+            "Arrêtée la présente proforma à la somme de" if proforma else "Arrêtée la présente facture à la somme de"
+        ),
         paragraphs=[
             (
                 "Modalités de paiement",
@@ -125,12 +139,24 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
             *([("Observations", invoice.notes)] if invoice.notes else []),
         ],
         signature_blocks=["Pour GLOBUS ENGINEERING — la Direction financière"],
-        verify_token=invoice.authenticity_token,
-        footer_note="Facture authentifiable : scannez le QR code ou saisissez la référence sur notre site.",
+        verify_token=None if proforma else invoice.authenticity_token,
+        footer_note=(
+            "Facture proforma : document provisoire sans valeur comptable ; la facture définitive suivra sa validation."
+            if proforma
+            else "Facture authentifiable : scannez le QR code ou saisissez la référence sur notre site."
+        ),
     )
+    return doc
+
+
+def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
+    """PDF de la facture définitive (rendu à la validation, de nouveau à l'annulation avec le tampon « ANNULÉE »)."""
+    from app.core.files import store_generated
+    from app.core.pdf import render
+
     stored = store_generated(
         db,
-        render(doc),
+        render(invoice_document(db, invoice)),
         filename=f"{invoice.number}.pdf",
         mime="application/pdf",
         purpose="invoices",
@@ -139,9 +165,121 @@ def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
     invoice.pdf_file_id = stored.id
 
 
-def validate_invoice(db: Session, invoice: ClientInvoice, *, user_id: uuid.UUID) -> ClientInvoice:
+def proforma_pdf(db: Session, invoice: ClientInvoice) -> bytes:
+    """Facture proforma (brouillon) : tampon « PROFORMA », QR d'authenticité propre, jamais confondue avec la
+    facture définitive."""
+    from app.modules.documents.seals import sealed_pdf
+    from app.modules.identity.models import Organization
+
+    org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
+    return sealed_pdf(
+        db,
+        invoice_document(db, invoice, proforma=True),
+        kind="proforma",
+        entity_type="client_invoice",
+        entity_id=invoice.id,
+        reference=f"{invoice.number} (proforma)",
+        title=invoice.title,
+        issued_on=invoice.issue_date,
+        amount=invoice.total,
+        currency=invoice.currency,
+        party=org.name if org else None,
+    )
+
+
+def credit_note_pdf(db: Session, note: CreditNote) -> None:
+    """Facture d'avoir (note de crédit) d'une facture client : PDF scellé, conservé avec l'avoir."""
+    from app.core.files import store_generated
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_date,
+        fmt_money,
+        organization_lines,
+        project_label,
+    )
+    from app.modules.documents.seals import sealed_pdf
+    from app.modules.identity.models import Organization
+    from app.modules.projects.models import Project
+
+    invoice = db.get(ClientInvoice, note.client_invoice_id) if note.client_invoice_id else None
+    if invoice is None:
+        return
+    org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
+    project = db.get(Project, note.project_id) if note.project_id else None
+    remaining = max(
+        Decimal(invoice.total or 0) - Decimal(invoice.amount_paid or 0) - Decimal(invoice.amount_credited or 0),
+        Decimal(0),
+    )
+    doc = PdfDocument(
+        title="FACTURE D'AVOIR",
+        number=note.number,
+        issued_on=note.issue_date,
+        stamp="ANNULÉE" if note.status == "cancelled" else None,
+        parties=[("Client", organization_lines(org)), company_party()],
+        meta=[
+            ("Facture d'origine", f"{invoice.number} du {fmt_date(invoice.issue_date)} — {invoice.title}"),
+            ("Projet", project_label(project)),
+            ("Motif", note.reason),
+            ("Devise", "Franc CFA (XAF)" if note.currency == "XAF" else note.currency),
+        ],
+        columns=["Désignation", "Montant"],
+        col_widths=[130 * 2.83465, 50 * 2.83465],
+        rows=[[f"Avoir sur la facture {invoice.number} : {note.reason}", fmt_money(note.amount, note.currency)]],
+        totals=[
+            ("Facture d'origine (TTC)", fmt_money(invoice.total, invoice.currency)),
+            ("Montant du présent avoir (TTC)", fmt_money(note.amount, note.currency)),
+            ("Total des avoirs sur la facture", fmt_money(invoice.amount_credited, invoice.currency)),
+            ("Reste dû sur la facture", fmt_money(remaining, invoice.currency)),
+        ],
+        amount_words=amount_in_words(note.amount, note.currency),
+        amount_words_label="Arrêté le présent avoir à la somme de",
+        signature_blocks=["Pour GLOBUS ENGINEERING — la Direction financière"],
+        footer_note="Facture d'avoir : réduit d'autant la facture d'origine (remboursée si celle-ci est réglée).",
+    )
+    data = sealed_pdf(
+        db,
+        doc,
+        kind="credit_note",
+        entity_type="credit_note",
+        entity_id=note.id,
+        reference=note.number,
+        title=f"Avoir sur la facture {invoice.number}",
+        issued_on=note.issue_date,
+        amount=note.amount,
+        currency=note.currency,
+        party=org.name if org else None,
+    )
+    stored = store_generated(
+        db,
+        data,
+        filename=f"avoir-{note.number}.pdf",
+        mime="application/pdf",
+        purpose="invoices",
+        classification="confidential",
+    )
+    note.file_id = stored.id
+
+
+def validate_invoice(
+    db: Session, invoice: ClientInvoice, *, user_id: uuid.UUID, principal: Any = None
+) -> ClientInvoice:
+    """Proforma (brouillon) → facture définitive : validée par une autre personne que celle qui l'a préparée."""
+    from app.core.sod import require_other_person
+
     if invoice.status != "draft":
         raise BusinessRuleError("Facture déjà validée")
+    if principal is not None:
+        require_other_person(
+            db,
+            principal,
+            invoice.created_by_id,
+            "Double regard : la facture est validée par une autre personne que celle qui l'a préparée",
+            resource_type="client_invoice",
+            resource_id=invoice.id,
+            project_id=invoice.project_id,
+        )
     if not invoice.lines:
         raise BusinessRuleError("Facture sans ligne")
     compute_invoice(invoice)

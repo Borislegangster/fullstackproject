@@ -246,14 +246,24 @@ def approve_release(db: Session, item: EscrowItem, *, principal: Any, reference:
     )
     if role is None:
         raise BusinessRuleError("Validation réservée à la Finance et à la Direction", code="APPROVAL_ROLE_REQUIRED")
-    if any(a["user_id"] == str(principal.id) for a in item.approvals):
+    from app.core.sod import is_super_admin
+
+    admin = is_super_admin(principal)
+    already = any(a["user_id"] == str(principal.id) for a in item.approvals)
+    if already and not admin:
         raise BusinessRuleError(
             "Séparation des tâches : une seconde personne doit valider", code="SEGREGATION_OF_DUTIES"
         )
-    item.approvals = [
-        *item.approvals,
-        {"user_id": str(principal.id), "name": principal.user.full_name, "role": role, "at": utcnow().isoformat()},
-    ]
+    if not already:
+        item.approvals = [
+            *item.approvals,
+            {
+                "user_id": str(principal.id),
+                "name": principal.user.full_name,
+                "role": "ADMIN" if admin else role,
+                "at": utcnow().isoformat(),
+            },
+        ]
     audit.record(
         db,
         family="security",
@@ -264,7 +274,8 @@ def approve_release(db: Session, item: EscrowItem, *, principal: Any, reference:
         project_id=item.project_id,
         criticality="HIGH",
     )
-    if len(item.approvals) < 2:
+    # Deux validations de personnes distinctes ; le super administrateur peut valider seul (tracé ci-dessus).
+    if len(item.approvals) < (1 if admin else 2):
         return False
     if not reference:
         raise BusinessRuleError(
