@@ -259,18 +259,21 @@ sa propre fenêtre connectée, et vous passez de l'un à l'autre sans vous déco
 
 **Méthode**
 
-1. Récupérez les trois fichiers d'installation : `GLOBUS-Terrain.apk`, `GLOBUS-Direction.apk`, `GLOBUS-Client.apk`
-   (dossier `dist\mobile\` du projet sur l'ordinateur de travail, ou sur GitHub : *Actions* › dernière exécution réussie
-   › section *Artifacts*).
+1. Récupérez les trois fichiers d'installation : `GLOBUS-Terrain-1.0.xxx.apk`, `GLOBUS-Direction-1.0.xxx.apk`,
+   `GLOBUS-Client-1.0.xxx.apk` (sur GitHub : *Actions* › dernière exécution réussie › section *Artifacts* ; le dernier
+   nombre est le numéro de fabrication, prenez toujours le plus grand).
 
 2. Copiez-les sur le téléphone (câble USB en mode **Transfert de fichiers**, dossier **Download** ; ou via Google Drive).
 3. Sur le téléphone, application **Fichiers** › **Téléchargements**, touchez chaque fichier `.apk`. Si Android demande,
-   touchez **Paramètres** › **Autoriser cette source**, revenez, puis **Installer**.
+   touchez **Paramètres** › **Autoriser cette source**, revenez, puis **Installer** (ou **Mettre à jour** si une version
+   précédente est déjà installée). S'il refuse (« conflit avec un package existant »), la version installée est une
+   ancienne version d'essai : désinstallez-la d'abord.
 
 **Résultat attendu** : trois icônes GLOBUS sur le téléphone. Ne les ouvrez pas encore.
 
 > L'idéal est d'avoir deux téléphones (un pour Ernest, un pour Grâce et Paul). Les iPhone ne peuvent pas encore installer
-> ces applications (annexe A).
+> ces applications (annexe A). Une fois connecté, le numéro de la version installée figure en bas de **Mon compte ›
+> Profil**.
 
 - [ ] Les trois applications sont installées.
 

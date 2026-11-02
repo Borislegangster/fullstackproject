@@ -6,7 +6,7 @@ section: Prise en main
 order: 16
 routes: [/erp/tableau-de-bord, /erp/validations]
 summary: Piloter l'entreprise depuis le téléphone — tableau de bord, validations en attente, chantiers, achats, finance, commercial, RH, sécurité — avec les mêmes droits que l'ERP web.
-keywords: [application, mobile, direction, validation, approbation, tableau de bord, paiement, achat, situation, congé, rapport, android, iphone]
+keywords: [application, mobile, direction, mise à jour, version, validation, approbation, tableau de bord, paiement, achat, situation, congé, rapport, android, iphone]
 related: [erp-tableau-de-bord, erp-achats, erp-finances, erp-situations, erp-rapport-direction, erp-securite]
 ---
 
@@ -15,6 +15,15 @@ related: [erp-tableau-de-bord, erp-achats, erp-finances, erp-situations, erp-rap
 **GLOBUS Direction** (Android et iPhone) s'adresse à la direction et aux responsables (achats, finance, RH, QHSE,
 commercial, administration). Connectez-vous avec votre compte ERP ; la double authentification est obligatoire pour ces
 profils. Chaque rubrique n'apparaît que si votre rôle y donne droit, exactement comme dans l'ERP web.
+
+## Mettre à jour l'application
+
+Sur Android, chaque nouvelle version est transmise sous forme d'un fichier `GLOBUS-Direction-1.0.xxx.apk` : ouvrez-le
+(application **Fichiers** › **Téléchargements**), puis touchez **Mettre à jour** ; votre connexion reste en place. Le
+numéro de la version installée figure en bas de **Mon compte › Profil** ; le dernier nombre augmente à chaque version.
+Si le téléphone refuse (« Application non installée » ou « conflit avec un package existant »), la version installée est
+une ancienne version d'essai : désinstallez-la (appui long sur l'icône › **Désinstaller**), installez le nouveau
+fichier, puis reconnectez-vous.
 
 ## Pilotage
 

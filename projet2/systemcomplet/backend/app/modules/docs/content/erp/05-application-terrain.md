@@ -6,7 +6,7 @@ section: Prise en main
 order: 15
 routes: [/erp/terrain, /erp/rh/mon-espace]
 summary: Application unique du personnel (chantier, logistique, QHSE, SAV, RH) — écrans selon votre rôle, travail hors ligne, scanner universel, synchronisation sans écrasement.
-keywords: [application, mobile, terrain, chantier, hors ligne, synchronisation, conflit, scanner, QR, pointage, réception, incident, rapport vocal, photo, android, iphone]
+keywords: [application, mobile, terrain, mise à jour, version, chantier, hors ligne, synchronisation, conflit, scanner, QR, pointage, réception, incident, rapport vocal, photo, android, iphone]
 related: [erp-premiers-pas, erp-chantier-suivi, erp-livraisons, erp-stocks, erp-qhse, erp-rh, erp-sav]
 ---
 
@@ -17,6 +17,13 @@ related: [erp-premiers-pas, erp-chantier-suivi, erp-livraisons, erp-stocks, erp-
 1. Ouvrez l'application, saisissez votre e-mail et votre mot de passe, puis **Se connecter**.
 2. Saisissez le code de votre application d'authentification si la double authentification est active (obligatoire pour l'encadrement).
 3. Le **chantier courant** s'affiche sous la barre du haut : touchez-le pour changer de chantier parmi ceux qui vous sont affectés. Toutes les rubriques travaillent sur ce chantier.
+
+## Mettre à jour l'application
+
+Sur Android, chaque nouvelle version est transmise sous forme d'un fichier `GLOBUS-Terrain-1.0.xxx.apk` : ouvrez-le (application **Fichiers** › **Téléchargements**), puis touchez **Mettre à jour**. Vos saisies en attente, votre connexion et le chantier courant restent en place. Le numéro de la version installée figure en bas de **Mon compte › Profil** ; le dernier nombre augmente à chaque version.
+
+> [!WARNING]
+> Si le téléphone refuse (« Application non installée » ou « conflit avec un package existant »), la version installée est une ancienne version d'essai. Avant de la désinstaller, ouvrez **Synchronisation** et attendez qu'aucune opération ne reste en attente : une désinstallation efface les saisies non envoyées. Désinstallez-la ensuite (appui long sur l'icône › **Désinstaller**), installez le nouveau fichier, puis reconnectez-vous.
 
 ## Accueil chantier
 

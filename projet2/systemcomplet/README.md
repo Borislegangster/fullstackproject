@@ -11,7 +11,7 @@ paiements en ligne, IA. Applications desktop et mobiles : phase suivante, sur la
 | `backend/` | API FastAPI + PostgreSQL (`app/core`, `app/modules/<domaine>`, `app/providers`, `app/websocket`, `app/workers`), migrations Alembic, tests |
 | `apps/web/` | Next.js 15 (App Router) : vitrine `/`, espace client `/espace-client`, ERP `/erp`, extranet `/extranet` |
 | `infra/` | Images Docker, Docker Compose de production, nginx (TLS), coturn, scripts `init-env.sh` / `deploy.sh` |
-| `docs/` | Exploitation : [déploiement](docs/DEPLOIEMENT.md), [revue de recette V4](docs/REVUE_V4.md) (42 critères), [propositions d'innovation](docs/INNOVATIONS.md) |
+| `docs/` | Exploitation : [déploiement](docs/DEPLOIEMENT.md), [signature des applications Android](docs/SIGNATURE_ANDROID.md), [revue de recette V4](docs/REVUE_V4.md) (42 critères), [propositions d'innovation](docs/INNOVATIONS.md) |
 
 ## Démarrage local (sans Docker ni PostgreSQL installé)
 

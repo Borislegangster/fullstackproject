@@ -6,7 +6,7 @@ section: Bienvenue
 order: 15
 route: /espace-client/menu
 summary: Installer l'application GLOBUS Client, vous connecter, naviguer, consulter votre projet hors ligne, recevoir les notifications et utiliser la maquette 3D sur votre téléphone.
-keywords: [application, mobile, téléphone, android, iphone, installer, hors ligne, notifications, push, appel, 3D, paiement, sécurité]
+keywords: [application, mobile, téléphone, android, iphone, installer, mise à jour, version, hors ligne, notifications, push, appel, 3D, paiement, sécurité]
 related: [client-premiers-pas, client-compte, client-notifications, client-maquette-3d]
 ---
 
@@ -21,6 +21,13 @@ L'application **GLOBUS Client** (Android et iPhone) reprend toutes les fonctions
 
 > [!NOTE]
 > Votre compte est protégé par la double authentification. Si elle n'est pas encore activée, l'application ouvre directement **Mon compte › Sécurité** : touchez **Configurer une application d'authentification**, puis **Ouvrir l'application d'authentification** (sur le même téléphone) ou scannez le QR code depuis un autre appareil, et saisissez le code affiché.
+
+## Mettre à jour l'application
+
+Sur Android, chaque nouvelle version vous est transmise sous forme d'un fichier `GLOBUS-Client-1.0.xxx.apk` : ouvrez-le (application **Fichiers** › **Téléchargements**), puis touchez **Mettre à jour**. Votre connexion et vos données restent en place. Le numéro de la version installée figure en bas de **Mon compte › Profil** ; le dernier nombre augmente à chaque version.
+
+> [!NOTE]
+> Si le téléphone refuse (« Application non installée » ou « conflit avec un package existant »), la version installée est une ancienne version d'essai : désinstallez-la (appui long sur l'icône › **Désinstaller**), installez le nouveau fichier, puis reconnectez-vous.
 
 ## Se repérer
 

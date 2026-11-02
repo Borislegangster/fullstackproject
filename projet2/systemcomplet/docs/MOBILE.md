@@ -77,6 +77,11 @@ flutter build apk --release --dart-define-from-file=config/production.json
   les notifications restent reçues dans l'application, par e-mail et WhatsApp.
 - Signature de publication Android : `android/key.properties` (non versionné : `storeFile`, `storePassword`,
   `keyAlias`, `keyPassword`) ; sans ce fichier, la version « release » est signée avec la clé de débogage (tests internes).
+  En CI, la clé permanente vient des secrets `ANDROID_*` du dépôt (création, sauvegarde et mise en place :
+  [SIGNATURE_ANDROID.md](SIGNATURE_ANDROID.md)) : les APK se mettent alors à jour sans désinstallation.
+- Version des APK de la CI : `<majeur.mineur du pubspec.yaml>.<numéro d'exécution>` (versionCode = numéro d'exécution),
+  fichiers `GLOBUS-<Client|Terrain|Direction>-<version>.apk` ; version installée affichée en bas de **Mon compte ›
+  Profil**.
 - iOS : construction sur macOS (`flutter build ipa`) avec un compte Apple Developer ; identifiant
   `com.globusengineering.client`.
 

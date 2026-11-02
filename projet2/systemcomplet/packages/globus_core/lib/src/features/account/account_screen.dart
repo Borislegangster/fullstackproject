@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -189,9 +190,31 @@ class _ProfileTabState extends State<_ProfileTab> {
             label: const Text('Se déconnecter de cet appareil'),
           ),
         ),
+        const _AppVersion(),
       ],
     );
   }
+}
+
+/// Version installée (« 1.0.312 » : le dernier nombre augmente à chaque compilation), pour vérifier qu'une mise à
+/// jour est bien en place. Rien n'est affiché si la plateforme ne la fournit pas (tests).
+class _AppVersion extends StatelessWidget {
+  const _AppVersion();
+
+  static final Future<PackageInfo?> _info = PackageInfo.fromPlatform().then<PackageInfo?>((info) => info, onError: (_) => null);
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<PackageInfo?>(
+    future: _info,
+    builder: (context, snapshot) {
+      final info = snapshot.data;
+      if (info == null || info.version.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text('${info.appName} · version ${info.version}', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+      );
+    },
+  );
 }
 
 // ------------------------------------------------------------------------------------------------ sécurité

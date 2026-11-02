@@ -6,6 +6,9 @@ on:
     paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml", ".gitleaks.toml"]
   pull_request:
     paths: ["projet2/systemcomplet/**", ".github/workflows/globus-v4.yml", ".gitleaks.toml"]
+  # Lancement manuel (Actions › « GLOBUS V4 » › Run workflow) : contrôles et APK, sans publication d'images ni
+  # déploiement (p. ex. APK signés juste après l'ajout des secrets ANDROID_*, docs/SIGNATURE_ANDROID.md).
+  workflow_dispatch:
 
 concurrency:
   # Branches / PR : une exécution par branche (la précédente est annulée). Main : chaque commit a sa propre exécution
@@ -109,6 +112,10 @@ jobs:
   mobile:
     name: Mobile — analyse, tests, APK Android
     runs-on: ubuntu-latest
+    env:
+      # Version des APK : « majeur.mineur » du pubspec.yaml + numéro d'exécution du workflow (p. ex. 1.0.312), et
+      # versionCode = numéro d'exécution : Android n'installe une mise à jour que si ce numéro augmente.
+      BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -121,6 +128,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      # Clé permanente (secrets du dépôt) : les APK se mettent à jour par-dessus la version installée. Sans les secrets,
+      # avertissement et clé de débogage jetable (désinstallation nécessaire à chaque version). Aucune valeur affichée.
+      - name: Signature Android (clé permanente)
+        working-directory: ${{ env.ROOT }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: python3 packages/globus_core/tool/android_signing.py
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.47.7"
@@ -142,11 +159,18 @@ jobs:
           flutter test
       - name: Application client — APK (production)
         working-directory: ${{ env.ROOT }}/apps/mobile-client
-        run: flutter build apk --release --dart-define-from-file=config/production.json
+        run: |
+          base="$(sed -nE 's/^version: *([0-9]+\.[0-9]+)\..*/\1/p' pubspec.yaml)"
+          version="${base:?version introuvable dans pubspec.yaml}.${BUILD_NUMBER}"
+          flutter build apk --release --dart-define-from-file=config/production.json \
+            --build-name="$version" --build-number="$BUILD_NUMBER"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/GLOBUS-Client-${version}.apk"
+          echo "- GLOBUS Client : version **${version}**" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: globus-client-apk-production
-          path: ${{ env.ROOT }}/apps/mobile-client/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.ROOT }}/apps/mobile-client/build/GLOBUS-Client-*.apk
+          if-no-files-found: error
           retention-days: 14
       - name: Application terrain — analyse et tests
         working-directory: ${{ env.ROOT }}/apps/mobile-field
@@ -157,11 +181,18 @@ jobs:
           flutter test
       - name: Application terrain — APK (production)
         working-directory: ${{ env.ROOT }}/apps/mobile-field
-        run: flutter build apk --release --dart-define-from-file=config/production.json
+        run: |
+          base="$(sed -nE 's/^version: *([0-9]+\.[0-9]+)\..*/\1/p' pubspec.yaml)"
+          version="${base:?version introuvable dans pubspec.yaml}.${BUILD_NUMBER}"
+          flutter build apk --release --dart-define-from-file=config/production.json \
+            --build-name="$version" --build-number="$BUILD_NUMBER"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/GLOBUS-Terrain-${version}.apk"
+          echo "- GLOBUS Terrain : version **${version}**" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: globus-terrain-apk-production
-          path: ${{ env.ROOT }}/apps/mobile-field/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.ROOT }}/apps/mobile-field/build/GLOBUS-Terrain-*.apk
+          if-no-files-found: error
           retention-days: 14
       - name: Application direction — analyse et tests
         working-directory: ${{ env.ROOT }}/apps/mobile-direction
@@ -172,12 +203,23 @@ jobs:
           flutter test
       - name: Application direction — APK (production)
         working-directory: ${{ env.ROOT }}/apps/mobile-direction
-        run: flutter build apk --release --dart-define-from-file=config/production.json
+        run: |
+          base="$(sed -nE 's/^version: *([0-9]+\.[0-9]+)\..*/\1/p' pubspec.yaml)"
+          version="${base:?version introuvable dans pubspec.yaml}.${BUILD_NUMBER}"
+          flutter build apk --release --dart-define-from-file=config/production.json \
+            --build-name="$version" --build-number="$BUILD_NUMBER"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/GLOBUS-Direction-${version}.apk"
+          echo "- GLOBUS Direction : version **${version}**" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: globus-direction-apk-production
-          path: ${{ env.ROOT }}/apps/mobile-direction/build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.ROOT }}/apps/mobile-direction/build/GLOBUS-Direction-*.apk
+          if-no-files-found: error
           retention-days: 14
+      - name: Nettoyage de la clé de signature
+        if: always()
+        working-directory: ${{ env.ROOT }}
+        run: python3 packages/globus_core/tool/android_signing.py --clean
 
   mobile-ios:
     name: Mobile — compilation iOS (sans signature)
