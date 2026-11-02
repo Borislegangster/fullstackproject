@@ -435,8 +435,8 @@ export function ClientFinances() {
                   <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorPrevu" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#1D4ED8" stopOpacity={0.1} />
-                  <stop offset="95%" stopColor="#1D4ED8" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#385AA6" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#385AA6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -476,7 +476,7 @@ export function ClientFinances() {
                 type="monotone"
                 dataKey="prevu"
                 name="Prévu"
-                stroke="#1D4ED8"
+                stroke="#385AA6"
                 strokeDasharray="5 5"
                 fillOpacity={1}
                 fill="url(#colorPrevu)" />

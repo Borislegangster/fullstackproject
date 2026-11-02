@@ -1,0 +1,42 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>Attestation</h1>
+<p class="small">Référence {{ attestation.code|default(attestation.id|default('—')) }} · Établie le {{ generated_at|date_fr }}</p>
+
+<h2>Objet : {{ attestation.subject|default("Attestation de travail") }}</h2>
+
+<p style="margin-top:18pt">
+  Je soussigné, <strong>{{ company_representative|default('le Directeur Général') }}</strong>,
+  représentant légal de la société <strong>{{ company_name|default('Globus Engineering SARL') }}</strong>,
+  atteste par la présente que :
+</p>
+
+<p style="margin:14pt 0 0 28pt; font-size:12pt">
+  <strong>{{ recipient.full_name|default(recipient.first_name ~ ' ' ~ recipient.last_name) }}</strong>{% if recipient.id_number %},
+  titulaire de la pièce N° {{ recipient.id_number }}{% endif %},
+</p>
+
+<p style="margin-top:14pt">
+  {{ attestation.body|default("est employé(e) au sein de notre société depuis le " ~ (recipient.hire_date|date_fr) ~ " en qualité de " ~ (recipient.position|default("—")) ~ ".")|safe }}
+</p>
+
+{% if attestation.purpose %}
+<p style="margin-top:14pt">
+  La présente attestation est délivrée à l'intéressé(e) pour servir et valoir
+  ce que de droit, notamment pour : <strong>{{ attestation.purpose }}</strong>.
+</p>
+{% else %}
+<p style="margin-top:14pt">
+  La présente attestation est délivrée à l'intéressé(e) pour servir et valoir
+  ce que de droit.
+</p>
+{% endif %}
+
+<div class="signature-block" style="margin-top:50pt">
+  <div class="col" style="width:100%; text-align:right">
+    <p>Fait à {{ company_city|default('Douala') }}, le {{ generated_at|date_fr }}</p>
+    <p><strong>{{ company_representative|default('Le Directeur Général') }}</strong></p>
+    <div class="box" style="width:60%; margin-left:auto"></div>
+  </div>
+</div>
+{% endblock %}

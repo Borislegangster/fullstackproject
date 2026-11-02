@@ -1,0 +1,64 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{% if invoice.invoice_type == 'PROFORMA' %}Proforma{% elif invoice.invoice_type == 'APPEL_FONDS' %}Appel de fonds{% else %}Facture{% endif %} N° {{ invoice.code }}</h1>
+<p class="small">
+  Émise le {{ invoice.issue_date|date_fr }}
+  {% if invoice.due_date %} · Échéance {{ invoice.due_date|date_fr }}{% endif %}
+  · Statut :
+  <span class="badge {% if invoice.status == 'PAYEE' %}badge-green{% elif invoice.status == 'EN_RETARD' %}badge-red{% elif invoice.status == 'ENVOYEE' %}badge-orange{% else %}badge-gray{% endif %}">
+    {{ invoice.status }}
+  </span>
+</p>
+
+<h2>Client</h2>
+<p>
+  <strong>{{ client.full_name|default(client.email|default('Client')) }}</strong><br>
+  {{ client.email|default('') }} {% if client.phone %}· {{ client.phone }}{% endif %}
+</p>
+
+<h2>Projet</h2>
+<p><strong>{{ project.code|default('') }}</strong> · {{ project.name|default('') }}{% if project.location %} ({{ project.location }}){% endif %}</p>
+
+<h2>Détail</h2>
+<table class="lines">
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th style="text-align:right">Qté</th>
+      <th style="text-align:right">PU</th>
+      <th style="text-align:right">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in invoice.lines or [] %}
+    <tr>
+      <td>{{ line.designation|default(line.description|default('—')) }}</td>
+      <td style="text-align:right">{{ line.qty|default(1) }}</td>
+      <td style="text-align:right">{{ line.unit_price|default(0)|currency }}</td>
+      <td style="text-align:right">{{ line.total|default(0)|currency }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="small">Aucune ligne</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="total-block">
+  <table>
+    <tr><td>Sous-total :</td><td style="text-align:right">{{ invoice.subtotal|currency }}</td></tr>
+    {% if invoice.tax_amount %}
+    <tr><td>TVA ({{ invoice.tax_rate }} %) :</td><td style="text-align:right">{{ invoice.tax_amount|currency }}</td></tr>
+    {% endif %}
+    <tr class="grand"><td>Total TTC :</td><td style="text-align:right">{{ invoice.total|currency }}</td></tr>
+    {% if invoice.amount_paid %}
+    <tr><td>Déjà payé :</td><td style="text-align:right">{{ invoice.amount_paid|currency }}</td></tr>
+    <tr><td><strong>Reste dû :</strong></td><td style="text-align:right"><strong>{{ ((invoice.total or 0) - (invoice.amount_paid or 0))|currency }}</strong></td></tr>
+    {% endif %}
+  </table>
+</div>
+
+{% if invoice.notes %}
+<h2>Notes</h2>
+<p>{{ invoice.notes }}</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>{{ document_title|default('Document') }}</title>
+  <style>
+    @page { size: A4; margin: 1.5cm 1.5cm 2cm 1.5cm; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 11pt; color: #1f2937; }
+    h1 { color: #1a365d; font-size: 18pt; margin: 0 0 4pt; }
+    h2 { color: #1a365d; font-size: 13pt; margin: 16pt 0 6pt; border-bottom: 2pt solid #ed8936; padding-bottom: 2pt; }
+    p { margin: 0 0 4pt; }
+    .small { font-size: 9pt; color: #6b7280; }
+    .header { border-bottom: 2pt solid #1a365d; padding-bottom: 8pt; margin-bottom: 14pt; }
+    .header table { width: 100%; }
+    .header .brand { color: #1a365d; font-weight: bold; font-size: 14pt; }
+    .header .meta { text-align: right; font-size: 9pt; }
+    .badge { display: inline-block; padding: 2pt 6pt; border-radius: 3pt; font-size: 9pt; font-weight: bold; }
+    .badge-orange { background: #fed7aa; color: #9a3412; }
+    .badge-green { background: #bbf7d0; color: #166534; }
+    .badge-red { background: #fecaca; color: #991b1b; }
+    .badge-gray { background: #e5e7eb; color: #374151; }
+    table.lines { width: 100%; border-collapse: collapse; margin-top: 6pt; }
+    table.lines th { background: #1a365d; color: white; padding: 6pt 4pt; text-align: left; font-size: 10pt; }
+    table.lines td { padding: 4pt; border-bottom: 0.5pt solid #e5e7eb; font-size: 10pt; }
+    .total-block { margin-top: 10pt; }
+    .total-block table { width: 50%; margin-left: auto; }
+    .total-block td { padding: 3pt 4pt; }
+    .total-block .grand { font-weight: bold; font-size: 12pt; border-top: 1.5pt solid #1a365d; color: #1a365d; }
+    .footer { position: fixed; bottom: 0.5cm; left: 1.5cm; right: 1.5cm;
+              border-top: 0.5pt solid #d1d5db; padding-top: 4pt;
+              font-size: 8pt; color: #6b7280; text-align: center; }
+    .signature-block { margin-top: 30pt; }
+    .signature-block .col { width: 47%; display: inline-block; vertical-align: top; }
+    .signature-block .box { border: 1pt solid #d1d5db; height: 60pt; margin-top: 4pt; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <table>
+      <tr>
+        <td class="brand">{{ company_name|default('Globus Engineering SARL') }}</td>
+        <td class="meta">
+          {{ company_address|default('Douala, Cameroun') }}<br>
+          {{ company_phone|default('') }} · {{ company_email|default('') }}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <div class="footer">
+    {{ company_name|default('Globus Engineering SARL') }} ·
+    SIRET / RCCM &nbsp;·&nbsp; Document généré le {{ generated_at|date_fr }}
+  </div>
+</body>
+</html>

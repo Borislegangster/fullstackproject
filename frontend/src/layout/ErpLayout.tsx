@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboardIcon, UsersIcon, PackageIcon, TruckIcon, WalletIcon, TargetIcon, CalendarDaysIcon, ShieldAlertIcon, ShieldCheckIcon, FolderGit2Icon, FileOutputIcon, UsersRoundIcon, ArrowLeftIcon, LogOutIcon, MenuIcon, BellIcon, SearchIcon, HardHatIcon, SettingsIcon, BarChart3Icon, CalendarIcon, GlobeIcon, LifeBuoyIcon, ReceiptIcon, ActivityIcon, MicroscopeIcon } from 'lucide-react';
+import { LayoutDashboardIcon, UsersIcon, PackageIcon, TruckIcon, WalletIcon, TargetIcon, CalendarDaysIcon, ShieldAlertIcon, ShieldCheckIcon, FolderGit2Icon, FileOutputIcon, UsersRoundIcon, ArrowLeftIcon, LogOutIcon, MenuIcon, BellIcon, SearchIcon, HardHatIcon, SettingsIcon, BarChart3Icon, CalendarIcon, GlobeIcon, LifeBuoyIcon, ReceiptIcon, ActivityIcon, MicroscopeIcon, BoxIcon, MailIcon, TrendingUpIcon, GavelIcon, StoreIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useUnreadCount, useCompanySettings } from '../hooks/useErp';
 import { configureDateFormatting } from '../utils/datetime';
@@ -133,6 +133,24 @@ const navSections: NavSection[] = [
     label: 'Sous-Traitants',
     icon: UsersRoundIcon,
     roles: ['ADMIN', 'CHEF_PROJET'],
+  },
+  {
+    path: '/erp/fournisseurs',
+    label: 'Fournisseurs',
+    icon: StoreIcon,
+    roles: ['ADMIN', 'CHEF_PROJET', 'COMPTABLE'],
+  },
+  {
+    path: '/erp/livraisons',
+    label: 'Livraisons',
+    icon: TruckIcon,
+    roles: ['ADMIN', 'CHEF_PROJET', 'COMPTABLE'],
+  },
+  {
+    path: '/erp/appels-offres',
+    label: "Appels d'Offres",
+    icon: GavelIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
   }]
 
 },
@@ -153,8 +171,36 @@ const navSections: NavSection[] = [
 
 },
 {
+  label: 'TECHNIQUE',
+  items: [
+  {
+    path: '/erp/bim-hub',
+    label: 'Hub BIM',
+    icon: BoxIcon,
+    roles: ['ADMIN', 'CHEF_PROJET'],
+  }]
+
+},
+{
+  label: 'MARKETING',
+  items: [
+  {
+    path: '/erp/newsletter',
+    label: 'Newsletter',
+    icon: MailIcon,
+    roles: ['ADMIN'],
+  }]
+
+},
+{
   label: 'ANALYSE & OUTILS',
   items: [
+  {
+    path: '/erp/analytics',
+    label: 'Analytique',
+    icon: TrendingUpIcon,
+    roles: ['ADMIN', 'COMPTABLE', 'CHEF_PROJET'],
+  },
   {
     path: '/erp/rapports',
     label: 'Rapports',

@@ -1,0 +1,41 @@
+﻿# Dependances lourdes
+node_modules/
+.venv/
+venv/
+env/
+vendor/
+packages/
+
+# Builds & Bundles
+dist/
+build/
+out/
+target/
+*.min.js
+*.min.css
+*.map
+
+# Lockfiles massifs
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+composer.lock
+
+# Secrets & Fichiers confidentiels client (OPSEC STRICT)
+.env*
+*.pem
+*.key
+*.cert
+credentials*
+secrets*
+*.kdbx
+*.sqlite3
+dump.sql
+
+# Logs & Temp
+*.log
+logs/
+.cache/
+.git/
+.idea/
+.vscode/

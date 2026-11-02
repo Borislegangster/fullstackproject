@@ -62,7 +62,7 @@ export interface TranslationStatus {
 
 export const collaborationApi = {
   // Sessions
-  createSession: (data: { project_id: string; plan_urn: string; invited_user_ids?: string[] }) =>
+  createSession: (data: { project_id: string; plan_urn?: string; invited_user_ids?: string[] }) =>
     axiosClient.post<{ session_id: string; plan_urn: string; status: string }>(
       '/collaboration/sessions', data
     ).then(r => r.data),

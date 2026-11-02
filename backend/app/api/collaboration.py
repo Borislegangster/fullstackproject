@@ -237,7 +237,9 @@ manager = CollaborationManager()
 
 class SessionCreate(BaseModel):
     project_id: str
-    plan_urn: str
+    # Optional: empty URN = "annotation libre" session (no BIM model needed —
+    # the module stays fully usable without Autodesk APS credentials).
+    plan_urn: str = ""
     invited_user_ids: List[str] = []
 
 
@@ -256,17 +258,20 @@ async def create_session(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new collaborative review session."""
-    # Verify project exists
+    # Verify project exists — accept either the UUID or the human code (PRJ-…)
     proj_r = await db.execute(
-        select(Project).where(Project.id == data.project_id, Project.deleted_at.is_(None))
+        select(Project).where(
+            (Project.id == data.project_id) | (Project.code == data.project_id),
+            Project.deleted_at.is_(None),
+        )
     )
     project = proj_r.scalars().first()
     if not project:
         raise HTTPException(404, "Projet introuvable")
 
     session = CollaborationSession(
-        project_id=data.project_id,
-        plan_urn=data.plan_urn,
+        project_id=project.id,
+        plan_urn=data.plan_urn or "",
         created_by=user.id,
         status="ACTIVE",
         mode="FREE",
@@ -730,18 +735,19 @@ async def collaboration_websocket(
         # ── Connect to Room ───────────────────────────────────
         await manager.connect(session_id, user, websocket)
 
-        # Send current state to new participant
-        await websocket.send_json({
-            "type": "SESSION_STATE",
-            "payload": {
-                "session_id": session_id,
-                "mode": session.mode,
-                "presenter_id": session.presenter_id,
-                "participants": manager.get_participants(session_id),
-            },
-        })
-
         try:
+            # Send current state to new participant — inside the try: the
+            # client may already have disconnected (reload, onglet fermé) and
+            # send_json lèverait alors WebSocketDisconnect hors gestionnaire.
+            await websocket.send_json({
+                "type": "SESSION_STATE",
+                "payload": {
+                    "session_id": session_id,
+                    "mode": session.mode,
+                    "presenter_id": session.presenter_id,
+                    "participants": manager.get_participants(session_id),
+                },
+            })
             while True:
                 msg = await websocket.receive()
                 if msg.get("type") == "websocket.disconnect":
@@ -864,7 +870,10 @@ async def collaboration_websocket(
                     }, exclude=user.id)
 
         except WebSocketDisconnect:
-            await manager.disconnect(session_id, user.id)
+            pass  # déconnexion client normale (reload, fermeture d'onglet)
         except Exception as e:
             print(f"[WS Error] session={session_id} user={user.id}: {e}")
+        finally:
+            # Toujours libérer le slot/participant — y compris après un `break`
+            # normal (trame websocket.disconnect) qui ne lève aucune exception.
             await manager.disconnect(session_id, user.id)

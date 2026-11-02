@@ -1,0 +1,91 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "globus-api",
+      "runtimeExecutable": "G:/projet2/projet2/systemcomplet/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "G:/projet2/projet2/systemcomplet/backend/scripts/dev_server.py",
+        "--seed",
+        "--port",
+        "8010",
+        "--web-port",
+        "3010"
+      ],
+      "port": 8010
+    },
+    {
+      "name": "globus-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "G:/projet2/projet2/systemcomplet/apps/web/scripts/dev-local.mjs"
+      ],
+      "port": 3010
+    },
+    {
+      "name": "globus-api-e2e",
+      "runtimeExecutable": "G:/projet2/projet2/systemcomplet/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "G:/projet2/projet2/systemcomplet/backend/scripts/dev_server_isolated.py",
+        "--seed",
+        "--port",
+        "8010",
+        "--web-port",
+        "3010"
+      ],
+      "port": 8010
+    },
+    {
+      "name": "globus-api-alt",
+      "runtimeExecutable": "G:/projet2/projet2/systemcomplet/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "G:/projet2/projet2/systemcomplet/backend/scripts/dev_server_isolated.py",
+        "--pgdata",
+        "C:/Users/boris/AppData/Local/Temp/globus_pgdata_alt",
+        "--seed",
+        "--port",
+        "8012",
+        "--web-port",
+        "3012"
+      ],
+      "port": 8012,
+      "autoPort": false
+    },
+    {
+      "name": "globus-web-alt",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "Object.assign(process.env,{WEB_PORT:'3012',API_PORT:'8012',NEXT_DIST_DIR:'.next-dev-alt'});import('file:///G:/projet2/projet2/systemcomplet/apps/web/scripts/dev-local.mjs')"
+      ],
+      "port": 3012,
+      "autoPort": false
+    },
+    {
+      "name": "globus-api-local",
+      "runtimeExecutable": "G:/projet2/projet2/systemcomplet/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "G:/projet2/projet2/systemcomplet/backend/scripts/dev_server_isolated.py",
+        "--pgdata",
+        "C:/Users/boris/.globus-pgdata-dev",
+        "--seed",
+        "--port",
+        "8016",
+        "--web-port",
+        "3016"
+      ],
+      "port": 8016,
+      "autoPort": false
+    },
+    {
+      "name": "globus-web-local",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "Object.assign(process.env,{WEB_PORT:'3016',API_PORT:'8016',NEXT_DIST_DIR:'.next-dev-alt'});import('file:///G:/projet2/projet2/systemcomplet/apps/web/scripts/dev-local.mjs')"
+      ],
+      "port": 3016,
+      "autoPort": false
+    }
+  ]
+}

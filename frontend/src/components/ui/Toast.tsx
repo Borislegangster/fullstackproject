@@ -14,12 +14,12 @@ export function GlobusToaster() {
         },
         success: {
           style: {
-            background: '#F97316',
+            background: '#FB8C43',
             color: '#fff'
           },
           iconTheme: {
             primary: '#fff',
-            secondary: '#F97316'
+            secondary: '#FB8C43'
           }
         },
         error: {

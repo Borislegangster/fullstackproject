@@ -1,0 +1,80 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@400;600;700;800&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+/*
+ * Gilroy & Doxent are commercial fonts — we declare @font-face stubs
+ * so the CSS class works and gracefully falls back to the next font
+ * in the stack (Montserrat / Georgia) until the real font files are
+ * added to /public/fonts/.
+ *
+ * To activate Gilroy/Doxent: drop the .woff2 files into public/fonts/
+ * and uncomment the src lines below.
+ */
+@font-face {
+  font-family: 'Gilroy';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  /* src: url('/fonts/Gilroy-Regular.woff2') format('woff2'); */
+  src: local('Gilroy Regular'), local('Gilroy-Regular');
+}
+@font-face {
+  font-family: 'Gilroy';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  /* src: url('/fonts/Gilroy-SemiBold.woff2') format('woff2'); */
+  src: local('Gilroy SemiBold'), local('Gilroy-SemiBold');
+}
+@font-face {
+  font-family: 'Gilroy';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  /* src: url('/fonts/Gilroy-Bold.woff2') format('woff2'); */
+  src: local('Gilroy Bold'), local('Gilroy-Bold');
+}
+@font-face {
+  font-family: 'Gilroy';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  /* src: url('/fonts/Gilroy-ExtraBold.woff2') format('woff2'); */
+  src: local('Gilroy ExtraBold'), local('Gilroy-ExtraBold');
+}
+
+@font-face {
+  font-family: 'Doxent';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  /* src: url('/fonts/Doxent-Regular.woff2') format('woff2'); */
+  src: local('Doxent Regular'), local('Doxent-Regular');
+}
+@font-face {
+  font-family: 'Doxent';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  /* src: url('/fonts/Doxent-Bold.woff2') format('woff2'); */
+  src: local('Doxent Bold'), local('Doxent-Bold');
+}
+
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: 'Poppins', 'Open Sans', sans-serif;
+  color: #374151;
+  background-color: #F4F4F4;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Gilroy', 'Montserrat', sans-serif;
+}

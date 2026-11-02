@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "globus-backend",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "cd /d G:\\projet2\\backend && venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "globus-frontend",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "cd /d G:\\projet2\\frontend && npx vite --host 127.0.0.1 --port 5174 --strictPort"
+      ],
+      "port": 5174
+    }
+  ]
+}

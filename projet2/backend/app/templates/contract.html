@@ -1,0 +1,62 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ contract.title|default('Contrat de travail') }}</h1>
+<p class="small">Référence {{ contract.code|default(contract.id|truncate(8, True, '', 0)) }} · Établi le {{ contract.created_at|date_fr }}</p>
+
+<h2>Entre les parties</h2>
+<p>
+  <strong>L'employeur :</strong> {{ company_name|default('Globus Engineering SARL') }},
+  domicilié à {{ company_address|default('Douala, Cameroun') }},
+  représenté par {{ company_representative|default('le Directeur Général') }}.
+</p>
+<p>
+  <strong>Le salarié :</strong> {{ worker.full_name|default(worker.first_name ~ ' ' ~ worker.last_name) }}{% if worker.id_number %},
+  pièce N° {{ worker.id_number }}{% endif %}{% if worker.address %}, domicilié à {{ worker.address }}{% endif %}.
+</p>
+
+<h2>Article 1 — Engagement</h2>
+<p>
+  Le salarié est engagé en qualité de <strong>{{ contract.position|default(worker.position|default('—')) }}</strong>
+  sous contrat de type <strong>{{ contract.contract_type|default('CDI') }}</strong>
+  à compter du <strong>{{ contract.start_date|date_fr }}</strong>{% if contract.end_date %}
+  jusqu'au <strong>{{ contract.end_date|date_fr }}</strong>{% endif %}.
+</p>
+
+<h2>Article 2 — Rémunération</h2>
+<p>
+  Le salarié percevra une rémunération mensuelle brute de
+  <strong>{{ contract.salary|default(0)|currency }}</strong>{% if contract.salary_period %} ({{ contract.salary_period }}){% endif %},
+  payable mensuellement par virement bancaire ou tout autre moyen convenu.
+</p>
+
+{% if contract.working_hours %}
+<h2>Article 3 — Durée du travail</h2>
+<p>{{ contract.working_hours }}</p>
+{% endif %}
+
+{% if contract.clauses %}
+<h2>Clauses particulières</h2>
+<p>{{ contract.clauses|safe }}</p>
+{% endif %}
+
+<h2>Article — Confidentialité et obligations</h2>
+<p>
+  Le salarié s'engage à respecter le règlement intérieur, à observer la plus stricte
+  confidentialité concernant les informations de l'entreprise et de ses clients,
+  et à se conformer aux règles de sécurité applicables sur les chantiers.
+</p>
+
+<div class="signature-block">
+  <div class="col">
+    <p><strong>L'employeur</strong></p>
+    <p class="small">Fait à {{ company_city|default('Douala') }}, le {{ generated_at|date_fr }}</p>
+    <div class="box"></div>
+  </div>
+  &nbsp;
+  <div class="col">
+    <p><strong>Le salarié</strong> (lu et approuvé)</p>
+    <p class="small">Fait à {{ company_city|default('Douala') }}, le {{ generated_at|date_fr }}</p>
+    <div class="box"></div>
+  </div>
+</div>
+{% endblock %}

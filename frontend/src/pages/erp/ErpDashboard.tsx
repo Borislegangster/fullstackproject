@@ -24,7 +24,7 @@ import {
 } from '../../hooks/useErp';
 import { ChartEmpty } from '../../components/ui/ChartEmpty';
 // Color palette for the expense-breakdown pie (assigned by category order).
-const EXPENSE_COLORS = ['#F97316', '#1D4ED8', '#10B981', '#8B5CF6', '#EAB308', '#9CA3AF'];
+const EXPENSE_COLORS = ['#FB8C43', '#385AA6', '#10B981', '#8B5CF6', '#EAB308', '#9CA3AF'];
 
 const quickActions = [
 {
