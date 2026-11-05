@@ -34,7 +34,7 @@ export function AuthLayout({
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(135deg, #0f1f35 0%, #1e3a5f 40%, #1a3050 100%)',
+              'linear-gradient(135deg, #0f1f35 0%, #2A4580 40%, #1a3050 100%)',
           }}
         />
 
@@ -44,12 +44,12 @@ export function AuthLayout({
           viewBox="0 0 600 800"
           fill="none"
         >
-          <circle cx="450" cy="120" r="180" fill="#F97316" />
-          <circle cx="80" cy="650" r="120" fill="#F97316" />
-          <circle cx="520" cy="600" r="60" fill="#1D4ED8" />
-          <circle cx="300" cy="400" r="8" fill="#BFDBFE" />
-          <circle cx="150" cy="300" r="5" fill="#BFDBFE" />
-          <circle cx="480" cy="350" r="6" fill="#BFDBFE" />
+          <circle cx="450" cy="120" r="180" fill="#FB8C43" />
+          <circle cx="80" cy="650" r="120" fill="#FB8C43" />
+          <circle cx="520" cy="600" r="60" fill="#385AA6" />
+          <circle cx="300" cy="400" r="8" fill="#C5D4EE" />
+          <circle cx="150" cy="300" r="5" fill="#C5D4EE" />
+          <circle cx="480" cy="350" r="6" fill="#C5D4EE" />
         </svg>
 
         {/* Wavy decorative line */}
@@ -88,9 +88,9 @@ export function AuthLayout({
           {/* Logo + brand */}
           <Link to="/" className="flex items-center gap-3 mb-16">
             <img
-              src="/LogoGlobus.png"
+              src="/LogoGlobus_original.png"
               alt="Globus Engineering"
-              className="h-10 object-contain brightness-0 invert"
+              className="h-20 object-contain rounded-md"
             />
           </Link>
 

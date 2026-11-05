@@ -6,11 +6,11 @@ const letters = [
 },
 {
   char: 'L',
-  color: '#f97316'
+  color: '#FB8C43'
 },
 {
   char: 'O',
-  color: '#1e3a5f'
+  color: '#2A4580'
 },
 {
   char: 'B',
@@ -18,7 +18,7 @@ const letters = [
 },
 {
   char: 'U',
-  color: '#f97316'
+  color: '#FB8C43'
 },
 {
   char: 'S',
@@ -63,7 +63,7 @@ export function GlobusLoader() {
         <motion.div
           className="h-full rounded-full"
           style={{
-            background: 'linear-gradient(90deg, #0f2a4a, #f97316, #3b82f6)'
+            background: 'linear-gradient(90deg, #0f2a4a, #FB8C43, #3b82f6)'
           }}
           initial={{
             x: '-100%'

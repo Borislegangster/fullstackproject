@@ -230,7 +230,7 @@ export function ClientPlanning() {
                   cx="32"
                   cy="32"
                   r="28"
-                  stroke="#F97316"
+                  stroke="#FB8C43"
                   strokeWidth="6"
                   fill="none"
                   strokeDasharray={CIRCUMFERENCE}

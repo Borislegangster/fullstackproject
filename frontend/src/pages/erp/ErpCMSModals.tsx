@@ -275,14 +275,14 @@ export function ProjectModal({ show, onClose, formData, setFormData, onSave, isE
         {/* ── Avancement (timeline) ── */}
         <h4 className="font-montserrat font-bold text-sm text-globus-blue-dark border-b pb-1 mt-2">Avancement du projet (page détail)</h4>
         {progression.map((s: any, idx: number) => (
-          <div key={idx} className="flex gap-2 items-start border border-gray-200 rounded-lg p-2">
-            <input type="text" value={s.step || ''} onChange={e => updateStep(idx, 'step', e.target.value)} className={inputCls + ' flex-1'} placeholder={`Étape ${idx + 1} (ex: Fondations)`} />
-            <select value={s.status || 'à-venir'} onChange={e => updateStep(idx, 'status', e.target.value)} className={selectCls + ' w-32 shrink-0'}>
+          <div key={idx} className="flex gap-2 items-center border border-gray-200 rounded-lg p-2 overflow-hidden">
+            <input type="text" value={s.step || ''} onChange={e => updateStep(idx, 'step', e.target.value)} className={'flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue'} placeholder={`Étape ${idx + 1} (ex: Fondations)`} />
+            <select value={s.status || 'à-venir'} onChange={e => updateStep(idx, 'status', e.target.value)} className={'w-32 shrink-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue'}>
               <option value="validé">Validé</option>
               <option value="en-cours">En cours</option>
               <option value="à-venir">À venir</option>
             </select>
-            <input type="text" value={s.date || ''} onChange={e => updateStep(idx, 'date', e.target.value)} className={inputCls + ' w-28 shrink-0'} placeholder="Mai 2024" />
+            <input type="text" value={s.date || ''} onChange={e => updateStep(idx, 'date', e.target.value)} className={'w-32 shrink-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue'} placeholder="Mai 2024" />
             <button type="button" onClick={() => removeStep(idx)} className="p-1.5 text-red-400 hover:text-red-600 shrink-0" title="Supprimer">×</button>
           </div>
         ))}
