@@ -91,6 +91,31 @@ import('./pages/public/CookiePolicyPage').then((m) => ({
   default: m.CookiePolicyPage
 }))
 );
+const OffresPage = lazy(() =>
+import('./pages/public/OffresPage').then((m) => ({
+  default: m.OffresPage
+}))
+);
+const OffreDetailPage = lazy(() =>
+import('./pages/public/OffreDetailPage').then((m) => ({
+  default: m.OffreDetailPage
+}))
+);
+const ExpertisesPage = lazy(() =>
+import('./pages/public/ExpertisesPage').then((m) => ({
+  default: m.ExpertisesPage
+}))
+);
+const ProjectBriefPage = lazy(() =>
+import('./pages/public/ProjectBriefPage').then((m) => ({
+  default: m.ProjectBriefPage
+}))
+);
+const NotFoundPage = lazy(() =>
+import('./pages/public/NotFoundPage').then((m) => ({
+  default: m.NotFoundPage
+}))
+);
 const LoginPage = lazy(() =>
 import('./pages/auth/LoginPage').then((m) => ({
   default: m.LoginPage
@@ -166,6 +191,21 @@ import('./pages/client/ClientSAV').then((m) => ({
 const ClientNotifications = lazy(() =>
 import('./pages/client/ClientNotifications').then((m) => ({
   default: m.ClientNotifications
+}))
+);
+const ClientBIM = lazy(() =>
+import('./pages/client/ClientBIM').then((m) => ({
+  default: m.ClientBIM
+}))
+);
+const ClientValidations = lazy(() =>
+import('./pages/client/ClientValidations').then((m) => ({
+  default: m.ClientValidations
+}))
+);
+const ClientCalls = lazy(() =>
+import('./pages/client/ClientCalls').then((m) => ({
+  default: m.ClientCalls
 }))
 );
 const PaymentCallback = lazy(() =>
@@ -285,6 +325,36 @@ import('./pages/erp/ErpBureauEtudes').then((m) => ({
   default: m.ErpBureauEtudes
 }))
 );
+const ErpFournisseurs = lazy(() =>
+import('./pages/erp/ErpFournisseurs').then((m) => ({
+  default: m.ErpFournisseurs
+}))
+);
+const ErpLivraisons = lazy(() =>
+import('./pages/erp/ErpLivraisons').then((m) => ({
+  default: m.ErpLivraisons
+}))
+);
+const ErpBIMHub = lazy(() =>
+import('./pages/erp/ErpBIMHub').then((m) => ({
+  default: m.ErpBIMHub
+}))
+);
+const ErpNewsletter = lazy(() =>
+import('./pages/erp/ErpNewsletter').then((m) => ({
+  default: m.ErpNewsletter
+}))
+);
+const ErpAnalytics = lazy(() =>
+import('./pages/erp/ErpAnalytics').then((m) => ({
+  default: m.ErpAnalytics
+}))
+);
+const ErpAppelsOffres = lazy(() =>
+import('./pages/erp/ErpAppelsOffres').then((m) => ({
+  default: m.ErpAppelsOffres
+}))
+);
 function AppContent() {
   const location = useLocation();
   const isClientPortal = location.pathname.startsWith('/espace-client');
@@ -324,6 +394,10 @@ function AppContent() {
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogDetailPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/offres" element={<OffresPage />} />
+            <Route path="/offres/:slug" element={<OffreDetailPage />} />
+            <Route path="/expertises" element={<ExpertisesPage />} />
+            <Route path="/decrire-mon-projet" element={<ProjectBriefPage />} />
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/aide" element={<HelpCenterPage />} />
             <Route path="/mentions-legales" element={<LegalNoticePage />} />
@@ -360,6 +434,9 @@ function AppContent() {
               <Route path="compte" element={<ClientAccount />} />
               <Route path="sav" element={<ClientSAV />} />
               <Route path="notifications" element={<ClientNotifications />} />
+              <Route path="3d" element={<ClientBIM />} />
+              <Route path="validations" element={<ClientValidations />} />
+              <Route path="appels" element={<ClientCalls />} />
             </Route>
 
             <Route path="/erp" element={
@@ -431,7 +508,28 @@ function AppContent() {
               <Route path="journal-activite" element={
                 <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpJournalActivite /></RoleGuard>
               } />
+              <Route path="fournisseurs" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpFournisseurs /></RoleGuard>
+              } />
+              <Route path="livraisons" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpLivraisons /></RoleGuard>
+              } />
+              <Route path="bim-hub" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpBIMHub /></RoleGuard>
+              } />
+              <Route path="newsletter" element={
+                <RoleGuard roles={['ADMIN']}><ErpNewsletter /></RoleGuard>
+              } />
+              <Route path="analytics" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET', 'COMPTABLE']}><ErpAnalytics /></RoleGuard>
+              } />
+              <Route path="appels-offres" element={
+                <RoleGuard roles={['ADMIN', 'CHEF_PROJET']}><ErpAppelsOffres /></RoleGuard>
+              } />
             </Route>
+
+            {/* 404 catch-all */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </main>

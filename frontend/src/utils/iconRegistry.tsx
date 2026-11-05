@@ -11,8 +11,17 @@ import {
   Building2Icon,
   RulerIcon,
   AwardIcon,
-  WrenchIcon } from
-'lucide-react';
+  WrenchIcon,
+  UsersIcon,
+  TargetIcon,
+  ClipboardListIcon,
+  SearchIcon,
+  LayersIcon,
+  ScanIcon,
+  TruckIcon,
+  HammerIcon
+} from 'lucide-react';
+
 /**
  * Centralized icon registry.
  * Maps string keys (from API/mock data) to React icon components.
@@ -36,7 +45,15 @@ const iconMap: Record<
   Building2Icon,
   RulerIcon,
   AwardIcon,
-  WrenchIcon
+  WrenchIcon,
+  UsersIcon,
+  TargetIcon,
+  ClipboardListIcon,
+  SearchIcon,
+  LayersIcon,
+  ScanIcon,
+  TruckIcon,
+  HammerIcon
 };
 /**
  * Get a React icon component by its string key.

@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     # Database — SQLite for dev, PostgreSQL for prod (required)
     DATABASE_URL: str = "sqlite+aiosqlite:///./globus_dev.db"
+    # Log every SQL statement (very verbose) — opt-in for debugging only.
+    DB_ECHO: bool = False
 
     # JWT — No insecure defaults. Must be set in .env
     JWT_SECRET_KEY: str = ""

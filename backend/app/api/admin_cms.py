@@ -119,17 +119,36 @@ async def list_guarantees(db: AsyncSession = Depends(get_db), admin: User = Depe
 @router.get("/settings")
 async def get_settings(db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
     r = await db.execute(select(CMSSiteSettings))
-    return r.scalars().first()
+    row = r.scalars().first()
+    if not row:  # self-heal: never return null for the singleton
+        from app.services.cms_defaults import ensure_cms_defaults
+        await ensure_cms_defaults(db)
+        row = (await db.execute(select(CMSSiteSettings))).scalars().first()
+    return row
 
 @router.get("/about")
 async def get_about(db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
     r = await db.execute(select(CMSAboutContent))
-    return r.scalars().first()
+    row = r.scalars().first()
+    if not row:
+        from app.services.cms_defaults import ensure_cms_defaults
+        await ensure_cms_defaults(db)
+        row = (await db.execute(select(CMSAboutContent))).scalars().first()
+    return row
 
 @router.get("/legal/{slug}")
 async def get_legal(slug: str, db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
     r = await db.execute(select(CMSLegalPage).where(CMSLegalPage.slug == slug))
-    return r.scalars().first()
+    row = r.scalars().first()
+    if not row:
+        from app.services.cms_defaults import ensure_cms_defaults
+        await ensure_cms_defaults(db)
+        row = (await db.execute(
+            select(CMSLegalPage).where(CMSLegalPage.slug == slug)
+        )).scalars().first()
+    if not row:
+        raise HTTPException(404, "Page légale introuvable")
+    return row
 
 @router.get("/contacts")
 async def list_contacts(db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
@@ -364,7 +383,10 @@ async def delete_guarantee(id: str, db: AsyncSession = Depends(get_db), admin: U
 async def update_settings(data: SiteSettingsIn, db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
     r = await db.execute(select(CMSSiteSettings).limit(1))
     settings = r.scalars().first()
-    if not settings: raise HTTPException(404, "Settings non trouves")
+    if not settings:  # self-heal instead of 404 on a fresh DB
+        from app.services.cms_defaults import ensure_cms_defaults
+        await ensure_cms_defaults(db)
+        settings = (await db.execute(select(CMSSiteSettings).limit(1))).scalars().first()
     for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(settings, k, v)
     await db.commit()
@@ -443,7 +465,10 @@ async def export_data(db: AsyncSession = Depends(get_db), admin: User = Depends(
 async def update_about(data: AboutContentIn, db: AsyncSession = Depends(get_db), admin: User = Depends(require_admin)):
     r = await db.execute(select(CMSAboutContent).limit(1))
     about = r.scalars().first()
-    if not about: raise HTTPException(404, "About non trouve")
+    if not about:  # self-heal instead of 404 on a fresh DB
+        from app.services.cms_defaults import ensure_cms_defaults
+        await ensure_cms_defaults(db)
+        about = (await db.execute(select(CMSAboutContent).limit(1))).scalars().first()
     for k, v in data.model_dump(exclude_unset=True).items():
         if v is not None: setattr(about, k, v)
     await db.commit()

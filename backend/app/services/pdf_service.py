@@ -10,6 +10,7 @@ import io
 import os
 from typing import Any
 
+# pyrefly: ignore [missing-import]
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
@@ -46,6 +47,7 @@ def render_template(template_name: str, context: dict) -> str:
 
 def html_to_pdf(html: str) -> bytes:
     """Convert HTML to a PDF byte string. Raises RuntimeError if rendering fails."""
+    # pyrefly: ignore [missing-import]
     from xhtml2pdf import pisa
     buffer = io.BytesIO()
     result = pisa.CreatePDF(html, dest=buffer, encoding="utf-8")

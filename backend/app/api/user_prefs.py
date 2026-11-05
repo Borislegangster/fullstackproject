@@ -1,9 +1,13 @@
 """User preferences — Notifications, theme, locale."""
 from typing import Optional
 
+# pyrefly: ignore [missing-import]
 from fastapi import APIRouter, Depends
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel
+# pyrefly: ignore [missing-import]
 from sqlalchemy import select
+# pyrefly: ignore [missing-import]
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
