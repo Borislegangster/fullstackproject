@@ -1,19 +1,27 @@
-import aioboto3
 import logging
 from typing import Optional
-from botocore.exceptions import ClientError
 from app.config import get_settings
+
+try:
+    import aioboto3
+    from botocore.exceptions import ClientError
+except ImportError:
+    aioboto3 = None
+    ClientError = Exception
 
 logger = logging.getLogger(__name__)
 
 class StorageService:
     def __init__(self):
         self.settings = get_settings()
-        self.session = aioboto3.Session(
-            aws_access_key_id=self.settings.S3_ACCESS_KEY_ID,
-            aws_secret_access_key=self.settings.S3_SECRET_ACCESS_KEY,
-            region_name=self.settings.S3_REGION_NAME
-        )
+        if aioboto3 is not None:
+            self.session = aioboto3.Session(
+                aws_access_key_id=self.settings.S3_ACCESS_KEY_ID,
+                aws_secret_access_key=self.settings.S3_SECRET_ACCESS_KEY,
+                region_name=self.settings.S3_REGION_NAME
+            )
+        else:
+            self.session = None
         self.bucket = self.settings.S3_BUCKET_NAME
         self.endpoint_url = self.settings.S3_ENDPOINT_URL
         self.use_cloud = self.settings.USE_CLOUD_STORAGE

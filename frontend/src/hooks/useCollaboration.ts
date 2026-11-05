@@ -295,6 +295,17 @@ export function useCollaboration(opts: UseCollaborationOptions): CollaborationAp
     }
   }, [onSessionEnded]);
 
+  // Latest handlers, readable inside the WS closures WITHOUT relancer l'effet
+  // de connexion : les callbacks du parent sont recréés à chaque render, et
+  // les mettre en dépendance ouvrait/fermait la socket en boucle
+  // ("WebSocket is closed before the connection is established").
+  const handlePacketRef = useRef(handlePacket);
+  handlePacketRef.current = handlePacket;
+  const handleBinaryRef = useRef(handleBinary);
+  handleBinaryRef.current = handleBinary;
+  const onSessionEndedRef = useRef(onSessionEnded);
+  onSessionEndedRef.current = onSessionEnded;
+
   // Establish & maintain the connection
   useEffect(() => {
     let cancelled = false;
@@ -313,15 +324,21 @@ export function useCollaboration(opts: UseCollaborationOptions): CollaborationAp
         setConnected(true);
       };
       ws.onmessage = (e) => {
-        if (e.data instanceof ArrayBuffer) handleBinary(e.data);
-        else handlePacket(e.data);
+        if (e.data instanceof ArrayBuffer) handleBinaryRef.current(e.data);
+        else handlePacketRef.current(e.data);
       };
       ws.onerror = () => {
         // onclose will retry
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         setConnected(false);
         if (cancelled) return;
+        // Fermetures définitives du serveur → NE PAS se reconnecter :
+        // 4001 token invalide, 4003 accès refusé, 4004 session terminée.
+        if (e.code === 4001 || e.code === 4003 || e.code === 4004) {
+          if (e.code === 4004) onSessionEndedRef.current?.();
+          return;
+        }
         const delay = Math.min(30_000, 1000 * Math.pow(2, reconnectAttempt.current));
         reconnectAttempt.current += 1;
         reconnectTimer = setTimeout(connect, delay);
@@ -334,7 +351,7 @@ export function useCollaboration(opts: UseCollaborationOptions): CollaborationAp
       if (reconnectTimer) clearTimeout(reconnectTimer);
       wsRef.current?.close();
     };
-  }, [sessionId, handlePacket, handleBinary]);
+  }, [sessionId]);
 
   // Expire stale cursors after 5 s of inactivity
   useEffect(() => {

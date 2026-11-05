@@ -17,6 +17,7 @@ import { CollaborationToolbar } from '../../components/bim/CollaborationToolbar'
 import { SessionSidebar } from '../../components/bim/SessionSidebar';
 import { VideoGrid } from '../../components/bim/VideoGrid';
 import { useWebRTC } from '../../hooks/useWebRTC';
+import { useProjects } from '../../hooks/useErp';
 import { VideoIcon, HardHatIcon } from 'lucide-react';
 import { formatDateTime } from '../../utils/datetime';
 
@@ -187,18 +188,24 @@ function CreateSessionModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [bimFile, setBimFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  // Vrais projets — plus de saisie libre d'ID (source d'erreurs 404).
+  const { data: projects } = useProjects();
+  const projectOptions: any[] = Array.isArray(projects) ? projects : [];
 
   const handleCreate = async () => {
-    if (!projectId) { setError('Project ID requis'); return; }
+    if (!projectId) { setError('Sélectionnez un projet'); return; }
     setError('');
     setCreating(true);
     try {
       let urn = planUrn.trim();
       if (!urn && bimFile) {
+        // L'upload BIM nécessite Autodesk APS — une erreur ici n'empêche pas
+        // de créer la session en mode annotation libre (sans maquette).
         const uploaded = await collaborationApi.uploadBim(projectId, bimFile);
         urn = uploaded.urn;
       }
-      if (!urn) { setError('URN ou fichier BIM requis'); return; }
+      // La maquette est OPTIONNELLE : sans URN, la session s'ouvre en mode
+      // « annotation libre » (curseurs, annotations, chat, visio, snapshots).
       const session = await collaborationApi.createSession({ project_id: projectId, plan_urn: urn });
       onCreated(session.session_id);
     } catch (e: any) {
@@ -217,30 +224,45 @@ function CreateSessionModal({ onClose, onCreated }: { onClose: () => void; onCre
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ID du Projet</label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 mb-1">Projet</label>
+            <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              placeholder="ex: PRJ-2026-001"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue bg-white">
+              <option value="">— Sélectionner un projet —</option>
+              {projectOptions.map((p) => (
+                <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>
+              ))}
+            </select>
+            {projectOptions.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Aucun projet — créez d'abord un chantier (ou convertissez un lead CRM).
+              </p>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URN du Plan (APS)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Maquette BIM <span className="text-gray-400 font-normal">(optionnel)</span>
+            </label>
             <input
               value={planUrn}
               onChange={(e) => setPlanUrn(e.target.value)}
-              placeholder="dXJuOmFkc2sub2JqZWN0czEv... (laisser vide pour uploader un fichier)"
+              placeholder="URN APS (dXJuOmFkc2su...) — ou uploadez un fichier ci-dessous"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-globus-blue" />
           </div>
-          <div className="text-center text-xs text-gray-400">— OU —</div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Uploader un fichier BIM</label>
             <input
               type="file"
               accept=".rvt,.dwg,.ifc,.nwd"
               onChange={(e) => setBimFile(e.target.files?.[0] || null)}
               className="w-full text-sm" />
-            <p className="text-xs text-gray-400 mt-1">.rvt, .dwg, .ifc, .nwd — max 500 MB</p>
+            <p className="text-xs text-gray-400 mt-1">
+              .rvt, .dwg, .ifc, .nwd — max 500 MB (nécessite Autodesk APS configuré)
+            </p>
+            <p className="text-xs text-gray-500 mt-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5">
+              💡 Sans maquette, la session s'ouvre en <b>mode annotation libre</b> :
+              curseurs partagés, annotations par calque, chat, visio et snapshots restent disponibles.
+            </p>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex gap-3 pt-2">
@@ -315,15 +337,48 @@ function CollaborativeViewer({ sessionId }: { sessionId: string }) {
     });
   };
 
+  // Capture silencieuse du viewer → data URL base64. IMPORTANT: getScreenShot
+  // SANS callback ouvre la capture dans un nouvel onglet (comportement
+  // Autodesk) — on passe donc toujours un callback et on convertit le blob.
+  const captureViewerImage = (): Promise<string> =>
+    new Promise((resolve) => {
+      const v = viewerRef.current;
+      if (!v?.getScreenShot) return resolve('');
+      let settled = false;
+      const timer = setTimeout(() => { if (!settled) { settled = true; resolve(''); } }, 4000);
+      try {
+        v.getScreenShot(1024, 768, async (blobUrl: string) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try {
+            const blob = await fetch(blobUrl).then((r) => r.blob());
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(String(reader.result || ''));
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(blob);
+          } catch {
+            resolve('');
+          } finally {
+            try { URL.revokeObjectURL(blobUrl); } catch { /* noop */ }
+          }
+        });
+      } catch {
+        clearTimeout(timer);
+        if (!settled) { settled = true; resolve(''); }
+      }
+    });
+
   const handleSnapshot = async () => {
     // Capture the viewer canvas; if not ready, capture the whole stage as fallback.
     let imageData = '';
     try {
-      const screenshot = viewerRef.current?.getScreenShot?.(800, 600);
-      if (typeof screenshot === 'string') imageData = screenshot;
+      imageData = await captureViewerImage();
     } catch (e) { /* viewer may not be ready */ }
 
-    if (!imageData) {
+    // En mode annotation libre (pas de maquette), le snapshot est archivé
+    // sans image de fond (les annotations + notes restent dans le PDF GED).
+    if (!imageData && session?.plan_urn) {
       alert('Le viewer n\'est pas encore prêt — réessayez dans quelques secondes.');
       return;
     }
@@ -403,10 +458,26 @@ function CollaborativeViewer({ sessionId }: { sessionId: string }) {
         <div className="flex-1 relative">
           {session ? (
             <>
-              <ForgeViewer
-                urn={session.plan_urn}
-                onViewerReady={(v) => { viewerRef.current = v; }}
-                className="absolute inset-0" />
+              {session.plan_urn ? (
+                <ForgeViewer
+                  urn={session.plan_urn}
+                  onViewerReady={(v) => { viewerRef.current = v; }}
+                  className="absolute inset-0" />
+              ) : (
+                /* Mode annotation libre — pas de maquette BIM : fond quadrillé
+                   type table à dessin, toutes les fonctions collab actives. */
+                <div
+                  className="absolute inset-0 bg-white"
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px), linear-gradient(#f3f4f6 1px, transparent 1px), linear-gradient(90deg, #f3f4f6 1px, transparent 1px)',
+                    backgroundSize: '100px 100px, 100px 100px, 20px 20px, 20px 20px',
+                  }}>
+                  <span className="absolute top-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-gray-400 bg-white/80 px-3 py-1 rounded-full border border-gray-200">
+                    Mode annotation libre — aucune maquette BIM associée
+                  </span>
+                </div>
+              )}
               <CollaborationCanvas
                 collab={collab}
                 activeLayer={activeLayer}

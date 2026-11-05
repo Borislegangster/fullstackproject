@@ -1,6 +1,15 @@
 import os
+import sys
 from dotenv import load_dotenv
 load_dotenv()
+
+# Force UTF-8 on stdout/stderr so French accents + emoji in logs never crash
+# the app on a Windows cp1252 console (UnicodeEncodeError at startup).
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -35,22 +44,38 @@ async def lifespan(app: FastAPI):
     import app.models.cms  # noqa: F401 — CMS models
     import app.models.media  # noqa: F401 — Media model
     import app.models.erp  # noqa: F401 — ERP models (30+ tables)
+    import app.models.suppliers  # noqa: F401
+    import app.models.bim_hub  # noqa: F401
+    import app.models.communications  # noqa: F401
+    import app.models.marketing  # noqa: F401
+    import app.models.security_audit  # noqa: F401
+    import app.models.extensions  # noqa: F401
 
     if settings.DEBUG:
         # Development: auto-create all tables (convenient, no migration needed)
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        # Seed the default project templates (idempotent).
+        # Seed the default project templates + CMS singleton rows (idempotent).
         from app.database import AsyncSessionLocal
         from app.services.project_templates import ensure_default_templates
+        from app.services.cms_defaults import ensure_cms_defaults
         async with AsyncSessionLocal() as db:
             await ensure_default_templates(db)
-        print(f"[DEV] 🛠️ Tables vérifiées/créées — {settings.APP_NAME}")
+            await ensure_cms_defaults(db)
+        print(f"[DEV] Tables OK + defaults seeded - {settings.APP_NAME}")
     else:
         # Production: only verify DB connection — use Alembic for migrations
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
-        print(f"[PROD] ✅ Connexion DB OK — {settings.APP_NAME}")
+        # Self-heal the CMS singleton rows (idempotent, non-fatal).
+        try:
+            from app.database import AsyncSessionLocal
+            from app.services.cms_defaults import ensure_cms_defaults
+            async with AsyncSessionLocal() as db:
+                await ensure_cms_defaults(db)
+        except Exception as e:
+            print(f"[PROD] ensure_cms_defaults skipped: {e}")
+        print(f"[PROD] DB connection OK - {settings.APP_NAME}")
     yield
 
 
@@ -175,4 +200,30 @@ app.include_router(quotes_router, prefix="/api/v1")
 # Payments — Flutterwave gateway
 from app.api.payments import router as payments_router  # noqa: E402
 app.include_router(payments_router, prefix="/api/v1")
+
+# ── V4 Phase 2 — New domain routers ─────────────────────────
+from app.api.suppliers import router as suppliers_router  # noqa: E402
+from app.api.deliveries import router as deliveries_router  # noqa: E402
+from app.api.bim_hub import router as bim_hub_router  # noqa: E402
+from app.api.newsletter import router as newsletter_router  # noqa: E402
+from app.api.disputes import tender_router, dispute_router  # noqa: E402
+from app.api.project_extensions import router as project_ext_router  # noqa: E402
+from app.api.calls import router as calls_router  # noqa: E402
+from app.api.analytics_dashboard import router as analytics_router  # noqa: E402
+from app.api.security_admin import router as security_router  # noqa: E402
+from app.api.offers_cms import router as offers_cms_router  # noqa: E402
+from app.api.project_brief import router as project_brief_router  # noqa: E402
+
+app.include_router(suppliers_router, prefix="/api/v1")
+app.include_router(deliveries_router, prefix="/api/v1")
+app.include_router(bim_hub_router, prefix="/api/v1")
+app.include_router(newsletter_router, prefix="/api/v1")
+app.include_router(tender_router, prefix="/api/v1")
+app.include_router(dispute_router, prefix="/api/v1")
+app.include_router(project_ext_router, prefix="/api/v1")
+app.include_router(calls_router, prefix="/api/v1")
+app.include_router(analytics_router, prefix="/api/v1")
+app.include_router(security_router, prefix="/api/v1")
+app.include_router(offers_cms_router, prefix="/api/v1")
+app.include_router(project_brief_router, prefix="/api/v1")
 
