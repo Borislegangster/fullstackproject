@@ -933,13 +933,6 @@ def _quote_out(quote: Quote) -> dict[str, Any]:
     return jsonable(data)
 
 
-def _check_schedule(schedule: list[dict[str, Any]]) -> None:
-    if schedule:
-        total = sum(Decimal(str(s.get("pct", 0))) for s in schedule)
-        if total != Decimal("100"):
-            raise BusinessRuleError("L'échéancier doit totaliser 100 %", code="SCHEDULE_NOT_100")
-
-
 @router.get("/quotes")
 def list_quotes(
     params: PageParams = Depends(),
@@ -968,7 +961,6 @@ def list_quotes(
 def create_quote(
     data: QuoteIn, principal: Principal = Depends(require("crm:write")), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
-    _check_schedule(data.payment_schedule)
     values = data.model_dump(exclude={"lines"})
     opp = db.get(Opportunity, data.opportunity_id) if data.opportunity_id else None
     if opp:
@@ -980,6 +972,7 @@ def create_quote(
     for index, line in enumerate(data.lines):
         quote.lines.append(QuoteLine(sort_order=index, **line.model_dump()))
     service.compute_quote(quote)
+    service.normalize_schedule(quote)
     db.add(quote)
     db.flush()
     audit.record(
@@ -1019,7 +1012,6 @@ def update_quote(
     quote = _get_quote(db, quote_id)
     if quote.status != "draft":
         raise BusinessRuleError("Seul un devis en brouillon est modifiable : créez une révision", code="QUOTE_LOCKED")
-    _check_schedule(data.payment_schedule)
     for key, value in data.model_dump(exclude={"lines"}).items():
         setattr(quote, key, value)
     quote.lines.clear()
@@ -1027,6 +1019,7 @@ def update_quote(
     for index, line in enumerate(data.lines):
         quote.lines.append(QuoteLine(sort_order=index, **line.model_dump()))
     service.compute_quote(quote)
+    service.normalize_schedule(quote)
     audit.record(
         db,
         family="business",

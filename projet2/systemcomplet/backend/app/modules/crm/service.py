@@ -681,6 +681,52 @@ def compute_quote(quote: Quote) -> None:
     quote.total = money(base + quote.tax_amount)
 
 
+def normalize_schedule(quote: Quote) -> None:
+    """Échéancier saisi en MONTANTS TTC (source de vérité) ; le % est déduit.
+
+    Chaque échéance porte son montant, sauf la dernière qui reçoit le reste
+    (total TTC - échéances précédentes) : aucune erreur d'arrondi possible.
+    Les anciens échéanciers en % seuls restent acceptés (tolérance 0,01 %).
+    """
+    steps = [dict(s) for s in (quote.payment_schedule or [])]
+    if not steps:
+        return
+    total = money(quote.total)
+    if total <= 0:
+        raise BusinessRuleError("Ajoutez des lignes chiffrées avant de définir l'échéancier", code="SCHEDULE_NO_TOTAL")
+
+    def given(step: dict[str, Any], key: str) -> bool:
+        return step.get(key) not in (None, "")
+
+    if any(given(s, "amount") for s in steps) or not any(given(s, "pct") for s in steps):
+        if not all(given(s, "amount") for s in steps[:-1]):
+            raise BusinessRuleError("Indiquez le montant de chaque échéance", code="SCHEDULE_AMOUNT")
+        amounts = [money(s["amount"]) for s in steps[:-1]]
+        rest = total - sum(amounts, Decimal("0"))
+        if given(steps[-1], "amount") and money(steps[-1]["amount"]) != rest:
+            raise BusinessRuleError(
+                f"L'échéancier doit totaliser le montant TTC du devis ({total})", code="SCHEDULE_NOT_TOTAL"
+            )
+        amounts.append(rest)
+        if any(a <= 0 for a in amounts):
+            raise BusinessRuleError(
+                f"Les échéances dépassent le montant TTC du devis ({total}) : la dernière doit rester positive",
+                code="SCHEDULE_NOT_TOTAL",
+            )
+    else:
+        pcts = [Decimal(str(s.get("pct") or 0)) for s in steps]
+        if any(p <= 0 for p in pcts) or abs(sum(pcts, Decimal("0")) - 100) > Decimal("0.01"):
+            raise BusinessRuleError("L'échéancier doit totaliser 100 %", code="SCHEDULE_NOT_100")
+        amounts = [money(total * p / 100) for p in pcts[:-1]]
+        amounts.append(total - sum(amounts, Decimal("0")))
+    pcts_out = [(a * 100 / total).quantize(Decimal("0.01")) for a in amounts[:-1]]
+    pcts_out.append(Decimal("100") - sum(pcts_out, Decimal("0")))
+    for step, amount, pct in zip(steps, amounts, pcts_out, strict=True):
+        step["amount"] = str(amount)
+        step["pct"] = float(pct)
+    quote.payment_schedule = steps
+
+
 def quote_pdf(db: Session, quote: Quote) -> bytes:
     from app.core.pdf import (
         PdfDocument,
@@ -707,7 +753,9 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         for line in quote.lines
     ]
     schedule = "\n".join(
-        f"• {s.get('label', 'Échéance')} : {s.get('pct', 0)} %" for s in (quote.payment_schedule or [])
+        f"• {s.get('label', 'Échéance')} : "
+        + (fmt_money(s["amount"], quote.currency) if s.get("amount") else f"{s.get('pct', 0)} %")
+        for s in (quote.payment_schedule or [])
     )
     studies = getattr(quote, "nature", "travaux") == "etudes"
     stamps = {"draft": "BROUILLON", "rejected": "REFUSÉ", "expired": "EXPIRÉ", "superseded": "REMPLACÉ"}
