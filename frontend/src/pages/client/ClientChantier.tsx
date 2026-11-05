@@ -355,7 +355,7 @@ export function ClientChantier() {
                 className="absolute inset-0 opacity-20"
                 style={{
                   backgroundImage:
-                  'linear-gradient(#2A4580 1px, transparent 1px), linear-gradient(90deg, #2A4580 1px, transparent 1px)',
+                  'linear-gradient(#1e3a5f 1px, transparent 1px), linear-gradient(90deg, #1e3a5f 1px, transparent 1px)',
                   backgroundSize: '40px 40px'
                 }}>
               </div>

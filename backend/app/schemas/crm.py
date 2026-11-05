@@ -1,5 +1,4 @@
 """CRM / Lead management schemas."""
-# pyrefly: ignore [missing-import]
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

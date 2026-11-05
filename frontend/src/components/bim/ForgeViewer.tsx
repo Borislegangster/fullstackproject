@@ -64,23 +64,13 @@ export interface ForgeViewerProps {
   className?: string;
 }
 
-type Stage = 'idle' | 'loading-script' | 'loading-token' | 'translating' | 'loading-document' | 'ready' | 'error' | 'no-credentials';
-
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+type Stage = 'idle' | 'loading-script' | 'loading-token' | 'loading-document' | 'ready' | 'error' | 'no-credentials';
 
 export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [stage, setStage] = useState<Stage>('idle');
   const [error, setError] = useState('');
-  const [translationProgress, setTranslationProgress] = useState('');
-  // Le parent re-rend à haute fréquence (curseurs temps réel) et recrée son
-  // callback inline à chaque render : on le garde dans un ref pour que
-  // l'initialisation ne dépende QUE de l'URN — sinon le viewer se
-  // détruit/réinitialise en boucle et spamme /aps-token (quota Autodesk).
-  const onViewerReadyRef = useRef(onViewerReady);
-  onViewerReadyRef.current = onViewerReady;
-  const resizeObsRef = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,47 +102,10 @@ export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerP
         return;
       }
 
-      // ── Attendre la fin de la traduction Autodesk (DWG/RVT → SVF2) ──
-      // Sans cette étape, Document.load échoue ou reste bloqué tant que le
-      // job Model Derivative n'est pas terminé (~1-3 min pour un DWG).
-      const bareUrn = urn.replace(/^urn:/, '');
-      try {
-        let st = await collaborationApi.getTranslationStatus(bareUrn);
-        while (!cancelled && (st.status === 'inprogress' || st.status === 'pending')) {
-          setStage('translating');
-          setTranslationProgress(st.progress || '');
-          await sleep(5000);
-          st = await collaborationApi.getTranslationStatus(bareUrn);
-        }
-        if (cancelled) return;
-        if (st.status === 'failed') {
-          setError('La traduction Autodesk de cette maquette a échoué. Ré-uploadez le fichier.');
-          setStage('error');
-          return;
-        }
-        // 'success' → charger ; 'not_started'/inconnu → tenter le chargement
-        // direct quand même (maquette traduite hors plateforme, URN externe…).
-      } catch {
-        // Statut indisponible (réseau, URN exotique) — non bloquant.
-      }
-
-      // Attendre que le conteneur ait une taille réelle : démarrer le viewer
-      // sur un conteneur 0×0 (layout flex en cours de calcul, onglet en
-      // arrière-plan) spamme "Framebuffer incomplete: attachment has zero
-      // size" et produit un cadrage caméra dégénéré.
-      for (let i = 0; i < 100 && !cancelled; i++) {
-        const el = containerRef.current;
-        if (el && el.clientWidth > 0 && el.clientHeight > 0) break;
-        await sleep(100);
-      }
-
       if (cancelled || !containerRef.current) return;
       const Autodesk = window.Autodesk!;
       const config = {
-        // Paire documentée pour les traductions SVF2 : AutodeskProduction2 +
-        // streamingV2. Mélanger AutodeskProduction (endpoints SVF classiques)
-        // avec streamingV2 fait échouer le fetch des dérivés 2D (.f2d → 404).
-        env: 'AutodeskProduction2',
+        env: 'AutodeskProduction',
         api: 'streamingV2',
         getAccessToken: (onTokenReady: (token: string, expires: number) => void) => {
           onTokenReady(tokenResp.access_token, tokenResp.expires_in);
@@ -165,18 +118,6 @@ export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerP
         viewer.start();
         viewerRef.current = viewer;
 
-        // Le conteneur (layout flex) peut mesurer 0×0 au premier rendu →
-        // "Framebuffer incomplete: attachment has zero size". Resynchroniser
-        // le canvas dès que le conteneur obtient sa taille réelle.
-        if (typeof ResizeObserver !== 'undefined') {
-          resizeObsRef.current?.disconnect();
-          const ro = new ResizeObserver(() => {
-            try { viewerRef.current?.resize?.(); } catch { /* noop */ }
-          });
-          ro.observe(containerRef.current);
-          resizeObsRef.current = ro;
-        }
-
         const fullUrn = urn.startsWith('urn:') ? urn : `urn:${urn}`;
         setStage('loading-document');
         Autodesk.Viewing.Document.load(
@@ -186,11 +127,8 @@ export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerP
             const viewable = doc.getRoot().getDefaultGeometry();
             viewer.loadDocumentNode(doc, viewable).then(() => {
               if (cancelled) return;
-              // Le viewer a pu démarrer avec un conteneur à 0×0 (layout flex)
-              // → le cadrage initial est dégénéré et le plan est hors champ.
-              try { viewer.resize(); viewer.fitToView(); } catch { /* noop */ }
               setStage('ready');
-              onViewerReadyRef.current?.(viewer);
+              onViewerReady?.(viewer);
             });
           },
           (errCode: any, errMsg: any) => {
@@ -205,13 +143,11 @@ export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerP
     start();
     return () => {
       cancelled = true;
-      resizeObsRef.current?.disconnect();
-      resizeObsRef.current = null;
       try { viewerRef.current?.tearDown?.(); } catch { /* noop */ }
       try { viewerRef.current?.finish?.(); } catch { /* noop */ }
       viewerRef.current = null;
     };
-  }, [urn]);
+  }, [urn, onViewerReady]);
 
   if (stage === 'no-credentials') {
     return (
@@ -227,15 +163,14 @@ export function ForgeViewer({ urn, onViewerReady, className = '' }: ForgeViewerP
   }
 
   return (
-    <div className={className || "relative w-full h-full"}>
-      <div ref={containerRef} className="w-full h-full bg-gray-900 overflow-hidden" />
+    <div className={`relative ${className}`}>
+      <div ref={containerRef} className="w-full h-full bg-gray-900" />
       {stage !== 'ready' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/80 text-white text-sm gap-3 z-10">
           <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
           <p>
             {stage === 'loading-script' && 'Chargement du viewer 3D...'}
             {stage === 'loading-token' && 'Authentification...'}
-            {stage === 'translating' && `Traduction Autodesk en cours${translationProgress ? ` (${translationProgress})` : ''}... Cela prend 1 à 3 min.`}
             {stage === 'loading-document' && 'Chargement du modèle BIM...'}
           </p>
         </div>

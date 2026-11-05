@@ -7,11 +7,8 @@ hashed before storage.
 import secrets
 from typing import Optional
 
-# pyrefly: ignore [missing-import]
 import pyotp
-# pyrefly: ignore [missing-import]
 from sqlalchemy import select
-# pyrefly: ignore [missing-import]
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User

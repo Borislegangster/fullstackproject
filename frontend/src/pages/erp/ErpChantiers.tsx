@@ -1086,7 +1086,7 @@ export function ErpChantiers() {
                       <Bar
                       dataKey="Équipements"
                       stackId="a"
-                      fill="#FB8C43"
+                      fill="#F97316"
                       radius={[0, 4, 4, 0]} />
 
                     </BarChart>

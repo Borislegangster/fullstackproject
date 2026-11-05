@@ -21,7 +21,7 @@ export type DrawingTool = 'none' | 'pencil' | 'rectangle' | 'arrow';
 
 export const LAYER_COLORS: Record<string, string> = {
   architecture: '#3b82f6',  // blue
-  structure: '#FB8C43',     // orange
+  structure: '#f97316',     // orange
   electricite: '#fbbf24',   // yellow
   plomberie: '#06b6d4',     // cyan
   decisions: '#10b981',     // green

@@ -30,6 +30,3 @@ test-results
 storybook-static
 blob-report
 .playwright
-
-.env.local
-.env

@@ -509,12 +509,12 @@ export function ErpRapports() {
                       
                         <stop
                         offset="5%"
-                        stopColor="#FB8C43"
+                        stopColor="#F97316"
                         stopOpacity={0.3} />
                       
                         <stop
                         offset="95%"
-                        stopColor="#FB8C43"
+                        stopColor="#F97316"
                         stopOpacity={0} />
 
                       </linearGradient>
@@ -570,7 +570,7 @@ export function ErpRapports() {
                     <Area
                     type="monotone"
                     dataKey="current"
-                    stroke="#FB8C43"
+                    stroke="#F97316"
                     strokeWidth={2.5}
                     fill="url(#colorCurrent)" />
 

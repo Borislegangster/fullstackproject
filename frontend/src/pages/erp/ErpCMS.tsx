@@ -229,7 +229,6 @@ export function ErpCMS() {
     lfInit.current = true;
     const forms: any = {};
     for (const [key, page] of Object.entries(legalPages)) {
-      if (!page) continue; // defensive: never crash on a null page payload
       forms[key] = {
         title: page.title || '',
         last_updated: page.last_updated || '',
@@ -487,7 +486,6 @@ export function ErpCMS() {
     else if (type === 'partner') setShowPartnerModal(true);
     else if (type === 'faqItem') setShowFaqItemModal(true);
     else if (type === 'faqCategory') setShowFaqCategoryModal(true);
-    else if (type === 'heroSlide') setShowHeroSlideModal(true);
     else if (type === 'engagement') setShowEngagementModal(true);
     else if (type === 'methodology') setShowMethodologyModal(true);
     else if (type === 'guarantee') setShowGuaranteeModal(true);
@@ -3388,7 +3386,7 @@ export function ErpCMS() {
                     Vidéos
                   </p>
                   <p className="text-2xl font-montserrat font-bold text-purple-600">
-                    {mediaData.filter((m) => m.type === 'video' || m.type === 'youtube').length}
+                    {mediaData.filter((m) => m.type === 'video').length}
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
@@ -3512,22 +3510,14 @@ export function ErpCMS() {
                         <div className="h-32 bg-gray-100 relative flex items-center justify-center overflow-hidden">
                           {media.type === 'image' ?
                             <img
-                              src={media.url.startsWith('http') ? media.url : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${media.url}`}
+                              src={media.url}
                               alt={media.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> :
 
                             media.type === 'video' ?
-                              <video
-                                src={media.url.startsWith('http') ? media.url : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${media.url}`}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                muted playsInline loop
-                                onMouseOver={e => (e.target as HTMLVideoElement).play().catch(() => {})}
-                                onMouseOut={e => {
-                                  const v = e.target as HTMLVideoElement;
-                                  v.pause();
-                                  v.currentTime = 0;
-                                }}
-                              /> :
+                              <div className="w-full h-full flex items-center justify-center">
+                                <VideoIcon className="w-12 h-12 text-gray-400" />
+                              </div> :
                             media.type === 'youtube' ?
                               <div className="w-full h-full relative">
                                 <img src={media.thumbnail || media.url} alt="YouTube" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -3545,7 +3535,7 @@ export function ErpCMS() {
                           <div className="absolute top-2 right-2 flex gap-1">
                             <button
                               onClick={() => confirmDelete(media, 'media')}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors shadow-sm bg-white/80 backdrop-blur-sm">
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
                               <Trash2Icon className="w-4 h-4" />
                             </button>
                           </div>
@@ -3673,25 +3663,12 @@ export function ErpCMS() {
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-500 mb-1">Image OG (URL)</label>
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="text"
-                              value={page.og_image || ''}
-                              onChange={e => setSeoPage(i, 'og_image', e.target.value)}
-                              placeholder="https://..."
-                              className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMediaFilter('image');
-                                setShowMediaPicker(true);
-                                setMediaPickerCallback(() => (url: string) => setSeoPage(i, 'og_image', url));
-                              }}
-                              className="p-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 hover:bg-globus-orange hover:text-white hover:border-globus-orange transition-colors shrink-0"
-                              title="Choisir depuis la médiathèque">
-                              <FolderOpenIcon className="w-5 h-5" />
-                            </button>
-                          </div>
+                          <input
+                            type="text"
+                            value={page.og_image || ''}
+                            onChange={e => setSeoPage(i, 'og_image', e.target.value)}
+                            placeholder="https://..."
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-globus-blue" />
                         </div>
                       </div>
                     ))}

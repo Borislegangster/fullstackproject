@@ -1,25 +1,16 @@
 """GED API — Documents, Folders, Versioning, Signing, Material Choices."""
 import os
 import uuid
-# pyrefly: ignore [missing-import]
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-# pyrefly: ignore [missing-import]
 from sqlalchemy import select
-# pyrefly: ignore [missing-import]
 from sqlalchemy.ext.asyncio import AsyncSession
-# pyrefly: ignore [missing-import]
 from pydantic import BaseModel
 from typing import Optional
 
-# pyrefly: ignore [missing-import]
 from app.database import get_db
-# pyrefly: ignore [missing-import]
 from app.auth.models import User
-# pyrefly: ignore [missing-import]
 from app.auth.service import require_staff, get_current_user
-# pyrefly: ignore [missing-import]
 from app.models.erp import GEDFolder, Document, MaterialChoice, Project
-# pyrefly: ignore [missing-import]
 from app.services.activity_service import log_activity
 
 router = APIRouter(prefix="/ged", tags=["GED"])
@@ -207,7 +198,6 @@ async def upload_new_version_binary(
     return {"id": new_doc.id, "version": new_doc.version, "file_url": new_doc.file_url}
 
 
-# pyrefly: ignore [missing-import]
 from fastapi.responses import RedirectResponse
 
 @router.get("/documents/{doc_id}/download")

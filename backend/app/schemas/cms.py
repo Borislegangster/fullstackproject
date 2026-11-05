@@ -2,7 +2,6 @@
 Pydantic schemas for CMS API responses.
 Mirror the TypeScript interfaces in cms.types.ts exactly.
 """
-# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 

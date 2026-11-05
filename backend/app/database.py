@@ -11,7 +11,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
 
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DB_ECHO,   # off by default; set DB_ECHO=True to log SQL
+    echo=settings.DEBUG,
     connect_args=connect_args,
 )
 

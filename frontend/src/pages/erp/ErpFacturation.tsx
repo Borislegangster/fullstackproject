@@ -48,7 +48,7 @@ interface Devis {
 // Aging buckets → chart bars (label + colour by bucket key).
 const AGING_META: Record<string, {range: string; color: string}> = {
   '0_30': { range: '0-30j', color: '#10B981' },
-  '31_60': { range: '30-60j', color: '#FB8C43' },
+  '31_60': { range: '30-60j', color: '#F97316' },
   '61_90': { range: '60-90j', color: '#EF4444' },
   '90_plus': { range: '90j+', color: '#991B1B' },
 };

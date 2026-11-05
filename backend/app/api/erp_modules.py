@@ -917,8 +917,7 @@ async def list_activity_logs(
          "entity_type": l.entity_type, "entity_id": l.entity_id,
          "description": l.description, "old_value": l.old_value,
          "new_value": l.new_value, "ip_address": l.ip_address,
-         # Le modèle n'a pas de colonne user_agent — forme API stable via getattr.
-         "user_agent": getattr(l, "user_agent", ""), "created_at": l.created_at}
+         "user_agent": l.user_agent, "created_at": l.created_at}
         for l in r.scalars().all()
     ]
 

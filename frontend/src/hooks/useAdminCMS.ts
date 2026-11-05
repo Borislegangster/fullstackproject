@@ -159,9 +159,8 @@ export function useAdminCMS() {
       if (guarData.status === 'fulfilled') setGuarantees(guarData.value);
       if (contactsData.status === 'fulfilled') setContacts(contactsData.value);
       if (mediaData.status === 'fulfilled') setMediaItems(mediaData.value);
-      // Singletons can be null on a fresh/unseeded DB — never store null.
-      if (settingsData.status === 'fulfilled' && settingsData.value) setSiteSettings(settingsData.value);
-      if (aboutData.status === 'fulfilled' && aboutData.value) setAboutContent(aboutData.value);
+      if (settingsData.status === 'fulfilled') setSiteSettings(settingsData.value);
+      if (aboutData.status === 'fulfilled') setAboutContent(aboutData.value);
 
       // Legal pages
       try {
@@ -172,10 +171,10 @@ export function useAdminCMS() {
           legalApi.get('cookies'),
         ]);
         const pages: Record<string, AdminLegalPage> = {};
-        if (legal.status === 'fulfilled' && legal.value) pages['legalNotice'] = legal.value;
-        if (privacy.status === 'fulfilled' && privacy.value) pages['privacy'] = privacy.value;
-        if (terms.status === 'fulfilled' && terms.value) pages['terms'] = terms.value;
-        if (cookies.status === 'fulfilled' && cookies.value) pages['cookies'] = cookies.value;
+        if (legal.status === 'fulfilled') pages['legalNotice'] = legal.value;
+        if (privacy.status === 'fulfilled') pages['privacy'] = privacy.value;
+        if (terms.status === 'fulfilled') pages['terms'] = terms.value;
+        if (cookies.status === 'fulfilled') pages['cookies'] = cookies.value;
         setLegalPages(pages);
       } catch { /* legal pages are optional */ }
     } catch (e) {

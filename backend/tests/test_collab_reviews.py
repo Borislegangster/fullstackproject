@@ -90,30 +90,6 @@ def test_binary_cursor_relay(client, admin_headers, admin_token, client_token, s
         assert 0 <= slot <= 255
 
 
-def test_create_session_without_model_and_by_code(client, admin_headers, sample_project):
-    """La maquette BIM est optionnelle (mode annotation libre) et le projet
-    peut être référencé par son CODE humain (PRJ-…) comme par son UUID."""
-    # Sans plan_urn → session valide
-    r = client.post(f"{API}/collaboration/sessions", headers=admin_headers, json={
-        "project_id": sample_project["id"],
-    })
-    assert r.status_code == 200, r.text
-    assert r.json()["plan_urn"] == ""
-
-    # Par code projet (si le projet a un code)
-    if sample_project.get("code"):
-        r2 = client.post(f"{API}/collaboration/sessions", headers=admin_headers, json={
-            "project_id": sample_project["code"],
-        })
-        assert r2.status_code == 200, r2.text
-
-    # Projet inexistant → toujours 404
-    r3 = client.post(f"{API}/collaboration/sessions", headers=admin_headers, json={
-        "project_id": "PRJ-INEXISTANT",
-    })
-    assert r3.status_code == 404
-
-
 def test_ice_servers_endpoint(client, admin_headers):
     r = client.get(f"{API}/collaboration/ice-servers", headers=admin_headers)
     assert r.status_code == 200

@@ -32,12 +32,6 @@ import app.auth.models  # noqa: E402,F401
 import app.models.cms  # noqa: E402,F401
 import app.models.media  # noqa: E402,F401
 import app.models.erp  # noqa: E402,F401
-import app.models.suppliers  # noqa: E402,F401
-import app.models.bim_hub  # noqa: E402,F401
-import app.models.communications  # noqa: E402,F401
-import app.models.marketing  # noqa: E402,F401
-import app.models.security_audit  # noqa: E402,F401
-import app.models.extensions  # noqa: E402,F401
 
 from app.config import get_settings  # noqa: E402
 
