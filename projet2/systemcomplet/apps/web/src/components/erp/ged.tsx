@@ -464,6 +464,9 @@ export function BulkImport({ projectId, folderId, defaultConfidentiality, onDone
 }
 
 /** Actions groupées sur les documents cochés : soumission en revue, validation, publication (double regard). */
+/** Nombre maximal de documents par appel à /documents/bulk-transition (BulkTransitionIn). */
+const BULK_LIMIT = 200;
+
 function GedBulkActions({ rows, done }: { rows: Row[]; done: () => void }) {
   const { can } = useAuth();
   const toast = useToast();
@@ -476,8 +479,14 @@ function GedBulkActions({ rows, done }: { rows: Row[]; done: () => void }) {
       return;
     }
     setBusy(target);
+    // L'API accepte 200 documents par appel : la sélection (qui peut couvrir plusieurs pages) part par lots.
+    const res: { done: Row[]; errors: Row[] } = { done: [], errors: [] };
     try {
-      const res = await api<{ done: Row[]; errors: Row[] }>("/documents/bulk-transition", { method: "POST", body: { document_ids: eligible.map((r) => r.id), target } });
+      for (let i = 0; i < eligible.length; i += BULK_LIMIT) {
+        const part = await api<{ done: Row[]; errors: Row[] }>("/documents/bulk-transition", { method: "POST", body: { document_ids: eligible.slice(i, i + BULK_LIMIT).map((r) => r.id), target } });
+        res.done.push(...part.done);
+        res.errors.push(...part.errors);
+      }
       const skipped = rows.length - eligible.length;
       // Le récapitulatif vit dans la barre de sélection : la sélection n'est vidée (done) qu'à sa fermeture,
       // sinon la barre disparaît avec la fenêtre avant qu'on ait pu la lire.
@@ -488,7 +497,14 @@ function GedBulkActions({ rows, done }: { rows: Row[]; done: () => void }) {
         done();
       }
     } catch (err) {
-      toast.error(label, errorMessage(err));
+      if (res.done.length) {
+        // Un lot a échoué après d'autres déjà enregistrés : récapitulatif de ce qui est fait ; la fermeture vide la
+        // sélection et recharge la liste (statuts à jour avant toute nouvelle tentative).
+        setReport({
+          title: `${label} : ${res.done.length} effectué${res.done.length > 1 ? "s" : ""}, interrompu`,
+          errors: [...res.errors, { document_id: "lot", code: "Envoi interrompu", message: errorMessage(err) }],
+        });
+      } else toast.error(label, errorMessage(err));
     } finally {
       setBusy(null);
     }
@@ -700,7 +716,7 @@ export function GedExplorer() {
               { key: "status", label: "Statut", options: opts(VERSION_STATUSES) },
             ],
             emptyText: "Aucun document dans ce dossier.",
-            bulkActions: can("documents:write") || can("documents:approve") ? (rows, done) => <GedBulkActions rows={rows} done={done} /> : undefined,
+            bulkActions: can("documents:write") || can("documents:approve") || can("documents:publish") ? (rows, done) => <GedBulkActions rows={rows} done={done} /> : undefined,
           }}
         />
       </div>

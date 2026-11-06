@@ -35,7 +35,7 @@ Les **Paiements** : encaissements clients (en ligne par carte ou Mobile Money co
 ::: perm finance:approve
 ### Approuver (double regard)
 
-Ouvrez le paiement « à approuver » puis **Approuver** (fenêtre **Approuver le paiement**). Vous ne pouvez pas approuver un ordre que vous avez créé vous-même : une seconde personne est requise.
+Ouvrez le paiement « à approuver » puis **Approuver** (fenêtre **Approuver le paiement**). Vous ne pouvez pas approuver un ordre que vous avez créé vous-même : une seconde personne est requise. Seul le super administrateur peut approuver sa propre saisie ; l'approbation est tracée au journal d'audit.
 :::
 
 ::: perm finance:approve
@@ -47,7 +47,7 @@ Filtrez **Sens** : **Encaissements** et **Statut** : « À approuver », puis ou
 2. **Approuver** ouvre **Approuver l'encaissement** : à la confirmation, l'appel de fonds ou la facture passe « Partiellement payé » ou « Payé », le **Reçu** PDF est émis, le client est notifié et le voit dans son espace (**Paiements et reçus**).
 3. Sinon **Refuser** ouvre **Refuser l'encaissement** : **Motif** obligatoire ; la pièce reste due.
 
-La personne qui a saisi l'encaissement ne peut jamais l'approuver, quel que soit son rôle ; elle peut seulement **Retirer la saisie** (fenêtre **Retirer la saisie**, motif obligatoire).
+La personne qui a saisi l'encaissement ne peut pas l'approuver ; elle peut seulement **Retirer la saisie** (fenêtre **Retirer la saisie**, motif obligatoire). Seul le super administrateur peut approuver un encaissement qu'il a lui-même saisi ; l'approbation est tracée au journal d'audit.
 :::
 
 ::: role DIRECTION, ADMIN

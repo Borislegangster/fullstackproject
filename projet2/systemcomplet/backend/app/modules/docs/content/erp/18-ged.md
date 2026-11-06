@@ -23,7 +23,7 @@ Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). Choisi
 2. Le document est créé en brouillon (version 1).
 3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet : nom et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier, reprise du dossier parent) ; **Créer**. Le nouveau dossier s'ouvre aussitôt dans l'arborescence.
 
-Un même fichier (contenu identique, quel que soit son nom) ne peut être déposé qu'une fois par projet : un second dépôt est refusé et le message indique le document déjà présent et son dossier.
+Un même fichier (contenu identique, quel que soit son nom) ne peut être déposé qu'une fois par projet : un second dépôt est refusé et le message indique le document déjà présent et son dossier (s'il vous est accessible).
 
 ## Importer plusieurs fichiers ou un dossier
 

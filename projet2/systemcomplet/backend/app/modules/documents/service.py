@@ -8,6 +8,7 @@ from __future__ import annotations
 import difflib
 import io
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import Text, cast, func, or_, select, text
@@ -74,18 +75,20 @@ def extract_text(upload: ValidatedUpload) -> tuple[str | None, int | None]:
 
 
 # ---------------------------------------------------------------------------- contrôle d'accès
-def can_read(access: Access, db: Session, doc: Document) -> bool:
+def can_read(access: Access, db: Session, doc: Document, acl: Sequence[DocumentPermission] | None = None) -> bool:
+    """`acl` : droits du document et de son dossier déjà chargés (traitements en lot) ; sinon lus ici."""
     if doc.deleted_at is not None:
         return False
-    acl = (
-        db.execute(
-            select(DocumentPermission).where(
-                or_(DocumentPermission.document_id == doc.id, DocumentPermission.folder_id == doc.folder_id)
+    if acl is None:
+        acl = (
+            db.execute(
+                select(DocumentPermission).where(
+                    or_(DocumentPermission.document_id == doc.id, DocumentPermission.folder_id == doc.folder_id)
+                )
             )
+            .scalars()
+            .all()
         )
-        .scalars()
-        .all()
-    )
     deny = any(p.permission == "deny" and _matches(p, access) for p in acl)
     if deny:
         return False
@@ -170,8 +173,19 @@ def create_document(
                 "Ce dossier appartient à un autre espace (projet) que celui du document", code="FOLDER_PROJECT_MISMATCH"
             )
     if reject_duplicates:
+        # Verrou de transaction sur (projet, empreinte) : deux dépôts simultanés du même fichier sont sérialisés,
+        # le second voit le document du premier une fois celui-ci validé.
+        db.execute(
+            select(func.pg_advisory_xact_lock(func.hashtextextended(f"ged-dup:{project_id}:{upload.sha256}", 0)))
+        )
         duplicate = find_duplicate(db, upload.sha256, project_id)
         if duplicate is not None:
+            if not can_read(access, db, duplicate):
+                # L'original n'est pas lisible par l'appelant : ni code, ni titre, ni dossier.
+                raise Conflict(
+                    "Ce fichier est déjà présent dans la GED de ce projet (document non accessible avec votre profil)",
+                    code="DUPLICATE_DOCUMENT",
+                )
             raise Conflict(
                 f"Fichier déjà présent dans la GED : {describe(db, duplicate)}",
                 code="DUPLICATE_DOCUMENT",
@@ -232,6 +246,41 @@ def find_duplicates(db: Session, checksums: list[str], project_id: uuid.UUID | N
     for checksum, document in db.execute(stmt).all():
         found.setdefault(checksum, document)
     return found
+
+
+def readable_counts_by_folder(db: Session, access: Access, folder_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Nombre de documents lisibles par l'appelant dans chaque dossier (droits chargés en une requête)."""
+    if not folder_ids:
+        return {}
+    in_folders = (Document.folder_id.in_(folder_ids), Document.deleted_at.is_(None))
+    docs = db.execute(select(Document).where(*in_folders)).scalars().all()
+    if not docs:
+        return {}
+    perms = (
+        db.execute(
+            select(DocumentPermission).where(
+                or_(
+                    DocumentPermission.document_id.in_(select(Document.id).where(*in_folders)),
+                    DocumentPermission.folder_id.in_(folder_ids),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    by_doc: dict[uuid.UUID, list[DocumentPermission]] = {}
+    by_folder: dict[uuid.UUID, list[DocumentPermission]] = {}
+    for perm in perms:
+        if perm.document_id:
+            by_doc.setdefault(perm.document_id, []).append(perm)
+        if perm.folder_id:
+            by_folder.setdefault(perm.folder_id, []).append(perm)
+    counts: dict[uuid.UUID, int] = {}
+    for doc in docs:
+        acl = [*by_doc.get(doc.id, ()), *by_folder.get(doc.folder_id, ())] if doc.folder_id else by_doc.get(doc.id, [])
+        if doc.folder_id and can_read(access, db, doc, acl=acl):
+            counts[doc.folder_id] = counts.get(doc.folder_id, 0) + 1
+    return counts
 
 
 def describe(db: Session, document: Document) -> str:
