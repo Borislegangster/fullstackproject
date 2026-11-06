@@ -152,3 +152,28 @@ def test_offline_receipt_double_check_to_paid_funds_call(client: Any, db: Any) -
     assert imported.status_code == 200 and imported.json()["matched"] == 1, imported.text
     payment = client.get(f"{API}/payments/{first['id']}", headers=fh).json()
     assert [b["reference"] for b in payment["bank_matches"]] == ["VIR-2026-0042"]
+
+
+def test_admin_invoices_and_approves_own_offline_receipt(client: Any, db: Any) -> None:
+    """Le super administrateur fait tout le circuit seul : facture, validation, saisie du règlement, approbation
+    (chaque auto-validation est tracée)."""
+    from app.modules.system.models import AuditEvent
+    from tests.test_billing import _invoice, _project_and_client
+
+    project, ah, org = _project_and_client(client, db)
+    invoice = _invoice(client, ah, project, org)
+    validated = client.post(f"{API}/client-invoices/{invoice['id']}/validate", headers=ah)
+    assert validated.status_code == 200, validated.text
+
+    receipt = _receipt(client, ah, f"/client-invoices/{invoice['id']}/payments", reference="VIR-ADM-0001")
+    assert receipt.status_code == 201, receipt.text
+    approved = client.post(f"{API}/payments/{receipt.json()['id']}/approve", headers=ah)
+    assert approved.status_code == 200, approved.text
+    assert approved.json()["status"] == "succeeded"
+    assert client.get(f"{API}/client-invoices/{invoice['id']}", headers=ah).json()["status"] == "paid"
+
+    traced = {
+        e.resource_id
+        for e in db.execute(select(AuditEvent).where(AuditEvent.action == "ADMIN_SELF_APPROVAL")).scalars()
+    }
+    assert {invoice["id"], receipt.json()["id"]} <= traced

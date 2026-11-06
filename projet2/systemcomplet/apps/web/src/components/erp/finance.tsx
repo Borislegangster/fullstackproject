@@ -360,6 +360,9 @@ export function PaymentDetail({ id }: { id: string }) {
   const p = payment.data;
   const cur = p.currency === "XAF" ? "FCFA" : p.currency;
   const selfInitiated = !!user && p.initiated_by_id === user.id;
+  // Double regard : seul le super administrateur approuve sa propre saisie (le serveur trace l'auto-approbation).
+  const superAdmin = hasRole("ADMIN");
+  const blockedBySelf = selfInitiated && !superAdmin;
   // Encaissement hors ligne (virement, espèces, chèque, Mobile Money direct) saisi avec preuve : double regard strict.
   const offline = p.direction === "in" && p.provider === "manual";
   const awaitingOffline = offline && p.status === "awaiting_approval";
@@ -383,7 +386,7 @@ export function PaymentDetail({ id }: { id: string }) {
               </a>
             ) : null}
             {p.status === "awaiting_approval" && can("finance:approve") ? (
-              <Button size="sm" onClick={() => setApproving(true)} disabled={selfInitiated && (offline || !hasRole("ADMIN"))}>
+              <Button size="sm" onClick={() => setApproving(true)} disabled={blockedBySelf}>
                 <ShieldCheck className="h-4 w-4" /> Approuver
               </Button>
             ) : null}
@@ -422,13 +425,17 @@ export function PaymentDetail({ id }: { id: string }) {
       />
       {awaitingOffline ? (
         <Alert tone="warning" title="Encaissement à vérifier">
-          Contrôlez la preuve (montant, référence, date de valeur) avec le relevé ou la caisse, puis approuvez : la pièce est alors réglée, le reçu émis et le client notifié. La personne qui a
-          saisi l&apos;encaissement ne peut pas l&apos;approuver (double regard).
+          Contrôlez la preuve (montant, référence, date de valeur) avec le relevé ou la caisse, puis approuvez : la pièce est alors réglée, le reçu émis et le client notifié.{" "}
+          {selfInitiated && superAdmin
+            ? "Vous avez saisi cet encaissement : en tant que super administrateur, vous pouvez l'approuver vous-même (approbation tracée au journal d'audit)."
+            : "La personne qui a saisi l'encaissement ne peut pas l'approuver (double regard) ; seul le super administrateur le peut."}
         </Alert>
       ) : p.status === "awaiting_approval" ? (
         <Alert tone="warning" title="Approbation requise">
           {p.approval_role ? `Seuil atteint : approbation réservée au rôle ${optionLabel(p.approval_role)}. ` : ""}
-          L'initiateur du paiement ne peut pas l'approuver (séparation des tâches).
+          {selfInitiated && superAdmin
+            ? "Vous avez initié ce paiement : en tant que super administrateur, vous pouvez l'approuver vous-même (approbation tracée au journal d'audit)."
+            : "L'initiateur du paiement ne peut pas l'approuver (séparation des tâches) ; seul le super administrateur le peut."}
         </Alert>
       ) : null}
       {p.failure_reason ? (
