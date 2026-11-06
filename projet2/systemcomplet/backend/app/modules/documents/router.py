@@ -19,7 +19,7 @@ from app.core.context import get_context
 from app.core.crud import make_crud_router, serialize
 from app.core.database import get_db
 from app.core.downloads import file_response, signed_url, watermark_label
-from app.core.errors import BusinessRuleError, Conflict, Forbidden, NotFound
+from app.core.errors import AppError, BusinessRuleError, Conflict, Forbidden, NotFound
 from app.core.files import validate_upload
 from app.core.middleware import client_ip
 from app.core.pagination import PageParams, paginate
@@ -86,14 +86,19 @@ def list_documents(
     discipline: str | None = None,
     status: str | None = None,
     client_visible: bool | None = None,
+    recursive: bool = False,
     db: Session = Depends(get_db),
     access: Access = Depends(get_access),
 ) -> dict[str, Any]:
+    """`recursive` : documents du dossier et de tous ses sous-dossiers (explorateur GED)."""
     stmt = select(Document).where(Document.deleted_at.is_(None))
     if not access.p.is_internal:
         stmt = access.filter_by_project(stmt, Document.project_id, allow_null=False)
     elif access.project_scope() is not None:
         stmt = access.filter_by_project(stmt, Document.project_id)
+    if folder_id is not None and recursive:
+        stmt = stmt.where(Document.folder_id.in_(service.subtree_ids(db, folder_id)))
+        folder_id = None
     for col, value in (
         (Document.project_id, project_id),
         (Document.folder_id, folder_id),
@@ -207,6 +212,133 @@ def bulk_transition(
     return result
 
 
+class BulkUpdateIn(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
+    doc_type: str | None = Field(default=None, max_length=30)
+    discipline: str | None = Field(default=None, max_length=40)
+    confidentiality: str | None = Field(default=None, pattern="^(public|internal|confidential|very_sensitive)$")
+    folder_id: uuid.UUID | None = None
+    client_visible: bool | None = None
+    partner_visible: bool | None = None
+    paid_deliverable: bool | None = None
+    add_tags: list[str] = Field(default_factory=list, max_length=30)
+
+
+@router.post("/documents/bulk-update")
+def bulk_update(
+    data: BulkUpdateIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Mêmes propriétés sur plusieurs documents : visibles par le client / les partenaires, livrable d'études payant,
+    type, discipline, confidentialité, dossier, mots-clés ajoutés. Seuls les champs envoyés sont modifiés."""
+    values = data.model_dump(exclude_unset=True, exclude={"document_ids", "add_tags"})
+    for key in ("doc_type", "confidentiality", "client_visible", "partner_visible", "paid_deliverable"):
+        if key in values and values[key] is None:
+            values.pop(key)  # champ obligatoire : « non renseigné » = inchangé
+    result = service.bulk_update(
+        db, access=access, document_ids=data.document_ids, values=values, add_tags=data.add_tags
+    )
+    db.commit()
+    return result
+
+
+class BulkSignOtpIn(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
+    channel: str = Field(default="email", pattern="^(email|sms|whatsapp)$")
+
+
+@router.post("/documents/bulk-sign/otp")
+def bulk_sign_otp(
+    data: BulkSignOtpIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Un seul code pour signer toute la sélection : il ne vaut que pour les versions listées (empreinte)."""
+    from app.modules.identity.models import User
+    from app.modules.identity.service import issue_otp
+
+    access.require("documents:read")
+    eligible, skipped = service.sign_selection(db, access=access, user_id=access.p.id, document_ids=data.document_ids)
+    if not eligible:
+        raise BusinessRuleError(
+            "Aucun document de la sélection n'est à signer (version validée ou publiée requise, ou déjà signée)",
+            code="NOTHING_TO_SIGN",
+            details={"skipped": skipped},
+        )
+    count = len(eligible)
+    result = issue_otp(
+        db,
+        db.get(User, access.p.id),
+        purpose="otp_sign_bulk",
+        channel=data.channel,
+        payload={
+            "selection": service.selection_digest(eligible),
+            "count": count,
+            "label": f"signature de {count} document{'s' if count > 1 else ''} de la GED",
+        },
+    )
+    db.commit()
+    return jsonable(
+        {
+            **result,
+            "eligible": [
+                {"document_id": d.id, "code": d.code, "title": d.title, "version": v.label} for d, v in eligible
+            ],
+            "skipped": skipped,
+        }
+    )
+
+
+class BulkSignIn(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1, max_length=500)
+    otp_token: str = Field(max_length=100)
+    code: str = Field(min_length=6, max_length=6)
+    role: str | None = Field(default=None, max_length=60)
+    consent: bool
+
+
+@router.post("/documents/bulk-sign")
+def bulk_sign(
+    data: BulkSignIn,
+    request: Request,
+    db: Session = Depends(get_db),
+    access: Access = Depends(get_access),
+    _: None = Depends(rate_limit("sign-bulk", "20/hour")),
+) -> dict[str, Any]:
+    """Signe la version validée ou publiée de chaque document de la sélection, avec le code reçu."""
+    from app.modules.identity.models import User
+    from app.modules.identity.service import verify_otp
+
+    if not data.consent:
+        raise BusinessRuleError("Le consentement à la signature électronique est requis")
+    user = db.get(User, access.p.id)
+    otp = verify_otp(db, user, purpose="otp_sign_bulk", otp_token=data.otp_token, code=data.code)
+    eligible, skipped = service.sign_selection(db, access=access, user_id=user.id, document_ids=data.document_ids)
+    if not eligible or otp["payload"].get("selection") != service.selection_digest(eligible):
+        raise BusinessRuleError(
+            "La sélection a changé depuis l'envoi du code : demandez un nouveau code", code="SELECTION_CHANGED"
+        )
+    done: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for document, version in eligible:
+        try:
+            with db.begin_nested():
+                signature = service.sign_version(
+                    db,
+                    user=user,
+                    document=document,
+                    version=version,
+                    otp=otp,
+                    ip=client_ip(request.scope),
+                    user_agent=request.headers.get("user-agent"),
+                    role=data.role,
+                )
+            done.append(
+                {"document_id": document.id, "code": document.code, "version": version.label, "id": signature.id}
+            )
+        except AppError as exc:
+            errors.append({"document_id": document.id, "code": document.code, "message": exc.message})
+    db.commit()
+    return jsonable({"done": done, "errors": errors, "skipped": skipped})
+
+
 @router.get("/documents/search")
 def search_documents(
     q: str = Query(..., min_length=2, max_length=200),
@@ -267,51 +399,8 @@ def update_document(
     document_id: uuid.UUID, data: DocumentPatch, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, Any]:
     document = service.get_document(db, document_id)
-    service.require_write(access, db, document)
-    values = data.model_dump(exclude_unset=True)
-    if "client_visible" in values or "partner_visible" in values:
-        access.require("documents:publish")
-    if "confidentiality" in values and not access.can_read_confidentiality(values["confidentiality"]):
-        raise BusinessRuleError("Niveau de confidentialité non autorisé")
-    if values.get("folder_id"):
-        folder = db.get(Folder, values["folder_id"])
-        if folder is None:
-            raise NotFound("Dossier introuvable")
-        if folder.project_id != document.project_id:
-            raise BusinessRuleError(
-                "Ce dossier appartient à un autre espace (projet) que celui du document", code="FOLDER_PROJECT_MISMATCH"
-            )
-    if values.get("unlock_invoice_id"):
-        from app.modules.billing.models import ClientInvoice
-
-        invoice = db.get(ClientInvoice, values["unlock_invoice_id"])
-        if invoice is None or invoice.project_id != document.project_id:
-            raise BusinessRuleError("Facture d'études introuvable sur ce projet")
-    before = audit.snapshot(document, list(values))
-    for key, value in values.items():
-        setattr(document, key, value)
-    audit.record(
-        db,
-        family="business",
-        module="documents",
-        action="UPDATE",
-        resource_type="document",
-        resource_id=document.id,
-        project_id=document.project_id,
-        diff=audit.diff_dicts(before, values),
-    )
-    if values.get("client_visible") and document.published_version_id:
-        from app.core.events import emit
-
-        version = db.get(DocumentVersion, document.published_version_id)
-        emit(
-            db,
-            "document.client_published",
-            {"document_id": document.id, "title": document.title, "label": version.label if version else ""},
-            aggregate_type="document",
-            aggregate_id=document.id,
-            project_id=document.project_id,
-        )
+    if service.update_document(db, access=access, document=document, values=data.model_dump(exclude_unset=True)):
+        service.notify_client_published(db, [document])
     db.commit()
     return _doc_out(db, document, versions=True)
 
@@ -786,23 +875,49 @@ def _folder_scope(access: Access, project_id: uuid.UUID | None) -> None:
 
 @router.get("/document-folders/tree")
 def folder_tree(
-    project_id: uuid.UUID | None = None, db: Session = Depends(get_db), access: Access = Depends(get_access)
+    project_id: uuid.UUID | None = None,
+    all_projects: bool = False,
+    db: Session = Depends(get_db),
+    access: Access = Depends(get_access),
 ) -> list[dict[str, Any]]:
-    """Tous les dossiers d'un projet (ou de la GED générale), avec le nombre de documents lisibles de chacun."""
+    """Dossiers d'un projet, de la GED générale, ou (`all_projects`) de la GED générale et de tous les projets
+    accessibles, avec le projet de chacun et le nombre de documents lisibles."""
+    from app.modules.projects.models import Project
+
     _folder_scope(access, project_id)
-    folders = (
-        db.execute(
-            select(Folder)
-            .where(Folder.project_id == project_id if project_id else Folder.project_id.is_(None))
-            .order_by(Folder.path)
-            .limit(5000)
-        )
-        .scalars()
-        .all()
+    stmt = select(Folder)
+    if project_id:
+        stmt = stmt.where(Folder.project_id == project_id)
+    elif all_projects:
+        stmt = access.filter_by_project(stmt, Folder.project_id)
+    else:
+        stmt = stmt.where(Folder.project_id.is_(None))
+    folders = db.execute(stmt.order_by(Folder.path).limit(5000)).scalars().all()
+    project_ids = {f.project_id for f in folders if f.project_id}
+    projects = (
+        {
+            p.id: p
+            for p in db.execute(
+                select(Project).where(Project.id.in_(project_ids), Project.deleted_at.is_(None))
+            ).scalars()
+        }
+        if project_ids
+        else {}
     )
+    folders = [f for f in folders if f.project_id is None or f.project_id in projects]  # projets archivés écartés
     # Seuls les documents que l'appelant peut lire sont comptés (confidentialité, ACL, lots, disciplines).
     counts = service.readable_counts_by_folder(db, access, [f.id for f in folders])
-    return jsonable([{**serialize(f), "documents": counts.get(f.id, 0)} for f in folders])
+    out = []
+    for folder in folders:
+        project = projects.get(folder.project_id) if folder.project_id else None
+        out.append(
+            {
+                **serialize(folder),
+                "documents": counts.get(folder.id, 0),
+                "project": {"id": project.id, "code": project.code, "name": project.name} if project else None,
+            }
+        )
+    return jsonable(out)
 
 
 class FolderPathsIn(BaseModel):
@@ -840,8 +955,8 @@ def ensure_folders(
 @router.delete("/document-folders/{folder_id}")
 def delete_folder(
     folder_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
-) -> dict[str, str]:
-    """Suppression d'un dossier vide uniquement (documents et sous-dossiers d'abord déplacés ou supprimés)."""
+) -> dict[str, Any]:
+    """Suppression d'un dossier vide : ni document dans le dossier ni dans ses sous-dossiers (supprimés avec lui)."""
     access.require("documents:write")
     folder = db.get(Folder, folder_id)
     if folder is None:
@@ -850,16 +965,18 @@ def delete_folder(
         access.require_project(folder.project_id, "documents:write")
     elif not access.p.is_internal:
         raise NotFound("Dossier introuvable")
-    if (
-        db.execute(select(Folder.id).where(Folder.parent_id == folder.id).limit(1)).first()
-        or db.execute(
-            select(Document.id).where(Document.folder_id == folder.id, Document.deleted_at.is_(None)).limit(1)
-        ).first()
-    ):
-        raise BusinessRuleError("Le dossier n'est pas vide", code="FOLDER_NOT_EMPTY")
-    for doc in db.execute(select(Document).where(Document.folder_id == folder.id)).scalars():
+    subtree = service.subtree_ids(db, folder.id)
+    if db.execute(
+        select(Document.id).where(Document.folder_id.in_(subtree), Document.deleted_at.is_(None)).limit(1)
+    ).first():
+        raise BusinessRuleError(
+            "Le dossier ou un de ses sous-dossiers contient des documents : déplacez-les ou supprimez-les d'abord",
+            code="FOLDER_NOT_EMPTY",
+        )
+    for doc in db.execute(select(Document).where(Document.folder_id.in_(subtree))).scalars():
         doc.folder_id = None  # documents supprimés (logiquement) : on les détache
-    db.delete(folder)
+    db.flush()
+    db.delete(folder)  # sous-dossiers vides supprimés en cascade
     audit.record(
         db,
         family="business",
@@ -868,10 +985,10 @@ def delete_folder(
         resource_type="document_folder",
         resource_id=folder_id,
         project_id=folder.project_id,
-        diff={"path": folder.path},
+        diff={"path": folder.path, "subfolders": len(subtree) - 1},
     )
     db.commit()
-    return {"status": "deleted"}
+    return {"status": "deleted", "folders": len(subtree)}
 
 
 def _folder_before_create(db: Session, obj: Folder, access: Access, values: dict[str, Any]) -> None:
@@ -883,11 +1000,10 @@ def _folder_before_create(db: Session, obj: Folder, access: Access, values: dict
         raise NotFound("Dossier parent introuvable")
     if parent is not None and parent.project_id != obj.project_id:
         raise BusinessRuleError("Le dossier parent appartient à un autre projet", code="FOLDER_PROJECT_MISMATCH")
-    same = select(Folder.id).where(Folder.name == obj.name)
-    same = same.where(Folder.parent_id == obj.parent_id if obj.parent_id else Folder.parent_id.is_(None))
-    same = same.where(Folder.project_id == obj.project_id if obj.project_id else Folder.project_id.is_(None))
-    if db.execute(same.limit(1)).first():
-        raise Conflict(f"Un dossier « {obj.name} » existe déjà à cet endroit", code="DUPLICATE_FOLDER")
+    service.lock_folder_level(db, obj.project_id, obj.parent_id)
+    twin = service.sibling_named(db, project_id=obj.project_id, parent_id=obj.parent_id, name=obj.name)
+    if twin is not None:
+        raise Conflict(f"Un dossier « {twin.name} » existe déjà à cet endroit", code="DUPLICATE_FOLDER")
     obj.path = (parent.path.rstrip("/") if parent else "") + "/" + obj.name
 
 
@@ -900,13 +1016,20 @@ def _folder_before_update(db: Session, obj: Folder, access: Access, values: dict
         name = values["name"].strip()
         if "/" in name:
             raise BusinessRuleError("Nom de dossier invalide (le caractère « / » est interdit)")
+        service.lock_folder_level(db, obj.project_id, obj.parent_id)
+        twin = service.sibling_named(
+            db, project_id=obj.project_id, parent_id=obj.parent_id, name=name, exclude_id=obj.id
+        )
+        if twin is not None:
+            raise Conflict(f"Un dossier « {twin.name} » existe déjà à cet endroit", code="DUPLICATE_FOLDER")
         values["name"] = name
         old = obj.path
         new = old.rsplit("/", 1)[0] + "/" + name
         values["path"] = new
-        for child in db.execute(select(Folder).where(Folder.path.like(f"{old}/%"))).scalars():
-            if child.project_id == obj.project_id:
-                child.path = new + child.path[len(old) :]
+        # Sous-dossiers suivis par parent_id (et non par préfixe de chemin : « _ » et « % » sont des jokers SQL)
+        children = [i for i in service.subtree_ids(db, obj.id) if i != obj.id]
+        for child in db.execute(select(Folder).where(Folder.id.in_(children))).scalars() if children else ():
+            child.path = new + child.path[len(old) :]
 
 
 router.include_router(

@@ -6,7 +6,9 @@ comparaison texte ; suppression logique avec justification ; journal d'accès (V
 from __future__ import annotations
 
 import difflib
+import hashlib
 import io
+import re
 import uuid
 from collections.abc import Sequence
 from typing import Any
@@ -191,6 +193,9 @@ def create_document(
                 code="DUPLICATE_DOCUMENT",
                 details={"document_id": str(duplicate.id), "code": duplicate.code},
             )
+    if not tags:  # mot-clé par défaut : le nom du fichier, sans extension
+        stem = re.sub(r"\.[^./\\]+$", "", upload.filename).strip() or upload.filename
+        tags = [stem[:100]] if stem else []
     document = Document(
         code=code or next_number(db, "document"),
         title=title,
@@ -283,6 +288,37 @@ def readable_counts_by_folder(db: Session, access: Access, folder_ids: list[uuid
     return counts
 
 
+def lock_folder_level(db: Session, project_id: uuid.UUID | None, parent_id: uuid.UUID | None) -> None:
+    """Création de dossiers sérialisée par emplacement (projet, dossier parent) : un double clic ou deux imports
+    simultanés ne créent pas deux dossiers du même nom (la contrainte unique ne joue pas quand le parent ou le
+    projet est vide : en SQL, deux valeurs NULL ne sont jamais égales)."""
+    db.execute(select(func.pg_advisory_xact_lock(func.hashtextextended(f"ged-folder:{project_id}:{parent_id}", 0))))
+
+
+def sibling_named(
+    db: Session,
+    *,
+    project_id: uuid.UUID | None,
+    parent_id: uuid.UUID | None,
+    name: str,
+    exclude_id: uuid.UUID | None = None,
+) -> Folder | None:
+    """Dossier de même nom (casse ignorée, comme sous Windows) au même emplacement."""
+    stmt = select(Folder).where(func.lower(Folder.name) == name.strip().lower())
+    stmt = stmt.where(Folder.parent_id == parent_id if parent_id else Folder.parent_id.is_(None))
+    stmt = stmt.where(Folder.project_id == project_id if project_id else Folder.project_id.is_(None))
+    if exclude_id is not None:
+        stmt = stmt.where(Folder.id != exclude_id)
+    return db.execute(stmt.order_by(Folder.created_at).limit(1)).scalars().first()
+
+
+def subtree_ids(db: Session, folder_id: uuid.UUID) -> list[uuid.UUID]:
+    """Le dossier et tous ses sous-dossiers, à toute profondeur (requête récursive sur parent_id)."""
+    tree = select(Folder.id).where(Folder.id == folder_id).cte("folder_subtree", recursive=True)
+    tree = tree.union_all(select(Folder.id).where(Folder.parent_id == tree.c.id))
+    return list(db.execute(select(tree.c.id)).scalars())
+
+
 def describe(db: Session, document: Document) -> str:
     folder = db.get(Folder, document.folder_id) if document.folder_id else None
     where = f" — dossier {folder.path}" if folder else ""
@@ -308,10 +344,9 @@ def ensure_folder_path(
         name = raw.strip()[:200]
         if not name or name in (".", ".."):
             continue
-        stmt = select(Folder).where(Folder.name == name)
-        stmt = stmt.where(Folder.parent_id == parent.id if parent else Folder.parent_id.is_(None))
-        stmt = stmt.where(Folder.project_id == project_id if project_id else Folder.project_id.is_(None))
-        existing = db.execute(stmt).scalars().first()
+        parent_key = parent.id if parent else None
+        lock_folder_level(db, project_id, parent_key)
+        existing = sibling_named(db, project_id=project_id, parent_id=parent_key, name=name)
         if existing is None:
             existing = Folder(
                 name=name,
@@ -853,3 +888,156 @@ def bulk_transition(
         except AppError as exc:
             errors.append({"document_id": str(document_id), "code": label, "message": exc.message})
     return {"done": done, "errors": errors}
+
+
+# ---------------------------------------------------------------------------- propriétés (fiche et actions groupées)
+def update_document(db: Session, *, access: Access, document: Document, values: dict[str, Any]) -> bool:
+    """Applique les propriétés modifiées ; renvoie True si le document vient d'être rendu visible au client
+    avec une version publiée (la notification est émise par l'appelant : une seule pour une action groupée)."""
+    require_write(access, db, document)
+    if "client_visible" in values or "partner_visible" in values:
+        access.require("documents:publish")
+    if "confidentiality" in values and not access.can_read_confidentiality(values["confidentiality"]):
+        raise BusinessRuleError("Niveau de confidentialité non autorisé")
+    if values.get("folder_id"):
+        folder = db.get(Folder, values["folder_id"])
+        if folder is None:
+            raise NotFound("Dossier introuvable")
+        if folder.project_id != document.project_id:
+            raise BusinessRuleError(
+                "Ce dossier appartient à un autre espace (projet) que celui du document", code="FOLDER_PROJECT_MISMATCH"
+            )
+    if values.get("unlock_invoice_id"):
+        from app.modules.billing.models import ClientInvoice
+
+        invoice = db.get(ClientInvoice, values["unlock_invoice_id"])
+        if invoice is None or invoice.project_id != document.project_id:
+            raise BusinessRuleError("Facture d'études introuvable sur ce projet")
+    if "tags" in values and values["tags"] is not None:
+        values["tags"] = list(dict.fromkeys(str(t).strip()[:100] for t in values["tags"] if str(t).strip()))[:30]
+    newly_visible = bool(values.get("client_visible")) and not document.client_visible
+    before = audit.snapshot(document, list(values))
+    for key, value in values.items():
+        setattr(document, key, value)
+    audit.record(
+        db,
+        family="business",
+        module="documents",
+        action="UPDATE",
+        resource_type="document",
+        resource_id=document.id,
+        project_id=document.project_id,
+        diff=audit.diff_dicts(before, values),
+    )
+    return newly_visible and bool(document.published_version_id)
+
+
+def notify_client_published(db: Session, documents: Sequence[Document]) -> None:
+    """Prévient le client des documents publiés dans son espace : un message par document, ou un seul message
+    récapitulatif par projet quand plusieurs documents sont rendus visibles en une fois."""
+    by_project: dict[uuid.UUID | None, list[Document]] = {}
+    for document in documents:
+        by_project.setdefault(document.project_id, []).append(document)
+    for project_id, docs in by_project.items():
+        if len(docs) == 1:
+            document = docs[0]
+            version = db.get(DocumentVersion, document.published_version_id) if document.published_version_id else None
+            emit(
+                db,
+                "document.client_published",
+                {"document_id": document.id, "title": document.title, "label": version.label if version else ""},
+                aggregate_type="document",
+                aggregate_id=document.id,
+                project_id=project_id,
+            )
+            continue
+        more = f" et {len(docs) - 5} autre(s)" if len(docs) > 5 else ""
+        emit(
+            db,
+            "documents.client_published",
+            {
+                "count": len(docs),
+                "titles": ", ".join(f"« {d.title} »" for d in docs[:5]) + more,
+                "document_ids": [str(d.id) for d in docs],
+            },
+            aggregate_type="project",
+            aggregate_id=project_id,
+            project_id=project_id,
+        )
+
+
+def bulk_update(
+    db: Session, *, access: Access, document_ids: list[uuid.UUID], values: dict[str, Any], add_tags: list[str]
+) -> dict[str, Any]:
+    """Mêmes propriétés sur plusieurs documents (visibilité client / partenaires, livrable payant, type, discipline,
+    confidentialité, dossier, mots-clés) ; chaque document est traité à part (un refus n'empêche pas les autres)."""
+    access.require("documents:write")
+    if "client_visible" in values or "partner_visible" in values:
+        access.require("documents:publish")
+    tags = [t.strip()[:100] for t in add_tags if t.strip()]
+    if not values and not tags:
+        raise BusinessRuleError("Aucune propriété à modifier", code="NOTHING_TO_UPDATE")
+    done: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    published: list[Document] = []
+    for document_id in dict.fromkeys(document_ids):
+        document = db.get(Document, document_id)
+        label = document.code if document else str(document_id)
+        try:
+            with db.begin_nested():
+                if document is None or document.deleted_at is not None:
+                    raise NotFound("Document introuvable")
+                changes = dict(values)
+                if tags:
+                    changes["tags"] = [*(document.tags or []), *tags]
+                if update_document(db, access=access, document=document, values=changes):
+                    published.append(document)
+            done.append({"document_id": str(document_id), "code": label})
+        except AppError as exc:
+            errors.append({"document_id": str(document_id), "code": label, "message": exc.message})
+    if published:
+        notify_client_published(db, published)
+    return {"done": done, "errors": errors}
+
+
+# ---------------------------------------------------------------------------- signature de plusieurs documents
+def signable_version(db: Session, document: Document) -> DocumentVersion | None:
+    """Version à signer : la version courante si elle est validée ou publiée, sinon la version publiée en vigueur."""
+    current = db.get(DocumentVersion, document.current_version_id) if document.current_version_id else None
+    if current is not None and current.status in ("validated", "published"):
+        return current
+    published = db.get(DocumentVersion, document.published_version_id) if document.published_version_id else None
+    return published if published is not None and published.status == "published" else None
+
+
+def sign_selection(
+    db: Session, *, access: Access, user_id: uuid.UUID, document_ids: list[uuid.UUID]
+) -> tuple[list[tuple[Document, DocumentVersion]], list[dict[str, Any]]]:
+    """Documents de la sélection que l'utilisateur peut signer maintenant, et ceux écartés (avec la raison)."""
+    eligible: list[tuple[Document, DocumentVersion]] = []
+    skipped: list[dict[str, Any]] = []
+    for document_id in dict.fromkeys(document_ids):
+        document = db.get(Document, document_id)
+        label = document.code if document else str(document_id)
+        if document is None or not can_read(access, db, document):
+            skipped.append({"document_id": str(document_id), "code": label, "message": "Document introuvable"})
+            continue
+        version = signable_version(db, document)
+        if version is None:
+            message = "Aucune version validée ou publiée à signer"
+            skipped.append({"document_id": str(document_id), "code": label, "message": message})
+            continue
+        already = db.execute(
+            select(Signature.id).where(Signature.version_id == version.id, Signature.signer_id == user_id).limit(1)
+        ).first()
+        if already:
+            message = f"Version {version.label} déjà signée par vous"
+            skipped.append({"document_id": str(document_id), "code": label, "message": message})
+            continue
+        eligible.append((document, version))
+    return eligible, skipped
+
+
+def selection_digest(pairs: Sequence[tuple[Document, DocumentVersion]]) -> str:
+    """Empreinte de la sélection (document + version) : le code reçu ne vaut que pour ces versions-là."""
+    return hashlib.sha256("|".join(sorted(f"{d.id}:{v.id}" for d, v in pairs)).encode()).hexdigest()
