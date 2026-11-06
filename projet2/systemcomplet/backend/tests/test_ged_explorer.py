@@ -184,5 +184,31 @@ def test_bulk_properties_grouped_client_notice_and_bulk_signature(client: Any, d
     approvals = client.get(f"{API}/document-versions/{docs[0]['current_version']['id']}/approvals", headers=ah).json()
     signature = next(a for a in approvals if a["type"] == "signature")
     assert signature["signer_name"] == author.full_name and signature["role"] == "Gérant"
+    # Déplacement groupé à la racine (folder_id explicitement nul)
+    folder = client.post(
+        f"{API}/document-folders/ensure", headers=ah, json={"project_id": project["id"], "paths": ["Classement"]}
+    ).json()["Classement"]
+    into = client.post(f"{API}/documents/bulk-update", headers=ah, json={"document_ids": ids[:2], "folder_id": folder})
+    assert len(into.json()["done"]) == 2
+    out = client.post(f"{API}/documents/bulk-update", headers=ah, json={"document_ids": ids[:2], "folder_id": None})
+    assert len(out.json()["done"]) == 2
+    rows = client.get(f"{API}/documents", headers=ah, params={"project_id": project["id"]}).json()["items"]
+    assert all(d["folder_id"] is None for d in rows if d["id"] in ids[:2])
+
+    # Un document supprimé n'est jamais signé, même si son identifiant est envoyé
+    extra = _upload(client, ah, "Plan supprime.txt", project_id=project["id"])
+    for target in ("in_review", "validated", "published"):
+        client.post(
+            f"{API}/documents/bulk-transition",
+            headers=rh if target != "in_review" else ah,
+            json={"document_ids": [extra["id"]], "target": target},
+        )
+    removed = client.post(
+        f"{API}/documents/{extra['id']}/delete", headers=ah, json={"reason": "Doublon déposé par erreur"}
+    )
+    assert removed.status_code == 200, removed.text
+    gone = client.post(f"{API}/documents/bulk-sign/otp", headers=ah, json={"document_ids": [extra["id"]]})
+    assert gone.status_code == 422 and gone.json()["error"]["code"] == "NOTHING_TO_SIGN"
+
     nothing = client.post(f"{API}/documents/bulk-sign/otp", headers=ah, json={"document_ids": ids})
     assert nothing.status_code == 422 and nothing.json()["error"]["code"] == "NOTHING_TO_SIGN"

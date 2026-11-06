@@ -1019,7 +1019,7 @@ def sign_selection(
     for document_id in dict.fromkeys(document_ids):
         document = db.get(Document, document_id)
         label = document.code if document else str(document_id)
-        if document is None or not can_read(access, db, document):
+        if document is None or document.deleted_at is not None or not can_read(access, db, document):
             skipped.append({"document_id": str(document_id), "code": label, "message": "Document introuvable"})
             continue
         version = signable_version(db, document)

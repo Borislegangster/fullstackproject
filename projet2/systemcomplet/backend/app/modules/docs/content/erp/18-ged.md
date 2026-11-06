@@ -51,7 +51,7 @@ Un même fichier (contenu identique, quel que soit son nom) ne peut être dépos
 
 Cochez des documents dans la liste (la case de l'en-tête coche toute la page) : une barre propose, selon vos droits, **Soumettre en revue**, **Valider** et **Publier** pour tous les documents cochés, **Propriétés**, **Signer** et **Désélectionner**. Seuls les documents au bon statut sont traités ; un récapitulatif liste ceux qui ont été refusés et pourquoi.
 
-- **Propriétés** ouvre **Propriétés de N documents** : **Visible par le client**, **Visible par les partenaires**, **Livrable d'études payant** (Oui ou Non pour toute la sélection), **Type de document**, **Discipline**, **Confidentialité**, **Déplacer dans le dossier** (sélection d'un même projet) et **Ajouter des étiquettes**. Seules les propriétés renseignées changent ; **Appliquer à la sélection**. Le client reçoit un seul message pour tous les documents publiés rendus visibles.
+- **Propriétés** ouvre **Propriétés de N documents** : **Visible par le client**, **Visible par les partenaires**, **Livrable d'études payant** (Oui ou Non pour toute la sélection), **Type de document**, **Discipline**, **Confidentialité**, **Déplacer** dans un dossier ou à la racine (sélection d'un même projet) et **Ajouter des étiquettes**. Seules les propriétés renseignées changent ; **Appliquer à la sélection**. Le client reçoit un seul message pour tous les documents publiés rendus visibles.
 - **Signer** ouvre **Signer N documents** : cochez le consentement, **Recevoir mon code**, saisissez-le puis **Signer la sélection**. Un seul code signe la version validée ou publiée de chaque document (jusqu'à 500 à la fois) ; les documents sans version à signer, ou déjà signés par vous, sont écartés et listés.
 
 ## La fiche document

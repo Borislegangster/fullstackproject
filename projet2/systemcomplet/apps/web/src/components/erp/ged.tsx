@@ -546,14 +546,14 @@ type BulkResult = { done: Row[]; errors: Row[] };
 /** Propriétés communes à plusieurs documents : seules les valeurs renseignées sont appliquées. */
 function BulkPropertiesDialog({ open, rows, onClose, onResult }: { open: boolean; rows: Row[]; onClose: () => void; onResult: (label: string, res: BulkResult) => void }) {
   const { can } = useAuth();
-  const empty = { client_visible: "" as Tri, partner_visible: "" as Tri, paid_deliverable: "" as Tri, doc_type: "", discipline: "", confidentiality: "", folder_id: null as string | null };
+  const empty = { client_visible: "" as Tri, partner_visible: "" as Tri, paid_deliverable: "" as Tri, doc_type: "", discipline: "", confidentiality: "", move: "" as "" | "root" | "folder", folder_id: null as string | null };
   const [v, setV] = useState(empty);
   const [tags, setTags] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (open) {
-      setV({ client_visible: "", partner_visible: "", paid_deliverable: "", doc_type: "", discipline: "", confidentiality: "", folder_id: null });
+      setV({ client_visible: "", partner_visible: "", paid_deliverable: "", doc_type: "", discipline: "", confidentiality: "", move: "", folder_id: null });
       setTags([]);
       setError(null);
     }
@@ -564,7 +564,9 @@ function BulkPropertiesDialog({ open, rows, onClose, onResult }: { open: boolean
   const changes: Row = {};
   for (const key of ["client_visible", "partner_visible", "paid_deliverable"] as const) if (v[key]) changes[key] = v[key] === "yes";
   for (const key of ["doc_type", "discipline", "confidentiality"] as const) if (v[key]) changes[key] = v[key];
-  if (v.folder_id) changes.folder_id = v.folder_id;
+  // « Racine » : folder_id explicitement nul (le document sort de tout dossier) ; « Inchangé » : rien d'envoyé.
+  if (v.move === "root") changes.folder_id = null;
+  else if (v.move === "folder" && v.folder_id) changes.folder_id = v.folder_id;
   if (tags.length) changes.add_tags = tags;
   const unpublished = v.client_visible === "yes" || v.partner_visible === "yes" ? rows.filter((r) => !r.published_version_id).length : 0;
   const submit = async () => {
@@ -629,9 +631,23 @@ function BulkPropertiesDialog({ open, rows, onClose, onResult }: { open: boolean
           <Field label="Confidentialité">
             <Select value={v.confidentiality} onChange={(e) => setV({ ...v, confidentiality: e.target.value })} options={opts(CONFIDENTIALITY)} placeholder="Inchangée" />
           </Field>
-          <Field label="Déplacer dans le dossier" help={space === undefined ? "Sélection répartie sur plusieurs projets : déplacez les documents projet par projet." : undefined}>
-            <RefSelect key={space ?? "global"} source={folderRef(space)} value={v.folder_id} onChange={(id) => setV({ ...v, folder_id: id })} placeholder="Inchangé" disabled={space === undefined} />
+          <Field label="Déplacer" help={space === undefined ? "Sélection répartie sur plusieurs projets : déplacez les documents projet par projet." : undefined}>
+            <Select
+              value={v.move}
+              onChange={(e) => setV({ ...v, move: e.target.value as "" | "root" | "folder", folder_id: null })}
+              options={[
+                { value: "folder", label: "Dans un dossier…" },
+                { value: "root", label: "À la racine (hors dossier)" },
+              ]}
+              placeholder="Inchangé"
+              disabled={space === undefined}
+            />
           </Field>
+          {v.move === "folder" && space !== undefined ? (
+            <Field label="Dossier de destination" required>
+              <RefSelect key={space ?? "global"} source={folderRef(space)} value={v.folder_id} onChange={(id) => setV({ ...v, folder_id: id })} placeholder="Choisir…" />
+            </Field>
+          ) : null}
           <Field label="Ajouter des étiquettes" className="sm:col-span-2">
             <TagInput value={tags} onChange={setTags} />
           </Field>
