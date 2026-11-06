@@ -428,6 +428,7 @@ const PERMISSION_MODULES: Record<string, string> = {
   security: "Sécurité",
   seo: "Référencement (SEO)",
   settings: "Paramètres",
+  signatures: "Signatures des documents",
   site: "Chantier (terrain)",
   subcontracting: "Sous-traitance",
   suppliers: "Fournisseurs",

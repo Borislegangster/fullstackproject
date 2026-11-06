@@ -1,14 +1,20 @@
 """Génération PDF (reportlab) : en-tête de marque, tableaux de lignes, totaux, QR d'authenticité,
-filigrane dynamique (§12.2), pages numérotées. Polices de la charte (§3) : Gilroy (titres) et Poppins (corps)."""
+filigrane dynamique (§12.2), pages numérotées. Polices de la charte (§3) : Gilroy (titres) et Poppins (corps).
+
+Blocs de signature : le cachet de l'entreprise (fond transparent) est apposé dans le bloc « GLOBUS ENGINEERING » de
+chaque document ; les signatures manuscrites validées électroniquement (`SignatureMark`) y sont dessinées, à
+condition que le contenu signé (`fingerprint`) soit toujours celui du document."""
 
 from __future__ import annotations
 
+import hashlib
 import io
+import json
 import logging
 import threading
 import unicodedata
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -20,9 +26,9 @@ from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen import canvas as rl_canvas
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Flowable, Image, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.core.config import settings
 
@@ -138,6 +144,46 @@ def brand_logo(faded: bool = False) -> ImageReader | None:
                 log.warning("pdf_logo_unavailable", exc_info=True)
                 _brand_cache[key] = None
     return _brand_cache[key]
+
+
+STAMP_FILE = BRAND_DIR / "cachet-globus.png"
+STAMP_SETTING = "company_stamp"
+
+
+def company_stamp() -> ImageReader | None:
+    """Cachet de l'entreprise (PNG transparent) : celui déposé dans Paramètres › Entreprise (réglage
+    `company_stamp`, relu au plus toutes les 5 minutes), sinon le cachet officiel livré avec la plateforme."""
+    import time
+
+    cached = _brand_cache.get("stamp")
+    if cached and time.monotonic() - cached[0] < 300:
+        return cached[1]
+    data: bytes | None = None
+    try:
+        from app.core.database import SessionLocal
+        from app.core.files import read_private
+        from app.modules.system.models import Setting, StoredFile
+
+        with SessionLocal() as db:
+            row = db.get(Setting, STAMP_SETTING)
+            file_id = (row.value or {}).get("file_id") if row is not None else None
+            stored = db.get(StoredFile, file_id) if file_id else None
+            if stored is not None:
+                data = read_private(stored)
+    except Exception:  # base indisponible (scripts, tests isolés) : cachet livré avec la plateforme
+        log.debug("pdf_company_stamp_default", exc_info=True)
+    reader: ImageReader | None = None
+    try:
+        reader = ImageReader(io.BytesIO(data if data else STAMP_FILE.read_bytes()))
+    except Exception:  # cachet absent : bloc de signature sans cachet
+        log.warning("pdf_company_stamp_unavailable", exc_info=True)
+    _brand_cache["stamp"] = (time.monotonic(), reader)
+    return reader
+
+
+def forget_company_stamp() -> None:
+    """Nouveau cachet déposé : les prochains documents l'utilisent aussitôt."""
+    _brand_cache.pop("stamp", None)
 
 
 @dataclass(frozen=True)
@@ -331,6 +377,26 @@ def fmt_date(value: date | datetime | None) -> str:
 
 
 @dataclass
+class SignatureMark:
+    """Signature manuscrite validée électroniquement, dessinée dans le bloc de sa partie."""
+
+    party: str  # company / client / supplier / subcontractor / employee
+    image: bytes  # PNG transparent (tracé)
+    signer_name: str
+    signed_at: datetime
+    reference: str  # référence courte de la preuve (affichée sous la signature)
+    method: str = "code à usage unique"
+
+
+COMPANY_PARTY = "company"
+
+
+def infer_party(label: str) -> str:
+    upper = label.upper()
+    return COMPANY_PARTY if "GLOBUS" in upper or "EMPLOYEUR" in upper else "counterparty"
+
+
+@dataclass
 class PdfDocument:
     title: str
     number: str
@@ -348,6 +414,38 @@ class PdfDocument:
     amount_words: str | None = None  # montant en toutes lettres (arrêté du document)
     amount_words_label: str = "Arrêté le présent document à la somme de"
     stamp: str | None = None  # tampon diagonal sur chaque page : PROFORMA, BROUILLON, ANNULÉ…
+    signature_parties: list[str] | None = None  # partie de chaque bloc (company, client…) ; déduite sinon
+    signatures: dict[str, SignatureMark] = field(default_factory=dict)  # partie → signature à dessiner
+    status_meta: list[tuple[str, str]] = field(default_factory=list)  # état (accepté le…) hors contenu signé
+    status_totals: list[tuple[str, str]] = field(default_factory=list)  # soldes (déjà réglé…) hors contenu signé
+
+    def blocks(self) -> list[tuple[str, str]]:
+        """(libellé, partie) de chaque bloc de signature ; tout document porte au moins le bloc de l'entreprise."""
+        labels = self.signature_blocks or ["Pour GLOBUS ENGINEERING — la Direction"]
+        parties = self.signature_parties if self.signature_parties and self.signature_blocks else None
+        return [
+            (label, parties[i] if parties and i < len(parties) else infer_party(label))
+            for i, label in enumerate(labels)
+        ]
+
+    def fingerprint(self) -> str:
+        """Empreinte du contenu engageant (parties, lignes, montants, conditions) : ce que l'on signe. Exclut la date
+        d'édition, l'état (tampon, acceptation, soldes) et les signatures elles-mêmes ; une signature dont
+        l'empreinte ne correspond plus n'est pas apposée (document modifié depuis)."""
+        content = {
+            "title": self.title,
+            "number": self.number,
+            "parties": self.parties,
+            "meta": self.meta,
+            "columns": self.columns,
+            "rows": self.rows,
+            "totals": self.totals,
+            "paragraphs": self.paragraphs,
+            "amount_words": self.amount_words,
+            "blocks": self.blocks(),
+        }
+        raw = json.dumps(content, sort_keys=True, ensure_ascii=False, default=str, separators=(",", ":"))
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 def _qr_image(data: str) -> ImageReader:
@@ -356,6 +454,97 @@ def _qr_image(data: str) -> ImageReader:
     img.save(buf, format="PNG")
     buf.seek(0)
     return ImageReader(buf)
+
+
+def local_time(value: datetime) -> datetime:
+    """Heure locale de l'entreprise (Douala, UTC+1) pour les mentions de signature."""
+    from datetime import timedelta, timezone
+
+    try:
+        from zoneinfo import ZoneInfo
+
+        zone: Any = ZoneInfo(settings.TIMEZONE)
+    except (ImportError, KeyError, ValueError):  # fuseaux absents (Windows) : heure d'Afrique de l'Ouest
+        zone = timezone(timedelta(hours=1))
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(zone)
+
+
+class SignatureBox(Flowable):
+    """Bloc de signature : libellé, cachet de l'entreprise (bloc GLOBUS), signature manuscrite par-dessus le cachet
+    et mention de la validation électronique ; à défaut de signature, « Date et signature »."""
+
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        *,
+        label: str,
+        party: str,
+        mark: SignatureMark | None,
+        stamp: ImageReader | None,
+        fonts: Fonts,
+    ) -> None:
+        super().__init__()
+        self.width, self.height = width, height
+        self.label, self.party, self.mark, self.stamp, self.fonts = label, party, mark, stamp, fonts
+
+    def wrap(self, avail_width: float, avail_height: float) -> tuple[float, float]:
+        return self.width, self.height
+
+    def draw(self) -> None:
+        c, f, t = self.canv, self.fonts, self.fonts.safe
+        w, h = self.width, self.height
+        c.saveState()
+        c.setFillColor(colors.HexColor("#111827"))
+        c.setFont(f.body_bold, 7.5)
+        top = h - 9
+        for line in simpleSplit(t(self.label, f.body_bold), f.body_bold, 7.5, w - 8)[:2]:
+            c.drawString(4, top, line)
+            top -= 9
+        caption_h = 17 if self.mark else 10
+        area_top, area_bottom = top - 1, caption_h + 2
+        area_h = max(area_top - area_bottom, 10)
+        if self.party == COMPANY_PARTY and self.stamp is not None:
+            size = min(area_h + 14, 35 * mm, w * 0.6)
+            iw, ih = self.stamp.getSize()
+            sw, sh = (size, size * ih / iw) if iw >= ih else (size * iw / ih, size)
+            cx, cy = min(w * 0.64, w - sw / 2 - 4), area_bottom + area_h / 2 + 2
+            c.saveState()
+            c.translate(cx, cy)
+            c.rotate(-7)  # cachet apposé à la main : légèrement incliné
+            c.drawImage(self.stamp, -sw / 2, -sh / 2, sw, sh, mask="auto")
+            c.restoreState()
+        if self.mark is not None:
+            try:
+                sig = ImageReader(io.BytesIO(self.mark.image))
+                iw, ih = sig.getSize()
+                max_w, max_h = w * 0.62, min(area_h, 19 * mm)
+                scale = min(max_w / iw, max_h / ih)
+                sw, sh = iw * scale, ih * scale
+                x = (w * 0.5 - sw / 2) if self.party == COMPANY_PARTY else (w - sw) / 2
+                c.drawImage(sig, max(4, x), area_bottom + (area_h - sh) / 2, sw, sh, mask="auto")
+            except Exception:  # image illisible : la mention électronique reste
+                log.warning("pdf_signature_image_unreadable", exc_info=True)
+            when = local_time(self.mark.signed_at)
+            c.setFillColor(colors.HexColor("#1F2937"))
+            c.setFont(f.body, 6.3)
+            c.drawString(
+                4,
+                10,
+                t(f"Signé par {self.mark.signer_name[:60]} le {when:%d/%m/%Y} à {when:%H:%M}"),
+            )
+            c.setFillColor(colors.HexColor("#6B7280"))
+            c.setFont(f.body, 5.6)
+            c.drawString(
+                4, 3.5, t(f"Signature électronique validée par {self.mark.method} · réf. {self.mark.reference}")
+            )
+        else:
+            c.setFillColor(colors.HexColor("#6B7280"))
+            c.setFont(f.body, 6.8)
+            c.drawString(4, 4, t("Date et signature"))
+        c.restoreState()
 
 
 def render(doc: PdfDocument) -> bytes:
@@ -495,9 +684,12 @@ def render(doc: PdfDocument) -> bytes:
             )
         )
         story += [table, Spacer(1, 4 * mm)]
-    if doc.meta:
+    if doc.meta or doc.status_meta:
         meta = Table(
-            [[Paragraph(f"<b>{t(k)}</b>", small), Paragraph(t(v or "—"), base)] for k, v in doc.meta],
+            [
+                [Paragraph(f"<b>{t(k)}</b>", small), Paragraph(t(v or "—"), base)]
+                for k, v in [*doc.meta, *doc.status_meta]
+            ],
             colWidths=[45 * mm, 135 * mm],
         )
         meta.setStyle(TableStyle([("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
@@ -530,7 +722,10 @@ def render(doc: PdfDocument) -> bytes:
         story += [table, Spacer(1, 3 * mm)]
     if doc.totals:
         totals = Table(
-            [[Paragraph(t(k), right), Paragraph(f"<b>{t(v)}</b>", right)] for k, v in doc.totals],
+            [
+                [Paragraph(t(k), right), Paragraph(f"<b>{t(v)}</b>", right)]
+                for k, v in [*doc.totals, *doc.status_totals]
+            ],
             colWidths=[140 * mm, 40 * mm],
         )
         totals.setStyle(TableStyle([("LINEABOVE", (0, -1), (-1, -1), 1, ACCENT)]))
@@ -541,22 +736,42 @@ def render(doc: PdfDocument) -> bytes:
         story.append(Paragraph(t(title, fonts.subtitle), h2))
         for chunk in (text or "").split("\n"):
             story.append(Paragraph(t(chunk.replace("&", "&amp;").replace("<", "&lt;")), base))
-    if doc.signature_blocks:
-        sig = Table(
-            [[Paragraph(f"<b>{t(s)}</b><br/><br/><br/>Date et signature", small) for s in doc.signature_blocks]],
-            colWidths=[180 * mm / len(doc.signature_blocks)] * len(doc.signature_blocks),
-            rowHeights=[28 * mm],
+    blocks = doc.blocks()
+    stamp_image = company_stamp() if any(party == COMPANY_PARTY for _, party in blocks) else None
+    col = 180 * mm / len(blocks)
+    box_h = 38 * mm
+    sig = Table(
+        [
+            [
+                SignatureBox(
+                    col - 4,
+                    box_h - 4,
+                    label=label,
+                    party=party,
+                    mark=doc.signatures.get(party),
+                    stamp=stamp_image,
+                    fonts=fonts,
+                )
+                for label, party in blocks
+            ]
+        ],
+        colWidths=[col] * len(blocks),
+        rowHeights=[box_h],
+    )
+    sig.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.25, colors.HexColor("#9CA3AF")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#9CA3AF")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 2),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
         )
-        sig.setStyle(
-            TableStyle(
-                [
-                    ("BOX", (0, 0), (-1, -1), 0.25, colors.HexColor("#9CA3AF")),
-                    ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#9CA3AF")),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ]
-            )
-        )
-        story += [Spacer(1, 6 * mm), sig]
+    )
+    story += [Spacer(1, 6 * mm), KeepTogether([sig])]
     template = SimpleDocTemplate(
         buffer,
         pagesize=A4,

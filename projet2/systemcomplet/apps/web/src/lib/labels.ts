@@ -1498,6 +1498,9 @@ export function fieldLabel(name: string): string {
 
 export const OPTION_LABELS: Record<string, string> = {
   ...STATUS_LABELS,
+  // filtres de la page Signatures
+  to_sign: "À signer",
+  all: "Tous",
   // listes de choix des projets, stocks, fournisseurs et finances
   // rubriques de petite caisse, mouvements de stock, statuts divers
   transport: "Transport",

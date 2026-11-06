@@ -58,6 +58,8 @@ from app.modules.reports.router import router as reports_router
 from app.modules.reviews.router import public as reviews_public
 from app.modules.reviews.router import router as reviews_router
 from app.modules.scheduling.router import router as scheduling_router
+from app.modules.signatures.router import public as signatures_public
+from app.modules.signatures.router import router as signatures_router
 from app.modules.subcontracting.router import extranet as subcontractor_extranet
 from app.modules.subcontracting.router import router as subcontracting_router
 from app.modules.suppliers.router import extranet as supplier_extranet
@@ -88,6 +90,8 @@ for _router in (
     projects_router,
     documents_public,
     documents_router,
+    signatures_public,
+    signatures_router,
     proofs_router,
     proofs_public,
     finance_router,

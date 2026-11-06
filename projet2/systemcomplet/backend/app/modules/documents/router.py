@@ -965,6 +965,12 @@ def verify_authenticity(
 
     invoice = db.execute(select(ClientInvoice).where(ClientInvoice.authenticity_token == token)).scalar_one_or_none()
     if invoice is not None:
+        from app.modules.documents.models import DocumentSeal
+        from app.modules.documents.seals import public_signatures
+
+        seal = db.execute(
+            select(DocumentSeal).where(DocumentSeal.kind == "invoice", DocumentSeal.entity_id == invoice.id)
+        ).scalar_one_or_none()
         return jsonable(
             {
                 "valid": True,
@@ -974,6 +980,7 @@ def verify_authenticity(
                 "total": invoice.total,
                 "currency": invoice.currency,
                 "status": invoice.status,
+                "signatures": public_signatures(db, seal) if seal is not None else [],
             }
         )
     from app.modules.proofs.models import Proof

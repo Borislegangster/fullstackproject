@@ -12,6 +12,7 @@ import { BarChartCard, LineChartCard } from "@/components/ui/charts";
 import { Field, FileDrop, Input, Select, Textarea } from "@/components/ui/form";
 import { ConfirmDialog, Modal, Tabs } from "@/components/ui/overlay";
 import { Alert, Badge, Button, Card, CardHeader, DescriptionList, EmptyState, PageTitle, Progress, Skeleton, Stat, StatusBadge } from "@/components/ui/primitives";
+import { SignaturePanel } from "@/components/signatures/sign-document";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiError, apiUrl, errorMessage, newKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -422,7 +423,8 @@ export function PaymentDetail({ id }: { id: string }) {
             ) : null}
           </div>
         }
-      />
+      />      {p.receipt_file_id && can("signatures:company") ? <SignaturePanel kind={p.direction === "in" ? "receipt" : "payment_notice"} entityId={id} /> : null}
+
       {awaitingOffline ? (
         <Alert tone="warning" title="Encaissement à vérifier">
           Contrôlez la preuve (montant, référence, date de valeur) avec le relevé ou la caisse, puis approuvez : la pièce est alors réglée, le reçu émis et le client notifié.{" "}

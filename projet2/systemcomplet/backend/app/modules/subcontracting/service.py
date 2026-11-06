@@ -725,6 +725,7 @@ def contract_pdf(db: Session, contract: Subcontract) -> bytes:
         amount_words=amount_in_words(contract.amount, contract.currency),
         amount_words_label="Arrêté le présent marché à la somme hors taxes de",
         signature_blocks=["Pour GLOBUS ENGINEERING", f"Pour {sub.legal_name}" if sub else "Le sous-traitant"],
+        signature_parties=["company", "subcontractor"],
     )
     return sealed_pdf(
         db,

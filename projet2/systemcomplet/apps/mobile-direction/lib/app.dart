@@ -16,6 +16,7 @@ const sections = <NavSection>[
   NavSection(title: 'Pilotage', [
     NavItem('$base/tableau-de-bord', 'Tableau de bord', Icons.dashboard_outlined, anyPerms: ['dashboard:view', 'dashboard:direction']),
     NavItem('$base/validations', 'Validations', Icons.task_alt),
+    NavItem('$base/signatures', 'Signatures', Icons.draw_outlined, perms: ['signatures:company']),
     NavItem('$base/direction/rapports', 'Rapport de direction', Icons.summarize_outlined, perms: ['dashboard:direction']),
     NavItem('$base/rapports/anomalies', 'Anomalies (IA)', Icons.policy_outlined, perms: ['ai:use']),
   ]),
@@ -98,6 +99,7 @@ AppPage _detail(String path, String title, ResourceConfig config) =>
 final pages = <AppPage>[
   AppPage('$base/tableau-de-bord', 'Tableau de bord', (_, _) => const DashboardScreen(), top: true),
   AppPage('$base/validations', 'Validations', (_, _) => const ApprovalsScreen(), top: true),
+  AppPage('$base/signatures', 'Signatures', (_, _) => const SignaturesScreen(company: true)),
   AppPage('$base/direction/rapports', 'Rapport de direction', (_, _) => const ExecutiveReportsScreen()),
   AppPage('$base/direction/rapports/:id', 'Rapport de direction', (_, s) => ExecutiveReportScreen(id: s.pathParameters['id']!)),
   _resource('$base/rapports/anomalies', anomalies),

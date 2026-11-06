@@ -806,8 +806,22 @@ def _counterparty_lines(db: Session, payment: Payment) -> list[str]:
     return lines or [f"<b>{payment.counterparty_label or '—'}</b>"]
 
 
-def _receipt(db: Session, payment: Payment) -> None:
+def _receipt(db: Session, payment: Payment, data: bytes | None = None) -> None:
+    """Reçu (encaissement) ou avis de paiement (décaissement) : PDF scellé conservé avec le paiement."""
     from app.core.files import store_generated
+
+    stored = store_generated(
+        db,
+        data if data is not None else receipt_bytes(db, payment),
+        filename=f"recu-{payment.number}.pdf",
+        mime="application/pdf",
+        purpose="receipts",
+        classification="confidential",
+    )
+    payment.receipt_file_id = stored.id
+
+
+def receipt_bytes(db: Session, payment: Payment) -> bytes:
     from app.core.pdf import PdfDocument, amount_in_words, company_party, fmt_date, fmt_money, project_label
     from app.modules.documents.seals import sealed_pdf
     from app.modules.projects.models import Project
@@ -842,7 +856,7 @@ def _receipt(db: Session, payment: Payment) -> None:
         signature_blocks=["Pour GLOBUS ENGINEERING — le Service financier"],
         footer_note="Reçu émis automatiquement après confirmation du paiement — à conserver comme justificatif.",
     )
-    data = sealed_pdf(
+    return sealed_pdf(
         db,
         doc,
         kind="receipt" if incoming else "payment_notice",
@@ -855,15 +869,6 @@ def _receipt(db: Session, payment: Payment) -> None:
         currency=payment.currency,
         party=payment.counterparty_label,
     )
-    stored = store_generated(
-        db,
-        data,
-        filename=f"recu-{payment.number}.pdf",
-        mime="application/pdf",
-        purpose="receipts",
-        classification="confidential",
-    )
-    payment.receipt_file_id = stored.id
 
 
 # ---------------------------------------------------------------------------- paiements sortants

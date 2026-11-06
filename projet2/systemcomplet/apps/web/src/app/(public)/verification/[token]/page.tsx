@@ -27,7 +27,7 @@ interface VerifyResult {
   sha256?: string;
   issued_at?: string;
   published_at?: string | null;
-  signatures?: { signer: string; signed_at: string; method: string }[];
+  signatures?: { signer: string; signed_at: string; method?: string; party_label?: string; reference?: string; valid?: boolean }[];
   number?: string;
   issue_date?: string;
   total?: string;
@@ -105,6 +105,7 @@ export default async function VerificationPage({ params }: { params: Promise<{ t
                   <Row label="Date d'émission" value={dateLong(r.issue_date)} />
                   <Row label="Montant TTC" value={money(r.total, r.currency === "XAF" ? "FCFA" : r.currency)} />
                   <Row label="Statut" value={optionLabel(r.status)} />
+                  <SignedBy r={r} />
                 </>
               ) : (
                 <>
@@ -159,12 +160,35 @@ function SealedView({ r }: { r: VerifyResult }) {
             {r.party ? <Row label="Concerne" value={r.party} /> : null}
             {r.status ? <Row label="Statut actuel" value={optionLabel(r.status)} /> : null}
             {r.sha256 ? <Row label="Empreinte SHA-256" value={<code className="break-all text-xs">{r.sha256}</code>} /> : null}
+            <SignedBy r={r} />
           </dl>
           {r.note ? <p className="mt-6 rounded-xl bg-amber-50 p-3 text-left text-sm text-amber-900">{r.note}</p> : null}
           <p className="mt-6 text-xs text-muted">Comparez ces informations avec le document en votre possession : toute différence signale une falsification.</p>
         </div>
       </div>
     </section>
+  );
+}
+
+/** Signatures manuscrites du document (validées par code) : partie, signataire, date, validité. */
+function SignedBy({ r }: { r: VerifyResult }) {
+  if (!r.signatures?.length) return null;
+  return (
+    <div>
+      <dt className="text-muted">Signatures</dt>
+      <dd>
+        <ul className="mt-1 space-y-1">
+          {r.signatures.map((s, i) => (
+            <li key={i} className="font-medium text-ink">
+              {s.party_label ? `${s.party_label} : ` : ""}
+              {s.signer} — {dateTime(s.signed_at)}
+              {s.reference ? <span className="text-xs text-muted"> · {s.reference}</span> : null}
+              {s.valid === false ? <span className="block text-xs text-amber-700">Document modifié depuis cette signature : elle n&apos;y figure plus.</span> : null}
+            </li>
+          ))}
+        </ul>
+      </dd>
+    </div>
   );
 }
 

@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Alert, Badge, Button, Card, CardHeader, EmptyState, PageTitle, Skeleton, Stat } from "@/components/ui/primitives";
+import { SignaturePanel } from "@/components/signatures/sign-document";
 import { useToast } from "@/components/ui/toast";
 import { api, download, errorMessage } from "@/lib/api";
 import { date, dateTime, money, number } from "@/lib/format";
+import { useAuth } from "@/lib/auth";
 import { useApi } from "@/lib/hooks";
 
 interface ReportRow {
@@ -123,6 +125,7 @@ function Bullets({ items, icon, tone }: { items: string[]; icon: React.ReactNode
 }
 
 export function ExecutiveReportDetail({ id }: { id: string }) {
+  const { can } = useAuth();
   const toast = useToast();
   const report = useApi<ReportDetail>(`/reports/executive/${id}`);
   if (report.loading && !report.data) return <Skeleton className="h-96 w-full" />;
@@ -151,7 +154,8 @@ export function ExecutiveReportDetail({ id }: { id: string }) {
             </Button>
           ) : null
         }
-      />
+      />      {r.has_pdf && can("signatures:company") ? <SignaturePanel kind="executive_report" entityId={r.id} /> : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Encaissé sur la semaine" value={money(f.collected)} tone="success" hint={`Facturé : ${money(f.invoiced)}`} />
         <Stat label="Créances (dont retard)" value={money(f.receivable)} tone={Number(f.overdue) > 0 ? "danger" : "neutral"} hint={`En retard : ${money(f.overdue)}`} />

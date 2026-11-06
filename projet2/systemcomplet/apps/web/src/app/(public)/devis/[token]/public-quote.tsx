@@ -1,11 +1,11 @@
 "use client";
 
-import { CheckCircle2, Download, ShieldCheck } from "lucide-react";
+import { Download, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 
-import { Checkbox, CodeInput, Field, Input } from "@/components/ui/form";
-import { Alert, Button, Card, CardHeader, Skeleton, StatusBadge } from "@/components/ui/primitives";
-import { api, apiUrl, errorMessage } from "@/lib/api";
+import { type Challenge, SignatureForm } from "@/components/signatures/sign-document";
+import { Alert, Card, CardHeader, Skeleton, StatusBadge } from "@/components/ui/primitives";
+import { api, apiUrl } from "@/lib/api";
 import { date, money, number, percent } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 
@@ -41,12 +41,6 @@ interface PublicQuoteData {
 /** Devis en ligne : consultation, téléchargement PDF et acceptation par code OTP (preuve horodatée). */
 export function PublicQuote({ token }: { token: string }) {
   const { data: quote, error, loading, reload } = useApi<PublicQuoteData>(`/public/quotes/${encodeURIComponent(token)}`);
-  const [otp, setOtp] = useState<{ otp_token: string; sent_to: string } | null>(null);
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [terms, setTerms] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   if (loading) return <Skeleton className="h-96 w-full" />;
@@ -149,64 +143,29 @@ export function PublicQuote({ token }: { token: string }) {
       ) : ["sent", "viewed"].includes(quote.status) ? (
         <Card className="p-6">
           <p className="flex items-center gap-2 text-lg font-semibold text-brand-800">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" /> Accepter ce devis
+            <ShieldCheck className="h-5 w-5 text-emerald-600" /> Signer et accepter ce devis
           </p>
-          <p className="mt-1 text-sm text-muted">Un code de validation est envoyé par e-mail au contact du devis. Votre acceptation est horodatée et associée à l'empreinte du document.</p>
-          {!otp ? (
-            <Button
-              className="mt-4"
-              loading={busy}
-              onClick={async () => {
-                setBusy(true);
-                setMessage(null);
-                try {
-                  setOtp(await api(`/public/quotes/${encodeURIComponent(token)}/otp`, { method: "POST" }));
-                } catch (err) {
-                  setMessage(errorMessage(err));
-                } finally {
-                  setBusy(false);
-                }
+          <p className="mt-1 text-sm text-muted">
+            Dessinez votre signature à la souris ou au doigt, puis validez-la avec le code reçu par e-mail : votre « Bon pour accord » signé est apposé sur le devis, horodaté et lié à
+            l&apos;empreinte du document.
+          </p>
+          <div className="mt-4">
+            <SignatureForm
+              askName
+              channels={false}
+              submitLabel="Signer et accepter le devis"
+              consent="J'ai lu le devis et j'accepte ses conditions. Je reconnais que la signature manuscrite apposée est la mienne et je l'authentifie par le code reçu par e-mail."
+              requestCode={() => api<Challenge>(`/public/quotes/${encodeURIComponent(token)}/otp`, { method: "POST" })}
+              submit={async (p) => {
+                await api(`/public/quotes/${encodeURIComponent(token)}/accept`, {
+                  method: "POST",
+                  body: { full_name: p.full_name, otp_token: p.otp_token, code: p.code, accept_terms: true, signature_image: p.image },
+                });
+                setDone(true);
+                void reload();
               }}
-            >
-              Recevoir mon code de validation
-            </Button>
-          ) : (
-            <div className="mt-4 grid gap-4 sm:max-w-md">
-              <p className="text-sm text-ink">Code envoyé à {otp.sent_to}.</p>
-              <Field label="Code reçu" required>
-                <CodeInput value={code} onChange={setCode} autoFocus />
-              </Field>
-              <Field label="Nom et prénom du signataire" required>
-                <Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
-              </Field>
-              <Checkbox label="J'ai lu le devis et j'accepte ses conditions." checked={terms} onChange={setTerms} />
-              <Button
-                variant="accent"
-                loading={busy}
-                disabled={code.length !== 6 || name.trim().length < 3 || !terms}
-                onClick={async () => {
-                  setBusy(true);
-                  setMessage(null);
-                  try {
-                    await api(`/public/quotes/${encodeURIComponent(token)}/accept`, { method: "POST", body: { full_name: name.trim(), otp_token: otp.otp_token, code, accept_terms: true } });
-                    setDone(true);
-                    void reload();
-                  } catch (err) {
-                    setMessage(errorMessage(err));
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                <CheckCircle2 className="h-4 w-4" /> J'accepte le devis
-              </Button>
-            </div>
-          )}
-          {message ? (
-            <div className="mt-4">
-              <Alert tone="danger">{message}</Alert>
-            </div>
-          ) : null}
+            />
+          </div>
         </Card>
       ) : null}
     </div>

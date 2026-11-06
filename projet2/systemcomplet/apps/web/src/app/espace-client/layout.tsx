@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CalendarDays,
   ClipboardCheck,
+  FileSignature,
   FileText,
   FolderLock,
   Gift,
@@ -45,6 +46,7 @@ const SECTIONS: NavSection[] = [
       { href: "/espace-client/documents", label: "Documents", icon: FileText },
       { href: "/espace-client/preuves", label: "Preuves certifiées", icon: ShieldCheck },
       { href: "/espace-client/validations", label: "Validations", icon: ClipboardCheck },
+      { href: "/espace-client/signatures", label: "Documents à signer", icon: FileSignature },
     ],
   },
   {

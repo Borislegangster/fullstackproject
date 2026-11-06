@@ -182,6 +182,7 @@ class Signature(UUIDPk, Base):
     signer_email: Mapped[str | None] = str_col(254)
     role: Mapped[str | None] = str_col(60)
     method: Mapped[str] = str_col(20, nullable=False, default="otp")  # otp / otp_drawn / webauthn
+    party: Mapped[str | None] = str_col(20)  # documents émis : company / client (bloc de signature du PDF)
     signed_hash: Mapped[str] = str_col(64, nullable=False)
     signature_image_file_id: Mapped[uuid.UUID | None] = fk("stored_files.id")
     otp_channel: Mapped[str | None] = str_col(20)
@@ -239,6 +240,7 @@ class DocumentSeal(UUIDPk, Base):
     currency: Mapped[str | None] = str_col(3)
     party: Mapped[str | None] = str_col(250)
     sha256: Mapped[str | None] = str_col(64)
+    content_hash: Mapped[str | None] = str_col(64)  # empreinte du contenu engageant (ce que l'on signe)
     revoked_at: Mapped[datetime | None] = dt_col()
     created_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now(), onupdate=utcnow)

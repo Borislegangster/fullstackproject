@@ -15,6 +15,7 @@ import { BarChartCard, DonutChart } from "@/components/ui/charts";
 import { Checkbox, Field, FileDrop, Input, Select, TagInput, Textarea } from "@/components/ui/form";
 import { ConfirmDialog, Modal, Tabs } from "@/components/ui/overlay";
 import { Alert, Badge, Button, Card, CardHeader, DescriptionList, PageTitle, Progress, Skeleton, Stat, StatusBadge } from "@/components/ui/primitives";
+import { SignaturePanel } from "@/components/signatures/sign-document";
 import { useToast } from "@/components/ui/toast";
 import { api, apiUrl, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -1189,6 +1190,7 @@ export function QuoteDetail({ id }: { id: string }) {
         </Alert>
       ) : null}
       {q.rejected_reason ? <Alert tone="danger" title={`Refusé le ${dateTime(q.rejected_at)}`}>{q.rejected_reason}</Alert> : null}
+      <SignaturePanel kind="quote" entityId={id} onChange={() => void quote.reload()} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Total TTC" value={money(q.total, cur)} hint={`HT ${money(q.subtotal, cur)} · TVA ${number(q.tax_rate, 2)} %`} tone="info" />
         <Stat label="Remise" value={money(q.discount_amount, cur)} />
@@ -1384,6 +1386,7 @@ export function CrmContractDetail({ id }: { id: string }) {
         <Stat label="Période" value={c.start_date ? `${date(c.start_date)} → ${date(c.end_date)}` : "—"} />
         <Stat label="Signature" value={c.signed_at ? dateTime(c.signed_at) : "En attente"} hint={c.signed_by_name ? `${c.signed_by_name} · ${optionLabel(proof.method)}` : undefined} tone={c.signed_at ? "success" : "warning"} />
       </div>
+      <SignaturePanel kind="contract" entityId={id} onChange={() => void contract.reload()} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <DescriptionList

@@ -18,9 +18,11 @@ from sqlalchemy.orm import Session
 
 from app.core.security import random_token
 from app.core.utils import jsonable, utcnow
-from app.modules.documents.models import DocumentSeal
+from app.modules.documents.models import DocumentSeal, Signature
 
 KIND_LABELS = {
+    "invoice": "Facture",
+    "contract": "Contrat",
     "receipt": "Reçu de paiement",
     "payment_notice": "Avis de paiement",
     "quote": "Devis",
@@ -74,14 +76,56 @@ def seal(
 
 
 def sealed_pdf(db: Session, doc: Any, **seal_fields: Any) -> bytes:
-    """Rend le PDF avec le QR d'authenticité de son sceau et enregistre l'empreinte SHA-256 du fichier produit."""
+    """Rend le PDF avec le QR d'authenticité de son sceau (ou celui, propre, de la facture définitive), le cachet de
+    l'entreprise et les signatures manuscrites toujours valables ; enregistre l'empreinte du contenu engageant et
+    celle (SHA-256) du fichier produit."""
     from app.core.pdf import render
 
     row = seal(db, **seal_fields)
-    doc.verify_token = row.token
+    doc.verify_token = doc.verify_token or row.token
+    row.content_hash = doc.fingerprint()
+    doc.signatures = signature_marks(db, kind=row.kind, entity_id=row.entity_id, content_hash=row.content_hash)
     data = render(doc)
     row.sha256 = hashlib.sha256(data).hexdigest()
     return data
+
+
+def signatures_of(db: Session, *, kind: str, entity_id: uuid.UUID) -> list[Signature]:
+    """Signatures manuscrites d'un document émis (la plus récente d'abord)."""
+    return list(
+        db.execute(
+            select(Signature)
+            .where(Signature.entity_type == kind, Signature.entity_id == entity_id, Signature.party.is_not(None))
+            .order_by(Signature.signed_at.desc())
+        ).scalars()
+    )
+
+
+def signature_reference(signature: Signature) -> str:
+    return "SIG-" + signature.id.hex[:8].upper()
+
+
+def signature_marks(db: Session, *, kind: str, entity_id: uuid.UUID, content_hash: str) -> dict[str, Any]:
+    """Partie → signature à dessiner : la plus récente de chaque partie dont l'empreinte est celle du contenu actuel."""
+    from app.core.files import read_private
+    from app.core.pdf import SignatureMark
+    from app.modules.system.models import StoredFile
+
+    marks: dict[str, Any] = {}
+    for sig in signatures_of(db, kind=kind, entity_id=entity_id):
+        if sig.party in marks or sig.signed_hash != content_hash or not sig.signature_image_file_id:
+            continue
+        stored = db.get(StoredFile, sig.signature_image_file_id)
+        if stored is None:
+            continue
+        marks[sig.party] = SignatureMark(
+            party=sig.party,
+            image=read_private(stored),
+            signer_name=sig.signer_name,
+            signed_at=sig.signed_at,
+            reference=signature_reference(sig),
+        )
+    return marks
 
 
 def revoke(db: Session, *, entity_type: str, entity_id: uuid.UUID) -> None:
@@ -103,13 +147,14 @@ def mask(party: str | None) -> str | None:
 def _status(db: Session, row: DocumentSeal) -> str | None:
     """Statut à jour du document (annulé, payé, accepté…) lu dans son enregistrement d'origine."""
     from app.modules.billing.models import ClientInvoice, CreditNote
-    from app.modules.crm.models import Quote
+    from app.modules.crm.models import Contract, Quote
     from app.modules.finance.models import Payment
     from app.modules.hr.models import PayrollItem, PayrollRun
     from app.modules.procurement.models import PurchaseOrder
     from app.modules.subcontracting.models import Subcontract
 
     models = {
+        "contract": Contract,
         "payment": Payment,
         "quote": Quote,
         "client_invoice": ClientInvoice,
@@ -150,5 +195,36 @@ def public_payload(db: Session, token: str) -> dict[str, Any] | None:
             "revoked": row.revoked_at is not None or status == "cancelled",
             "sha256": row.sha256,
             "note": note,
+            "signatures": public_signatures(db, row),
         }
     )
+
+
+PARTY_LABELS = {
+    "company": "GLOBUS ENGINEERING",
+    "client": "Client",
+    "supplier": "Fournisseur",
+    "subcontractor": "Sous-traitant",
+    "employee": "Salarié",
+}
+
+
+def public_signatures(db: Session, row: DocumentSeal) -> list[dict[str, Any]]:
+    """Signatures du document sur la page publique : signataire (masqué hors entreprise), date, validité."""
+    out = []
+    seen: set[str] = set()
+    for sig in signatures_of(db, kind=row.kind, entity_id=row.entity_id):
+        if sig.party in seen:
+            continue
+        seen.add(sig.party or "")
+        out.append(
+            {
+                "party": sig.party,
+                "party_label": PARTY_LABELS.get(sig.party or "", sig.party),
+                "signer": sig.signer_name if sig.party == "company" else mask(sig.signer_name),
+                "signed_at": sig.signed_at,
+                "reference": signature_reference(sig),
+                "valid": bool(row.content_hash) and sig.signed_hash == row.content_hash,
+            }
+        )
+    return out

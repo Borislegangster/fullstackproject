@@ -891,7 +891,8 @@ def payslip_pdf(db: Session, run: PayrollRun, item: PayrollItem) -> bytes:
         totals=[("Total retenues", fmt_money(item.deductions)), ("NET À PAYER", fmt_money(item.net))],
         amount_words=amount_in_words(item.net),
         amount_words_label="Net à payer",
-        signature_blocks=["Pour l'employeur", "Le salarié"],
+        signature_blocks=["Pour l'employeur — GLOBUS ENGINEERING", "Le salarié"],
+        signature_parties=["company", "employee"],
         footer_note="Document confidentiel — à conserver sans limitation de durée.",
     )
     return sealed_pdf(

@@ -409,6 +409,7 @@ def passport_pdf(db: Session, project: Any) -> bytes:
         rows=rows,
         col_widths=[170, 130, 110, 70] if rows else None,
         paragraphs=paragraphs,
+        signature_blocks=["Pour GLOBUS ENGINEERING — la Direction technique"],
         footer_note="Passeport du bâtiment GLOBUS ENGINEERING — à conserver et à transmettre en cas de vente.",
     )
     from app.modules.documents.seals import sealed_pdf

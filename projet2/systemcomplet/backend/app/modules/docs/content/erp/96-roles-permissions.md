@@ -151,6 +151,10 @@ Les permissions marquées **sensible** donnent accès à des données ou à des 
 - `documents:confidential` — Accéder aux documents confidentiels (**sensible**)
 - `documents:very_sensitive` — Accéder aux documents très sensibles (**sensible**)
 
+### Signatures
+
+- `signatures:company` — Signer les documents émis au nom de l'entreprise (signature + cachet) (**sensible**)
+
 ### BIM
 
 - `bim:read` — Consulter le Hub BIM

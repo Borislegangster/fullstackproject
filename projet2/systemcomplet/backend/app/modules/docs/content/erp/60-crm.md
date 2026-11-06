@@ -60,12 +60,12 @@ Les opportunités par étape. La liste **Étape** de chaque carte fait avancer l
 
 ## Onglet « Devis »
 
-Les **Devis** : envoi d'un lien sécurisé, suivi de consultation, acceptation par code OTP avec preuve, révisions. Filtre **Statut**. La fiche (**Détail estimatif**, **Échéancier**) propose **PDF**.
+Les **Devis** : envoi d'un lien sécurisé, suivi de consultation, acceptation par le client — il dessine sa signature (« Bon pour accord ») et la valide par code —, révisions. Filtre **Statut**. La fiche (**Détail estimatif**, **Échéancier**) propose **PDF** et l'encadré **Signatures** : état de la signature du client et de l'entreprise, **PDF signé**, **Signer** au nom de l'entreprise (voir [Signatures](doc:erp-signatures)).
 
 ::: perm crm:write
 1. **Nouveau devis** ouvre **Nouveau devis** : intitulé, **Nature du devis** (« Travaux » ou « Études et conception »), opportunité (le client et le contact en sont repris), client, contact, devise, **TVA (%)**, **Remise globale (montant)**, introduction ; lignes chiffrées (**Ligne** : section facultative de regroupement, lot, **Désignation**, unité, **Qté** et **PU HT** obligatoires, remise %) ; **Échéancier de paiement** facultatif (**Échéance** : libellé, **Montant TTC** — déduit du total, la part en % est affichée —, jalon ; la dernière échéance reçoit automatiquement le reste du total TTC) ; conditions particulières ; **Valable jusqu'au**. Une ligne ou une échéance incomplète est signalée et bloque l'enregistrement.
 2. **Modifier** (brouillon) ouvre **Modifier le devis**.
-3. **Envoyer** (ou **Renvoyer**) : le client reçoit un lien sécurisé et accepte par code ; **Copier** copie ce lien.
+3. **Envoyer** (ou **Renvoyer**) : le client reçoit un lien sécurisé ; il signe le devis à la main et valide par code, ce qui l'accepte ; **Copier** copie ce lien.
 4. **Réviser** crée une nouvelle révision (l'ancienne reste consultable).
 5. **Refus client** ouvre **Enregistrer le refus du client** (motif).
 :::
@@ -77,14 +77,15 @@ Les **Devis** : envoi d'un lien sécurisé, suivi de consultation, acceptation p
 ::: perm crm:contracts
 ## Onglet « Contrats »
 
-Les **Contrats clients** (filtre **Statut**) avec leur **Échéancier contractuel**.
+Les **Contrats clients** (filtre **Statut**) avec leur **Échéancier contractuel**. Le contrat est édité en PDF (parties, objet, prix, échéancier, délais, conditions) ; l'encadré **Signatures** en montre l'état.
 
-1. **Contrat signé** ouvre **Enregistrer la signature du contrat** : date, mode (OTP, signature manuscrite scannée), pièce ; **Enregistrer la signature**.
+1. **Envoyer au client pour signature** ouvre la fenêtre du même nom : **E-mail du signataire** (celui du contact est proposé) et **Nom du signataire** ; **Envoyer le lien** : le client reçoit par e-mail un lien personnel (valable 30 jours) pour lire le contrat, le signer à la main et valider par code ; s'il a un espace client, le contrat apparaît aussi dans **Documents à signer**. **Signer** appose la signature de l'entreprise sur le cachet. Le contrat passe à « Signé » quand les deux parties ont signé le même contenu.
+2. **Enregistrer la signature** ouvre **Enregistrer la signature du contrat** pour un contrat signé hors plateforme : date, mode (OTP, signature manuscrite scannée), pièce ; **Enregistrer la signature**.
 :::
 
 ::: perm crm:contracts
 ::: perm projects:write
-2. **Créer le projet** ouvre **Créer le projet à partir du contrat** : le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche. Si les études ont été lancées depuis l'opportunité, le bouton devient **Rattacher au projet PRJ-…** (fenêtre **Rattacher le contrat de travaux au projet …**) : le contrat de travaux **se rattache au projet existant** (montant du contrat, budget des travaux, lots et jalons ajoutés) au lieu d'en créer un nouveau ; le client y a déjà accès.
+3. **Créer le projet** ouvre **Créer le projet à partir du contrat** : le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche. Si les études ont été lancées depuis l'opportunité, le bouton devient **Rattacher au projet PRJ-…** (fenêtre **Rattacher le contrat de travaux au projet …**) : le contrat de travaux **se rattache au projet existant** (montant du contrat, budget des travaux, lots et jalons ajoutés) au lieu d'en créer un nouveau ; le client y a déjà accès.
 :::
 :::
 
