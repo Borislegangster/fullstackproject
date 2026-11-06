@@ -22,6 +22,8 @@ import { optionLabel } from "@/lib/labels";
 import { REFS, type RefSource } from "@/lib/refs";
 
 const opts = (values: string[]) => values.map((v) => ({ value: v, label: optionLabel(v) }));
+/** Type posé par le module BIM sur les maquettes déposées depuis le Hub BIM (pas proposé au dépôt GED). */
+const BIM_DOC_TYPE = "maquette_bim";
 export const DOC_TYPES = ["plan", "contrat", "avenant", "facture", "devis", "pv", "rapport", "note_calcul", "cctp", "photo", "fonciers", "administratif", "technique", "qhse", "rh", "autre"];
 const DISCIPLINES = ["architecture", "structure", "electricite", "plomberie", "cvc", "vrd", "topographie", "geotechnique", "securite", "autre"];
 const CONFIDENTIALITY = ["public", "internal", "confidential", "very_sensitive"];
@@ -477,10 +479,14 @@ function GedBulkActions({ rows, done }: { rows: Row[]; done: () => void }) {
     try {
       const res = await api<{ done: Row[]; errors: Row[] }>("/documents/bulk-transition", { method: "POST", body: { document_ids: eligible.map((r) => r.id), target } });
       const skipped = rows.length - eligible.length;
+      // Le récapitulatif vit dans la barre de sélection : la sélection n'est vidée (done) qu'à sa fermeture,
+      // sinon la barre disparaît avec la fenêtre avant qu'on ait pu la lire.
       if (res.errors.length || skipped) {
         setReport({ title: `${label} : ${res.done.length} effectué${res.done.length > 1 ? "s" : ""}${skipped ? `, ${skipped} ignoré${skipped > 1 ? "s" : ""} (statut)` : ""}`, errors: res.errors });
-      } else toast.success(`${label} : ${res.done.length} document${res.done.length > 1 ? "s" : ""}`);
-      if (!res.errors.length) done();
+      } else {
+        toast.success(`${label} : ${res.done.length} document${res.done.length > 1 ? "s" : ""}`);
+        done();
+      }
     } catch (err) {
       toast.error(label, errorMessage(err));
     } finally {
@@ -689,7 +695,7 @@ export function GedExplorer() {
               { key: "updated_at", label: "Modifié", format: "datetime", sortable: true, hideOnMobile: true },
             ],
             filters: [
-              { key: "doc_type", label: "Type", options: opts(DOC_TYPES) },
+              { key: "doc_type", label: "Type", options: opts([...DOC_TYPES, BIM_DOC_TYPE]) },
               { key: "discipline", label: "Discipline", options: opts(DISCIPLINES) },
               { key: "status", label: "Statut", options: opts(VERSION_STATUSES) },
             ],
@@ -1029,7 +1035,7 @@ export function DocumentDetail({ id }: { id: string }) {
           partial
           exclude={can("documents:publish") ? [] : ["client_visible", "partner_visible"]}
           fields={{
-            doc_type: { options: opts(DOC_TYPES) },
+            doc_type: { options: opts(d.doc_type === BIM_DOC_TYPE ? [...DOC_TYPES, BIM_DOC_TYPE] : DOC_TYPES) },
             discipline: { options: opts(DISCIPLINES) },
             confidentiality: { options: opts(CONFIDENTIALITY) },
             folder_id: { ref: folderRef(d.project_id) },

@@ -1795,6 +1795,7 @@ const Map<String, String> kOptionLabels = {
   'manual_reminder': 'Relance manuelle',
   'manuscrite_scannee': 'Signature manuscrite scannée',
   'map': 'Carte',
+  'maquette_bim': 'Maquette BIM',
   'masonry': 'Mosaïque',
   'masque': 'Masque',
   'matched': 'Rapproché',

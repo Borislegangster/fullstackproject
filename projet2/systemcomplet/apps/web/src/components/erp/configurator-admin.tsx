@@ -157,7 +157,7 @@ const emptyZone = (n: number): ZoneDraft => ({ key: `zone-${n}`, label: "", room
 
 function ModelCreate({ projectId, onDone, onCancel }: { projectId: string; onDone: (m: Row) => void; onCancel: () => void }) {
   const categories = useApi<{ items: Row[] }>("/configurator/material-categories", { page_size: 200 });
-  const materials = useApi<{ items: Row[] }>("/configurator/materials", { page_size: 500, is_active: true });
+  const materials = useApi<{ items: Row[] }>("/configurator/materials", { page_size: 200, is_active: true });
   const federation = useApi<Row>(`/projects/${projectId}/bim/federation`);
   const [head, setHead] = useState({ name: "", source: "glb", bim_version_id: "", lock_date: "" });
   const [zones, setZones] = useState<ZoneDraft[]>([emptyZone(1)]);

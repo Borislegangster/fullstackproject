@@ -2092,6 +2092,7 @@ export const OPTION_LABELS: Record<string, string> = {
   logistique: "Logistique",
   mailgun: "Mailgun",
   map: "Carte",
+  maquette_bim: "Maquette BIM",
   material: "Matériau",
   media: "Médias",
   meta: "Meta (WhatsApp)",
