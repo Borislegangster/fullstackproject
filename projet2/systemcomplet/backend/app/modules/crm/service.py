@@ -786,8 +786,8 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
             ("Nature", "Études et conception" if getattr(quote, "nature", "travaux") == "etudes" else "Travaux"),
             ("Validité de l'offre", fmt_date(quote.valid_until)),
             ("Devise", "Franc CFA (XAF)" if quote.currency == "XAF" else quote.currency),
-            *accepted,
         ],
+        status_meta=accepted,
         columns=["Désignation", "Unité", "Qté", "PU", "Total HT"],
         col_widths=[82 * 2.83465, 18 * 2.83465, 18 * 2.83465, 30 * 2.83465, 32 * 2.83465],
         rows=rows,
@@ -807,6 +807,7 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
             if v
         ],
         signature_blocks=["Pour le client — « Bon pour accord »", "Pour GLOBUS ENGINEERING"],
+        signature_parties=["client", "company"],
         amount_words=amount_in_words(quote.total, quote.currency),
         amount_words_label="Arrêté le présent devis à la somme de",
         footer_note=f"Devis valable jusqu'au {fmt_date(quote.valid_until)} — acceptation en ligne depuis le lien reçu.",
@@ -822,6 +823,143 @@ def quote_pdf(db: Session, quote: Quote) -> bytes:
         issued_on=doc.issued_on,
         amount=quote.total,
         currency=quote.currency,
+        party=(org.name if org else person),
+    )
+
+
+def contract_pdf(db: Session, contract: Contract) -> bytes:
+    """Contrat client (études ou travaux) établi depuis le devis accepté : parties, objet, prix, échéancier,
+    délais et conditions ; signé à la main sur la plateforme par le client et par GLOBUS ENGINEERING."""
+    from app.core.pdf import (
+        PdfDocument,
+        amount_in_words,
+        company_party,
+        fmt_date,
+        fmt_money,
+        fmt_qty,
+        organization_lines,
+        project_label,
+    )
+    from app.modules.documents.seals import sealed_pdf
+    from app.modules.projects.models import Project
+
+    org = db.get(Organization, contract.organization_id) if contract.organization_id else None
+    contact = db.get(Contact, contract.contact_id) if contract.contact_id else None
+    quote = db.get(Quote, contract.quote_id) if contract.quote_id else None
+    project = db.get(Project, contract.project_id) if contract.project_id else None
+    person = f"{contact.first_name} {contact.last_name or ''}".strip() if contact else None
+    studies = contract.nature == "etudes"
+    currency = contract.currency
+    schedule = "\n".join(
+        f"• {s.get('label', 'Échéance')} : "
+        + (fmt_money(s["amount"], currency) if s.get("amount") else f"{s.get('pct', 0)} %")
+        + (f" — {s['milestone']}" if s.get("milestone") else "")
+        for s in (contract.payment_schedule or (quote.payment_schedule if quote else []) or [])
+    )
+    period = (
+        f"du {fmt_date(contract.start_date)} au {fmt_date(contract.end_date)}"
+        if contract.start_date and contract.end_date
+        else (f"à compter du {fmt_date(contract.start_date)}" if contract.start_date else "")
+    )
+    lines = list(quote.lines) if quote is not None else []
+    terms = contract.terms or (quote.terms if quote else None)
+    intro = quote.introduction if quote is not None and quote.introduction else ""
+    doc = PdfDocument(
+        title="CONTRAT D'ÉTUDES" if studies else "CONTRAT DE TRAVAUX",
+        number=contract.number,
+        issued_on=(contract.sent_at or contract.created_at or utcnow()).date(),
+        stamp={"draft": "BROUILLON", "cancelled": "ANNULÉ"}.get(contract.status),
+        parties=[
+            (
+                "Le client (maître d'ouvrage)",
+                organization_lines(
+                    org,
+                    person=person,
+                    email=contact.email if contact else None,
+                    phone=contact.phone if contact else None,
+                ),
+            ),
+            company_party("Le prestataire"),
+        ],
+        meta=[
+            ("Objet", contract.title),
+            ("Nature", "Études et conception" if studies else "Travaux"),
+            *([("Projet", project_label(project))] if project is not None else []),
+            *([("Devis de référence", f"{quote.number} (rév. {quote.revision})")] if quote is not None else []),
+            ("Montant", f"{fmt_money(contract.amount, currency)} TTC"),
+            *([("Période d'exécution", period)] if period else []),
+            ("Devise", "Franc CFA (XAF)" if currency == "XAF" else currency),
+        ],
+        columns=["Désignation", "Unité", "Qté", "PU", "Total HT"] if lines else [],
+        col_widths=[82 * 2.83465, 18 * 2.83465, 18 * 2.83465, 30 * 2.83465, 32 * 2.83465] if lines else None,
+        rows=[
+            [
+                li.designation,
+                li.unit,
+                fmt_qty(li.quantity),
+                fmt_money(li.unit_price, currency),
+                fmt_money(li.total, currency),
+            ]
+            for li in lines
+        ],
+        totals=(
+            [
+                ("Total HT", fmt_money(quote.subtotal, currency)),
+                ("Remise", fmt_money(quote.discount_amount, currency)),
+                (f"TVA {fmt_qty(quote.tax_rate)} %", fmt_money(quote.tax_amount, currency)),
+                ("Total TTC", fmt_money(quote.total, currency)),
+            ]
+            if quote is not None
+            else [("Montant du contrat (TTC)", fmt_money(contract.amount, currency))]
+        ),
+        amount_words=amount_in_words(contract.amount, currency),
+        amount_words_label="Arrêté le présent contrat à la somme de",
+        paragraphs=[
+            (title, text)
+            for title, text in (
+                (
+                    "Article 1 — Objet",
+                    f"Le présent contrat a pour objet : {contract.title}."
+                    + (f"\n{intro}" if intro else "")
+                    + (
+                        f"\nIl reprend le devis {quote.number} (rév. {quote.revision}) accepté par le client."
+                        if quote is not None
+                        else ""
+                    ),
+                ),
+                (
+                    "Article 2 — Prix",
+                    f"Le prix est fixé à {fmt_money(contract.amount, currency)} TTC, "
+                    "selon le détail ci-dessus et l'échéancier ci-après.",
+                ),
+                ("Article 3 — Échéancier de paiement", schedule),
+                ("Article 4 — Délais", f"Exécution {period}." if period else ""),
+                ("Article 5 — Conditions particulières", terms or ""),
+                (
+                    "Signature",
+                    "Chaque partie appose sa signature manuscrite sur la plateforme GLOBUS ENGINEERING et la valide "
+                    "par un code à usage unique reçu personnellement. L'empreinte du contrat signé est conservée : "
+                    "toute modification ultérieure du contrat invalide les signatures. Authenticité vérifiable par le "
+                    "QR code.",
+                ),
+            )
+            if text
+        ],
+        signature_blocks=["Pour le client — « Lu et approuvé »", "Pour GLOBUS ENGINEERING"],
+        signature_parties=["client", "company"],
+        footer_note="Contrat GLOBUS ENGINEERING — signé à la main sur la plateforme, authentifiable par QR code.",
+    )
+    return sealed_pdf(
+        db,
+        doc,
+        kind="contract",
+        entity_type="contract",
+        entity_id=contract.id,
+        reference=contract.number,
+        title=contract.title,
+        issued_on=doc.issued_on,
+        amount=contract.amount,
+        currency=currency,
         party=(org.name if org else person),
     )
 

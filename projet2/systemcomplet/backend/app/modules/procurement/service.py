@@ -531,6 +531,7 @@ def po_pdf(db: Session, po: PurchaseOrder) -> bytes:
         amount_words=amount_in_words(po.total, po.currency),
         amount_words_label="Arrêté le présent bon de commande à la somme de",
         signature_blocks=["Pour GLOBUS ENGINEERING — le Service achats", "Le fournisseur — « Bon pour accord »"],
+        signature_parties=["company", "supplier"],
         footer_note=f"BC {po.number} — confirmation via le lien sécurisé transmis.",
     )
     return sealed_pdf(

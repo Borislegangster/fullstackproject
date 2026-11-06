@@ -56,6 +56,8 @@ Chaque action ouvre un court formulaire en français (aucun code à saisir : les
 choisissent dans une liste) ; elle est tracée dans le journal d'audit comme sur le web. Une notification touchée ouvre
 directement la fiche concernée.
 
+**Signatures** (droit « signer au nom de l'entreprise ») liste les documents émis que l'entreprise n'a pas encore signés : **PDF** pour relire, **Signer** pour dessiner la signature au doigt et la valider par code ; elle est apposée sur le cachet de l'entreprise.
+
 ## Gérer
 
 - **Chantiers** : portefeuille filtrable (statut, santé) ; fiche avec indicateurs, budget (engagé, dépensé, marge

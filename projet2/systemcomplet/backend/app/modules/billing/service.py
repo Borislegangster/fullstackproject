@@ -123,8 +123,8 @@ def invoice_document(db: Session, invoice: ClientInvoice, *, proforma: bool = Fa
             ("Total HT", fmt_money(invoice.subtotal, invoice.currency)),
             (f"TVA {fmt_qty(invoice.tax_rate)} %", fmt_money(invoice.tax_amount, invoice.currency)),
             ("Total TTC", fmt_money(invoice.total, invoice.currency)),
-            *(balance if settled else []),
         ],
+        status_totals=balance if settled else [],
         amount_words=amount_in_words(invoice.total, invoice.currency),
         amount_words_label=(
             "Arrêtée la présente proforma à la somme de" if proforma else "Arrêtée la présente facture à la somme de"
@@ -149,14 +149,35 @@ def invoice_document(db: Session, invoice: ClientInvoice, *, proforma: bool = Fa
     return doc
 
 
-def invoice_pdf(db: Session, invoice: ClientInvoice) -> None:
-    """PDF de la facture définitive (rendu à la validation, de nouveau à l'annulation avec le tampon « ANNULÉE »)."""
+def invoice_bytes(db: Session, invoice: ClientInvoice) -> bytes:
+    """PDF de la facture définitive : son propre QR d'authenticité, cachet et signatures de l'entreprise."""
+    from app.modules.documents.seals import sealed_pdf
+    from app.modules.identity.models import Organization
+
+    org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
+    return sealed_pdf(
+        db,
+        invoice_document(db, invoice),
+        kind="invoice",
+        entity_type="client_invoice",
+        entity_id=invoice.id,
+        reference=invoice.number,
+        title=invoice.title,
+        issued_on=invoice.issue_date,
+        amount=invoice.total,
+        currency=invoice.currency,
+        party=org.name if org else None,
+    )
+
+
+def invoice_pdf(db: Session, invoice: ClientInvoice, data: bytes | None = None) -> None:
+    """PDF de la facture définitive (rendu à la validation, de nouveau à l'annulation avec le tampon « ANNULÉE » et
+    après chaque signature)."""
     from app.core.files import store_generated
-    from app.core.pdf import render
 
     stored = store_generated(
         db,
-        render(invoice_document(db, invoice)),
+        data if data is not None else invoice_bytes(db, invoice),
         filename=f"{invoice.number}.pdf",
         mime="application/pdf",
         purpose="invoices",
@@ -187,9 +208,26 @@ def proforma_pdf(db: Session, invoice: ClientInvoice) -> bytes:
     )
 
 
-def credit_note_pdf(db: Session, note: CreditNote) -> None:
+def credit_note_pdf(db: Session, note: CreditNote, data: bytes | None = None) -> None:
     """Facture d'avoir (note de crédit) d'une facture client : PDF scellé, conservé avec l'avoir."""
     from app.core.files import store_generated
+
+    data = data if data is not None else credit_note_bytes(db, note)
+    if data is None:
+        return
+    stored = store_generated(
+        db,
+        data,
+        filename=f"avoir-{note.number}.pdf",
+        mime="application/pdf",
+        purpose="invoices",
+        classification="confidential",
+    )
+    note.file_id = stored.id
+
+
+def credit_note_bytes(db: Session, note: CreditNote) -> bytes | None:
+    """Contenu scellé de la facture d'avoir (QR, cachet, signatures) ; None sans facture d'origine."""
     from app.core.pdf import (
         PdfDocument,
         amount_in_words,
@@ -205,7 +243,7 @@ def credit_note_pdf(db: Session, note: CreditNote) -> None:
 
     invoice = db.get(ClientInvoice, note.client_invoice_id) if note.client_invoice_id else None
     if invoice is None:
-        return
+        return None
     org = db.get(Organization, invoice.organization_id) if invoice.organization_id else None
     project = db.get(Project, note.project_id) if note.project_id else None
     remaining = max(
@@ -238,7 +276,7 @@ def credit_note_pdf(db: Session, note: CreditNote) -> None:
         signature_blocks=["Pour GLOBUS ENGINEERING — la Direction financière"],
         footer_note="Facture d'avoir : réduit d'autant la facture d'origine (remboursée si celle-ci est réglée).",
     )
-    data = sealed_pdf(
+    return sealed_pdf(
         db,
         doc,
         kind="credit_note",
@@ -251,15 +289,6 @@ def credit_note_pdf(db: Session, note: CreditNote) -> None:
         currency=note.currency,
         party=org.name if org else None,
     )
-    stored = store_generated(
-        db,
-        data,
-        filename=f"avoir-{note.number}.pdf",
-        mime="application/pdf",
-        purpose="invoices",
-        classification="confidential",
-    )
-    note.file_id = stored.id
 
 
 def validate_invoice(

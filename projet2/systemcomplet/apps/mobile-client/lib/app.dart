@@ -31,6 +31,7 @@ const sections = <NavSection>[
     NavItem('$base/documents', 'Documents', Icons.description_outlined),
     NavItem('$base/preuves', 'Preuves certifiées', Icons.verified_user_outlined),
     NavItem('$base/validations', 'Validations', Icons.fact_check_outlined),
+    NavItem('$base/signatures', 'Documents à signer', Icons.draw_outlined),
   ]),
   NavSection(title: 'Immersion', [
     NavItem('$base/immersion', 'Maquette 3D / BIM', Icons.view_in_ar_outlined),
@@ -75,6 +76,7 @@ final pages = <AppPage>[
   AppPage('$base/documents', 'Documents', (_, _) => const DocumentsScreen()),
   AppPage('$base/preuves', 'Preuves certifiées', (_, _) => const ProofsScreen()),
   AppPage('$base/validations', 'Validations', (_, _) => const ValidationsScreen()),
+  AppPage('$base/signatures', 'Documents à signer', (_, _) => const SignaturesScreen(company: false)),
   AppPage('$base/immersion', 'Maquette 3D / BIM', (_, _) => const ImmersionScreen()),
   AppPage('$base/configurateur', 'Configurateur', (_, _) => const ConfiguratorListScreen()),
   AppPage('$base/configurateur/:id', 'Configurateur', (_, s) => ConfiguratorScreen(modelId: s.pathParameters['id']!)),

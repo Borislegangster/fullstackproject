@@ -49,6 +49,7 @@ Dans **Mon compte › Notifications**, touchez **Activer le push** puis autorise
 
 - **Payer** ouvre le choix du moyen de paiement ; Mobile Money : validez la demande sur votre téléphone avec votre code secret. L'écran de suivi affiche la confirmation et **Télécharger le reçu**.
 - Les décisions, avenants, échéanciers et offres se valident par **code à usage unique** reçu par e-mail, SMS ou WhatsApp, comme sur le site.
+- **Documents à signer** : vos devis et contrats se signent au doigt sur l'écran (**Signer**), puis la signature se valide par code ; **PDF** ouvre le document signé.
 - Les appels audio et vidéo fonctionnent depuis la **Messagerie** ou **Appels** ; un appel entrant s'affiche en haut de l'écran avec **Répondre** et **Refuser**. Pendant l'appel : micro, caméra, changement de caméra, haut-parleur, partage d'écran et consentement à l'enregistrement.
 
 ## Maquette 3D, configurateur et visites 360°

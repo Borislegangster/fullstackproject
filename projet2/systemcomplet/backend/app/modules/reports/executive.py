@@ -357,8 +357,21 @@ def generate(
     return report
 
 
-def _pdf(db: Session, report: ExecutiveReport) -> Any:
+def _pdf(db: Session, report: ExecutiveReport, data: bytes | None = None) -> Any:
     from app.core.files import store_generated
+
+    return store_generated(
+        db,
+        data if data is not None else report_bytes(db, report),
+        filename=f"{report.number}.pdf",
+        mime="application/pdf",
+        purpose="executive_reports",
+        classification="confidential",
+    )
+
+
+def report_bytes(db: Session, report: ExecutiveReport) -> bytes:
+    """PDF scellé du rapport de direction (cachet et signature de la Direction)."""
     from app.core.pdf import PdfDocument
     from app.modules.documents.seals import sealed_pdf
 
@@ -391,24 +404,18 @@ def _pdf(db: Session, report: ExecutiveReport) -> Any:
             ("Décisions attendues", " • ".join(n.get("decisions", []))),
             ("Perspective", n.get("outlook", "")),
         ],
+        signature_blocks=["Pour GLOBUS ENGINEERING — la Direction générale"],
         footer_note="Document confidentiel — Direction GLOBUS ENGINEERING.",
     )
-    return store_generated(
+    return sealed_pdf(
         db,
-        sealed_pdf(
-            db,
-            doc,
-            kind="executive_report",
-            entity_type="executive_report",
-            entity_id=report.id,
-            reference=report.number,
-            title=f"Rapport de direction du {report.period_start:%d/%m/%Y} au {report.period_end:%d/%m/%Y}",
-            issued_on=doc.issued_on,
-        ),
-        filename=f"{report.number}.pdf",
-        mime="application/pdf",
-        purpose="executive_reports",
-        classification="confidential",
+        doc,
+        kind="executive_report",
+        entity_type="executive_report",
+        entity_id=report.id,
+        reference=report.number,
+        title=f"Rapport de direction du {report.period_start:%d/%m/%Y} au {report.period_end:%d/%m/%Y}",
+        issued_on=doc.issued_on,
     )
 
 

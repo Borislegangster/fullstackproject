@@ -21,6 +21,7 @@ export 'src/features/docs/docs_screen.dart';
 export 'src/features/messaging/messaging.dart';
 export 'src/features/notifications/notifications.dart';
 export 'src/features/projects/project_widgets.dart';
+export 'src/features/signatures/signatures.dart';
 export 'src/features/support/ticket_detail.dart';
 export 'src/files/files.dart';
 export 'src/format/format.dart';

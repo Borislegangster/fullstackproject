@@ -751,6 +751,15 @@ _EMAIL: list[tuple[str, str, str]] = [
         "libération des {{ amount | money }} conservés sous séquestre par code à usage unique, ou contestez-la, sous "
         "{{ review_days }} jours.</p><p><a class='btn' href='{{ link }}'>Examiner et valider</a></p>",
     ),
+    (
+        "signature.link",
+        "{{ document }} {{ reference }} — votre signature est attendue",
+        "<p>Bonjour {{ first_name }},</p><p>GLOBUS ENGINEERING vous invite à signer le document "
+        "<strong>{{ document }} {{ reference }}</strong> ({{ title }}).</p><p>Relisez-le, dessinez votre signature "
+        "à la souris ou au doigt, puis validez-la avec le code à usage unique que vous recevrez par e-mail.</p>"
+        "<p><a class='btn' href='{{ link }}'>Lire et signer le document</a></p><p>Lien personnel valable "
+        "{{ ttl_days }} jours : ne le transférez pas.</p>",
+    ),
 ]
 
 # Règles par défaut : événement → audience → canaux.

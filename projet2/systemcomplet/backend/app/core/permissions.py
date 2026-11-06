@@ -83,6 +83,7 @@ PERMISSIONS: list[Perm] = [
     Perm("documents:publish", "Publier des documents"),
     Perm("documents:confidential", "Accéder aux documents confidentiels", True),
     Perm("documents:very_sensitive", "Accéder aux documents très sensibles", True),
+    Perm("signatures:company", "Signer les documents émis au nom de l'entreprise (signature + cachet)", True),
     Perm("bim:read", "Consulter le Hub BIM"),
     Perm("bim:write", "Déposer des maquettes / annoter"),
     Perm("bim:coordinate", "Gérer issues / clashes"),

@@ -405,6 +405,7 @@ class QuoteAcceptIn(BaseModel):
     otp_token: str = Field(max_length=100)
     code: str = Field(min_length=6, max_length=6)
     accept_terms: bool
+    signature_image: str | None = Field(default=None, max_length=1_500_000)  # signature dessinée (data URL PNG)
 
 
 @public.post("/quotes/{token}/accept")
@@ -434,6 +435,24 @@ def public_quote_accept(
         db.commit()
         raise AppError("Code incorrect", code="OTP_INVALID")
     row.used_at = utcnow()
+    if data.signature_image:
+        # « Bon pour accord » signé à la main sur le devis, validé par le code reçu par e-mail = acceptation
+        from app.modules.signatures import registry as signables
+        from app.modules.signatures import service as signing
+
+        signing.sign(
+            db,
+            signable=signables.get("quote"),
+            entity=quote,
+            party=signables.CLIENT,
+            signer=signing.Signer(name=data.full_name.strip(), email=row.email, via="lien"),
+            image=data.signature_image,
+            otp={"verified_at": row.used_at, "channel": "email", "token_id": str(row.id)},
+            ip=client_ip(request.scope),
+            user_agent=request.headers.get("user-agent"),
+        )
+        db.commit()
+        return {"status": quote.status, "accepted_at": quote.accepted_at, "signed": True}
     from app.core.files import read_private as _read
 
     pdf = _read(db.get(StoredFile, quote.pdf_file_id)) if quote.pdf_file_id else service.quote_pdf(db, quote)
