@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import Text, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -19,7 +19,7 @@ from app.core.context import get_context
 from app.core.crud import make_crud_router, serialize
 from app.core.database import get_db
 from app.core.downloads import file_response, signed_url, watermark_label
-from app.core.errors import BusinessRuleError, Forbidden, NotFound
+from app.core.errors import BusinessRuleError, Conflict, Forbidden, NotFound
 from app.core.files import validate_upload
 from app.core.middleware import client_ip
 from app.core.pagination import PageParams, paginate
@@ -49,6 +49,18 @@ def _version_out(v: DocumentVersion) -> dict[str, Any]:
     return jsonable(data)
 
 
+def _place(db: Session, doc: Document) -> dict[str, Any]:
+    """Où se trouve le document : projet (code + nom) et chemin du dossier."""
+    from app.modules.projects.models import Project
+
+    project = db.get(Project, doc.project_id) if doc.project_id else None
+    folder = db.get(Folder, doc.folder_id) if doc.folder_id else None
+    return {
+        "project": {"id": project.id, "code": project.code, "name": project.name} if project else None,
+        "folder_path": folder.path if folder else None,
+    }
+
+
 def _doc_out(db: Session, doc: Document, *, versions: bool = False) -> dict[str, Any]:
     data = serialize(doc)
     current = db.get(DocumentVersion, doc.current_version_id) if doc.current_version_id else None
@@ -56,6 +68,7 @@ def _doc_out(db: Session, doc: Document, *, versions: bool = False) -> dict[str,
     data["current_version"] = _version_out(current) if current else None
     data["published_version"] = _version_out(published) if published else None
     data["deliverable"] = deliverables.state(db, doc)
+    data.update(_place(db, doc))
     if versions:
         data["versions"] = [
             _version_out(v)
@@ -105,7 +118,7 @@ def list_documents(
         params,
         sort_fields={"title": Document.title, "updated_at": Document.updated_at, "code": Document.code},
         default_sort=Document.updated_at.desc(),
-        search_columns=[Document.title, Document.code],
+        search_columns=[Document.title, Document.code, cast(Document.tags, Text)],
     )
     result["items"] = [_doc_out(db, d) for d in result["items"] if service.can_read(access, db, d)]
     return result
@@ -144,11 +157,54 @@ async def upload_document(
         discipline=discipline,
         confidentiality=confidentiality,
         description=description,
-        tags=[t.strip() for t in tags.split(",") if t.strip()],
+        tags=list(dict.fromkeys(t.strip()[:100] for t in tags.split(",") if t.strip()))[:30],
         code=code,
+        reject_duplicates=True,
     )
     db.commit()
     return _doc_out(db, document, versions=True)
+
+
+class DuplicateCheckIn(BaseModel):
+    project_id: uuid.UUID | None = None
+    checksums: list[str] = Field(default_factory=list, max_length=2000)
+
+
+@router.post("/documents/check-duplicates")
+def check_duplicates(
+    data: DuplicateCheckIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> list[dict[str, Any]]:
+    """Avant un import multiple : quels fichiers (empreinte SHA-256) sont déjà dans la GED de ce projet ?"""
+    access.require("documents:write")
+    if data.project_id:
+        access.require_project(data.project_id)
+    wanted = [c.lower() for c in data.checksums if len(c) == 64]
+    found = service.find_duplicates(db, wanted, data.project_id)
+    return jsonable(
+        [
+            {"checksum": checksum, "document_id": doc.id, "code": doc.code, "where": service.describe(db, doc)}
+            for checksum, doc in found.items()
+            if service.can_read(access, db, doc)
+        ]
+    )
+
+
+class BulkTransitionIn(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1, max_length=200)
+    target: str = Field(pattern="^(in_review|validated|published|archived)$")
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+@router.post("/documents/bulk-transition")
+def bulk_transition(
+    data: BulkTransitionIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Soumettre en revue / valider / publier / archiver plusieurs documents en une fois (version courante)."""
+    result = service.bulk_transition(
+        db, access=access, document_ids=data.document_ids, target=data.target, comment=data.comment
+    )
+    db.commit()
+    return result
 
 
 @router.get("/documents/search")
@@ -177,8 +233,6 @@ def get_document(
             for link in db.execute(select(DocumentLink).where(DocumentLink.document_id == document.id)).scalars()
         ]
     )
-    folder = db.get(Folder, document.folder_id) if document.folder_id else None
-    data["folder_path"] = folder.path if folder else None
     if access.p.is_internal and access.has("documents:approve"):
         data["permissions"] = jsonable(
             [
@@ -219,6 +273,14 @@ def update_document(
         access.require("documents:publish")
     if "confidentiality" in values and not access.can_read_confidentiality(values["confidentiality"]):
         raise BusinessRuleError("Niveau de confidentialité non autorisé")
+    if values.get("folder_id"):
+        folder = db.get(Folder, values["folder_id"])
+        if folder is None:
+            raise NotFound("Dossier introuvable")
+        if folder.project_id != document.project_id:
+            raise BusinessRuleError(
+                "Ce dossier appartient à un autre espace (projet) que celui du document", code="FOLDER_PROJECT_MISMATCH"
+            )
     if values.get("unlock_invoice_id"):
         from app.modules.billing.models import ClientInvoice
 
@@ -714,6 +776,148 @@ def sign(
 
 
 # ---------------------------------------------------------------------------- dossiers
+def _folder_scope(access: Access, project_id: uuid.UUID | None) -> None:
+    access.require("documents:read")
+    if project_id:
+        access.require_project(project_id)
+    elif not access.p.is_internal:
+        raise NotFound("Dossier introuvable")
+
+
+@router.get("/document-folders/tree")
+def folder_tree(
+    project_id: uuid.UUID | None = None, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> list[dict[str, Any]]:
+    """Tous les dossiers d'un projet (ou de la GED générale), avec le nombre de documents de chacun."""
+    _folder_scope(access, project_id)
+    folders = (
+        db.execute(
+            select(Folder)
+            .where(Folder.project_id == project_id if project_id else Folder.project_id.is_(None))
+            .order_by(Folder.path)
+            .limit(5000)
+        )
+        .scalars()
+        .all()
+    )
+    counts = (
+        dict(
+            db.execute(
+                select(Document.folder_id, func.count())
+                .where(Document.folder_id.in_([f.id for f in folders]), Document.deleted_at.is_(None))
+                .group_by(Document.folder_id)
+            ).all()
+        )
+        if folders
+        else {}
+    )
+    return jsonable([{**serialize(f), "documents": counts.get(f.id, 0)} for f in folders])
+
+
+class FolderPathsIn(BaseModel):
+    project_id: uuid.UUID | None = None
+    parent_id: uuid.UUID | None = None
+    paths: list[str] = Field(min_length=1, max_length=1000)
+    default_confidentiality: str = Field(default="internal", pattern="^(public|internal|confidential|very_sensitive)$")
+
+
+@router.post("/document-folders/ensure")
+def ensure_folders(
+    data: FolderPathsIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Import d'un dossier : crée (ou retrouve) chaque sous-dossier « A/B/C » ; renvoie chemin → id."""
+    access.require("documents:write")
+    if data.project_id:
+        access.require_project(data.project_id, "documents:write")
+    out: dict[str, Any] = {}
+    for path in dict.fromkeys(p.strip().strip("/") for p in data.paths):
+        if not path or len(path) > 1000:
+            continue
+        folder = service.ensure_folder_path(
+            db,
+            access=access,
+            project_id=data.project_id,
+            parent_id=data.parent_id,
+            relative_path=path,
+            default_confidentiality=data.default_confidentiality,
+        )
+        out[path] = folder.id if folder else data.parent_id
+    db.commit()
+    return jsonable(out)
+
+
+@router.delete("/document-folders/{folder_id}")
+def delete_folder(
+    folder_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, str]:
+    """Suppression d'un dossier vide uniquement (documents et sous-dossiers d'abord déplacés ou supprimés)."""
+    access.require("documents:write")
+    folder = db.get(Folder, folder_id)
+    if folder is None:
+        raise NotFound("Dossier introuvable")
+    if folder.project_id:
+        access.require_project(folder.project_id, "documents:write")
+    elif not access.p.is_internal:
+        raise NotFound("Dossier introuvable")
+    if (
+        db.execute(select(Folder.id).where(Folder.parent_id == folder.id).limit(1)).first()
+        or db.execute(
+            select(Document.id).where(Document.folder_id == folder.id, Document.deleted_at.is_(None)).limit(1)
+        ).first()
+    ):
+        raise BusinessRuleError("Le dossier n'est pas vide", code="FOLDER_NOT_EMPTY")
+    for doc in db.execute(select(Document).where(Document.folder_id == folder.id)).scalars():
+        doc.folder_id = None  # documents supprimés (logiquement) : on les détache
+    db.delete(folder)
+    audit.record(
+        db,
+        family="business",
+        module="documents",
+        action="DELETE",
+        resource_type="document_folder",
+        resource_id=folder_id,
+        project_id=folder.project_id,
+        diff={"path": folder.path},
+    )
+    db.commit()
+    return {"status": "deleted"}
+
+
+def _folder_before_create(db: Session, obj: Folder, access: Access, values: dict[str, Any]) -> None:
+    obj.name = (obj.name or "").strip()
+    if not obj.name or "/" in obj.name:
+        raise BusinessRuleError("Nom de dossier invalide (le caractère « / » est interdit)")
+    parent = db.get(Folder, obj.parent_id) if obj.parent_id else None
+    if obj.parent_id and parent is None:
+        raise NotFound("Dossier parent introuvable")
+    if parent is not None and parent.project_id != obj.project_id:
+        raise BusinessRuleError("Le dossier parent appartient à un autre projet", code="FOLDER_PROJECT_MISMATCH")
+    same = select(Folder.id).where(Folder.name == obj.name)
+    same = same.where(Folder.parent_id == obj.parent_id if obj.parent_id else Folder.parent_id.is_(None))
+    same = same.where(Folder.project_id == obj.project_id if obj.project_id else Folder.project_id.is_(None))
+    if db.execute(same.limit(1)).first():
+        raise Conflict(f"Un dossier « {obj.name} » existe déjà à cet endroit", code="DUPLICATE_FOLDER")
+    obj.path = (parent.path.rstrip("/") if parent else "") + "/" + obj.name
+
+
+def _folder_before_update(db: Session, obj: Folder, access: Access, values: dict[str, Any]) -> None:
+    if ("parent_id" in values and values["parent_id"] != obj.parent_id) or (
+        "project_id" in values and values["project_id"] != obj.project_id
+    ):
+        raise BusinessRuleError("Un dossier ne peut pas changer d'emplacement ; créez-en un nouveau")
+    if "name" in values and values["name"] and values["name"].strip() != obj.name:
+        name = values["name"].strip()
+        if "/" in name:
+            raise BusinessRuleError("Nom de dossier invalide (le caractère « / » est interdit)")
+        values["name"] = name
+        old = obj.path
+        new = old.rsplit("/", 1)[0] + "/" + name
+        values["path"] = new
+        for child in db.execute(select(Folder).where(Folder.path.like(f"{old}/%"))).scalars():
+            if child.project_id == obj.project_id:
+                child.path = new + child.path[len(old) :]
+
+
 router.include_router(
     make_crud_router(
         Folder,
@@ -728,13 +932,10 @@ router.include_router(
         search=["name"],
         sort=["name", "path"],
         default_sort="path",
-        before_create=lambda db, obj, access, values: setattr(
-            obj,
-            "path",
-            (db.get(Folder, obj.parent_id).path.rstrip("/") if obj.parent_id and db.get(Folder, obj.parent_id) else "")
-            + "/"
-            + obj.name,
-        ),
+        before_create=_folder_before_create,
+        before_update=_folder_before_update,
+        exclude_in={"path"},
+        allow_delete=False,  # suppression contrôlée ci-dessus (dossier vide uniquement)
         creator_attr="created_by_id",
     )
 )

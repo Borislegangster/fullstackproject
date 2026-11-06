@@ -1,9 +1,9 @@
 "use client";
 
-import { ChevronRight, Download, Eye, FileText, Folder, FolderPlus, GitCompare, Lock, PenLine, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { CheckCheck, ChevronRight, Download, Eye, FileText, Files, Folder, FolderPlus, FolderUp, GitCompare, Lock, PenLine, Search, Send, ShieldCheck, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CellLink, ResourceView, type Row } from "@/components/erp/resource";
 import { RefSelect } from "@/components/forms/ref-select";
@@ -14,12 +14,12 @@ import { ConfirmDialog, Modal, Tabs } from "@/components/ui/overlay";
 import { OtpDialog } from "@/components/ui/otp-dialog";
 import { Alert, Badge, Button, Card, CardHeader, DescriptionList, EmptyState, PageTitle, Skeleton, StatusBadge } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
-import { api, apiUrl, errorMessage } from "@/lib/api";
+import { ApiError, api, apiUrl, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { date, dateTime, fileSize } from "@/lib/format";
 import { useApi, useDebounce } from "@/lib/hooks";
 import { optionLabel } from "@/lib/labels";
-import { REFS } from "@/lib/refs";
+import { REFS, type RefSource } from "@/lib/refs";
 
 const opts = (values: string[]) => values.map((v) => ({ value: v, label: optionLabel(v) }));
 export const DOC_TYPES = ["plan", "contrat", "avenant", "facture", "devis", "pv", "rapport", "note_calcul", "cctp", "photo", "fonciers", "administratif", "technique", "qhse", "rh", "autre"];
@@ -77,7 +77,8 @@ export function DocumentUpload({ projectId, folderId, defaultConfidentiality, on
         files={files}
         onChange={(f) => {
           setFiles(f);
-          if (f[0] && !v.title) setV({ ...v, title: f[0].name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ") });
+          if (f[0] && !v.title) setV({ ...v, title: fileStem(f[0].name).replace(/[_-]+/g, " ") });
+          if (f[0] && !tags.length) setTags([fileStem(f[0].name)]);
         }}
         maxSizeMb={500}
         label="Plan, note de calcul, PV, maquette IFC… (500 Mo max)"
@@ -102,7 +103,7 @@ export function DocumentUpload({ projectId, folderId, defaultConfidentiality, on
           <RefSelect source={REFS.projects} value={v.project_id} onChange={(id) => setV({ ...v, project_id: id, site_id: null, lot_id: null, folder_id: null })} placeholder="Document général" />
         </Field>
         <Field label="Dossier">
-          <RefSelect key={v.project_id ?? "global"} source={{ ...REFS.folders, dependsOn: undefined, query: v.project_id ? { project_id: v.project_id } : undefined }} value={v.folder_id} onChange={(id) => setV({ ...v, folder_id: id })} />
+          <RefSelect key={v.project_id ?? "global"} source={folderRef(v.project_id)} value={v.folder_id} onChange={(id) => setV({ ...v, folder_id: id })} placeholder="Racine" />
         </Field>
         {v.project_id ? (
           <>
@@ -158,6 +159,363 @@ export function DocumentUpload({ projectId, folderId, defaultConfidentiality, on
   );
 }
 
+/* ----------------------------------------------------------------------------- import multiple / dossier */
+
+/** Source du sélecteur de dossier : tous les dossiers du projet choisi (ou de la GED générale), avec leur chemin. */
+export const folderRef = (projectId?: string | null): RefSource => ({
+  path: "/document-folders/tree",
+  query: projectId ? { project_id: projectId } : undefined,
+  label: (r) => r.path ?? r.name,
+  sublabel: (r) => `${r.documents ?? 0} document${r.documents > 1 ? "s" : ""}`,
+  paginated: false,
+  searchable: false,
+});
+
+/** Nom du fichier sans extension : titre et mot-clé du document. */
+export const fileStem = (name: string) => name.replace(/\.[^./\\]+$/, "").trim() || name;
+
+const IGNORED_FILES = /^(\.|~\$|thumbs\.db$|desktop\.ini$)/i;
+const MAX_IMPORT_MB = 500;
+
+type ImportStatus = "pending" | "uploading" | "done" | "duplicate" | "twin" | "error";
+interface ImportItem {
+  key: string;
+  file: File;
+  dir: string;
+  status: ImportStatus;
+  message?: string;
+  sha?: string;
+}
+
+async function sha256(file: File): Promise<string | undefined> {
+  if (typeof crypto === "undefined" || !crypto.subtle || file.size > 300 * 1024 * 1024) return undefined;
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Glisser-déposer d'un dossier : parcours récursif des entrées (Chrome, Edge, Firefox, Safari). */
+async function filesFromDrop(items: DataTransferItemList): Promise<{ file: File; dir: string }[]> {
+  const out: { file: File; dir: string }[] = [];
+  const walk = async (entry: any, dir: string): Promise<void> => {
+    if (!entry) return;
+    if (entry.isFile) {
+      const file: File = await new Promise((resolve, reject) => entry.file(resolve, reject));
+      out.push({ file, dir });
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const sub = dir ? `${dir}/${entry.name}` : entry.name;
+      for (;;) {
+        const batch: any[] = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        if (!batch.length) break;
+        for (const child of batch) await walk(child, sub);
+      }
+    }
+  };
+  const entries = Array.from(items).map((i) => (typeof i.webkitGetAsEntry === "function" ? i.webkitGetAsEntry() : null));
+  for (const entry of entries) await walk(entry, "");
+  return out;
+}
+
+const STATUS_TEXT: Record<ImportStatus, string> = {
+  pending: "En attente",
+  uploading: "Envoi…",
+  done: "Déposé",
+  duplicate: "Déjà dans la GED — ignoré",
+  twin: "En double dans la sélection — ignoré",
+  error: "Erreur",
+};
+
+export function BulkImport({ projectId, folderId, defaultConfidentiality, onDone, onCancel }: { projectId?: string | null; folderId?: string | null; defaultConfidentiality?: string | null; onDone: () => void; onCancel: () => void }) {
+  const [items, setItems] = useState<ImportItem[]>([]);
+  const [meta, setMeta] = useState({ doc_type: "autre", discipline: "", confidentiality: defaultConfidentiality || "internal", project_id: projectId ?? null, folder_id: folderId ?? null });
+  const [keepTree, setKeepTree] = useState(true);
+  const [phase, setPhase] = useState<"select" | "running" | "finished">("select");
+  const [step, setStep] = useState("");
+  const [over, setOver] = useState(false);
+  const filesInput = useRef<HTMLInputElement>(null);
+  const dirInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    dirInput.current?.setAttribute("webkitdirectory", "");
+    dirInput.current?.setAttribute("directory", "");
+  }, []);
+
+  const add = (picked: { file: File; dir: string }[]) => {
+    setItems((prev) => {
+      const seen = new Set(prev.map((i) => `${i.dir}/${i.file.name}/${i.file.size}`));
+      const next = [...prev];
+      for (const { file, dir } of picked) {
+        if (IGNORED_FILES.test(file.name)) continue;
+        const id = `${dir}/${file.name}/${file.size}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const tooBig = file.size > MAX_IMPORT_MB * 1024 * 1024;
+        next.push({ key: id, file, dir, status: tooBig ? "error" : "pending", message: tooBig ? `Plus de ${MAX_IMPORT_MB} Mo` : undefined });
+      }
+      return next;
+    });
+  };
+  const fromInput = (list: FileList | null) => {
+    if (!list) return;
+    add(
+      Array.from(list).map((file) => {
+        const rel = (file as File & { webkitRelativePath?: string }).webkitRelativePath || "";
+        return { file, dir: rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "" };
+      }),
+    );
+  };
+  const patchItem = (key: string, change: Partial<ImportItem>) => setItems((all) => all.map((i) => (i.key === key ? { ...i, ...change } : i)));
+
+  const run = async () => {
+    setPhase("running");
+    let queue = items.filter((i) => i.status === "pending");
+    // 1. Empreintes : doublons dans la sélection, puis fichiers déjà présents dans la GED du projet
+    setStep("Contrôle des doublons…");
+    const bySha = new Map<string, string>();
+    const hashed: ImportItem[] = [];
+    for (const item of queue) {
+      const sha = await sha256(item.file).catch(() => undefined);
+      if (sha && bySha.has(sha)) {
+        patchItem(item.key, { status: "twin", message: `Même contenu que « ${bySha.get(sha)} »` });
+        continue;
+      }
+      if (sha) bySha.set(sha, item.file.name);
+      hashed.push({ ...item, sha });
+    }
+    queue = hashed;
+    try {
+      const shas = queue.map((i) => i.sha).filter((x): x is string => !!x);
+      for (let i = 0; i < shas.length; i += 1000) {
+        const found = await api<Row[]>("/documents/check-duplicates", { method: "POST", body: { project_id: meta.project_id, checksums: shas.slice(i, i + 1000) } });
+        const where = new Map(found.map((f) => [f.checksum, f.where]));
+        queue = queue.filter((item) => {
+          if (item.sha && where.has(item.sha)) {
+            patchItem(item.key, { status: "duplicate", message: where.get(item.sha) });
+            return false;
+          }
+          return true;
+        });
+      }
+    } catch {
+      /* le serveur refuse de toute façon chaque doublon au dépôt */
+    }
+    // 2. Arborescence : sous-dossiers recréés sous le dossier de destination
+    const folderOf = new Map<string, string | null>();
+    if (keepTree) {
+      const dirs = [...new Set(queue.map((i) => i.dir).filter(Boolean))];
+      if (dirs.length) {
+        setStep("Création des dossiers…");
+        try {
+          for (let i = 0; i < dirs.length; i += 500) {
+            const ids = await api<Record<string, string>>("/document-folders/ensure", { method: "POST", body: { project_id: meta.project_id, parent_id: meta.folder_id, paths: dirs.slice(i, i + 500), default_confidentiality: meta.confidentiality } });
+            for (const [path, id] of Object.entries(ids)) folderOf.set(path, id);
+          }
+        } catch (err) {
+          for (const item of queue) patchItem(item.key, { status: "error", message: `Dossiers : ${errorMessage(err)}` });
+          setStep("");
+          setPhase("finished");
+          return;
+        }
+      }
+    }
+    // 3. Dépôt : 3 envois en parallèle ; titre et mot-clé = nom du fichier
+    setStep("Envoi des fichiers…");
+    let next = 0;
+    const worker = async () => {
+      while (next < queue.length) {
+        const item = queue[next++];
+        patchItem(item.key, { status: "uploading" });
+        const fd = new FormData();
+        const stem = fileStem(item.file.name);
+        fd.append("file", item.file);
+        fd.append("title", stem.slice(0, 300));
+        fd.append("tags", stem.replace(/,/g, " ").slice(0, 100));
+        fd.append("doc_type", meta.doc_type);
+        fd.append("confidentiality", meta.confidentiality);
+        if (meta.discipline) fd.append("discipline", meta.discipline);
+        if (meta.project_id) fd.append("project_id", meta.project_id);
+        const folder = keepTree && item.dir ? folderOf.get(item.dir) ?? meta.folder_id : meta.folder_id;
+        if (folder) fd.append("folder_id", folder);
+        try {
+          await api<Row>("/documents", { method: "POST", form: fd });
+          patchItem(item.key, { status: "done", message: undefined });
+        } catch (err) {
+          const duplicate = err instanceof ApiError && err.code === "DUPLICATE_DOCUMENT";
+          patchItem(item.key, { status: duplicate ? "duplicate" : "error", message: errorMessage(err) });
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    setStep("");
+    setPhase("finished");
+  };
+
+  const count = (s: ImportStatus) => items.filter((i) => i.status === s).length;
+  const finished = items.filter((i) => i.status !== "pending" && i.status !== "uploading").length;
+  const pending = count("pending");
+  return (
+    <div className="space-y-4">
+      {phase === "select" ? (
+        <>
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setOver(true);
+            }}
+            onDragLeave={() => setOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setOver(false);
+              void filesFromDrop(e.dataTransfer.items).then(add);
+            }}
+            className={`rounded-xl border-2 border-dashed p-6 text-center text-sm ${over ? "border-brand-500 bg-brand-50" : "border-line"}`}
+          >
+            <p className="font-medium">Glissez ici des fichiers ou un dossier entier</p>
+            <p className="mt-1 text-xs text-muted">Chaque fichier devient un document : titre et mot-clé = nom du fichier. Les doublons sont détectés et ignorés.</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button size="sm" variant="secondary" onClick={() => filesInput.current?.click()}>
+                <Files className="h-4 w-4" /> Choisir des fichiers
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => dirInput.current?.click()}>
+                <FolderUp className="h-4 w-4" /> Choisir un dossier
+              </Button>
+            </div>
+            <input ref={filesInput} type="file" multiple hidden onChange={(e) => { fromInput(e.target.files); e.target.value = ""; }} />
+            <input ref={dirInput} type="file" multiple hidden onChange={(e) => { fromInput(e.target.files); e.target.value = ""; }} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Projet">
+              <RefSelect source={REFS.projects} value={meta.project_id} onChange={(id) => setMeta({ ...meta, project_id: id, folder_id: null })} placeholder="Documents généraux" />
+            </Field>
+            <Field label="Dossier de destination">
+              <RefSelect key={meta.project_id ?? "global"} source={folderRef(meta.project_id)} value={meta.folder_id} onChange={(id) => setMeta({ ...meta, folder_id: id })} placeholder="Racine" />
+            </Field>
+            <Field label="Type" required>
+              <Select value={meta.doc_type} onChange={(e) => setMeta({ ...meta, doc_type: e.target.value })} options={opts(DOC_TYPES)} />
+            </Field>
+            <Field label="Discipline">
+              <Select value={meta.discipline} onChange={(e) => setMeta({ ...meta, discipline: e.target.value })} options={[{ value: "", label: "—" }, ...opts(DISCIPLINES)]} />
+            </Field>
+            <Field label="Confidentialité" required>
+              <Select value={meta.confidentiality} onChange={(e) => setMeta({ ...meta, confidentiality: e.target.value })} options={opts(CONFIDENTIALITY)} />
+            </Field>
+            <div className="flex items-end">
+              <Checkbox label="Recréer les sous-dossiers" description="Pour un dossier importé : même arborescence dans la GED." checked={keepTree} onChange={setKeepTree} />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-2">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${items.length ? (finished * 100) / items.length : 0}%` }} />
+          </div>
+          <p className="text-sm text-muted">
+            {step || "Terminé."} {finished}/{items.length} traités — {count("done")} déposé{count("done") > 1 ? "s" : ""}, {count("duplicate") + count("twin")} doublon{count("duplicate") + count("twin") > 1 ? "s" : ""} ignoré{count("duplicate") + count("twin") > 1 ? "s" : ""}, {count("error")} erreur{count("error") > 1 ? "s" : ""}.
+          </p>
+        </div>
+      )}
+      {items.length ? (
+        <div className="max-h-72 overflow-y-auto rounded-xl border border-line">
+          <table className="min-w-full divide-y divide-line text-sm">
+            <tbody className="divide-y divide-line">
+              {items.map((i) => (
+                <tr key={i.key}>
+                  <td className="px-3 py-1.5">
+                    <span className="block truncate font-medium" title={i.file.name}>
+                      {i.file.name}
+                    </span>
+                    {i.dir && keepTree ? <span className="block truncate text-xs text-muted">{i.dir}</span> : null}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-muted">{fileSize(i.file.size)}</td>
+                  <td className={`px-3 py-1.5 text-xs ${i.status === "done" ? "text-emerald-700" : i.status === "error" ? "text-red-600" : i.status === "duplicate" || i.status === "twin" ? "text-amber-700" : "text-muted"}`}>
+                    {STATUS_TEXT[i.status]}
+                    {i.message ? <span className="block">{i.message}</span> : null}
+                  </td>
+                  <td className="px-2 py-1.5 text-right">
+                    {phase === "select" ? (
+                      <button type="button" aria-label="Retirer le fichier" className="rounded p-1 text-muted hover:text-red-600" onClick={() => setItems((all) => all.filter((x) => x.key !== i.key))}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+      <div className="flex justify-end gap-2 border-t border-line pt-4">
+        {phase === "finished" ? (
+          <Button onClick={onDone}>Terminer</Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={onCancel} disabled={phase === "running"}>
+              Annuler
+            </Button>
+            <Button loading={phase === "running"} disabled={!pending} onClick={() => void run()}>
+              <Upload className="h-4 w-4" /> Importer {pending} fichier{pending > 1 ? "s" : ""}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Actions groupées sur les documents cochés : soumission en revue, validation, publication (double regard). */
+function GedBulkActions({ rows, done }: { rows: Row[]; done: () => void }) {
+  const { can } = useAuth();
+  const toast = useToast();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [report, setReport] = useState<{ title: string; errors: Row[] } | null>(null);
+  const runBulk = async (target: string, label: string) => {
+    const eligible = rows.filter((r) => (VERSION_FLOW[r.current_version?.status] ?? []).includes(target));
+    if (!eligible.length) {
+      toast.error(label, "Aucun document sélectionné n'est au bon statut pour cette action.");
+      return;
+    }
+    setBusy(target);
+    try {
+      const res = await api<{ done: Row[]; errors: Row[] }>("/documents/bulk-transition", { method: "POST", body: { document_ids: eligible.map((r) => r.id), target } });
+      const skipped = rows.length - eligible.length;
+      if (res.errors.length || skipped) {
+        setReport({ title: `${label} : ${res.done.length} effectué${res.done.length > 1 ? "s" : ""}${skipped ? `, ${skipped} ignoré${skipped > 1 ? "s" : ""} (statut)` : ""}`, errors: res.errors });
+      } else toast.success(`${label} : ${res.done.length} document${res.done.length > 1 ? "s" : ""}`);
+      if (!res.errors.length) done();
+    } catch (err) {
+      toast.error(label, errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const actions = [
+    { target: "in_review", label: "Soumettre en revue", icon: <Send className="h-4 w-4" /> },
+    { target: "validated", label: "Valider", icon: <CheckCheck className="h-4 w-4" /> },
+    { target: "published", label: "Publier", icon: <ShieldCheck className="h-4 w-4" /> },
+  ].filter((a) => can(TRANSITION_PERMS[a.target]));
+  return (
+    <>
+      {actions.map((a) => (
+        <Button key={a.target} size="sm" variant="secondary" loading={busy === a.target} disabled={!!busy} onClick={() => void runBulk(a.target, a.label)}>
+          {a.icon} {a.label}
+        </Button>
+      ))}
+      <Modal open={!!report} onClose={() => { setReport(null); done(); }} title={report?.title ?? ""}>
+        {report?.errors.length ? (
+          <ul className="space-y-1 text-sm">
+            {report.errors.map((e) => (
+              <li key={e.document_id}>
+                <span className="font-semibold">{e.code}</span> — {e.message}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted">Les documents ignorés n&apos;étaient pas au statut requis.</p>
+        )}
+      </Modal>
+    </>
+  );
+}
+
 /* ----------------------------------------------------------------------------- explorateur */
 
 interface FolderNode {
@@ -165,11 +523,12 @@ interface FolderNode {
   name: string;
   path: string;
   parent_id: string | null;
+  documents: number;
   children: FolderNode[];
 }
 
 function buildTree(rows: Row[]): FolderNode[] {
-  const nodes = new Map<string, FolderNode>(rows.map((r) => [r.id, { id: r.id, name: r.name, path: r.path, parent_id: r.parent_id ?? null, children: [] }]));
+  const nodes = new Map<string, FolderNode>(rows.map((r) => [r.id, { id: r.id, name: r.name, path: r.path, parent_id: r.parent_id ?? null, documents: Number(r.documents ?? 0), children: [] }]));
   const roots: FolderNode[] = [];
   for (const node of nodes.values()) {
     const parent = node.parent_id ? nodes.get(node.parent_id) : undefined;
@@ -193,6 +552,7 @@ function FolderTree({ nodes, selected, onSelect, depth = 0 }: { nodes: FolderNod
             {n.children.length ? <ChevronRight className="h-3.5 w-3.5 text-muted" /> : <span className="w-3.5" />}
             <Folder className="h-4 w-4 text-accent-500" />
             <span className="truncate">{n.name}</span>
+            {n.documents ? <span className="ml-auto rounded-full bg-slate-100 px-1.5 text-xs tabular-nums text-muted">{n.documents}</span> : null}
           </button>
           {n.children.length ? <FolderTree nodes={n.children} selected={selected} onSelect={onSelect} depth={depth + 1} /> : null}
         </li>
@@ -241,11 +601,14 @@ export function GedExplorer() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [listKey, setListKey] = useState(0);
   const [newFolder, setNewFolder] = useState<string | null>(null);
   const [folderLevel, setFolderLevel] = useState("internal");
-  const folders = useApi<{ items: Row[] }>("/document-folders", { project_id: projectId ?? undefined, page_size: 500 });
-  const tree = useMemo(() => buildTree((folders.data?.items ?? []).filter((f) => (projectId ? f.project_id === projectId : !f.project_id))), [folders.data, projectId]);
-  const current = folders.data?.items?.find((f) => f.id === folderId);
+  // Arborescence complète du projet (ou de la GED générale) : plus de limite de pagination.
+  const folders = useApi<Row[]>("/document-folders/tree", { project_id: projectId ?? undefined });
+  const tree = useMemo(() => buildTree(folders.data ?? []), [folders.data]);
+  const current = folders.data?.find((f) => f.id === folderId);
   return (
     <div className="space-y-5">
       <PageTitle
@@ -253,9 +616,14 @@ export function GedExplorer() {
         subtitle="Documents versionnés, circuit d'approbation, publication « bon pour exécution », signature OTP, filigrane et traçabilité des accès."
         actions={
           can("documents:write") ? (
-            <Button onClick={() => setUploading(true)}>
-              <Upload className="h-4 w-4" /> Déposer un document
-            </Button>
+            <>
+              <Button variant="secondary" onClick={() => setImporting(true)}>
+                <FolderUp className="h-4 w-4" /> Importer plusieurs fichiers ou un dossier
+              </Button>
+              <Button onClick={() => setUploading(true)}>
+                <Upload className="h-4 w-4" /> Déposer un document
+              </Button>
+            </>
           ) : null
         }
       />
@@ -274,7 +642,15 @@ export function GedExplorer() {
           <button type="button" onClick={() => setFolderId(null)} className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-left text-sm hover:bg-brand-50 ${folderId === null ? "bg-brand-100 font-semibold text-brand-800" : ""}`}>
             <FileText className="h-4 w-4" /> Tous les documents
           </button>
-          {folders.loading && !folders.data ? <Skeleton className="h-24" /> : <FolderTree nodes={tree} selected={folderId} onSelect={setFolderId} />}
+          {folders.loading && !folders.data ? (
+            <Skeleton className="h-24" />
+          ) : folders.error ? (
+            <Alert tone="danger">{folders.error}</Alert>
+          ) : tree.length ? (
+            <FolderTree nodes={tree} selected={folderId} onSelect={setFolderId} />
+          ) : (
+            <p className="px-2 text-xs text-muted">Aucun dossier {projectId ? "dans ce projet" : "général"}.</p>
+          )}
           {can("documents:write") ? (
             <Button size="sm" variant="ghost" onClick={() => { setNewFolder(""); setFolderLevel(current?.default_confidentiality ?? "internal"); }}>
               <FolderPlus className="h-4 w-4" /> {current ? `Sous-dossier de « ${current.name} »` : "Nouveau dossier"}
@@ -282,7 +658,7 @@ export function GedExplorer() {
           ) : null}
         </Card>
         <ResourceView
-          key={`${projectId ?? "g"}-${folderId ?? "all"}`}
+          key={`${projectId ?? "g"}-${folderId ?? "all"}-${listKey}`}
           embedded
           config={{
             title: current ? current.path : "Documents",
@@ -292,7 +668,21 @@ export function GedExplorer() {
             columns: [
               { key: "code", label: "Code", sortable: true, render: (r) => <CellLink href={`/erp/ged/documents/${r.id}`}>{r.code}</CellLink> },
               { key: "title", label: "Titre", sortable: true },
-              { key: "doc_type", label: "Type", format: "option" },
+              {
+                key: "place",
+                label: "Emplacement",
+                render: (r) => (
+                  <span className="block max-w-[16rem] text-xs">
+                    <span className="block truncate font-medium" title={r.project ? `${r.project.code} — ${r.project.name}` : "Documents généraux"}>
+                      {r.project ? `${r.project.code} — ${r.project.name}` : "Documents généraux"}
+                    </span>
+                    <span className="flex items-center gap-1 truncate text-muted" title={r.folder_path ?? "Racine"}>
+                      <Folder className="h-3 w-3 shrink-0" /> {r.folder_path ?? "Racine"}
+                    </span>
+                  </span>
+                ),
+              },
+              { key: "doc_type", label: "Type", format: "option", hideOnMobile: true },
               { key: "current_version", label: "Version", render: (r) => (r.current_version ? `${r.current_version.label}` : "—") },
               { key: "status", label: "Statut", render: (r) => <StatusBadge status={r.current_version?.status} /> },
               { key: "confidentiality", label: "Niveau", render: (r) => <ConfidentialityBadge level={r.confidentiality} />, hideOnMobile: true },
@@ -304,9 +694,25 @@ export function GedExplorer() {
               { key: "status", label: "Statut", options: opts(VERSION_STATUSES) },
             ],
             emptyText: "Aucun document dans ce dossier.",
+            bulkActions: can("documents:write") || can("documents:approve") ? (rows, done) => <GedBulkActions rows={rows} done={done} /> : undefined,
           }}
         />
       </div>
+      <Modal open={importing} onClose={() => setImporting(false)} title="Importer plusieurs fichiers ou un dossier" size="lg">
+        {importing ? (
+          <BulkImport
+            projectId={projectId}
+            folderId={folderId}
+            defaultConfidentiality={current?.default_confidentiality}
+            onCancel={() => setImporting(false)}
+            onDone={() => {
+              setImporting(false);
+              void folders.reload();
+              setListKey((k) => k + 1);
+            }}
+          />
+        ) : null}
+      </Modal>
       <Modal open={uploading} onClose={() => setUploading(false)} title="Déposer un document" size="lg">
         <DocumentUpload projectId={projectId} folderId={folderId} defaultConfidentiality={current?.default_confidentiality} onCancel={() => setUploading(false)} onDone={(doc) => router.push(`/erp/ged/documents/${doc.id}`)} />
       </Modal>
@@ -319,9 +725,11 @@ export function GedExplorer() {
             disabled={!newFolder?.trim()}
             onClick={async () => {
               try {
-                await api("/document-folders", { method: "POST", body: { name: newFolder?.trim(), parent_id: folderId, project_id: projectId, default_confidentiality: folderLevel } });
+                const created = await api<Row>("/document-folders", { method: "POST", body: { name: newFolder?.trim(), parent_id: folderId, project_id: projectId, default_confidentiality: folderLevel } });
                 setNewFolder(null);
-                void folders.reload();
+                await folders.reload();
+                setFolderId(created.id);
+                toast.success("Dossier créé", created.path);
               } catch (err) {
                 toast.error("Création impossible", errorMessage(err));
               }
@@ -602,7 +1010,8 @@ export function DocumentDetail({ id }: { id: string }) {
             columns={1}
             items={[
               { label: "Description", value: d.description },
-              { label: "Projet", value: d.project_id ? <CellLink href={`/erp/chantiers/${d.project_id}`}>Ouvrir le chantier</CellLink> : "Document général" },
+              { label: "Projet", value: d.project ? <CellLink href={`/erp/chantiers/${d.project.id}`}>{`${d.project.code} — ${d.project.name}`}</CellLink> : "Documents généraux" },
+              { label: "Dossier", value: d.folder_path ?? "Racine" },
               { label: "Mots-clés", value: (d.tags ?? []).join(", ") || "—" },
               { label: "Conservation jusqu'au", value: d.retention_until ? date(d.retention_until) : "—" },
               { label: "Version publiée", value: d.published_version?.label ?? "Aucune" },
@@ -623,7 +1032,7 @@ export function DocumentDetail({ id }: { id: string }) {
             doc_type: { options: opts(DOC_TYPES) },
             discipline: { options: opts(DISCIPLINES) },
             confidentiality: { options: opts(CONFIDENTIALITY) },
-            folder_id: { ref: { ...REFS.folders, dependsOn: undefined, query: d.project_id ? { project_id: d.project_id } : undefined } },
+            folder_id: { ref: folderRef(d.project_id) },
             tags: { widget: "tags" },
             client_visible: { help: "Publie la version en vigueur dans l'espace client (notification envoyée)." },
             retention_until: { help: "Date jusqu'à laquelle le document doit être conservé (archivage légal)." },

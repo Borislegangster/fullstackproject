@@ -2217,6 +2217,7 @@ const Map<String, String> kStatusLabels = {
   'issued': 'Émis',
   'late': 'En retard',
   'leave': 'Congé',
+  'left': 'Parti',
   'locked': 'Verrouillé',
   'lost': 'Perdu',
   'matched': 'Rapproché',
