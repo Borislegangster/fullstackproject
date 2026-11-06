@@ -818,7 +818,9 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
       ? (quote.lines as Row[]).map((l) => ({ section: l.section ?? "", lot_code: l.lot_code ?? "", designation: l.designation, description: l.description ?? "", unit: l.unit ?? "u", quantity: String(toNumber(l.quantity)), unit_price: String(toNumber(l.unit_price)), discount_pct: String(toNumber(l.discount_pct)) }))
       : [emptyQuoteLine()],
   );
-  const [schedule, setSchedule] = useState<ScheduleDraft[]>(((src.payment_schedule ?? []) as Row[]).map((s) => ({ label: s.label ?? "", amount: s.amount != null ? String(toNumber(s.amount)) : "", milestone: s.milestone ?? "" })));
+  // Anciens brouillons (échéancier en % seuls) : montants recalculés depuis le total TTC enregistré.
+  const legacyAmount = (s: Row) => (s.amount != null && s.amount !== "" ? String(toNumber(s.amount)) : s.pct != null && toNumber(src.total) > 0 ? String(Math.round(toNumber(src.total) * toNumber(s.pct)) / 100) : "");
+  const [schedule, setSchedule] = useState<ScheduleDraft[]>(((src.payment_schedule ?? []) as Row[]).map((s) => ({ label: s.label ?? "", amount: legacyAmount(s), milestone: s.milestone ?? "" })));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cur = head.currency === "XAF" ? "FCFA" : head.currency;
