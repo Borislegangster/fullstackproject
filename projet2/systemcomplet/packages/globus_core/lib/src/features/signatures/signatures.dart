@@ -10,6 +10,7 @@ import '../../api/json.dart';
 import '../../context.dart';
 import '../../files/files.dart';
 import '../../format/format.dart';
+import '../../format/labels.dart';
 import '../../theme/globus_theme.dart';
 import '../../widgets/api_view.dart';
 import '../../widgets/dialogs.dart';
@@ -261,10 +262,11 @@ class _SignScreenState extends State<_SignScreen> {
       _busy = true;
       _error = null;
     });
+    final api = context.api;
     try {
       final image = _useSaved ? _saved : await _pad.toDataUrl();
       if (image == null) throw const FormatException('Dessinez votre signature avant de valider.');
-      final res = await context.api.post(
+      final res = await api.post(
         '$_base/sign',
         body: {
           'party': widget.party,
