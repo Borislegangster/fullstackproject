@@ -360,7 +360,7 @@ export function SignaturePanel({ kind, entityId, onChange }: { kind: string; ent
         footer={
           <Button
             loading={requesting}
-            disabled={!/^S+@S+.S+$/.test(recipient.email.trim())}
+            disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email.trim())}
             onClick={async () => {
               setRequesting(true);
               try {

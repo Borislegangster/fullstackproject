@@ -177,6 +177,15 @@ def test_company_signs_quote_then_change_voids_it_and_double_regard(client: Any,
     assert again.status_code == 409 and again.json()["error"]["code"] == "ALREADY_SIGNED"
     saved = client.get(f"{API}/signatures/me/saved", headers=ah).json()
     assert saved["saved"] and saved["image"].startswith("data:image/png;base64,")
+    # Un autre utilisateur qui recopie l'identifiant du fichier dans ses préférences ne relit pas cette signature
+    db.refresh(admin)
+    _other, oh = as_role(client, db, "CHEF_PROJET")
+    stolen = {"preferences": {"signature_file_id": admin.preferences["signature_file_id"]}}
+    assert client.patch(f"{API}/auth/me", headers=oh, json=stolen).status_code == 200
+    assert client.get(f"{API}/signatures/me/saved", headers=oh).json() == {"saved": False, "image": None}
+    bogus = {"preferences": {"signature_file_id": "pas-un-uuid"}}
+    assert client.patch(f"{API}/auth/me", headers=oh, json=bogus).status_code == 200
+    assert client.get(f"{API}/signatures/me/saved", headers=oh).json()["saved"] is False
     signed_list = client.get(f"{API}/signatures/documents", headers=ah, params={"state": "signed", "kind": "quote"})
     assert quote["id"] in [d["entity_id"] for d in signed_list.json()["items"]]
 

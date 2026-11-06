@@ -284,9 +284,18 @@ def saved_signature(db: Session, user: Any) -> str | None:
     from app.core.files import read_private
     from app.modules.system.models import StoredFile
 
-    file_id = (user.preferences or {}).get("signature_file_id")
-    stored = db.get(StoredFile, uuid.UUID(file_id)) if file_id else None
-    if stored is None:
+    try:
+        file_id = uuid.UUID(str((user.preferences or {}).get("signature_file_id")))
+    except ValueError:
+        return None
+    stored = db.get(StoredFile, file_id)
+    # Préférences modifiables par l'utilisateur : seule sa propre signature est relue, jamais un autre fichier privé
+    if (
+        stored is None
+        or stored.purpose != "signatures"
+        or stored.uploaded_by_id != user.id
+        or stored.deleted_at is not None
+    ):
         return None
     return "data:image/png;base64," + base64.b64encode(read_private(stored)).decode()
 
