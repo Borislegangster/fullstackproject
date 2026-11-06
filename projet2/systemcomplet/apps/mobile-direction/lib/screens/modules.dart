@@ -724,7 +724,10 @@ final employees = ResourceConfig(
     endpoint: 'POST /hr/employees',
     label: 'Nouvel employé',
     perms: const ['hr:write'],
-    fields: {'trade': FieldConfig(label: 'Métier', options: tradeOptions())},
+    fields: {
+      'matricule': const FieldConfig(hidden: true),
+      'trade': FieldConfig(label: 'Métier', options: tradeOptions()),
+    },
   ),
   update: ResourceCreate(
     endpoint: 'PATCH /hr/employees/{employee_id}',

@@ -111,6 +111,7 @@ export function toInputDateTime(value: unknown): string {
 
 export const STATUS_LABELS: Record<string, string> = {
   draft: "Brouillon",
+  left: "Parti",
   submitted: "Soumis",
   approved: "Approuvé",
   rejected: "Refusé",

@@ -10,12 +10,12 @@ import io
 import uuid
 from typing import Any
 
-from sqlalchemy import func, or_, select, text
+from sqlalchemy import Text, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from app.core import audit
 from app.core.access import Access
-from app.core.errors import BusinessRuleError, Conflict, Forbidden, NotFound
+from app.core.errors import AppError, BusinessRuleError, Conflict, Forbidden, NotFound
 from app.core.events import emit
 from app.core.files import ValidatedUpload, store_private
 from app.core.numbering import next_number
@@ -28,6 +28,7 @@ from app.modules.documents.models import (
     DocumentLink,
     DocumentPermission,
     DocumentVersion,
+    Folder,
     Signature,
 )
 
@@ -152,6 +153,7 @@ def create_document(
     description: str | None,
     tags: list[str],
     code: str | None = None,
+    reject_duplicates: bool = False,
 ) -> tuple[Document, DocumentVersion]:
     if project_id:
         access.require_project(project_id, "documents:write")
@@ -159,6 +161,22 @@ def create_document(
         access.require("documents:write")
     if not access.can_read_confidentiality(confidentiality):
         raise Forbidden("Niveau de confidentialité non autorisé pour votre profil")
+    if folder_id:
+        folder = db.get(Folder, folder_id)
+        if folder is None:
+            raise NotFound("Dossier introuvable")
+        if folder.project_id != project_id:
+            raise BusinessRuleError(
+                "Ce dossier appartient à un autre espace (projet) que celui du document", code="FOLDER_PROJECT_MISMATCH"
+            )
+    if reject_duplicates:
+        duplicate = find_duplicate(db, upload.sha256, project_id)
+        if duplicate is not None:
+            raise Conflict(
+                f"Fichier déjà présent dans la GED : {describe(db, duplicate)}",
+                code="DUPLICATE_DOCUMENT",
+                details={"document_id": str(duplicate.id), "code": duplicate.code},
+            )
     document = Document(
         code=code or next_number(db, "document"),
         title=title,
@@ -192,6 +210,72 @@ def create_document(
         },
     )
     return document, version
+
+
+# ---------------------------------------------------------------------------- doublons & dossiers
+def find_duplicate(db: Session, sha256: str, project_id: uuid.UUID | None) -> Document | None:
+    """Document actif (même projet, ou GED générale) dont une version a exactement le même contenu."""
+    return find_duplicates(db, [sha256], project_id).get(sha256)
+
+
+def find_duplicates(db: Session, checksums: list[str], project_id: uuid.UUID | None) -> dict[str, Document]:
+    if not checksums:
+        return {}
+    stmt = (
+        select(DocumentVersion.checksum_sha256, Document)
+        .join(Document, Document.id == DocumentVersion.document_id)
+        .where(DocumentVersion.checksum_sha256.in_(checksums), Document.deleted_at.is_(None))
+        .where(Document.project_id == project_id if project_id else Document.project_id.is_(None))
+        .order_by(Document.created_at)
+    )
+    found: dict[str, Document] = {}
+    for checksum, document in db.execute(stmt).all():
+        found.setdefault(checksum, document)
+    return found
+
+
+def describe(db: Session, document: Document) -> str:
+    folder = db.get(Folder, document.folder_id) if document.folder_id else None
+    where = f" — dossier {folder.path}" if folder else ""
+    return f"{document.code} « {document.title} »{where}"
+
+
+def ensure_folder_path(
+    db: Session,
+    *,
+    access: Access,
+    project_id: uuid.UUID | None,
+    parent_id: uuid.UUID | None,
+    relative_path: str,
+    default_confidentiality: str = "internal",
+) -> Folder | None:
+    """Retrouve ou crée la suite de sous-dossiers « A/B/C » sous `parent_id` (import d'un dossier entier)."""
+    parent = db.get(Folder, parent_id) if parent_id else None
+    if parent_id and parent is None:
+        raise NotFound("Dossier introuvable")
+    if parent is not None and parent.project_id != project_id:
+        raise BusinessRuleError("Ce dossier appartient à un autre projet", code="FOLDER_PROJECT_MISMATCH")
+    for raw in relative_path.replace("\\", "/").split("/"):
+        name = raw.strip()[:200]
+        if not name or name in (".", ".."):
+            continue
+        stmt = select(Folder).where(Folder.name == name)
+        stmt = stmt.where(Folder.parent_id == parent.id if parent else Folder.parent_id.is_(None))
+        stmt = stmt.where(Folder.project_id == project_id if project_id else Folder.project_id.is_(None))
+        existing = db.execute(stmt).scalars().first()
+        if existing is None:
+            existing = Folder(
+                name=name,
+                parent_id=parent.id if parent else None,
+                project_id=project_id,
+                path=(parent.path.rstrip("/") if parent else "") + "/" + name,
+                default_confidentiality=parent.default_confidentiality if parent else default_confidentiality,
+                created_by_id=access.p.id,
+            )
+            db.add(existing)
+            db.flush()
+        parent = existing
+    return parent
 
 
 def _add_version(
@@ -303,6 +387,18 @@ def transition_version(
         "draft": "documents:write",
     }[target]
     access.require(perm)
+    if target == "validated" or (target == "published" and version.status == "draft"):
+        from app.core.sod import require_other_person
+
+        require_other_person(
+            db,
+            access.p,
+            version.author_id,
+            "Double regard : l'auteur d'une version ne peut pas la valider ni la publier lui-même",
+            resource_type="document_version",
+            resource_id=version.id,
+            project_id=document.project_id,
+        )
     previous_status = version.status
     now = utcnow()
     if target == "in_review":
@@ -548,7 +644,12 @@ def search(
     """Recherche plein texte (PostgreSQL, configuration française) dans titres, descriptions et contenus."""
     tsq = func.websearch_to_tsquery("french", query)
     doc_vector = func.to_tsvector(
-        "french", func.coalesce(Document.title, "") + " " + func.coalesce(Document.description, "")
+        "french",
+        func.coalesce(Document.title, "")
+        + " "
+        + func.coalesce(Document.description, "")
+        + " "
+        + func.coalesce(cast(Document.tags, Text), ""),
     )
     ver_vector = func.to_tsvector(
         "french",
@@ -679,3 +780,27 @@ def get_document(db: Session, document_id: uuid.UUID) -> Document:
     if document is None or document.deleted_at is not None:
         raise NotFound("Document introuvable")
     return document
+
+
+def bulk_transition(
+    db: Session, *, access: Access, document_ids: list[uuid.UUID], target: str, comment: str | None
+) -> dict[str, Any]:
+    """Même transition sur la version courante de plusieurs documents ; chaque document est traité à part
+    (un refus — double regard, droit, statut — n'empêche pas les autres)."""
+    done: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for document_id in dict.fromkeys(document_ids):
+        document = db.get(Document, document_id)
+        label = document.code if document else str(document_id)
+        try:
+            with db.begin_nested():
+                if document is None or document.deleted_at is not None or not can_read(access, db, document):
+                    raise NotFound("Document introuvable")
+                version = db.get(DocumentVersion, document.current_version_id) if document.current_version_id else None
+                if version is None:
+                    raise NotFound("Aucune version")
+                transition_version(db, access=access, version=version, target=target, comment=comment)
+            done.append({"document_id": str(document_id), "code": label, "status": version.status})
+        except AppError as exc:
+            errors.append({"document_id": str(document_id), "code": label, "message": exc.message})
+    return {"done": done, "errors": errors}

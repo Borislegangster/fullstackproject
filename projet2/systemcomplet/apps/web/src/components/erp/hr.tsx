@@ -40,7 +40,7 @@ export function EmployeesList() {
       embedded
       config={{
         title: "Personnel",
-        subtitle: "Dossiers, contrats, badges QR, affectations chantier ; données sensibles chiffrées et masquées.",
+        subtitle: "Dossiers, contrats, badges QR, affectations chantier ; matricule attribué automatiquement ; données sensibles chiffrées et masquées.",
         path: "/hr/employees",
         href: (r) => `/erp/rh/employes/${r.id}`,
         columns: [
@@ -53,7 +53,7 @@ export function EmployeesList() {
           { key: "status", label: "Statut", format: "status" },
         ],
         filters: [
-          { key: "status", label: "Statut", options: opts(["active", "suspended", "terminated"]) },
+          { key: "status", label: "Statut", options: [...opts(["active", "suspended"]), { value: "left", label: "Sorti des effectifs" }] },
           { key: "trade", label: "Métier", options: personTradeOptions() },
         ],
         create: {
@@ -62,6 +62,7 @@ export function EmployeesList() {
           perms: ["hr:write"],
           initial: { contract_type: "CDI", pay_frequency: "monthly", hire_date: today() },
           fields: {
+            matricule: { hidden: true }, // attribué automatiquement (EMP-AAAA-00001)
             trade: personTradeField,
             contract_type: { options: opts(CONTRACTS) },
             pay_frequency: { options: opts(["monthly", "weekly", "daily"]) },

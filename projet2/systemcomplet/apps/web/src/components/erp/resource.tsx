@@ -75,6 +75,8 @@ export interface ResourceConfig {
   toolbar?: ReactNode;
   emptyText?: string;
   pageSize?: number;
+  /** Actions groupées sur les lignes cochées (cases à cocher affichées si défini). */
+  bulkActions?: (rows: Row[], done: () => void) => ReactNode;
 }
 
 function paramName(endpoint: string): string | null {
@@ -153,7 +155,12 @@ export function ResourceView({ config, list: externalList, embedded = false }: {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
   const [action, setAction] = useState<{ action: RowAction; row: Row } | null>(null);
+  const [checked, setChecked] = useState<Map<string, Row>>(new Map());
   const allowed = (perms?: string[]) => !perms || canAny(...perms);
+  const clearChecked = () => {
+    setChecked(new Map());
+    void list.reload();
+  };
 
   const openRow = async (row: Row) => {
     if (config.href) {
@@ -222,9 +229,36 @@ export function ResourceView({ config, list: externalList, embedded = false }: {
       ) : (
         header
       )}
+      {config.bulkActions && checked.size ? (
+        <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 text-sm">
+          <span className="font-semibold text-brand-800">
+            {checked.size} sélectionné{checked.size > 1 ? "s" : ""}
+          </span>
+          {config.bulkActions([...checked.values()], clearChecked)}
+          <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setChecked(new Map())}>
+            Désélectionner
+          </Button>
+        </div>
+      ) : null}
       <DataTable
         list={list}
         columns={config.columns}
+        selection={
+          config.bulkActions
+            ? {
+                selected: new Set(checked.keys()),
+                onChange: (next, rows) =>
+                  setChecked((prev) => {
+                    const map = new Map<string, Row>();
+                    for (const key of next) {
+                      const row = prev.get(key) ?? rows.find((r) => String(r.id) === key);
+                      if (row) map.set(key, row);
+                    }
+                    return map;
+                  }),
+              }
+            : undefined
+        }
         filters={config.filters}
         searchable={config.search !== false}
         onRowClick={(r) => void openRow(r)}

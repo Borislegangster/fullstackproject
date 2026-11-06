@@ -50,6 +50,12 @@ export function formatCell(value: unknown, format: CellFormat = "text", row?: an
   }
 }
 
+/** Sélection multiple (actions groupées) : identifiants des lignes cochées. */
+export interface RowSelection<T> {
+  selected: Set<string>;
+  onChange: (next: Set<string>, rows: T[]) => void;
+}
+
 export interface FilterDef {
   key: string;
   label: string;
@@ -70,6 +76,7 @@ export function DataTable<T extends Record<string, any>>({
   empty,
   rowKey = (row: T) => String(row.id ?? JSON.stringify(row)),
   compact,
+  selection,
 }: {
   columns: Column<T>[];
   list?: UseList<T>;
@@ -84,11 +91,32 @@ export function DataTable<T extends Record<string, any>>({
   empty?: { title: string; text?: ReactNode; action?: ReactNode };
   rowKey?: (row: T) => string;
   compact?: boolean;
+  selection?: RowSelection<T>;
 }) {
   const data = list ? list.items : rows ?? [];
   const isLoading = list ? list.loading : !!loading;
   const err = list ? list.error : error;
   const sort = list?.state.sort;
+
+  const pageKeys = data.map((row) => rowKey(row));
+  const allOnPage = !!selection && pageKeys.length > 0 && pageKeys.every((k) => selection.selected.has(k));
+  const toggleRow = (row: T) => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    const key = rowKey(row);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    selection.onChange(next, data);
+  };
+  const togglePage = () => {
+    if (!selection) return;
+    const next = new Set(selection.selected);
+    for (const k of pageKeys) {
+      if (allOnPage) next.delete(k);
+      else next.add(k);
+    }
+    selection.onChange(next, data);
+  };
 
   const toggleSort = (key: string) => {
     if (!list) return;
@@ -132,6 +160,11 @@ export function DataTable<T extends Record<string, any>>({
         <table className="min-w-full divide-y divide-line text-sm">
           <thead className="bg-slate-50/80">
             <tr>
+              {selection ? (
+                <th scope="col" className="w-10 px-4 py-2.5">
+                  <input type="checkbox" className="h-4 w-4 rounded border-line accent-brand-600" checked={allOnPage} onChange={togglePage} aria-label="Tout sélectionner sur la page" />
+                </th>
+              ) : null}
               {columns.map((c) => (
                 <th
                   key={c.key}
@@ -159,6 +192,7 @@ export function DataTable<T extends Record<string, any>>({
             {isLoading && !data.length
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`sk-${i}`}>
+                    {selection ? <td /> : null}
                     {columns.map((c) => (
                       <td key={c.key} className={clsx("px-4 py-3", c.hideOnMobile && "hidden md:table-cell")}>
                         <Skeleton className="h-4 w-full max-w-[10rem]" />
@@ -171,8 +205,13 @@ export function DataTable<T extends Record<string, any>>({
                   <tr
                     key={rowKey(row)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    className={clsx(onRowClick && "cursor-pointer hover:bg-brand-50/50", isLoading && "opacity-60")}
+                    className={clsx(onRowClick && "cursor-pointer hover:bg-brand-50/50", isLoading && "opacity-60", selection?.selected.has(rowKey(row)) && "bg-brand-50/70")}
                   >
+                    {selection ? (
+                      <td className="w-10 px-4 py-2" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" className="h-4 w-4 rounded border-line accent-brand-600" checked={selection.selected.has(rowKey(row))} onChange={() => toggleRow(row)} aria-label="Sélectionner la ligne" />
+                      </td>
+                    ) : null}
                     {columns.map((c) => (
                       <td
                         key={c.key}

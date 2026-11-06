@@ -14,15 +14,29 @@ related: [erp-hub-bim, erp-ia, erp-chantiers]
 
 ## Accès
 
-Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). Les documents s'organisent par projet et par dossiers ; filtres **Type**, **Discipline**, **Statut**. Les documents confidentiels ou très sensibles ne sont visibles qu'avec l'habilitation correspondante.
+Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). Choisissez le projet (ou « Documents généraux ») : son arborescence de dossiers s'affiche à gauche avec le nombre de documents de chacun ; **Tous les documents** liste tout. La colonne **Emplacement** indique pour chaque document son projet et son dossier. Filtres **Type**, **Discipline**, **Statut**. Les documents confidentiels ou très sensibles ne sont visibles qu'avec l'habilitation correspondante.
 
 ::: perm documents:write
 ## Déposer un document
 
-1. **Déposer un document** : projet, dossier, type (plan, note de calcul, contrat, PV…), discipline, code et titre, confidentialité, puis le fichier ; **Déposer**.
+1. **Déposer un document** : projet, dossier, type (plan, note de calcul, contrat, PV…), discipline, code et titre, confidentialité, puis le fichier ; **Déposer**. Le titre et le **Mot-clé** sont pré-remplis avec le nom du fichier.
 2. Le document est créé en brouillon (version 1).
-3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet : nom et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier, reprise du dossier parent) ; **Créer**.
+3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet : nom et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier, reprise du dossier parent) ; **Créer**. Le nouveau dossier s'ouvre aussitôt dans l'arborescence.
+
+Un même fichier (contenu identique, quel que soit son nom) ne peut être déposé qu'une fois par projet : un second dépôt est refusé et le message indique le document déjà présent et son dossier.
+
+## Importer plusieurs fichiers ou un dossier
+
+**Importer plusieurs fichiers ou un dossier** ouvre la fenêtre du même nom :
+
+1. Glissez des fichiers ou un dossier entier dans la zone, ou utilisez **Choisir des fichiers** / **Choisir un dossier**. La corbeille retire un fichier de la liste.
+2. Choisissez le **Projet**, le **Dossier de destination**, le **Type**, la **Discipline** et la **Confidentialité** appliqués à tous les fichiers. **Recréer les sous-dossiers** reproduit dans la GED l'arborescence du dossier importé.
+3. **Importer** : chaque fichier devient un document en brouillon, avec pour titre et mot-clé le nom du fichier. Les fichiers déjà présents dans la GED du projet, ou en double dans la sélection, sont ignorés ; la liste indique pour chaque fichier « Déposé », « Déjà dans la GED — ignoré » ou l'erreur. **Terminer** ferme la fenêtre.
 :::
+
+## Actions groupées
+
+Cochez des documents dans la liste (la case de l'en-tête coche toute la page) : une barre propose, selon vos droits, **Soumettre en revue**, **Valider** et **Publier** pour tous les documents cochés, et **Désélectionner**. Seuls les documents au bon statut sont traités ; un récapitulatif liste ceux qui ont été refusés et pourquoi.
 
 ## La fiche document
 
@@ -48,7 +62,7 @@ Cycle : brouillon → en revue → (correction) → validé → publié → obso
 :::
 
 ::: perm documents:approve
-- **Valider** ou renvoyer en **correction** avec un commentaire.
+- **Valider** ou renvoyer en **correction** avec un commentaire. Double regard : l'auteur d'une version ne peut ni la valider ni publier directement son brouillon ; une autre personne le fait (seul le super administrateur peut valider seul, et c'est tracé).
 :::
 
 ::: perm documents:publish
