@@ -14,14 +14,26 @@ related: [erp-hub-bim, erp-ia, erp-chantiers]
 
 ## Accès
 
-Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). Choisissez le projet (ou « Documents généraux ») : son arborescence de dossiers s'affiche à gauche avec le nombre de documents de chacun ; **Tous les documents** liste tout. La colonne **Emplacement** indique pour chaque document son projet et son dossier. Filtres **Type**, **Discipline**, **Statut**. Les documents confidentiels ou très sensibles ne sont visibles qu'avec l'habilitation correspondante.
+Menu **Projets › GED** (ou **Documents (GED)** depuis la fiche projet). À gauche, l'arborescence montre **tous les dossiers** : ceux de la GED générale puis ceux de chaque projet (code du projet à côté du nom), avec leurs sous-dossiers et le nombre de documents qu'ils contiennent, sous-dossiers compris. La flèche devant un dossier replie ou déplie ses sous-dossiers. Le sélecteur **Tous les projets** sert de filtre : choisissez un projet pour ne voir que ses dossiers.
+
+Cliquez un dossier pour lister ses documents et ceux de ses sous-dossiers ; **Tous les documents** liste tout. La colonne **Emplacement** indique pour chaque document son projet et son dossier, la colonne **Diffusion** s'il est visible par le client, par les partenaires, ou s'il s'agit d'un livrable payant. Filtres **Type**, **Discipline**, **Statut**. Les documents confidentiels ou très sensibles ne sont visibles qu'avec l'habilitation correspondante.
 
 ::: perm documents:write
 ## Déposer un document
 
-1. **Déposer un document** : projet, dossier, type (plan, note de calcul, contrat, PV…), discipline, code et titre, confidentialité, puis le fichier ; **Déposer**. Le titre et le **Mot-clé** sont pré-remplis avec le nom du fichier.
-2. Le document est créé en brouillon (version 1).
-3. **Nouveau dossier** (fenêtre du même nom) organise l'arborescence d'un projet : nom et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier, reprise du dossier parent) ; **Créer**. Le nouveau dossier s'ouvre aussitôt dans l'arborescence.
+1. **Déposer un document** : projet, dossier, type (plan, note de calcul, contrat, PV, photo, vidéo…), **discipline (obligatoire)**, code et titre, confidentialité, puis le fichier ; **Déposer**. Le titre et les **Étiquettes** sont pré-remplis avec le nom du fichier ; le type Photo ou Vidéo est proposé d'après l'extension.
+2. Le document est créé en brouillon (version 1), dans le projet et le dossier sélectionnés à gauche.
+
+## Dossiers
+
+Sous l'arborescence :
+
+- **Nouveau dossier** (aucun dossier sélectionné) : nom, **Projet** (vide : dossier de la GED générale) et **Confidentialité par défaut** (proposée à chaque dépôt dans ce dossier) ; **Créer**. Le nouveau dossier s'ouvre aussitôt.
+- **Sous-dossier** (un dossier sélectionné) : créé dans ce dossier, dans le même projet.
+- **Renommer** ouvre **Renommer le dossier** : les chemins des sous-dossiers suivent.
+- **Supprimer** : possible seulement si le dossier et ses sous-dossiers ne contiennent aucun document ; ils sont alors supprimés ensemble. Déplacez (actions groupées, **Propriétés**) ou supprimez d'abord les documents.
+
+Deux dossiers du même nom au même endroit sont refusés, majuscules et minuscules confondues, même en cas de double clic.
 
 Un même fichier (contenu identique, quel que soit son nom) ne peut être déposé qu'une fois par projet : un second dépôt est refusé et le message indique le document déjà présent et son dossier (s'il vous est accessible).
 
@@ -30,13 +42,17 @@ Un même fichier (contenu identique, quel que soit son nom) ne peut être dépos
 **Importer plusieurs fichiers ou un dossier** ouvre la fenêtre du même nom :
 
 1. Glissez des fichiers ou un dossier entier dans la zone, ou utilisez **Choisir des fichiers** / **Choisir un dossier**. La corbeille retire un fichier de la liste.
-2. Choisissez le **Projet**, le **Dossier de destination**, le **Type**, la **Discipline** et la **Confidentialité** appliqués à tous les fichiers. **Recréer les sous-dossiers** reproduit dans la GED l'arborescence du dossier importé.
-3. **Importer** : chaque fichier devient un document en brouillon, avec pour titre et mot-clé le nom du fichier. Les fichiers déjà présents dans la GED du projet, ou en double dans la sélection, sont ignorés ; la liste indique pour chaque fichier « Déposé », « Déjà dans la GED — ignoré » ou l'erreur. **Terminer** ferme la fenêtre.
+2. Choisissez le **Projet**, le **Dossier de destination** et la **Confidentialité**. Le **Type** et la **Discipline** choisis en haut s'appliquent à tous les fichiers de la liste. **Recréer les sous-dossiers** reproduit dans la GED l'arborescence du dossier importé.
+3. Dans la liste, chaque fichier a son propre **Type** (Photo ou Vidéo proposés d'après l'extension), sa **Discipline** et ses **Étiquettes** (le nom du fichier par défaut, plusieurs étiquettes séparées par des virgules) : ajustez fichier par fichier. **La discipline est obligatoire pour chaque fichier** : tant qu'un fichier n'en a pas, l'import est bloqué et un message indique combien de fichiers sont à compléter.
+4. **Importer** : chaque fichier devient un document en brouillon, avec pour titre le nom du fichier. Les fichiers déjà présents dans la GED du projet, ou en double dans la sélection, sont ignorés ; la liste indique pour chaque fichier « Déposé », « Déjà dans la GED — ignoré » ou l'erreur. **Terminer** ferme la fenêtre.
 :::
 
 ## Actions groupées
 
-Cochez des documents dans la liste (la case de l'en-tête coche toute la page) : une barre propose, selon vos droits, **Soumettre en revue**, **Valider** et **Publier** pour tous les documents cochés, et **Désélectionner**. Seuls les documents au bon statut sont traités ; un récapitulatif liste ceux qui ont été refusés et pourquoi.
+Cochez des documents dans la liste (la case de l'en-tête coche toute la page) : une barre propose, selon vos droits, **Soumettre en revue**, **Valider** et **Publier** pour tous les documents cochés, **Propriétés**, **Signer** et **Désélectionner**. Seuls les documents au bon statut sont traités ; un récapitulatif liste ceux qui ont été refusés et pourquoi.
+
+- **Propriétés** ouvre **Propriétés de N documents** : **Visible par le client**, **Visible par les partenaires**, **Livrable d'études payant** (Oui ou Non pour toute la sélection), **Type de document**, **Discipline**, **Confidentialité**, **Déplacer** dans un dossier ou à la racine (sélection d'un même projet) et **Ajouter des étiquettes**. Seules les propriétés renseignées changent ; **Appliquer à la sélection**. Le client reçoit un seul message pour tous les documents publiés rendus visibles.
+- **Signer** ouvre **Signer N documents** : cochez le consentement, **Recevoir mon code**, saisissez-le puis **Signer la sélection**. Un seul code signe la version validée ou publiée de chaque document (jusqu'à 500 à la fois) ; les documents sans version à signer, ou déjà signés par vous, sont écartés et listés.
 
 ## La fiche document
 
@@ -45,7 +61,7 @@ Cliquez un document : aperçu intégré (**Plein écran**), **Télécharger** (c
 - **Comparer** ouvre **Comparer deux versions** : choisissez deux versions pour voir leurs différences.
 
 ::: perm documents:write
-- **Propriétés** ouvre **Propriétés du document** (titre, type, discipline, dossier, confidentialité). **Livrable d'études payant** : le client ne voit qu'un aperçu filigrané (PDF, images) jusqu'au règlement de la **Facture d'études qui débloque le livrable** ; l'original lui est alors remis (voir [Chantiers](doc:erp-chantiers), onglet **Études et livrables**).
+- **Propriétés** ouvre **Propriétés du document** (titre, type, discipline, dossier, confidentialité, étiquettes). **Livrable d'études payant** : le client ne voit qu'un aperçu filigrané (PDF, images) jusqu'au règlement de la **Facture d'études qui débloque le livrable** ; l'original lui est alors remis (voir [Chantiers](doc:erp-chantiers), onglet **Études et livrables**).
 - **Nouvelle version** ouvre **Nouvelle version** : déposez le fichier mis à jour ; la version précédente est conservée.
 :::
 

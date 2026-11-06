@@ -234,6 +234,12 @@ _IN_APP: list[tuple[str, str, str, str]] = [
         "« {{ title }} » ({{ label }}) est disponible dans votre espace.",
         "/espace-client/documents",
     ),
+    (
+        "documents.client_published",
+        "{{ count }} nouveaux documents disponibles",
+        "{{ titles }} sont disponibles dans votre espace.",
+        "/espace-client/documents",
+    ),
     ("signature.requested", "Signature demandée", "« {{ title }} » attend votre signature.", "{{ link }}"),
     (
         "bim.issue_assigned",
@@ -1000,6 +1006,12 @@ DEFAULT_RULES: list[dict[str, Any]] = [
     },
     {
         "event": "document.client_published",
+        "audience": {"client": True},
+        "channels": ["in_app", "push", "email"],
+        "category": "documents",
+    },
+    {
+        "event": "documents.client_published",
         "audience": {"client": True},
         "channels": ["in_app", "push", "email"],
         "category": "documents",

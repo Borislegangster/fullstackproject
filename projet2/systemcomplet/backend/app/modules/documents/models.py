@@ -41,6 +41,7 @@ DOC_TYPES = (
     "note_calcul",
     "cctp",
     "photo",
+    "video",
     "fonciers",
     "administratif",
     "technique",
