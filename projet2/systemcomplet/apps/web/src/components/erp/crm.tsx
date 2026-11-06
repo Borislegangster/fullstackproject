@@ -790,13 +790,13 @@ interface QuoteLineDraft {
 
 interface ScheduleDraft {
   label: string;
-  pct: string;
+  amount: string;
   milestone: string;
 }
 
 const emptyQuoteLine = (section = ""): QuoteLineDraft => ({ section, lot_code: "", designation: "", description: "", unit: "u", quantity: "1", unit_price: "", discount_pct: "0" });
 
-/** Éditeur de devis : sections, lots, remises, échéancier (100 %), totaux en direct. */
+/** Éditeur de devis : sections, lots, remises, échéancier en montants (la dernière échéance = le reste), totaux en direct. */
 export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row; initial?: Row; onSaved: (q: Row) => void; onCancel: () => void }) {
   const src = quote ?? initial ?? {};
   const [head, setHead] = useState({
@@ -818,7 +818,9 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
       ? (quote.lines as Row[]).map((l) => ({ section: l.section ?? "", lot_code: l.lot_code ?? "", designation: l.designation, description: l.description ?? "", unit: l.unit ?? "u", quantity: String(toNumber(l.quantity)), unit_price: String(toNumber(l.unit_price)), discount_pct: String(toNumber(l.discount_pct)) }))
       : [emptyQuoteLine()],
   );
-  const [schedule, setSchedule] = useState<ScheduleDraft[]>(((src.payment_schedule ?? []) as Row[]).map((s) => ({ label: s.label ?? "", pct: String(s.pct ?? ""), milestone: s.milestone ?? "" })));
+  // Anciens brouillons (échéancier en % seuls) : montants recalculés depuis le total TTC enregistré.
+  const legacyAmount = (s: Row) => (s.amount != null && s.amount !== "" ? String(toNumber(s.amount)) : s.pct != null && toNumber(src.total) > 0 ? String(Math.round(toNumber(src.total) * toNumber(s.pct)) / 100) : "");
+  const [schedule, setSchedule] = useState<ScheduleDraft[]>(((src.payment_schedule ?? []) as Row[]).map((s) => ({ label: s.label ?? "", amount: legacyAmount(s), milestone: s.milestone ?? "" })));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cur = head.currency === "XAF" ? "FCFA" : head.currency;
@@ -826,7 +828,12 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
   const subtotal = lines.reduce((s, l) => s + lineTotal(l), 0);
   const net = Math.max(0, subtotal - toNumber(head.discount_amount));
   const tax = (net * toNumber(head.tax_rate)) / 100;
-  const scheduleTotal = schedule.reduce((s, x) => s + toNumber(x.pct), 0);
+  const cents = (v: number) => Math.round(v * 100) / 100;
+  const totalTtc = cents(net + tax);
+  // Chaque échéance porte un montant ; la dernière reçoit automatiquement le reste.
+  const scheduleBefore = (i: number) => cents(schedule.slice(0, i).reduce((s, x) => s + toNumber(x.amount), 0));
+  const scheduleRest = schedule.length ? cents(totalTtc - scheduleBefore(schedule.length - 1)) : 0;
+  const scheduleAmount = (i: number) => (i === schedule.length - 1 ? scheduleRest : toNumber(schedule[i].amount));
   const setLine = (i: number, patch: Partial<QuoteLineDraft>) => setLines((all) => all.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const [checked, setChecked] = useState(false);
   const lineIssue = (l: QuoteLineDraft): string | null => {
@@ -835,15 +842,16 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
     if (l.unit_price === "" || toNumber(l.unit_price) < 0) return "prix unitaire HT manquant";
     return null;
   };
-  const scheduleIssue = (x: ScheduleDraft): string | null => {
+  const scheduleIssue = (x: ScheduleDraft, i: number): string | null => {
     if (!x.label.trim()) return "libellé manquant (ex. « Acompte à la signature »)";
-    if (toNumber(x.pct) <= 0) return "pourcentage manquant";
+    if (i < schedule.length - 1 && toNumber(x.amount) <= 0) return "montant manquant";
     return null;
   };
   const problems = [
+    ...(schedule.length && scheduleRest <= 0 ? [`les échéances dépassent le total TTC (${money(totalTtc, cur)}) : la dernière échéance doit garder un montant positif`] : []),
     ...(lines.length ? [] : ["ajoutez au moins une ligne chiffrée (bouton « Ligne »)"]),
     ...lines.map((l, i) => (lineIssue(l) ? `ligne ${i + 1} : ${lineIssue(l)}` : null)).filter((x): x is string => !!x),
-    ...schedule.map((x, i) => (scheduleIssue(x) ? `échéance ${i + 1} : ${scheduleIssue(x)}` : null)).filter((x): x is string => !!x),
+    ...schedule.map((x, i) => (scheduleIssue(x, i) ? `échéance ${i + 1} : ${scheduleIssue(x, i)}` : null)).filter((x): x is string => !!x),
   ];
   const save = async () => {
     setChecked(true);
@@ -861,7 +869,8 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
         valid_until: head.valid_until || null,
         discount_amount: toNumber(head.discount_amount),
         tax_rate: toNumber(head.tax_rate),
-        payment_schedule: schedule.map((s) => ({ label: s.label.trim(), pct: toNumber(s.pct), milestone: s.milestone || null })),
+        // La dernière échéance part sans montant : le serveur lui attribue le reste exact du total TTC.
+        payment_schedule: schedule.map((s, i) => ({ label: s.label.trim(), amount: i < schedule.length - 1 ? toNumber(s.amount) : null, milestone: s.milestone || null })),
         lines: lines.map((l) => ({ section: l.section || null, lot_code: l.lot_code || null, designation: l.designation.trim(), description: l.description || null, unit: l.unit || "u", quantity: toNumber(l.quantity), unit_price: toNumber(l.unit_price), discount_pct: toNumber(l.discount_pct) })),
       };
       const saved = quote ? await api<Row>(`/crm/quotes/${quote.id}`, { method: "PUT", body }) : await api<Row>("/crm/quotes", { method: "POST", body });
@@ -992,30 +1001,36 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
       <Card className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-semibold">Échéancier de paiement</p>
-          <span className={`text-xs font-semibold ${schedule.length && Math.abs(scheduleTotal - 100) > 0.001 ? "text-red-600" : "text-muted"}`}>Total {number(scheduleTotal, 2)} % {schedule.length ? "(doit faire 100 %)" : ""}</span>
+          <span className={`text-xs font-semibold ${schedule.length && scheduleRest <= 0 ? "text-red-600" : "text-muted"}`}>Total TTC à répartir : {money(totalTtc, cur)}</span>
         </div>
-        <p className="mb-2 text-xs text-muted">Facultatif. Chaque échéance = une part du total TTC, en pourcentage (le montant est calculé). Total des pourcentages : 100 %.</p>
+        <p className="mb-2 text-xs text-muted">Facultatif. Saisissez le montant TTC de chaque échéance : il est déduit du total, et la dernière échéance reçoit automatiquement le reste.</p>
         {schedule.length ? (
-          <div className="mb-1 hidden grid-cols-[1fr_6rem_8rem_1fr_auto] gap-2 text-xs font-semibold uppercase text-muted sm:grid">
+          <div className="mb-1 hidden grid-cols-[1fr_9rem_5rem_1fr_auto] gap-2 text-xs font-semibold uppercase text-muted sm:grid">
             <span>Libellé de l&apos;échéance *</span>
-            <span>% du total *</span>
-            <span>Montant</span>
+            <span>Montant TTC *</span>
+            <span>Part</span>
             <span>Jalon déclencheur</span>
             <span />
           </div>
         ) : null}
         {schedule.map((s, i) => (
-          <div key={i} className="mb-2 grid grid-cols-[1fr_6rem_8rem_1fr_auto] items-center gap-2">
+          <div key={i} className="mb-2 grid grid-cols-[1fr_9rem_5rem_1fr_auto] items-center gap-2">
             <Input placeholder="Acompte à la signature" invalid={checked && !s.label.trim()} value={s.label} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
-            <Input type="number" min={0} max={100} placeholder="30" invalid={checked && toNumber(s.pct) <= 0} value={s.pct} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, pct: e.target.value } : x)))} />
-            <span className="text-right text-sm tabular-nums text-muted">{money(((net + tax) * toNumber(s.pct)) / 100, cur)}</span>
+            {i === schedule.length - 1 ? (
+              <span title="Reste du total TTC, calculé automatiquement" className={`px-2 text-right text-sm font-semibold tabular-nums ${scheduleRest <= 0 ? "text-red-600" : ""}`}>
+                {money(scheduleRest, cur)}
+              </span>
+            ) : (
+              <Input type="number" min={0} step="any" placeholder="Montant" invalid={checked && toNumber(s.amount) <= 0} value={s.amount} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)))} />
+            )}
+            <span className="text-right text-sm tabular-nums text-muted">{totalTtc > 0 ? `${number((scheduleAmount(i) * 100) / totalTtc, 2)} %` : "—"}</span>
             <Input placeholder="Fin des fondations" value={s.milestone} onChange={(e) => setSchedule((all) => all.map((x, j) => (j === i ? { ...x, milestone: e.target.value } : x)))} />
             <button type="button" aria-label="Retirer l'échéance" className="rounded p-1.5 text-muted hover:text-red-600" onClick={() => setSchedule((all) => all.filter((_, j) => j !== i))}>
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ))}
-        <Button size="sm" variant="ghost" onClick={() => setSchedule((all) => [...all, { label: "", pct: "", milestone: "" }])}>
+        <Button size="sm" variant="ghost" onClick={() => setSchedule((all) => (all.length ? [...all.slice(0, -1), { ...all[all.length - 1], amount: all[all.length - 1].amount || String(Math.max(0, scheduleRest)) }, { label: "", amount: "", milestone: "" }] : [{ label: "", amount: "", milestone: "" }]))}>
           <Plus className="h-4 w-4" /> Échéance
         </Button>
       </Card>
@@ -1027,7 +1042,7 @@ export function QuoteEditor({ quote, initial, onSaved, onCancel }: { quote?: Row
         <Button variant="secondary" onClick={onCancel}>
           Annuler
         </Button>
-        <Button onClick={save} loading={busy} disabled={head.title.trim().length < 2 || (schedule.length > 0 && Math.abs(scheduleTotal - 100) > 0.001)}>
+        <Button onClick={save} loading={busy} disabled={head.title.trim().length < 2 || (schedule.length > 0 && scheduleRest <= 0)}>
           {quote ? "Enregistrer" : "Créer le devis"}
         </Button>
       </div>
@@ -1232,7 +1247,7 @@ export function QuoteDetail({ id }: { id: string }) {
                   {s.milestone ? <span className="block text-xs text-muted">{s.milestone}</span> : null}
                 </span>
                 <span className="tabular-nums">
-                  {number(s.pct, 2)} % · {money((toNumber(q.total) * toNumber(s.pct)) / 100, cur)}
+                  {money(s.amount ?? (toNumber(q.total) * toNumber(s.pct)) / 100, cur)} · {number(s.pct, 2)} %
                 </span>
               </li>
             ))}
@@ -1391,7 +1406,7 @@ export function CrmContractDetail({ id }: { id: string }) {
                   {s.milestone ? <span className="block text-xs text-muted">{s.milestone}</span> : null}
                 </span>
                 <span className="tabular-nums">
-                  {number(s.pct, 2)} % · {money((toNumber(c.amount) * toNumber(s.pct)) / 100, cur)}
+                  {money(s.amount ?? (toNumber(c.amount) * toNumber(s.pct)) / 100, cur)} · {number(s.pct, 2)} %
                 </span>
               </li>
             ))}
