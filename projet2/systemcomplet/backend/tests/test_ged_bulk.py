@@ -149,3 +149,31 @@ def test_bulk_review_and_validation_follow_double_regard(client: Any, db: Any) -
         json={"target": "published"},
     )
     assert direct.status_code == 422 and direct.json()["error"]["code"] == "SEGREGATION_OF_DUTIES"
+
+
+def test_duplicates_and_folder_counts_hide_unreadable_documents(client: Any, db: Any) -> None:
+    admin = make_user(db, email=f"admin-ged-{uuid.uuid4().hex[:6]}@example.com", roles=["ADMIN"])
+    ah = login(client, admin.email)
+    _site, sh = as_role(client, db, "CHEF_CHANTIER")  # écriture GED, sans accès aux documents confidentiels
+    folder = client.post(f"{API}/document-folders", headers=ah, json={"name": f"RH-{uuid.uuid4().hex[:6]}"}).json()
+    secret = f"contrat confidentiel {uuid.uuid4()}".encode()
+    up = _upload(client, ah, "Contrat Dupont.txt", secret, folder_id=folder["id"], confidentiality="confidential")
+    assert up.status_code == 201, up.text
+    public = _upload(client, ah, "Note.txt", f"note {uuid.uuid4()}".encode(), folder_id=folder["id"])
+    assert public.status_code == 201, public.text
+
+    # Doublon d'un document illisible : refusé, sans révéler code, titre ni dossier
+    dup = _upload(client, sh, "copie.txt", secret)
+    assert dup.status_code == 409 and dup.json()["error"]["code"] == "DUPLICATE_DOCUMENT"
+    message = dup.json()["error"]["message"]
+    assert up.json()["code"] not in message and "Dupont" not in message and folder["name"] not in message
+    assert not dup.json()["error"].get("details")
+    # … alors que l'administrateur voit l'original
+    assert up.json()["code"] in _upload(client, ah, "copie.txt", secret).json()["error"]["message"]
+
+    # Compteurs de l'arborescence : seuls les documents lisibles sont comptés
+    def count(headers: dict[str, str]) -> int:
+        tree = client.get(f"{API}/document-folders/tree", headers=headers).json()
+        return next(f["documents"] for f in tree if f["id"] == folder["id"])
+
+    assert count(ah) == 2 and count(sh) == 1

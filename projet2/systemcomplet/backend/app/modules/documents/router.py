@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import Text, cast, func, select
+from sqlalchemy import Text, cast, select
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -788,7 +788,7 @@ def _folder_scope(access: Access, project_id: uuid.UUID | None) -> None:
 def folder_tree(
     project_id: uuid.UUID | None = None, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> list[dict[str, Any]]:
-    """Tous les dossiers d'un projet (ou de la GED générale), avec le nombre de documents de chacun."""
+    """Tous les dossiers d'un projet (ou de la GED générale), avec le nombre de documents lisibles de chacun."""
     _folder_scope(access, project_id)
     folders = (
         db.execute(
@@ -800,17 +800,8 @@ def folder_tree(
         .scalars()
         .all()
     )
-    counts = (
-        dict(
-            db.execute(
-                select(Document.folder_id, func.count())
-                .where(Document.folder_id.in_([f.id for f in folders]), Document.deleted_at.is_(None))
-                .group_by(Document.folder_id)
-            ).all()
-        )
-        if folders
-        else {}
-    )
+    # Seuls les documents que l'appelant peut lire sont comptés (confidentialité, ACL, lots, disciplines).
+    counts = service.readable_counts_by_folder(db, access, [f.id for f in folders])
     return jsonable([{**serialize(f), "documents": counts.get(f.id, 0)} for f in folders])
 
 
