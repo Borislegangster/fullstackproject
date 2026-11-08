@@ -33,6 +33,7 @@ from app.modules.referrals import models as referrals_models  # noqa: F401
 from app.modules.reports import models as reports_models  # noqa: F401
 from app.modules.reviews import models as reviews_models  # noqa: F401
 from app.modules.scheduling import models as scheduling_models  # noqa: F401
+from app.modules.site_assistant import models as site_assistant_models  # noqa: F401
 from app.modules.subcontracting import models as subcontracting_models  # noqa: F401
 from app.modules.suppliers import models as suppliers_models  # noqa: F401
 from app.modules.support import models as support_models  # noqa: F401

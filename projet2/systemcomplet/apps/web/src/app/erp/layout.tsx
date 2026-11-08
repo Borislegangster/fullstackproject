@@ -6,6 +6,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Sparkles,
   Boxes,
   Briefcase,
   Building2,
@@ -125,6 +126,7 @@ const SECTIONS: NavSection[] = [
     title: "Site web",
     items: [
       { href: "/erp/cms", label: "Contenus (CMS)", icon: Globe, perms: ["cms:read"] },
+      { href: "/erp/assistant-site", label: "Assistant du site (Claude)", icon: Sparkles, perms: ["cms:write"] },
       { href: "/erp/media", label: "Médiathèque", icon: ImageIcon, perms: ["cms:read", "media:write"] },
       { href: "/erp/seo", label: "SEO", icon: Search, perms: ["seo:write", "cms:read"] },
       { href: "/erp/analytics", label: "Analytics", icon: Activity, perms: ["analytics:read"] },

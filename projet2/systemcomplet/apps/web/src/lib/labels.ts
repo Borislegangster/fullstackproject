@@ -1370,6 +1370,9 @@ export const FIELD_LABELS: Record<string, string> = {
   task: "Tâche",
   employee: "Employé",
   organization: "Organisation",
+  last_run_at: "Dernier travail",
+  target_label: "Élément concerné",
+  tool: "Outil",
 };
 
 const WORDS: Record<string, string> = {
@@ -2181,6 +2184,11 @@ export const OPTION_LABELS: Record<string, string> = {
   week: "Semaine",
   whatsapp_click: "Clic sur WhatsApp",
   year: "Année",
+  external_video: "Vidéo externe (YouTube, Vimeo)",
+  forms: "Formulaires",
+  navigation: "Navigation",
+  redirects: "Redirections",
+  settings: "Réglages",
 };
 
 export function optionLabel(value: unknown): string {
