@@ -362,8 +362,7 @@ def client_reply(db: Session, conversation: AssistantConversation, user: Any, te
 
 def _client_ai(db: Session, conversation: AssistantConversation, project: Any, text: str) -> str | None:
     """Question libre d'un client : réponse IA limitée aux informations publiées de SON projet."""
-    ctx = knowledge(db, text)
-    ctx["client_project"] = {
+    client_project = {
         "name": project.name,
         "status": project.status,
         "progress_pct": str(project.progress_pct),
@@ -375,7 +374,14 @@ def _client_ai(db: Session, conversation: AssistantConversation, project: Any, t
         for m in conversation.messages
         if m.get("role") in ("user", "assistant")
     ]
-    answer = _ai_reply(ctx, history[:-1], text)
+    answer = _ai_reply(
+        db,
+        history[:-1],
+        text,
+        channel="whatsapp",
+        extra={"Projet du client (ce client uniquement)": client_project},
+        conversation_id=conversation.id,
+    )
     if answer is None:
         return None
     links = " ".join(_absolute(a["href"]) for a in answer.get("actions", []) if a.get("type") == "link")
@@ -421,16 +427,15 @@ def prospect_reply(db: Session, conversation: AssistantConversation, text: str) 
             )
         # pas de « oui » : on traite le message comme une nouvelle question
     intent = intent_of(text)
-    ctx = knowledge(db, text)
     history = [
         {"role": "user" if m["role"] == "user" else "assistant", "content": m["content"]}
         for m in conversation.messages
         if m.get("role") in ("user", "assistant")
     ]
-    answer = _ai_reply(ctx, history[:-1], text)
+    answer = _ai_reply(db, history[:-1], text, channel="whatsapp", conversation_id=conversation.id)
     conversation.mode = "ai" if answer else "rules"
     if answer is None:
-        answer = _rules_reply(intent, ctx)
+        answer = _rules_reply(intent, knowledge(db, text))
     reply = answer["reply"]
     links = [f"{a['label']} : {_absolute(a['href'])}" for a in answer.get("actions", []) if a.get("type") == "link"]
     links = [link for link in links if "wa.me" not in link]  # déjà sur WhatsApp

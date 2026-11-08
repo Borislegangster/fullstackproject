@@ -43,11 +43,18 @@ export function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 function Typing() {
+  // Réponse longue (recherche et vérification sur Internet) : on rassure le visiteur au bout de quelques secondes.
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), 7000);
+    return () => window.clearTimeout(timer);
+  }, []);
   return (
     <div className="flex w-fit items-center gap-1 rounded-2xl rounded-tl-md bg-white px-4 py-3 shadow-sm ring-1 ring-line" aria-label="L'assistant écrit…">
       {[0, 1, 2].map((i) => (
         <span key={i} className="h-2 w-2 animate-bounce rounded-full bg-brand-400" style={{ animationDelay: `${i * 140}ms` }} />
       ))}
+      {slow ? <span className="ml-2 text-xs text-muted">Je vérifie l'information…</span> : null}
     </div>
   );
 }
