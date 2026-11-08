@@ -262,3 +262,18 @@ def test_attachments_history_by_reference_access_and_missing_key(client: Any, db
     off = client.post(f"{API}/site-assistant/sessions/{session['id']}/messages", headers=ah, data={"text": "Encore"})
     assert off.status_code == 422 and off.json()["error"]["code"] == "ASSISTANT_UNAVAILABLE"
     assert db.execute(select(MediaAsset).where(MediaAsset.folder == "assistant")).first() is not None
+
+
+def test_attached_image_requires_media_write(db: Any) -> None:
+    """Une image jointe devient un média public : sans le droit media:write, elle est refusée."""
+    import pytest
+
+    from app.core.access import Access
+    from app.core.deps import Principal
+    from app.core.errors import Forbidden
+    from app.modules.site_assistant.router import _attachment
+
+    user = make_user(db, roles=["ADMIN"])
+    principal = Principal(user=user, session_id=None, permissions={"cms:write"}, org_kind="internal")
+    with pytest.raises(Forbidden):
+        _attachment(db, Access(principal, db), SimpleNamespace(filename="photo.png"), _png())

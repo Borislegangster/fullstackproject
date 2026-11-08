@@ -175,6 +175,8 @@ def _attachment(
     if len(data) > MAX_FILE_MB * 1024 * 1024:
         raise BusinessRuleError(f"« {name} » dépasse {MAX_FILE_MB} Mo", code="FILE_TOO_LARGE")
     if ext in IMAGE_EXT:
+        # Une image jointe devient un média public de la médiathèque : même droit que le dépôt direct.
+        access.require("media:write")
         try:
             asset = media_svc.upload_media(
                 db,
@@ -268,8 +270,10 @@ async def send_message(
     availability = agent.availability()
     if not availability["available"]:
         raise BusinessRuleError(availability["reason"], code="ASSISTANT_UNAVAILABLE")
-    session = _own_session(db, access, session_id)
-    if session.state == "running":
+    _own_session(db, access, session_id)
+    # Verrou de ligne jusqu'au commit : deux envois simultanés ne lancent pas deux tours sur une conversation.
+    session = db.get(SiteAssistantSession, session_id, with_for_update=True, populate_existing=True)
+    if session is None or session.state == "running":
         raise Conflict("Claude travaille encore sur la consigne précédente", code="ASSISTANT_RUNNING")
     if not text.strip() and not files:
         raise BusinessRuleError("Écrivez une consigne ou joignez un fichier", code="EMPTY_MESSAGE")
