@@ -27,7 +27,7 @@ from app.modules.cms.search import _clean, _join, _live
 
 TTL_SECONDS = 60
 MAX_CHARS = 240_000  # ≈ 60 000 jetons : au-delà, les rubriques les moins utiles (blog, vidéos) sont raccourcies
-# Pages fonctionnelles du site, toujours valables comme lien proposé au visiteur.
+# Pages fonctionnelles du site (routes publiques sans paramètre), toujours valables comme lien proposé au visiteur.
 STATIC_PATHS = (
     "/",
     "/offres",
@@ -37,14 +37,11 @@ STATIC_PATHS = (
     "/blog",
     "/faq",
     "/aide",
-    "/avis",
     "/chantiers",
     "/decrire-mon-projet",
     "/estimation-instantanee",
     "/financement",
     "/energie-confort",
-    "/parrainage",
-    "/visite",
     "/recherche",
 )
 _TRACKED = (
@@ -354,7 +351,7 @@ def _proof(db: Session) -> list[str]:
         rating = f" — {t.rating}/5" if t.rating else ""
         verified = " — avis vérifié (client d'un chantier réel)" if t.verified else ""
         testimonials.append(f"- « {_cut(t.quote, 500)} » ({who}{rating}{verified})")
-    out.append(_section("Témoignages de clients (page /avis)", ["\n".join(testimonials)] if testimonials else []))
+    out.append(_section("Témoignages de clients", ["\n".join(testimonials)] if testimonials else []))
     return out
 
 

@@ -165,6 +165,7 @@ def test_ai_mode_uses_all_published_information(client: Any, db: Any, monkeypatc
             _answer("Nous intervenons dans tout le Cameroun.", link="https://site-externe.example/arnaque",
                     label="Cliquez ici", callback=True),
             _answer("Voici nos réalisations.", link="/projets/immeuble-bastos", label="Immeuble de Bastos"),
+            _answer("Lisez les avis de nos clients.", link="/avis", label="Avis clients"),
         ],
     )  # fmt: skip
     first = client.post(
@@ -202,9 +203,14 @@ def test_ai_mode_uses_all_published_information(client: Any, db: Any, monkeypatc
         json={"conversation_id": body["conversation_id"], "message": "Un exemple ?"},
     ).json()
     assert third["actions"] == [{"type": "link", "label": "Immeuble de Bastos", "href": "/projets/immeuble-bastos"}]
+    fourth = client.post(
+        f"{API}/public/assistant/messages",
+        json={"conversation_id": body["conversation_id"], "message": "Des avis ?"},
+    ).json()
+    assert fourth["actions"] == [], "/avis n'existe que par invitation (/avis/<jeton>) : aucun lien vers une page 404"
     db.expire_all()
     usage = db.execute(select(AIRequest).where(AIRequest.feature == "public_assistant")).scalars().all()
-    assert len(usage) == 3 and usage[0].input_tokens == 4900 and usage[0].validation_status == "not_required"
+    assert len(usage) == 4 and usage[0].input_tokens == 4900 and usage[0].validation_status == "not_required"
 
 
 def test_ai_mode_web_search_pause_fallbacks(client: Any, db: Any, monkeypatch: Any) -> None:
