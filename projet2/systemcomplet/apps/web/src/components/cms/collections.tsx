@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { BodyBlocksField, CmsLookupsProvider, SpecFields } from "@/components/cms/blocks-editor";
@@ -294,7 +295,9 @@ export function TaxonomyView({ path, label }: { path: string; label: string }) {
 }
 
 export function CollectionsHub() {
-  const [key, setKey] = useState(CMS_COLLECTIONS[0].key);
+  // ?collection=… (liens de l'assistant du site) : ouvre directement la collection voulue.
+  const wanted = useSearchParams().get("collection");
+  const [key, setKey] = useState(CMS_COLLECTIONS.some((c) => c.key === wanted) ? (wanted as string) : CMS_COLLECTIONS[0].key);
   const def = CMS_COLLECTIONS.find((c) => c.key === key);
   const taxonomy = CMS_TAXONOMIES.find((t) => t.key === key);
   return (
