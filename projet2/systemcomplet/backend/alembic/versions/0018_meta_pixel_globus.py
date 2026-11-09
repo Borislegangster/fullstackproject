@@ -5,7 +5,7 @@ consentement), comme les autres balises tierces. L'identifiant apparaît dans Si
 du site › Pixel Meta, où il reste modifiable.
 
 Seul le site de production le reçoit (les bases de développement et de test n'envoient rien au compte Meta de
-GLOBUS) ; un identifiant déjà saisi n'est jamais remplacé.
+GLOBUS) ; un identifiant déjà saisi n'est jamais remplacé, et le retour arrière ne retire rien.
 
 Revision ID: 0018
 Revises: 0017
@@ -55,11 +55,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    rows = bind.execute(sa.text("SELECT id, tracking FROM cms_site_settings")).all()
-    update = sa.text("UPDATE cms_site_settings SET tracking = CAST(:tracking AS jsonb) WHERE id = :id")
-    for row_id, tracking in rows:
-        current = dict(tracking or {}) if isinstance(tracking, dict) else {}
-        if current.get("meta_pixel") == META_PIXEL_ID:
-            current.pop("meta_pixel")
-            bind.execute(update, {"id": row_id, "tracking": json.dumps(current)})
+    """Sans effet : rien ne distingue l'identifiant posé ici d'un identifiant saisi par l'équipe (le même, ou
+    ressaisi depuis) ; un retour arrière ne doit pas effacer un réglage. Le pixel se retire depuis l'ERP."""
