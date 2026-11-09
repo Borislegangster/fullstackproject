@@ -8,7 +8,10 @@ import { dateLong } from "@/lib/format";
 import { breadcrumbLd, JsonLd, webPageLd } from "@/lib/seo";
 
 import { SectionView } from "./blocks";
+import { LongText } from "./long-text";
 import { MediaImage } from "./media";
+import { ReadMore } from "./read-more";
+import { READ_MORE } from "./read-more-lines";
 
 export function Breadcrumbs({ items, dark = false }: { items: { name: string; path: string }[]; dark?: boolean }) {
   return (
@@ -77,9 +80,9 @@ export function PageHeader({
             {title}
           </h1>
           {summary ? (
-            <p className="fade-up mt-6 max-w-3xl text-lg leading-relaxed text-brand-100" style={{ "--delay": "180ms" } as CSSProperties}>
-              {summary}
-            </p>
+            <div className="fade-up mt-6 max-w-3xl" style={{ "--delay": "180ms" } as CSSProperties}>
+              <LongText text={summary} lines={READ_MORE.hero} onDark className="text-base leading-relaxed text-brand-100 sm:text-lg" />
+            </div>
           ) : null}
           {children ? (
             <div className="fade-up" style={{ "--delay": "280ms" } as CSSProperties}>
@@ -118,7 +121,11 @@ export function CmsPageView({ page, crumbs, after }: { page: PagePayload; crumbs
       ))}
       {page.template !== "legal" && page.body ? (
         <div className="container-page py-12">
-          <div className="prose-globus mx-auto max-w-3xl" dangerouslySetInnerHTML={{ __html: page.body }} />
+          <div className="mx-auto max-w-3xl">
+            <ReadMore lines={READ_MORE.rich} className="prose-globus">
+              <div dangerouslySetInnerHTML={{ __html: page.body }} />
+            </ReadMore>
+          </div>
         </div>
       ) : null}
       {after}

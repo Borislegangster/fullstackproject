@@ -87,6 +87,35 @@
   .prose-globus::after { content: ""; display: table; clear: both; }
 }
 
+/* Texte long replié (« Lire plus ») : nombre de lignes visibles selon l'écran, fondu sur la dernière ligne.
+   - data-mode="overflow" (mesuré, bouton affiché) : replié ; data-mode="fit" : affiché en entier.
+   - data-mode="unknown" (rendu serveur, avant la mesure) : replié seulement si JavaScript est actif, pour éviter un
+     saut de mise en page ; sans JavaScript, ou si le composant ne se charge pas dans les 6 s, tout le texte reste lisible. */
+.read-more-body { --rm-lines: var(--rm-base, 6); }
+@media (min-width: 640px) { .read-more-body { --rm-lines: var(--rm-sm, var(--rm-base, 6)); } }
+@media (min-width: 1024px) { .read-more-body { --rm-lines: var(--rm-lg, var(--rm-sm, var(--rm-base, 6))); } }
+.read-more-body[data-open="false"][data-mode="overflow"] {
+  overflow: hidden;
+  max-height: calc(var(--rm-lines) * 1.65em);
+  max-height: calc(var(--rm-lines) * 1lh);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6em), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6em), transparent);
+}
+@media (scripting: enabled) {
+  .read-more-body[data-open="false"][data-mode="unknown"] {
+    overflow: hidden;
+    max-height: calc(var(--rm-lines) * 1.65em);
+    max-height: calc(var(--rm-lines) * 1lh);
+    animation: read-more-release 0s linear 6s forwards;
+  }
+}
+@keyframes read-more-release { to { max-height: 1000em; } }
+.read-more-body[data-open="true"] { animation: read-more-open 0.35s ease-out; }
+@keyframes read-more-open { from { opacity: 0.6; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .read-more-body[data-open="true"] { animation: none; } }
+
 @media print {
   .no-print { display: none !important; }
+  .read-more-body { max-height: none !important; overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; }
+  .read-more-toggle { display: none !important; }
 }

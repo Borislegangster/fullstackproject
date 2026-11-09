@@ -52,7 +52,7 @@ export default async function HelpArticlePage({ params }: { params: Promise<{ sl
       />
       <section className="bg-white py-16 lg:py-24">
         <div className="container-page max-w-3xl">
-          <Blocks blocks={a.body_blocks} />
+          <Blocks blocks={a.body_blocks} collapse={false} />
           <div className="mt-12">
             <HelpFeedback slug={a.slug} />
           </div>

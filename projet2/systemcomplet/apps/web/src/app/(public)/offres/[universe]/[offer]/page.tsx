@@ -5,7 +5,9 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { Blocks } from "@/components/site/blocks";
 import { DynIcon } from "@/components/site/icon";
+import { LongText } from "@/components/site/long-text";
 import { PageHeader } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import type { OfferPayload } from "@/lib/cms-types";
 import { buildMetadata, getSite, JsonLd } from "@/lib/seo";
 import { publicGetOrNull, siteUrl } from "@/lib/server-api";
@@ -76,7 +78,12 @@ export default async function OfferPage({ params }: { params: Promise<{ universe
       <section className="bg-white py-16 lg:py-24">
         <div className="container-page grid gap-12 lg:grid-cols-3">
           <div className="space-y-14 lg:col-span-2">
-            {o.description ? <p className="text-xl leading-relaxed text-ink first-letter:float-left first-letter:mr-2 first-letter:font-title first-letter:text-6xl first-letter:font-bold first-letter:leading-none first-letter:text-accent-500">{o.description}</p> : null}
+            <LongText
+              text={o.description}
+              lines={READ_MORE.lead}
+              className="text-base leading-relaxed text-ink sm:text-lg lg:text-xl"
+              firstClassName="first-letter:float-left first-letter:mr-2 first-letter:font-title first-letter:text-5xl first-letter:font-bold first-letter:leading-none first-letter:text-accent-500 sm:first-letter:text-6xl"
+            />
             {steps.length ? (
               <div>
                 <p className="eyebrow text-accent-600">Votre parcours</p>
@@ -123,7 +130,9 @@ export default async function OfferPage({ params }: { params: Promise<{ universe
               {o.ideal_for ? (
                 <div className="glass-dark relative mt-5 rounded-2xl p-4 text-sm">
                   <p className="font-semibold text-accent-300">Idéal pour</p>
-                  <p className="mt-1 text-brand-50">{o.ideal_for}</p>
+                  <div className="mt-1">
+                    <LongText text={o.ideal_for} lines={READ_MORE.small} onDark className="leading-relaxed text-brand-50" />
+                  </div>
                 </div>
               ) : null}
               <Link href={describeHref} className="btn-glow group relative mt-6 w-full" data-track={`offer:${o.slug}`}>

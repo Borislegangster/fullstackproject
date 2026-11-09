@@ -17,8 +17,11 @@ import { CountUp, Marquee, Reveal, Spotlight, Stagger, Tilt } from "./fx";
 import { GalleryCarousel, GalleryGrid } from "./gallery-carousel";
 import { CinematicHero } from "./hero";
 import { DynIcon } from "./icon";
+import { LongText } from "./long-text";
 import { MediaImage, MediaVideo } from "./media";
 import { ModelViewer } from "./model-viewer";
+import { ReadMore } from "./read-more";
+import { READ_MORE } from "./read-more-lines";
 
 type Cta = { label: string; href: string; style?: string; track_id?: string | null };
 
@@ -139,7 +142,15 @@ function FeatureCard({ item, onDark }: { item: FeatureItem; onDark?: boolean }) 
       </div>
       <div className="flex flex-1 flex-col p-6">
         <h3 className={clsx("font-title text-xl font-bold", onDark ? "text-white" : "text-brand-900")}>{item.title}</h3>
-        {item.text ? <p className={clsx("mt-2 flex-1 text-sm leading-relaxed", onDark ? "text-brand-100" : "text-muted")}>{item.text}</p> : null}
+        {item.text ? (
+          item.href ? (
+            <p className={clsx("mt-2 line-clamp-4 flex-1 text-sm leading-relaxed", onDark ? "text-brand-100" : "text-muted")}>{item.text}</p>
+          ) : (
+            <div className="mt-2 flex-1">
+              <LongText text={item.text} lines={READ_MORE.small} onDark={onDark} className={clsx("text-sm leading-relaxed", onDark ? "text-brand-100" : "text-muted")} />
+            </div>
+          )
+        ) : null}
         {item.href ? (
           <span className={clsx("mt-5 inline-flex items-center gap-1.5 text-sm font-semibold", onDark ? "text-accent-300" : "text-accent-600")}>
             En savoir plus <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -334,7 +345,11 @@ function Steps({ b, onDark }: { b: Block; onDark?: boolean }) {
                   <DynIcon name={s.icon} fallback={false} className="h-5 w-5 text-accent-500" />
                   {s.title}
                 </h3>
-                {s.text ? <p className="mt-2 text-sm leading-relaxed text-muted">{s.text}</p> : null}
+                {s.text ? (
+                  <div className="mt-2">
+                    <LongText text={s.text} lines={READ_MORE.small} className="text-sm leading-relaxed text-muted" />
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}
@@ -376,7 +391,11 @@ function Steps({ b, onDark }: { b: Block; onDark?: boolean }) {
               <DynIcon name={s.icon} fallback={false} className="h-5 w-5 text-accent-500" />
               {s.title}
             </h3>
-            {s.text ? <p className={clsx("mt-2 leading-relaxed", onDark ? "text-brand-100" : "text-muted")}>{s.text}</p> : null}
+            {s.text ? (
+              <div className="mt-2">
+                <LongText text={s.text} lines={READ_MORE.small} onDark={onDark} className={clsx("leading-relaxed", onDark ? "text-brand-100" : "text-muted")} />
+              </div>
+            ) : null}
           </div>
         </Reveal>
       ))}
@@ -515,7 +534,11 @@ function TestimonialCard({ t, onDark }: { t: Testimonial; onDark?: boolean }) {
           </span>
         ) : null}
       </div>
-      <blockquote className={clsx("mt-4 flex-1 text-[1.05rem] leading-relaxed", onDark ? "text-brand-50" : "text-ink")}>« {t.quote} »</blockquote>
+      <div className="mt-4 flex-1">
+        <ReadMore as="blockquote" lines={READ_MORE.card} onDark={onDark} className={clsx("text-[1.05rem] leading-relaxed", onDark ? "text-brand-50" : "text-ink")}>
+          « {t.quote} »
+        </ReadMore>
+      </div>
       {t.video ? <MediaVideo media={t.video} className="mt-5" /> : null}
       <figcaption className={clsx("mt-6 flex items-center gap-3 border-t pt-5", onDark ? "border-white/10" : "border-line")}>
         <span className="rounded-full bg-gradient-to-br from-accent-400 to-brand-500 p-[2px]">
@@ -596,7 +619,7 @@ export function OfferCards({ items }: { items: any[] }) {
           </div>
           <div className="flex flex-1 flex-col p-6">
             <h3 className="font-title text-xl font-bold text-brand-900">{o.name}</h3>
-            {o.summary ? <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{o.summary}</p> : null}
+            {o.summary ? <p className="mt-2 line-clamp-4 flex-1 text-sm leading-relaxed text-muted">{o.summary}</p> : null}
             {o.duration_hint ? (
               <p className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted">
                 <Clock className="h-3.5 w-3.5 text-accent-500" /> {o.duration_hint}
@@ -763,7 +786,11 @@ function Catalog({ b, onDark }: { b: Block; onDark?: boolean }) {
                 <MediaVideo media={v.media} title={v.title} className="rounded-none" />
                 <figcaption className="p-5">
                   <p className="font-title font-bold text-brand-900">{v.title}</p>
-                  {v.description ? <p className="mt-1 text-sm text-muted">{v.description}</p> : null}
+                  {v.description ? (
+                    <div className="mt-1">
+                      <LongText text={v.description} lines={READ_MORE.caption} className="text-sm leading-relaxed text-muted" />
+                    </div>
+                  ) : null}
                 </figcaption>
               </figure>
             ))}
@@ -955,8 +982,17 @@ function Comparison({ b }: { b: Block }) {
 
 /* --------------------------------------------------------------------------------------------- textes, citation, formulaire */
 
-function RichText({ b, onDark }: { b: Block; onDark?: boolean }) {
-  const html = <div className={clsx("prose-globus", onDark && "prose-dark")} dangerouslySetInnerHTML={{ __html: b.html ?? "" }} />;
+/** Texte riche : replié au-delà de quelques lignes sur les pages de présentation (« Lire plus ») ; affiché en entier
+ * dans un article (blog, centre d'aide), dont la lecture complète est l'objet même de la page. */
+function RichText({ b, onDark, collapse = true }: { b: Block; onDark?: boolean; collapse?: boolean }) {
+  const prose = clsx("prose-globus", onDark && "prose-dark");
+  const html = collapse ? (
+    <ReadMore lines={READ_MORE.rich} onDark={onDark} className={prose}>
+      <div dangerouslySetInnerHTML={{ __html: b.html ?? "" }} />
+    </ReadMore>
+  ) : (
+    <div className={prose} dangerouslySetInnerHTML={{ __html: b.html ?? "" }} />
+  );
   if (!b.media)
     return (
       <div className="mx-auto max-w-3xl">
@@ -1043,12 +1079,25 @@ function FormBlock({ b }: { b: Block }) {
 
 /* --------------------------------------------------------------------------------------------- aiguillage */
 
-export function BlockView({ block: b, first = false, onDark = false, pullUp = false }: { block: Block; first?: boolean; onDark?: boolean; pullUp?: boolean }) {
+export function BlockView({
+  block: b,
+  first = false,
+  onDark = false,
+  pullUp = false,
+  collapse = true,
+}: {
+  block: Block;
+  first?: boolean;
+  onDark?: boolean;
+  pullUp?: boolean;
+  /** Replier les textes longs (« Lire plus ») ; false dans un article. */
+  collapse?: boolean;
+}) {
   switch (b.kind) {
     case "hero":
       return <CinematicHero block={b} first={first} pullUp={pullUp} />;
     case "rich_text":
-      return <RichText b={b} onDark={onDark} />;
+      return <RichText b={b} onDark={onDark} collapse={collapse} />;
     case "features":
       return (
         <div>
@@ -1245,12 +1294,12 @@ export function SectionView({ section, index, embedded = false }: { section: Sec
   );
 }
 
-export function Blocks({ blocks, onDark }: { blocks: Block[]; onDark?: boolean }) {
+export function Blocks({ blocks, onDark, collapse = true }: { blocks: Block[]; onDark?: boolean; collapse?: boolean }) {
   if (!blocks?.length) return null;
   return (
     <div className="space-y-16">
       {blocks.map((block, i) => (
-        <BlockView key={i} block={block} onDark={onDark} />
+        <BlockView key={i} block={block} onDark={onDark} collapse={collapse} />
       ))}
     </div>
   );

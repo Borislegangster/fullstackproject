@@ -4,7 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Blocks } from "@/components/site/blocks";
+import { LongText } from "@/components/site/long-text";
 import { PageHeader } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import { optionLabel } from "@/lib/labels";
 import type { Block, Media, Seo } from "@/lib/cms-types";
 import { buildMetadata, getSite, JsonLd } from "@/lib/seo";
@@ -61,7 +63,7 @@ export default async function ExpertisePage({ params }: { params: Promise<{ slug
       />
       <section className="bg-white py-16 lg:py-24">
         <div className="container-page max-w-4xl space-y-12">
-          {e.description ? <p className="text-xl leading-relaxed text-ink">{e.description}</p> : null}
+          <LongText text={e.description} lines={READ_MORE.lead} className="text-base leading-relaxed text-ink sm:text-lg lg:text-xl" />
           {e.body_blocks?.length ? <Blocks blocks={e.body_blocks} /> : null}
           <div className="relative overflow-hidden rounded-[2rem] bg-night px-6 py-12 text-center text-white shadow-2xl">
             <div className="absolute inset-0 bg-blueprint opacity-30 mask-radial" />
