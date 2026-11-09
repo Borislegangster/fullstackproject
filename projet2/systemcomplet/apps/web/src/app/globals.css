@@ -87,6 +87,26 @@
   .prose-globus::after { content: ""; display: table; clear: both; }
 }
 
+/* Texte long replié (« Lire plus ») : nombre de lignes visibles selon l'écran, fondu sur la dernière ligne. Replié
+   dès le rendu serveur (data-mode="unknown"), puis affiché en entier si la mesure montre qu'il tient (data-mode="fit"). */
+.read-more-body { --rm-lines: var(--rm-base, 6); }
+@media (min-width: 640px) { .read-more-body { --rm-lines: var(--rm-sm, var(--rm-base, 6)); } }
+@media (min-width: 1024px) { .read-more-body { --rm-lines: var(--rm-lg, var(--rm-sm, var(--rm-base, 6))); } }
+.read-more-body[data-open="false"]:not([data-mode="fit"]) {
+  overflow: hidden;
+  max-height: calc(var(--rm-lines) * 1.65em);
+  max-height: calc(var(--rm-lines) * 1lh);
+}
+.read-more-body[data-open="false"][data-mode="overflow"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6em), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2.6em), transparent);
+}
+.read-more-body[data-open="true"] { animation: read-more-open 0.35s ease-out; }
+@keyframes read-more-open { from { opacity: 0.6; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .read-more-body[data-open="true"] { animation: none; } }
+
 @media print {
   .no-print { display: none !important; }
+  .read-more-body { max-height: none !important; overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; }
+  .read-more-toggle { display: none !important; }
 }

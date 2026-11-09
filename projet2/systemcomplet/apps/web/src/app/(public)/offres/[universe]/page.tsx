@@ -6,8 +6,10 @@ import { notFound } from "next/navigation";
 
 import { Blocks, FaqList, OfferCards, TestimonialCards } from "@/components/site/blocks";
 import { DynIcon } from "@/components/site/icon";
+import { LongText } from "@/components/site/long-text";
 import { MediaImage } from "@/components/site/media";
 import { Breadcrumbs } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import { safe } from "@/lib/cms";
 import type { Block, Media, OfferPayload, Seo, Testimonial } from "@/lib/cms-types";
 import { buildMetadata, getSite, JsonLd } from "@/lib/seo";
@@ -96,9 +98,9 @@ export default async function UniversePage({ params }: { params: Promise<{ unive
             </p>
           ) : null}
           {u.promise ? (
-            <p className="fade-up mt-5 max-w-2xl text-lg leading-relaxed text-brand-50" style={{ "--delay": "300ms" } as CSSProperties}>
-              {u.promise}
-            </p>
+            <div className="fade-up mt-5 max-w-2xl" style={{ "--delay": "300ms" } as CSSProperties}>
+              <LongText text={u.promise} lines={READ_MORE.hero} onDark className="text-base leading-relaxed text-brand-50 sm:text-lg" />
+            </div>
           ) : null}
           <div className="fade-up mt-10 flex flex-wrap gap-3" style={{ "--delay": "420ms" } as CSSProperties}>
             <Link href={describeHref} className="btn-glow group" data-track={`universe:${u.key}`}>
@@ -114,7 +116,7 @@ export default async function UniversePage({ params }: { params: Promise<{ unive
       <section className="bg-white py-16 lg:py-24">
         <div className="container-page grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            {u.description ? <p className="text-xl leading-relaxed text-ink">{u.description}</p> : null}
+            <LongText text={u.description} lines={READ_MORE.lead} className="text-base leading-relaxed text-ink sm:text-lg lg:text-xl" />
             {u.body_blocks?.length ? (
               <div className="mt-10">
                 <Blocks blocks={u.body_blocks} />
@@ -128,13 +130,17 @@ export default async function UniversePage({ params }: { params: Promise<{ unive
                 <p className="relative flex items-center gap-2 text-sm font-semibold text-accent-300">
                   <Target className="h-4 w-4" /> Pour qui ?
                 </p>
-                <p className="relative mt-2 text-sm text-brand-50">{u.target}</p>
+                <div className="relative mt-2">
+                  <LongText text={u.target} lines={READ_MORE.small} onDark className="text-sm leading-relaxed text-brand-50" />
+                </div>
               </div>
             ) : null}
             {u.prospect_wants ? (
               <div className="rounded-[1.75rem] bg-gradient-to-br from-accent-50 to-white p-6 ring-1 ring-accent-100">
                 <p className="text-sm font-semibold text-accent-700">Ce qui compte pour vous</p>
-                <p className="mt-2 text-sm text-ink">{u.prospect_wants}</p>
+                <div className="mt-2">
+                  <LongText text={u.prospect_wants} lines={READ_MORE.small} className="text-sm leading-relaxed text-ink" />
+                </div>
               </div>
             ) : null}
           </aside>
@@ -209,7 +215,11 @@ export default async function UniversePage({ params }: { params: Promise<{ unive
           <p className="mx-auto max-w-3xl font-title text-3xl font-bold text-white sm:text-5xl">
             <span className="text-gradient-light">{u.tagline ?? u.name}</span>
           </p>
-          {u.promise ? <p className="mx-auto mt-5 max-w-2xl text-lg text-brand-100">{u.promise}</p> : null}
+          {u.promise ? (
+            <div className="mx-auto mt-5 max-w-2xl">
+              <LongText text={u.promise} lines={READ_MORE.hero} onDark className="text-base leading-relaxed text-brand-100 sm:text-lg" />
+            </div>
+          ) : null}
           <Link href={describeHref} className="btn-glow group mt-10">
             Décrire mon projet <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
           </Link>

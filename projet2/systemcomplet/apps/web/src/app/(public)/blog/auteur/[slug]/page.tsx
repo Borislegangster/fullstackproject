@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BlogCards } from "@/components/site/blocks";
+import { LongText } from "@/components/site/long-text";
 import { MediaImage } from "@/components/site/media";
 import { Breadcrumbs } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import { safe } from "@/lib/cms";
 import type { BlogCard, Media } from "@/lib/cms-types";
 import { buildMetadata, getSite, JsonLd } from "@/lib/seo";
@@ -51,7 +53,11 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
               {a.title ? <p className="text-muted">{a.title}</p> : null}
             </div>
           </div>
-          {a.bio ? <p className="mt-5 max-w-3xl text-ink">{a.bio}</p> : null}
+          {a.bio ? (
+            <div className="mt-5 max-w-3xl">
+              <LongText text={a.bio} lines={READ_MORE.card} className="leading-relaxed text-ink" />
+            </div>
+          ) : null}
         </div>
       </header>
       <section className="bg-surface py-16 lg:py-24">

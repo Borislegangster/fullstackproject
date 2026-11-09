@@ -85,6 +85,13 @@ Les contenus structurés : **Univers**, **Offres**, **Expertises**, **Services**
 
 Les listes structurées se remplissent sans code : **Parcours client** des univers (une étape par ligne), **Étapes de l'offre** (titre et description) et **Résultats chiffrés** des réalisations (indicateur et valeur).
 
+> [!TIP]
+> **Textes longs sur le site.** Dans les champs de description (univers, offre, expertise, réalisation…), chaque retour à la ligne crée un paragraphe sur le site.
+>
+> Au-delà de quelques lignes, le texte est replié et un bouton **Lire plus** affiche la suite (**Lire moins** la replie). Le nombre de lignes visibles dépend de l'écran : par exemple 6 lignes sur mobile et 7 sur ordinateur pour la description d'une offre.
+>
+> Les articles du blog, les articles d'aide et les pages légales s'affichent toujours en entier. Placez donc l'essentiel en début de texte.
+
 ::: perm cms:publish
 - Supprimer définitivement un élément (préférez l'archivage pour un contenu publié).
 :::

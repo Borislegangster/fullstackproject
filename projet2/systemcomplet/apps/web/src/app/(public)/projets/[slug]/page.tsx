@@ -7,9 +7,11 @@ import { notFound } from "next/navigation";
 import { Blocks, ProjectCards, TestimonialCards } from "@/components/site/blocks";
 import { BeforeAfterSlider } from "@/components/site/before-after";
 import { GalleryCarousel } from "@/components/site/gallery-carousel";
+import { LongText } from "@/components/site/long-text";
 import { MediaImage, MediaVideo } from "@/components/site/media";
 import { ModelViewer } from "@/components/site/model-viewer";
 import { Breadcrumbs } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import type { Block, Media, ProjectCard, Seo, Testimonial } from "@/lib/cms-types";
 import { number } from "@/lib/format";
 import { optionLabel } from "@/lib/labels";
@@ -109,9 +111,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             {p.seo?.h1 || p.title}
           </h1>
           {p.summary ? (
-            <p className="fade-up mt-5 max-w-3xl text-lg text-brand-100" style={{ "--delay": "200ms" } as CSSProperties}>
-              {p.summary}
-            </p>
+            <div className="fade-up mt-5 max-w-3xl" style={{ "--delay": "200ms" } as CSSProperties}>
+              <LongText text={p.summary} lines={READ_MORE.hero} onDark className="text-base leading-relaxed text-brand-100 sm:text-lg" />
+            </div>
           ) : null}
           {facts.length ? (
             <dl className="fade-up mt-10 grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4" style={{ "--delay": "320ms" } as CSSProperties}>
@@ -136,14 +138,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 {p.challenge ? (
                   <div className="rounded-[1.75rem] bg-surface p-7 ring-1 ring-line">
                     <p className="eyebrow text-accent-600">Le défi</p>
-                    <p className="mt-4 leading-relaxed text-ink">{p.challenge}</p>
+                    <div className="mt-4">
+                      <LongText text={p.challenge} lines={READ_MORE.card} className="leading-relaxed text-ink" />
+                    </div>
                   </div>
                 ) : null}
                 {p.solution ? (
                   <div className="relative overflow-hidden rounded-[1.75rem] bg-night p-7 text-white shadow-xl">
                     <div className="absolute inset-0 bg-blueprint opacity-30" />
                     <p className="eyebrow relative text-accent-300">Notre réponse</p>
-                    <p className="relative mt-4 leading-relaxed text-brand-50">{p.solution}</p>
+                    <div className="relative mt-4">
+                      <LongText text={p.solution} lines={READ_MORE.card} onDark className="leading-relaxed text-brand-50" />
+                    </div>
                   </div>
                 ) : null}
               </div>

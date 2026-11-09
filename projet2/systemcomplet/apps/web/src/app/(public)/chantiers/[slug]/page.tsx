@@ -4,7 +4,9 @@ import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 
 import { PanelContact } from "./panel-contact";
+import { LongText } from "@/components/site/long-text";
 import { Breadcrumbs } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import { dateLong, number } from "@/lib/format";
 import { optionLabel } from "@/lib/labels";
 import { JsonLd } from "@/lib/seo";
@@ -110,9 +112,9 @@ export default async function ChantierPage({ params, searchParams }: { params: P
             {c.title}
           </h1>
           {c.description ? (
-            <p className="fade-up mt-5 max-w-3xl text-lg text-brand-100" style={{ "--delay": "200ms" } as CSSProperties}>
-              {c.description}
-            </p>
+            <div className="fade-up mt-5 max-w-3xl" style={{ "--delay": "200ms" } as CSSProperties}>
+              <LongText text={c.description} lines={READ_MORE.hero} onDark className="text-base leading-relaxed text-brand-100 sm:text-lg" />
+            </div>
           ) : null}
           {facts.length ? (
             <dl className="fade-up mt-10 grid max-w-4xl grid-cols-2 gap-3 md:grid-cols-4" style={{ "--delay": "320ms" } as CSSProperties}>

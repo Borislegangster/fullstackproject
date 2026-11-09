@@ -5,9 +5,11 @@ import { notFound } from "next/navigation";
 
 import { BlogCards, Blocks } from "@/components/site/blocks";
 import { BlogViewTracker, Comments, LikeButton, ShareButtons } from "@/components/site/blog-interactions";
+import { LongText } from "@/components/site/long-text";
 import { MediaImage } from "@/components/site/media";
 import { NewsletterForm } from "@/components/site/newsletter-form";
 import { Breadcrumbs } from "@/components/site/page-view";
+import { READ_MORE } from "@/components/site/read-more-lines";
 import type { Block, BlogCard, Seo } from "@/lib/cms-types";
 import { dateLong } from "@/lib/format";
 import { buildMetadata, getSite, JsonLd } from "@/lib/seo";
@@ -117,7 +119,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
         ) : null}
         <div className="container-page max-w-3xl py-10">
-          <Blocks blocks={p.body_blocks} />
+          <Blocks blocks={p.body_blocks} collapse={false} />
           {p.tags?.length ? (
             <div className="mt-10 flex flex-wrap gap-2">
               {p.tags.map((t) => (
@@ -137,7 +139,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <div>
                 <p className="font-semibold text-brand-800">{p.author.name}</p>
                 {p.author.title ? <p className="text-sm text-muted">{p.author.title}</p> : null}
-                <p className="mt-2 text-sm text-ink">{p.author.bio}</p>
+                <div className="mt-2">
+                  <LongText text={p.author.bio} lines={READ_MORE.small} className="text-sm leading-relaxed text-ink" />
+                </div>
               </div>
             </div>
           ) : null}
