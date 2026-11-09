@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, ChevronRight, Download, Plus, Reply, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, Download, Plus, Reply, Save, Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { SpecFields } from "@/components/cms/blocks-editor";
@@ -98,6 +98,8 @@ const TRACKING_KEYS: [string, string][] = [
   ["tiktok_pixel", "Pixel TikTok"],
   ["linkedin_partner", "LinkedIn Insight (partner id)"],
 ];
+/** Même format que la validation de l'API et que la vitrine (identifiant injecté dans un script). */
+const TRACKING_ID = /^[A-Za-z0-9_-]{3,40}$/;
 const LEGAL_KEYS: [string, string][] = [
   ["forme", "Forme juridique"],
   ["capital", "Capital social"],
@@ -214,11 +216,32 @@ export function SiteSettingsEditor() {
         <Field label="Méta-description par défaut" className="sm:col-span-2">
           <Textarea value={v.default_meta_description ?? ""} onChange={(e) => set({ default_meta_description: e.target.value })} rows={2} />
         </Field>
-        {TRACKING_KEYS.map(([k, label]) => (
-          <Field key={k} label={label} help="Chargé uniquement après consentement.">
-            <Input value={v.tracking?.[k] ?? ""} onChange={(e) => nested("tracking", k, e.target.value)} />
-          </Field>
-        ))}
+        {TRACKING_KEYS.map(([k, label]) => {
+          const value = String(v.tracking?.[k] ?? "");
+          // Enregistré (identique à la valeur en base) et au bon format : la vitrine le charge déjà.
+          const installed = TRACKING_ID.test(value) && value === String(settings.data?.tracking?.[k] ?? "");
+          const cookies = k === "ga4_id" ? "cookies de mesure d'audience" : "cookies marketing";
+          return (
+            <Field
+              key={k}
+              label={label}
+              help={
+                installed ? (
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <Badge tone="success">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Installé sur le site
+                    </Badge>
+                    Chargé après l'accord du visiteur ({cookies}).
+                  </span>
+                ) : (
+                  "Chargé uniquement après consentement."
+                )
+              }
+            >
+              <Input value={value} onChange={(e) => nested("tracking", k, e.target.value)} />
+            </Field>
+          );
+        })}
         <Field label="Pages à exclure des moteurs de recherche" className="sm:col-span-2" help="Adresse de chaque page à ne pas référencer, ex. /offres/ancienne-offre (les espaces privés sont déjà exclus).">
           <TagInput
             value={robotsPaths(v.robots_extra)}

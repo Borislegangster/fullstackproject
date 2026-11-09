@@ -160,6 +160,12 @@ Identité (raison sociale, slogan, promesse, logos, image de partage, **Icône d
 
 **Icône de la plateforme** : icône unique, appliquée partout dès l'enregistrement — onglet du navigateur (favicon), application installée sur ordinateur ou téléphone, raccourci iPhone / iPad, assistant du site, notifications, et futures applications mobile et bureau. Choisissez une image carrée PNG ou WebP (idéalement 512 px ou plus, fond transparent de préférence) ; les marges sont recadrées et toutes les tailles sont générées automatiquement. L'aperçu montre chaque déclinaison ; **Pack d'icônes (applications)** télécharge toutes les tailles (16 à 1 024 px, favicon, iOS, Android) et leur description pour les applications mobile et bureau. Le logo reste réservé aux en-têtes, pieds de page et documents : icône et logo ne se mélangent plus. Un navigateur peut garder l'ancienne icône quelques minutes (rechargez la page).
 
+**Identifiants de mesure** : Google Analytics 4, Google Ads, **Pixel Meta** (Facebook et Instagram), Pixel TikTok, LinkedIn Insight. Un identifiant enregistré affiche **Installé sur le site** : la vitrine le charge, sans autre code à insérer.
+
+Chaque balise ne se charge qu'après l'accord du visiteur : cookies de mesure d'audience pour Google Analytics, cookies marketing pour les autres. Les pages vues sont comptées à chaque page, y compris en naviguant d'une page à l'autre du site.
+
+Le pixel Meta de GLOBUS ENGINEERING (1105423749001867) est déjà enregistré ; pour en changer, remplacez l'identifiant puis **Enregistrer**.
+
 ::: perm cms:publish
 - Modifiez puis **Enregistrer**. Changer la version de la politique de consentement redemande le consentement à tous les visiteurs.
 :::

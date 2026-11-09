@@ -73,8 +73,16 @@ export function SiteTracking({ tracking, policyVersion }: { tracking: SitePayloa
   useEffect(() => {
     if (!pathname) return;
     const stop = trackPage(pathname);
-    const w = window as unknown as { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void };
+    const w = window as unknown as {
+      gtag?: (...args: unknown[]) => void;
+      fbq?: (...args: unknown[]) => void;
+      ttq?: { page?: () => void };
+    };
     w.gtag?.("event", "page_view", { page_path: pathname });
+    // Navigation interne (sans rechargement) : les pixels Meta et TikTok ne comptent d'eux-mêmes que la première page.
+    // Au premier affichage ils ne sont pas encore chargés (ils le sont après le consentement, page vue comprise).
+    w.fbq?.("track", "PageView");
+    w.ttq?.page?.();
     return stop;
   }, [pathname]);
 
