@@ -272,7 +272,6 @@ _PHONE_CODES: dict[str, tuple[str, str, str]] = {
     "48": ("PL", "Pologne", "EU"),
     "7": ("RU", "Russie", "EU"),
     "90": ("TR", "Turquie", "AS"),
-    "1": ("US", "États-Unis / Canada", "NA"),
     "55": ("BR", "Brésil", "SA"),
     "971": ("AE", "Émirats arabes unis", "AS"),
     "974": ("QA", "Qatar", "AS"),
@@ -302,8 +301,66 @@ _PHONE_CODES: dict[str, tuple[str, str, str]] = {
     "254": ("KE", "Kenya", "AF"),
     "250": ("RW", "Rwanda", "AF"),
 }
-COUNTRY_NAMES = {iso: name for iso, name, _ in _PHONE_CODES.values()} | {"US": "États-Unis", "CA": "Canada"}
-CONTINENT_OF = {iso: continent for iso, _, continent in _PHONE_CODES.values()} | {"CA": "NA"}
+
+
+def _codes(text: str) -> frozenset[str]:
+    return frozenset(text.split())
+
+
+# Continent de chaque pays (codes ISO 3166-1, découpage GeoNames) : en-têtes d'un frontal géolocalisant qui ne
+# donnent que le pays, et repli téléphonique.
+_CONTINENT_COUNTRIES = {
+    "AF": "AO BF BI BJ BW CD CF CG CI CM CV DJ DZ EG EH ER ET GA GH GM GN GQ GW KE KM LR LS LY MA MG ML MR MU MW MZ "
+    "NA NE NG RE RW SC SD SH SL SN SO SS ST SZ TD TG TN TZ UG YT ZA ZM ZW",
+    "EU": "AD AL AT AX BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GG GI GR HR HU IE IM IS IT JE LI LT LU LV MC MD "
+    "ME MK MT NL NO PL PT RO RS RU SE SI SJ SK SM UA VA XK",
+    "AS": "AE AF AM AZ BD BH BN BT CC CN CX GE HK ID IL IN IO IQ IR JO JP KG KH KP KR KW KZ LA LB LK MM MN MO MV MY "
+    "NP OM PH PK PS QA SA SG SY TH TJ TL TM TR TW UZ VN YE",
+    "NA": "AG AI AW BB BL BM BQ BS BZ CA CR CU CW DM DO GD GL GP GT HN HT JM KN KY LC MF MQ MS MX NI PA PM PR SV SX "
+    "TC TT US VC VG VI",
+    "SA": "AR BO BR CL CO EC FK GF GY PE PY SR UY VE",
+    "OC": "AS AU CK FJ FM GU KI MH MP NC NF NR NU NZ PF PG PN PW SB TK TO TV UM VU WF WS",
+    "AN": "AQ BV GS HM TF",
+}
+CONTINENT_OF = {iso: continent for continent, codes in _CONTINENT_COUNTRIES.items() for iso in _codes(codes)}
+COUNTRY_NAMES = {iso: name for iso, name, _ in _PHONE_CODES.values()} | {
+    "US": "États-Unis",
+    "CA": "Canada",
+    "JM": "Jamaïque",
+    "DO": "République dominicaine",
+    "TT": "Trinité-et-Tobago",
+    "BS": "Bahamas",
+    "BB": "Barbade",
+    "PR": "Porto Rico",
+}
+
+# Plan de numérotation nord-américain (+1) : le pays se lit dans l'indicatif régional (3 chiffres suivants).
+_CANADA_AREA_CODES = _codes(
+    "204 226 236 249 250 257 263 289 306 343 354 365 367 368 382 387 403 416 418 428 431 437 438 450 460 468 474 "
+    "506 514 519 548 579 581 584 587 600 604 613 622 633 639 644 647 655 672 677 683 688 709 742 753 778 780 782 "
+    "807 819 825 851 867 873 879 902 905 942"
+)
+_NANP_OTHER = {
+    "242": "BS", "246": "BB", "264": "AI", "268": "AG", "284": "VG", "340": "VI", "345": "KY", "441": "BM",
+    "473": "GD", "649": "TC", "658": "JM", "876": "JM", "664": "MS", "670": "MP", "671": "GU", "684": "AS",
+    "721": "SX", "758": "LC", "767": "DM", "784": "VC", "787": "PR", "939": "PR", "809": "DO", "829": "DO",
+    "849": "DO", "868": "TT", "869": "KN",
+}  # fmt: skip
+_NANP_NON_GEOGRAPHIC = _codes("500 521 522 533 544 566 577 588 700 800 822 833 844 855 866 877 880 888 900")
+
+
+def _nanp(digits: str) -> GeoInfo | None:
+    """+1 : Canada, Caraïbes ou États-Unis selon l'indicatif régional ; inconnu pour les numéros non géographiques."""
+    area = digits[1:4]
+    if len(area) < 3 or area in _NANP_NON_GEOGRAPHIC:
+        return None
+    iso = "CA" if area in _CANADA_AREA_CODES else _NANP_OTHER.get(area, "US")
+    return GeoInfo(
+        country=iso,
+        country_name=COUNTRY_NAMES.get(iso, iso),
+        continent=CONTINENT_OF.get(iso, "NA"),
+        source="phone",
+    )
 
 
 def from_phone(phone: str | None) -> GeoInfo | None:
@@ -314,6 +371,8 @@ def from_phone(phone: str | None) -> GeoInfo | None:
     if not digits.startswith("+"):
         return None
     digits = "".join(c for c in digits[1:] if c.isdigit())
+    if digits.startswith("1"):
+        return _nanp(digits)
     for length in (3, 2, 1):
         match = _PHONE_CODES.get(digits[:length])
         if match:

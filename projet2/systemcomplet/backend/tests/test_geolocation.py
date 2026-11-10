@@ -67,6 +67,26 @@ def test_country_from_phone_prefix() -> None:
     cm = geoip.from_phone("+237690112233")
     assert cm.country == "CM" and cm.is_abroad is False and cm.source == "phone"
     assert geoip.from_phone("690112233") is None, "numéro local : indicatif inconnu"
+    # +1 partagé : le pays se lit dans l'indicatif régional (Montréal, New York, Jamaïque), rien pour un numéro vert.
+    assert geoip.from_phone("+1 514 555 1234").country == "CA"
+    assert geoip.from_phone("+1 212 555 1234").country == "US"
+    assert geoip.from_phone("+1 876 555 1234").country == "JM"
+    assert geoip.from_phone("+1 800 555 1234") is None
+    assert geoip.CONTINENT_OF["MX"] == "NA" and geoip.CONTINENT_OF["CM"] == "AF" and len(geoip.CONTINENT_OF) > 240
+
+
+def test_country_header_from_a_geolocating_proxy_gets_its_continent(client: Any, db: Any) -> None:
+    from app.modules.analytics.models import AnalyticsSession
+
+    resp = client.post(
+        f"{API}/public/analytics/collect",
+        json={"session_id": "sessionmexico001", "events": [{"type": "page_view", "path": "/"}]},
+        headers={"cf-ipcountry": "MX", "user-agent": "Mozilla/5.0 (Windows NT 10.0) Chrome/130"},
+    )
+    assert resp.status_code == 202, resp.text
+    db.expire_all()
+    session = db.get(AnalyticsSession, "sessionmexico001")
+    assert (session.country, session.continent) == ("MX", "NA")
 
 
 def test_visits_are_located_and_reported_by_zone(client: Any, db: Any, geodb: Path, admin_headers: dict) -> None:
