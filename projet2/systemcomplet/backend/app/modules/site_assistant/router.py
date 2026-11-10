@@ -109,8 +109,14 @@ def _session_out(db: Session, session: SiteAssistantSession, *, full: bool = Fal
 # ---------------------------------------------------------------------------- disponibilité, conversations
 @router.get("/status")
 def status(access: Access = Depends(get_access)) -> dict[str, Any]:
+    from app.providers.imagegen import availability as image_availability
+
     _require(access)
-    return {**agent.availability(), "can_publish": access.has("cms:publish")}
+    return {
+        **agent.availability(),
+        "can_publish": access.has("cms:publish"),
+        "images": image_availability() if access.has("media:write") else {"available": False},
+    }
 
 
 @router.get("/sessions")
@@ -341,6 +347,21 @@ def apply(action_id: uuid.UUID, db: Session = Depends(get_db), access: Access = 
     _apply(db, access, action)
     db.commit()
     return jsonable(_action_out(action))
+
+
+@router.get("/actions/{action_id}/preview")
+def preview(
+    action_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Où voir le résultat sur le site : page en ligne, ou aperçu (jeton de 30 min) du brouillon ou de la page telle
+    qu'elle sera une fois la proposition appliquée."""
+    from app.modules.site_assistant.preview import preview_target
+
+    _require(access)
+    target = preview_target(db, _own_action(db, access, action_id))
+    if target is None or not target.get("path"):
+        raise NotFound("Pas d'aperçu pour cette action (élément sans page publique)")
+    return target
 
 
 @router.post("/actions/{action_id}/reject")

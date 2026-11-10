@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, FileText, Image as ImageIcon, Loader2, Paperclip, Plus, Send, Sparkles, Trash2, Wrench, X, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, Eye, FileText, Image as ImageIcon, Loader2, Paperclip, Plus, Send, Sparkles, Trash2, Wrench, X, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,6 +14,12 @@ import { useApi } from "@/lib/hooks";
 
 /** Travaux confiés à Claude en un clic : la consigne est préremplie, il ne reste qu'à la compléter et joindre les données. */
 const TASKS: { label: string; prompt: string }[] = [
+  {
+    label: "Compléter toute la vitrine",
+    prompt:
+      "Analyse toute la vitrine page par page et complète-la : sections manquantes, textes trop courts, bannières et sections sans image (médiathèque d'abord, sinon images générées réalistes), appels à l'action, SEO. Commence par l'accueil puis les offres, services, expertises, réalisations, blog, FAQ et aide. Prépare des propositions complètes avec aperçu, sans rien inventer (dis-moi ce qu'il faut fournir : photos de chantiers réels, témoignages, chiffres).",
+  },
+  { label: "Illustrer les pages", prompt: "Repère les pages, sections, offres, services et articles sans image, et ajoute des visuels adaptés : images de la médiathèque si elles conviennent, sinon illustrations réalistes générées (jamais présentées comme nos réalisations)." },
   { label: "Audit SEO complet", prompt: "Fais un audit SEO complet du site et propose les corrections : titres, méta-descriptions, H1, images de partage, pages non indexées." },
   { label: "Textes alternatifs des images", prompt: "Rédige les textes alternatifs de toutes les images de la médiathèque qui n'en ont pas, en regardant chaque image. Avance par lots de 20." },
   { label: "Article de blog", prompt: "Rédige un article de blog sur le sujet suivant : … Public visé : … Crée-le en brouillon avec son SEO, à partir des informations jointes." },
@@ -33,7 +39,14 @@ const TOOL_LABEL: Record<string, string> = {
   update_media: "Média",
   create_redirect: "Redirection",
   request_publication: "Publication",
+  request_unpublish: "Retrait du site",
+  generate_image: "Image générée",
+  update_navigation: "Menu",
+  update_site_settings: "Réglages du site",
 };
+/** Actions dont le résultat se regarde sur le site (page, ou élément ayant sa propre page). */
+const PREVIEW_TOOLS = new Set(["save_page", "update_content", "create_content", "request_publication"]);
+const DETAIL_KINDS = new Set(["page", "universes", "offers", "expertises", "services", "projects", "blog_posts", "help_articles"]);
 const STATUS: Record<string, { label: string; tone: "info" | "warning" | "success" | "neutral" | "danger" }> = {
   applied: { label: "Brouillon enregistré", tone: "info" },
   proposed: { label: "À valider", tone: "warning" },
@@ -45,18 +58,56 @@ const ACCEPT = "image/*,.pdf,.docx,.xlsx,.txt,.md,.csv,.json,.html";
 
 function editLink(a: Row): string | null {
   if (a.tool === "create_redirect") return "/erp/seo";
+  if (a.target_type === "navigation") return "/erp/cms?onglet=navigation";
+  if (a.target_type === "site_settings") return "/erp/cms?onglet=reglages";
   if (a.target_type === "media") return "/erp/media";
   if (a.target_type === "page" && a.target_id) return `/erp/cms/pages/${a.target_id}`;
   if (a.target_type) return `/erp/cms?onglet=collections&collection=${a.target_type}`;
   return null;
 }
 
+/** Ouvre le résultat sur le site : page en ligne, ou aperçu fidèle (brouillon, proposition appliquée à blanc). */
+async function openPreview(actionId: string): Promise<void> {
+  // Fenêtre ouverte tout de suite (clic de l'utilisateur) pour ne pas être bloquée, adresse posée ensuite.
+  const win = window.open("about:blank", "_blank");
+  try {
+    const target = await api<{ path: string; token: string | null }>(`/site-assistant/actions/${actionId}/preview`);
+    const url = target.token ? `/api/apercu?token=${encodeURIComponent(target.token)}&path=${encodeURIComponent(target.path)}` : target.path;
+    if (win) {
+      win.opener = null;
+      win.location.href = url;
+    } else window.location.assign(url);
+  } catch (err) {
+    win?.close();
+    throw err;
+  }
+}
+
 function ActionCard({ action, onDecide }: { action: Row; onDecide: (id: string, verb: "apply" | "reject") => Promise<void> }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const status = STATUS[action.status] ?? STATUS.proposed;
+  const status = action.tool === "generate_image" && action.status === "applied" ? { label: "Ajoutée à la médiathèque", tone: "info" as const } : (STATUS[action.status] ?? STATUS.proposed);
   const link = editLink(action);
-  const details = action.payload?.changes ?? action.payload?.page ?? action.payload?.data ?? (action.tool === "create_redirect" ? action.payload : null);
+  const image = action.tool === "generate_image" && action.result?.url ? String(action.result.url).replace(/\/original$/, "/thumb") : null;
+  const previewable = PREVIEW_TOOLS.has(action.tool) && DETAIL_KINDS.has(action.target_type) && action.status !== "rejected" && action.status !== "failed";
+  const details =
+    action.payload?.changes ??
+    action.payload?.page ??
+    action.payload?.data ??
+    (action.tool === "update_navigation" ? action.payload?.items : null) ??
+    (action.tool === "create_redirect" ? action.payload : null) ??
+    (action.tool === "generate_image" ? { description: action.payload?.prompt, format: action.payload?.aspect, usage: action.payload?.purpose, modele: action.payload?.model } : null);
+  const preview = async () => {
+    setBusy("preview");
+    try {
+      await openPreview(action.id);
+    } catch (err) {
+      toast.error("Aperçu impossible", errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
   const decide = async (verb: "apply" | "reject") => {
     setBusy(verb);
     try {
@@ -73,7 +124,15 @@ function ActionCard({ action, onDecide }: { action: Row; onDecide: (id: string, 
       </div>
       <p className="mt-1 font-medium">{action.summary}</p>
       {action.target_label ? <p className="truncate text-xs text-muted" title={action.target_label}>{action.target_label}</p> : null}
+      {image ? (
+        <img src={image} alt={action.payload?.alt_text ?? ""} loading="lazy" className="mt-2 aspect-[3/2] w-full rounded-lg object-cover ring-1 ring-line" />
+      ) : null}
       <div className="mt-2 flex flex-wrap items-center gap-2">
+        {previewable ? (
+          <Button size="sm" variant={action.status === "proposed" ? "secondary" : "ghost"} loading={busy === "preview"} disabled={!!busy && busy !== "preview"} onClick={() => void preview()}>
+            <Eye className="h-4 w-4" /> {action.status === "proposed" ? "Aperçu sur le site" : "Voir sur le site"}
+          </Button>
+        ) : null}
         {action.status === "proposed" ? (
           <>
             <Button size="sm" loading={busy === "apply"} disabled={!!busy} onClick={() => void decide("apply")}>
@@ -310,9 +369,28 @@ export function SiteAssistant() {
     <div className="space-y-5">
       <PageTitle
         title="Assistant du site (Claude)"
-        subtitle="Donnez une consigne et vos données : Claude rédige, met en page, règle le SEO, décrit les images et analyse la fréquentation. Il crée des brouillons ; ce que voient les visiteurs attend votre validation."
+        subtitle="Donnez une consigne et vos données : Claude analyse les pages, rédige, complète les sections, illustre (médiathèque ou images générées), règle le SEO et analyse la fréquentation. Il crée des brouillons ; ce que voient les visiteurs attend votre validation, après aperçu sur le site."
       />
       {status.data && !available ? <Alert tone="warning" title="Assistant indisponible">{status.data.reason}</Alert> : null}
+      {status.data && available ? (
+        <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          <ImageIcon className="h-3.5 w-3.5" />
+          {status.data.images?.available ? (
+            <>
+              Images : médiathèque et génération d&apos;illustrations ({status.data.images.label}, {status.data.images.model}) — {status.data.images.daily_limit} par 24 h au plus.
+            </>
+          ) : (
+            <>
+              Images : médiathèque uniquement.{" "}
+              {status.data.images?.reason ? (
+                <Link href="/erp/parametres" className="font-semibold text-brand-700 hover:underline">
+                  {status.data.images.reason}
+                </Link>
+              ) : null}
+            </>
+          )}
+        </p>
+      ) : null}
       <div className={`grid gap-5 lg:grid-cols-[16rem_minmax(0,1fr)] ${session ? "xl:grid-cols-[16rem_minmax(0,1fr)_22rem]" : ""}`}>
         <Card className="h-fit space-y-2 p-3">
           <Button
@@ -390,7 +468,7 @@ export function SiteAssistant() {
                 </Button>
               ) : null}
             </div>
-            <p className="text-xs text-muted">Appliquer exécute la modification avec vos droits (publication : droit de publier). Les brouillons créés sont visibles dans le CMS.</p>
+            <p className="text-xs text-muted">Regardez l&apos;aperçu sur le site, puis appliquez : la modification est exécutée avec vos droits (publication : droit de publier). Les brouillons créés sont aussi dans le CMS.</p>
             {!actions.length ? <p className="text-sm text-muted">Aucune action pour l&apos;instant.</p> : null}
             <ul className="space-y-2">
               {pending.map((a) => (

@@ -3,10 +3,14 @@ import "server-only";
 import type { Metadata } from "next";
 
 import type { PagePayload, Section } from "./cms-types";
+import { previewPage } from "./preview";
 import { buildMetadata, getSite } from "./seo";
 import { publicGetOrNull } from "./server-api";
 
+/** Page CMS publiée (ou, en mode aperçu depuis l'ERP, sa version non publiée désignée par le jeton). */
 export async function getPage(routeKey: string): Promise<PagePayload | null> {
+  const draft = await previewPage({ routeKey });
+  if (draft) return draft;
   try {
     return await publicGetOrNull<PagePayload>(`/public/pages/${routeKey}`);
   } catch {

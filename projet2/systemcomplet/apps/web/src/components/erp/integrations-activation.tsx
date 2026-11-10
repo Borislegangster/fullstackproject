@@ -65,6 +65,14 @@ const GROUPS: {
     switchField: "AI_PROVIDER",
     off: "none",
   },
+  {
+    key: "images",
+    title: "Génération d'images (assistant du site)",
+    intro:
+      "Illustrations réalistes créées par l'assistant du site quand la médiathèque n'a pas d'image adaptée, ajoutées à la médiathèque (dossier « ia », mention « Illustration générée par IA »). Compte requis : platform.openai.com (clé API, crédit, organisation vérifiée pour les modèles GPT Image) ou aistudio.google.com (clé API Gemini avec facturation). Coût indicatif : quelques centimes à quelques dizaines de centimes de dollar par image.",
+    switchField: "IMAGE_GEN_PROVIDER",
+    off: "none",
+  },
 ];
 
 const NEED: Record<string, { label: string; tone: "danger" | "success" | "neutral" | "warning" }> = {

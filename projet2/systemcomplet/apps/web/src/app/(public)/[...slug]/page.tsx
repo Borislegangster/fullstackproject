@@ -3,6 +3,7 @@ import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 import { CmsPageView } from "@/components/site/page-view";
 import type { PagePayload } from "@/lib/cms-types";
+import { previewPage } from "@/lib/preview";
 import { buildMetadata, getSite } from "@/lib/seo";
 import { publicGetOrNull } from "@/lib/server-api";
 
@@ -11,6 +12,9 @@ type Resolved = { type: "page"; page: PagePayload } | { type: "redirect"; target
 async function resolve(slug: string[]): Promise<Resolved | null> {
   const path = "/" + slug.map((s) => decodeURIComponent(s)).join("/");
   if (path.length > 500) return null;
+  // Aperçu depuis l'ERP : page non publiée (brouillon ou proposition de l'assistant du site) à cette adresse.
+  const draft = await previewPage({ path });
+  if (draft) return { type: "page", page: draft };
   try {
     return await publicGetOrNull<Resolved>("/public/resolve", { path });
   } catch {

@@ -15,7 +15,7 @@ from app.core import audit
 from app.core.access import Access
 from app.core.crud import apply_changes, model_schema
 from app.core.deps import Principal, _permissions_for, org_kind_of
-from app.core.errors import NotFound
+from app.core.errors import AppError, NotFound
 from app.core.utils import jsonable
 from app.modules.cms import media as media_svc
 from app.modules.cms import models as m
@@ -229,3 +229,44 @@ def publish(db: Session, principal: Principal, kind: str, obj: Any, note: str | 
 
 def check_publishable(db: Session, kind: str, obj: Any) -> None:
     service._check_publishable(db, kind, obj)
+
+
+def unpublish(db: Session, principal: Principal, kind: str, obj: Any, note: str | None) -> Any:
+    """Retrait du site (archivage) : soumis aux droits de la personne qui valide."""
+    if obj.status == "archived":
+        return obj
+    return service.transition(db, principal, kind, obj, "archived", note=note or "Retiré depuis l'assistant du site")
+
+
+# ---------------------------------------------------------------------------- navigation et réglages du site
+# Réglages du site que l'assistant peut proposer : textes de présentation et SEO par défaut. Les coordonnées
+# légales, balises de suivi, bandeau cookies, robots et logos restent réservés aux écrans de réglage.
+ASSISTANT_SITE_FIELDS = frozenset(
+    {"slogan", "promise", "default_meta_description", "seo_title_template", "default_og_media_id", "opening_hours"}
+)
+
+
+def navigation_save(db: Session, principal: Principal, key: str, data: dict[str, Any]) -> Any:
+    from app.modules.cms.router_admin import save_navigation
+    from app.modules.cms.schemas import NavigationIn
+
+    principal.require("cms:write")
+    menu = save_navigation(db, key, NavigationIn.model_validate(data))
+    service.revalidate_after_commit(db, ["/"])
+    return menu
+
+
+def site_settings_save(db: Session, principal: Principal, changes: dict[str, Any]) -> Any:
+    from app.modules.cms.router_admin import save_site_settings
+
+    principal.require("cms:publish")
+    unknown = sorted(set(changes) - ASSISTANT_SITE_FIELDS)
+    if unknown:
+        raise AppError(
+            "Réglages modifiables par l'assistant : " + ", ".join(sorted(ASSISTANT_SITE_FIELDS)) + f" (refusé : "
+            f"{', '.join(unknown)})",
+            code="SITE_FIELD_NOT_ALLOWED",
+        )
+    site = save_site_settings(db, changes)
+    service.revalidate_after_commit(db, ["/"])
+    return site

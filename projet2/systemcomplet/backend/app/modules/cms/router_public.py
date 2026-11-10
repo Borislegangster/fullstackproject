@@ -648,13 +648,30 @@ def preview(
     if target is None:
         raise NotFound("Aperçu expiré ou invalide")
     key, item_id = target
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Robots-Tag"] = "noindex"
+    if key == "page":
+        # Page CMS non publiée (brouillon créé par l'équipe ou par l'assistant du site).
+        page = db.get(m.CmsPage, item_id)
+        if page is None or getattr(page, "deleted_at", None) is not None:
+            raise NotFound("Aperçu indisponible")
+        return {"kind": "page", "detail": jsonable(service.page_public_payload(db, page))}
+    if key == "proposal":
+        # Proposition de l'assistant du site : rendu de la page telle qu'elle serait une fois la proposition
+        # appliquée (calculé dans une transaction annulée, rien n'est enregistré).
+        from app.modules.site_assistant.preview import proposal_preview
+
+        preview = proposal_preview(db, item_id)
+        if preview is None:
+            raise NotFound("Aperçu indisponible (proposition déjà traitée ?)")
+        return preview
+    if key not in service.COLLECTIONS:
+        raise NotFound("Aperçu indisponible")
     definition = service.get_collection(key)
     row = db.get(definition.model, item_id)
     detail = details.detail_payload(db, key, row) if row is not None else None
     if detail is None:
         raise NotFound("Aperçu indisponible")
-    response.headers["Cache-Control"] = "no-store"
-    response.headers["X-Robots-Tag"] = "noindex"
     return {"kind": key, "detail": detail}
 
 
