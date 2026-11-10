@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 
 import { CmsPageView, EmptyPublicState } from "@/components/site/page-view";
-import type { PagePayload } from "@/lib/cms-types";
+import { getPage } from "@/lib/cms";
 import { buildMetadata, getSite } from "@/lib/seo";
-import { publicGetOrNull } from "@/lib/server-api";
 
-async function getHome() {
-  try {
-    return await publicGetOrNull<PagePayload>("/public/pages/home");
-  } catch {
-    return null;
-  }
+function getHome() {
+  return getPage("home");
 }
 
 export async function generateMetadata(): Promise<Metadata> {

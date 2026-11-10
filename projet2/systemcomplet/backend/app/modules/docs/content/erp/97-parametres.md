@@ -77,13 +77,14 @@ En haut, une carte par service indique son état (coche verte : configuré ; cro
 
 ### Activer les services
 
-WhatsApp Business, SMS, paiement en ligne, Google Analytics 4, Google Maps et assistants IA s'activent ici, sans intervention sur le serveur (effet sous 15 secondes).
+WhatsApp Business, SMS, paiement en ligne, Google Analytics 4, Google Maps, assistants IA et génération d'images s'activent ici, sans intervention sur le serveur (effet sous 15 secondes).
 
 - **Google Analytics 4 (statistiques dans l'ERP)** :
   - saisissez l'**Identifiant de la propriété Google Analytics 4**, le nombre affiché dans GA4 › Administration › Paramètres de la propriété, puis enregistrez ;
   - définissez la clé **Compte de service GA4 Data API** : le fichier JSON complet d'un compte de service Google Cloud, avec l'API « Google Analytics Data » activée et le compte ajouté en « Lecteur » dans GA4 › Gestion des accès ;
   - l'ID de mesure G-… du site se règle à part, dans **Site web › Contenus (CMS) › Réglages du site**.
 - **Google Maps** (facultatif) : la **Clé Google Maps**, avec l'API « Maps Static » activée et restreinte à l'adresse IP du serveur, affiche la carte des villes des visiteurs dans **Analytics**. La localisation des visiteurs elle-même ne demande aucune clé.
+- **Génération d'images (assistant du site)** (facultatif) : choisissez **OpenAI (GPT Image)** puis définissez la **Clé API OpenAI (génération d'images)** (platform.openai.com, crédit et organisation vérifiée), ou **Google (Gemini)** puis la **Clé API Google Gemini (génération d'images)** (aistudio.google.com, facturation activée). **Modèle d'images** : laissez vide (modèle par défaut) sauf si le prestataire retire ce modèle. **Images générées par jour (plafond)** : 40 par défaut. L'assistant du site crée alors des illustrations réalistes quand la médiathèque n'a pas d'image adaptée.
 
 1. Dans le bloc du service, choisissez le prestataire (ex. **Envoi des SMS** : Twilio ; **Prestataires de paiement activés** : cochez MTN Mobile Money, Orange Money…).
 2. Renseignez les réglages qui apparaissent (identifiant du numéro WhatsApp, Account SID et expéditeur Twilio, environnement de production MTN « mtncameroon », pays Orange « cm »…).

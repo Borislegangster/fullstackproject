@@ -93,6 +93,22 @@ OVERRIDABLE: dict[str, dict[str, Any]] = {
         "label": "Modèle Claude",
         "help": "Laisser la valeur proposée sauf avis contraire.",
     },
+    "IMAGE_GEN_PROVIDER": {
+        "group": "images",
+        "label": "Génération d'images",
+        "choices": [("none", "Désactivée"), ("openai", "OpenAI (GPT Image)"), ("google", "Google (Gemini)")],
+    },
+    "IMAGE_GEN_MODEL": {
+        "group": "images",
+        "label": "Modèle d'images (facultatif)",
+        "help": "Vide = modèle par défaut (OpenAI : gpt-image-2.5-sunburst ; Google : gemini-3.1-flash-image). "
+        "À changer seulement si le prestataire retire ce modèle.",
+    },
+    "IMAGE_GEN_DAILY_LIMIT": {
+        "group": "images",
+        "label": "Images générées par jour (plafond)",
+        "help": "Nombre maximal d'images créées par l'assistant en 24 h, pour maîtriser le coût (40 par défaut).",
+    },
 }
 
 _lock = threading.Lock()
@@ -104,6 +120,9 @@ def _coerce(name: str, value: Any) -> Any:
     if name == "GA4_PROPERTY_ID" and value is not None:
         # « properties/412345678 » ou « 412345678 » : seul le numéro compte.
         return "".join(ch for ch in str(value) if ch.isdigit()) or None
+    if name == "IMAGE_GEN_DAILY_LIMIT":
+        digits = "".join(ch for ch in str(value if value is not None else "") if ch.isdigit())
+        return min(int(digits), 1000) if digits else None
     if name == "PAYMENT_PROVIDERS":
         if isinstance(value, str):
             value = [v.strip() for v in value.split(",") if v.strip()]

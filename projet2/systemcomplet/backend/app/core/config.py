@@ -188,6 +188,13 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-opus-5-5"
     AI_TIMEOUT_SECONDS: float = 120.0
+    # Génération d'images de l'assistant du site (illustrations déposées dans la médiathèque) : OpenAI (GPT Image)
+    # ou Google (Gemini). Modèle vide = modèle par défaut du prestataire ; plafond quotidien pour maîtriser le coût.
+    IMAGE_GEN_PROVIDER: Literal["none", "openai", "google"] = "none"
+    IMAGE_GEN_MODEL: str | None = None
+    IMAGE_GEN_DAILY_LIMIT: int = 40
+    OPENAI_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
     # Transcription vocale : « device » = transcription faite sur l'appareil (Web Speech / mobile),
     # « http » = endpoint de transcription compatible Whisper (auto-hébergé ou service tiers).
     STT_PROVIDER: Literal["device", "http"] = "device"

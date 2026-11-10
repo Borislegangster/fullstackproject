@@ -3,9 +3,13 @@ l'analytics. Chaque outil est décrit par un modèle Pydantic (schéma envoyé �
 renvoie avant toute exécution).
 
 Règle de prudence : Claude ne change jamais seul ce que voient les visiteurs.
-  • appliqué d'office : création de brouillons, modification d'un brouillon (rien n'est public) ;
-  • proposé à la validation : contenu publié, SEO d'un contenu publié, textes alternatifs, redirections,
-    publication — essayé à blanc (erreurs renvoyées à Claude), puis appliqué par une personne, avec ses droits.
+  • appliqué d'office : création de brouillons, modification d'un brouillon, image générée déposée dans la
+    médiathèque (rien n'est public tant qu'elle n'est pas utilisée dans un contenu publié) ;
+  • proposé à la validation : contenu publié, SEO d'un contenu publié, textes alternatifs, redirections, menus,
+    réglages du site, publication, retrait — essayé à blanc (erreurs renvoyées à Claude), puis appliqué par une
+    personne, avec ses droits, après aperçu sur le site.
+Plusieurs propositions sur un même élément dans une conversation sont fusionnées (la dernière version d'une page
+remplace la précédente) ; une proposition dont la cible a changé depuis est refusée à l'application.
 """
 
 from __future__ import annotations
@@ -24,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.core.crud import serialize
 from app.core.deps import Principal
-from app.core.errors import AppError
+from app.core.errors import AppError, Conflict
 from app.core.utils import jsonable, utcnow
 from app.modules.cms import media as media_svc
 from app.modules.cms import models as m
@@ -32,6 +36,7 @@ from app.modules.cms import service
 from app.modules.cms.schemas import PageIn
 from app.modules.site_assistant import cms_ops
 from app.modules.site_assistant.models import SiteAssistantAction, SiteAssistantMessage, SiteAssistantSession, stamp
+from app.providers.imagegen import ASPECTS
 
 COLLECTION_KEYS = tuple(service.COLLECTIONS)
 KINDS = ("page", *COLLECTION_KEYS)
@@ -131,6 +136,7 @@ def _record(
 
 def _dry_run(ctx: ToolContext, operation: Callable[[], Any]) -> None:
     """Essai à blanc d'une proposition (mêmes contrôles que l'application réelle), puis annulation."""
+    queued = set(ctx.db.info.get("revalidate_paths", ()))
     savepoint = ctx.db.begin_nested()
     try:
         operation()
@@ -141,6 +147,11 @@ def _dry_run(ctx: ToolContext, operation: Callable[[], Any]) -> None:
         raise ToolError(exc.message) from exc
     finally:
         savepoint.rollback()
+        # Un essai à blanc ne doit pas révalider le site au prochain enregistrement.
+        if queued:
+            ctx.db.info["revalidate_paths"] = queued
+        else:
+            ctx.db.info.pop("revalidate_paths", None)
 
 
 def _apply(ctx: ToolContext, operation: Callable[[], Any]) -> Any:
@@ -166,12 +177,47 @@ def _validation_message(exc: ValidationError) -> str:
     return "Données invalides — " + " ; ".join(parts)
 
 
-def _proposed(action: SiteAssistantAction) -> dict[str, Any]:
+def _proposed(action: SiteAssistantAction, *, merged: bool = False) -> dict[str, Any]:
     return {
         "status": "proposed",
         "action_id": str(action.id),
-        "message": "Proposition enregistrée : elle sera appliquée quand la personne la validera.",
+        "message": (
+            "Proposition existante mise à jour (une seule proposition par élément) : elle sera appliquée quand la "
+            "personne la validera, après aperçu."
+            if merged
+            else "Proposition enregistrée : elle sera appliquée quand la personne la validera, après aperçu."
+        ),
     }
+
+
+def _pending(ctx: ToolContext, tool: str, kind: str | None, target_id: str | None) -> SiteAssistantAction | None:
+    """Proposition encore en attente, dans cette conversation, du même outil sur la même cible."""
+    return ctx.db.execute(
+        select(SiteAssistantAction)
+        .where(
+            SiteAssistantAction.session_id == ctx.session.id,
+            SiteAssistantAction.tool == tool,
+            SiteAssistantAction.target_type == kind,
+            SiteAssistantAction.target_id == target_id,
+            SiteAssistantAction.status == "proposed",
+        )
+        .order_by(SiteAssistantAction.created_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+
+def _merge(action: SiteAssistantAction, summary: str, payload: dict[str, Any]) -> SiteAssistantAction:
+    action.payload = jsonable(payload)
+    action.summary = summary[:400]
+    action.created_at = stamp()
+    return action
+
+
+def _version(obj: Any) -> str:
+    """Repère de version d'une cible (numéro de révision du CMS, qui change à chaque enregistrement de contenu ou
+    de statut, mais pas avec les compteurs de vues) : une proposition est refusée si la cible a changé depuis."""
+    revision = getattr(obj, "revision", None)
+    return f"r{revision}" if revision is not None else str(getattr(obj, "updated_at", None) or "")
 
 
 # ============================================================================ lecture
@@ -269,13 +315,29 @@ def get_content(ctx: ToolContext, args: GetArgs) -> dict[str, Any]:
     except AppError as exc:
         raise ToolError(exc.message) from exc
     if args.kind == "page":
-        return _page_out(ctx.db, obj, full=True)
+        data = jsonable(_page_out(ctx.db, obj, full=True))
+        pending = _pending(ctx, "save_page", "page", str(obj.id))
+        if pending is not None:
+            data["proposition_en_attente"] = {
+                "action_id": str(pending.id),
+                "page": pending.payload.get("page"),
+                "note": "Version proposée, pas encore validée. Pour la compléter, repartez de cette version : un "
+                "nouvel save_page sur cette page remplace la proposition en attente.",
+            }
+        return data
     data = jsonable(serialize(obj))
     target_type, target_key = _seo_target(args.kind, obj)
     seo = service.get_seo(ctx.db, target_type, target_key)
     data["path"] = service.public_path(ctx.db, args.kind, obj)
     data["seo"] = jsonable({c.key: getattr(seo, c.key) for c in seo.__table__.columns}) if seo else None
     data["seo_target"] = {"target_type": target_type, "target_key": target_key}
+    pending = _pending(ctx, "update_content", args.kind, str(obj.id))
+    if pending is not None:
+        data["modifications_en_attente"] = {
+            "action_id": str(pending.id),
+            "changes": pending.payload.get("changes"),
+            "note": "Modifications proposées, pas encore validées ; un nouvel update_content s'y ajoute.",
+        }
     return data
 
 
@@ -528,15 +590,23 @@ def update_content(ctx: ToolContext, args: UpdateArgs) -> dict[str, Any]:
             obj=obj,
         )
         return {"status": "draft_updated", "id": str(obj.id)}
-    _dry_run(ctx, lambda: cms_ops.collection_update(ctx.db, ctx.principal, args.kind, obj, dict(args.changes)))
+    pending = _pending(ctx, "update_content", args.kind, str(obj.id))
+    changes = {**((pending.payload.get("changes") or {}) if pending else {}), **args.changes}
+    _dry_run(ctx, lambda: cms_ops.collection_update(ctx.db, ctx.principal, args.kind, obj, dict(changes)))
     obj = cms_ops.load(ctx.db, args.kind, args.id)
+    payload = {**args.model_dump(), "changes": changes}
+    if pending is not None:
+        summary = args.summary if args.summary in pending.summary else f"{pending.summary} ; {args.summary}"
+        payload["base_version"] = pending.payload.get("base_version")
+        return _proposed(_merge(pending, summary, payload), merged=True)
+    payload["base_version"] = _version(obj)
     return _proposed(
         _record(
             ctx,
             tool="update_content",
             status="proposed",
             summary=args.summary,
-            payload=args.model_dump(),
+            payload=payload,
             kind=args.kind,
             obj=obj,
         )
@@ -580,16 +650,14 @@ def save_page(ctx: ToolContext, args: SavePageArgs) -> dict[str, Any]:
         return {"status": "draft_updated", "id": str(page.id)}
     _dry_run(ctx, lambda: cms_ops.page_save(ctx.db, ctx.principal, args.page, page))
     page = cms_ops.load(ctx.db, "page", args.page_id)
+    payload = args.model_dump()
+    pending = _pending(ctx, "save_page", "page", str(page.id))
+    if pending is not None:
+        payload["base_version"] = pending.payload.get("base_version")
+        return _proposed(_merge(pending, args.summary, payload), merged=True)
+    payload["base_version"] = _version(page)
     return _proposed(
-        _record(
-            ctx,
-            tool="save_page",
-            status="proposed",
-            summary=args.summary,
-            payload=args.model_dump(),
-            kind="page",
-            obj=page,
-        )
+        _record(ctx, tool="save_page", status="proposed", summary=args.summary, payload=payload, kind="page", obj=page)
     )
 
 
@@ -614,8 +682,13 @@ def set_seo(ctx: ToolContext, args: SeoArgs) -> dict[str, Any]:
         _apply(ctx, lambda: cms_ops.seo_set(ctx.db, ctx.principal, target_type, target_key, args.changes))
         _record(ctx, tool="set_seo", status="applied", summary=args.summary, payload=payload, kind=args.kind, obj=obj)
         return {"status": "applied_to_draft"}
-    _dry_run(ctx, lambda: cms_ops.seo_set(ctx.db, ctx.principal, target_type, target_key, dict(args.changes)))
+    pending = _pending(ctx, "set_seo", args.kind, str(obj.id))
+    changes = {**((pending.payload.get("changes") or {}) if pending else {}), **args.changes}
+    payload["changes"] = changes
+    _dry_run(ctx, lambda: cms_ops.seo_set(ctx.db, ctx.principal, target_type, target_key, dict(changes)))
     obj = cms_ops.load(ctx.db, args.kind, args.id)
+    if pending is not None:
+        return _proposed(_merge(pending, args.summary, payload), merged=True)
     return _proposed(
         _record(ctx, tool="set_seo", status="proposed", summary=args.summary, payload=payload, kind=args.kind, obj=obj)
     )
@@ -699,6 +772,255 @@ def request_publication(ctx: ToolContext, args: PublishArgs) -> dict[str, Any]:
     )
 
 
+class UnpublishArgs(Args):
+    kind: Kind
+    id: str
+    note: str | None = Field(default=None, max_length=500)
+    summary: str = Field(max_length=300, description="Pourquoi retirer cet élément du site")
+
+
+def request_unpublish(ctx: ToolContext, args: UnpublishArgs) -> dict[str, Any]:
+    try:
+        obj = cms_ops.load(ctx.db, args.kind, args.id)
+    except AppError as exc:
+        raise ToolError(exc.message) from exc
+    if obj.status != "published":
+        raise ToolError("Cet élément n'est pas en ligne")
+    if args.kind == "page" and obj.route_key in service.SYSTEM_PAGES:
+        raise ToolError("Page du site à adresse fixe : modifiez son contenu au lieu de la retirer")
+    return _proposed(
+        _record(
+            ctx,
+            tool="request_unpublish",
+            status="proposed",
+            summary=args.summary,
+            payload=args.model_dump(),
+            kind=args.kind,
+            obj=obj,
+        )
+    )
+
+
+class NavigationArgs(Args):
+    key: str = Field(max_length=40, description="Menu : header, footer, mobile, cta… (voir site_config navigation)")
+    title: str = Field(max_length=150)
+    items: list[dict[str, Any]] = Field(
+        description="Le menu complet : [{label, link_type: page|path|url|anchor, page_route_key | url, description, "
+        "icon, highlight, visible, children: […]}]"
+    )
+    summary: str = Field(max_length=300)
+
+
+def update_navigation(ctx: ToolContext, args: NavigationArgs) -> dict[str, Any]:
+    data = {"title": args.title, "items": args.items}
+    _dry_run(ctx, lambda: cms_ops.navigation_save(ctx.db, ctx.principal, args.key, dict(data)))
+    payload = {"key": args.key, **data}
+    pending = _pending(ctx, "update_navigation", "navigation", args.key)
+    if pending is not None:
+        return _proposed(_merge(pending, args.summary, payload), merged=True)
+    action = _record(
+        ctx,
+        tool="update_navigation",
+        status="proposed",
+        summary=args.summary,
+        payload=payload,
+        label=f"Menu « {args.key} »",
+    )
+    action.target_type, action.target_id = "navigation", args.key
+    return _proposed(action)
+
+
+class SiteSettingsArgs(Args):
+    changes: dict[str, Any] = Field(
+        description="Seulement : "
+        + ", ".join(sorted(cms_ops.ASSISTANT_SITE_FIELDS))
+        + " (default_og_media_id : image de partage par défaut ; opening_hours : liste d'horaires)"
+    )
+    summary: str = Field(max_length=300)
+
+
+def _publisher_view(principal: Principal) -> Principal:
+    from dataclasses import replace
+
+    return replace(principal, permissions={*principal.permissions, "cms:publish"})
+
+
+def update_site_settings(ctx: ToolContext, args: SiteSettingsArgs) -> dict[str, Any]:
+    pending = _pending(ctx, "update_site_settings", "site_settings", "site")
+    changes = {**((pending.payload.get("changes") or {}) if pending else {}), **args.changes}
+    # Essai à blanc avec le droit de publier : seule la forme est vérifiée ici ; les droits réels le seront quand
+    # la personne appliquera la proposition.
+    probe = _publisher_view(ctx.principal)
+    _dry_run(ctx, lambda: cms_ops.site_settings_save(ctx.db, probe, dict(changes)))
+    payload = {"changes": changes}
+    if pending is not None:
+        return _proposed(_merge(pending, args.summary, payload), merged=True)
+    action = _record(
+        ctx, tool="update_site_settings", status="proposed", summary=args.summary, payload=payload, label="Réglages"
+    )
+    action.target_type, action.target_id = "site_settings", "site"
+    return _proposed(action)
+
+
+class AuditArgs(Args):
+    include_ok: bool = Field(default=False, description="Inclure aussi les pages sans problème détecté")
+
+
+def audit_site_content(ctx: ToolContext, args: AuditArgs) -> dict[str, Any]:
+    from app.modules.site_assistant.audit import site_content_audit
+
+    return jsonable(site_content_audit(ctx.db, include_ok=args.include_ok))
+
+
+MAX_IMAGES_PER_TURN = 12
+IMAGE_SUFFIX = (
+    "\n\nPhotorealistic, professional quality. No text, letters, numbers, logos, brand names or watermarks "
+    "anywhere in the image. People, if any, are generic and not identifiable public figures."
+)
+
+
+class GenerateImageArgs(Args):
+    prompt: str = Field(
+        min_length=30,
+        max_length=3500,
+        description="Description détaillée de l'image, de préférence en anglais : sujet, lieu (Cameroun, Afrique "
+        "centrale), matériaux, lumière, cadrage, objectif photo, ambiance. Style photo réaliste et professionnel.",
+    )
+    aspect: Literal[ASPECTS] = Field(  # type: ignore[valid-type]
+        default="3:2", description="16:9 bannière, 3:2 ou 4:3 section ou carte, 1:1 vignette, 3:4 ou 9:16 portrait"
+    )
+    title: str = Field(min_length=3, max_length=200, description="Titre du média dans la médiathèque")
+    alt_text: str = Field(min_length=10, max_length=250, description="Texte alternatif (ce que montre l'image)")
+    purpose: str = Field(max_length=200, description="Où l'image servira (ex. bannière de la page Services)")
+
+
+def _images_today(db: Session) -> int:
+    from app.modules.ai.models import AIRequest
+
+    since = utcnow() - timedelta(hours=24)
+    return (
+        db.scalar(
+            select(func.count())
+            .select_from(AIRequest)
+            .where(
+                AIRequest.feature == "site_assistant_image",
+                AIRequest.status == "ok",
+                AIRequest.created_at >= since,
+            )
+        )
+        or 0
+    )
+
+
+def _record_image_request(
+    ctx: ToolContext, provider: Any, args: GenerateImageArgs, *, started: float, image: Any = None, error: str = ""
+) -> None:
+    import hashlib
+    import time
+
+    from app.modules.ai.models import AIRequest
+
+    usage = (getattr(image, "usage", None) or {}) if image is not None else {}
+    ctx.db.add(
+        AIRequest(
+            feature="site_assistant_image",
+            provider=provider.name,
+            model=provider.model,
+            user_id=ctx.principal.id,
+            entity_type="site_assistant_session",
+            entity_id=str(ctx.session.id),
+            input_hash=hashlib.sha256(args.prompt.encode()).hexdigest(),
+            input_tokens=int(usage.get("input_tokens") or 0),
+            output_tokens=int(usage.get("output_tokens") or 0),
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            status="error" if error else "ok",
+            error=error or None,
+            output={
+                "prompt": args.prompt[:2000],
+                "aspect": args.aspect,
+                "purpose": args.purpose,
+                "size": f"{image.width}x{image.height}" if image is not None else None,
+            },
+            validation_status="not_required",
+        )
+    )
+    ctx.db.flush()
+
+
+def generate_image(ctx: ToolContext, args: GenerateImageArgs) -> list[dict[str, Any]]:
+    import re
+    import time
+
+    from app.core.config import settings
+    from app.providers.imagegen import ImageGenError, get_image_provider
+
+    provider = get_image_provider()
+    if provider is None:
+        raise ToolError("Génération d'images non configurée : servez-vous des images de la médiathèque (search_media).")
+    if sum(1 for a in ctx.actions if a.tool == "generate_image") >= MAX_IMAGES_PER_TURN:
+        raise ToolError(f"{MAX_IMAGES_PER_TURN} images générées dans ce tour : continuez avec la médiathèque.")
+    limit = 40 if settings.IMAGE_GEN_DAILY_LIMIT is None else settings.IMAGE_GEN_DAILY_LIMIT
+    if _images_today(ctx.db) >= limit:
+        raise ToolError(
+            f"Plafond de {limit} images générées par 24 h atteint (Paramètres › Intégrations) : servez-vous de la "
+            "médiathèque ou signalez les images restant à créer."
+        )
+    started = time.perf_counter()
+    try:
+        image = provider.generate(args.prompt.strip() + IMAGE_SUFFIX, args.aspect)
+    except ImageGenError as exc:
+        _record_image_request(ctx, provider, args, started=started, error=str(exc))
+        raise ToolError(str(exc)) from exc
+    stem = re.sub(r"[^a-z0-9]+", "-", args.title.lower()).strip("-")[:60] or "illustration"
+    credits = f"Illustration générée par IA ({provider.label}, {provider.model})"[:250]
+
+    def store() -> m.MediaAsset:
+        asset = media_svc.upload_media(
+            ctx.db,
+            filename=f"ia-{stem}{image.extension}",
+            data=image.data,
+            title=args.title,
+            alt_text=args.alt_text,
+            folder="ia",
+            tags=["ia", "image-generee"],
+            author_id=ctx.principal.id,
+        )
+        asset.credits = credits
+        asset.caption = f"Image générée par IA — {args.purpose}"[:2000]
+        return asset
+
+    asset = _apply(ctx, store)
+    _record_image_request(ctx, provider, args, started=started, image=image)
+    _record(
+        ctx,
+        tool="generate_image",
+        status="applied",
+        summary=f"Image générée : {args.title}",
+        payload={**args.model_dump(), "provider": provider.name, "model": provider.model},
+        kind="media",
+        obj=asset,
+        label=args.title,
+        result={
+            "media_id": str(asset.id),
+            "url": media_svc.media_url(asset.id),
+            "width": image.width,
+            "height": image.height,
+        },
+    )
+    meta = {
+        "media_id": str(asset.id),
+        "title": asset.title,
+        "alt_text": asset.alt_text,
+        "size": f"{image.width}x{image.height}",
+        "folder": "ia",
+        "note": "Image ajoutée à la médiathèque (dossier « ia », mention « Illustration générée par IA »). "
+        "Regarde-la : si elle ne convient pas (déformation, texte parasite, scène peu crédible), génère-en une "
+        "autre avec une description corrigée ; sinon utilise son media_id dans le contenu.",
+    }
+    ref = {"type": "image", "source": {"type": "media_ref", "media_id": str(asset.id)}}
+    return [ref, {"type": "text", "text": json.dumps(meta, ensure_ascii=False)}]
+
+
 # ============================================================================ registre
 TOOLS: list[Tool] = [
     Tool(
@@ -771,6 +1093,27 @@ TOOLS: list[Tool] = [
         "Lecture des réglages du site",
     ),
     Tool(
+        "audit_site_content",
+        "Audit éditorial de toute la vitrine, page par page, tel que la voit un visiteur : sections et blocs vides, "
+        "bannières sans image, textes courts, listes sans élément publié, pages de détail minces (offres, "
+        "services, réalisations, articles…), SEO. À lancer en premier pour un travail d'ensemble.",
+        AuditArgs,
+        audit_site_content,
+        "Audit des pages de la vitrine",
+    ),
+    Tool(
+        "generate_image",
+        "Génère une illustration réaliste et professionnelle et l'ajoute à la médiathèque (dossier « ia », "
+        "mentionnée comme générée par IA) ; renvoie l'image pour contrôle et son media_id. Seulement quand la "
+        "médiathèque n'a pas d'image adaptée, et jamais pour représenter une réalisation, une personne réelle, "
+        "l'équipe ou un témoignage de GLOBUS.",
+        GenerateImageArgs,
+        generate_image,
+        "Création d'une image",
+        perms=("media:write",),
+        write=True,
+    ),
+    Tool(
         "create_content",
         "Crée un élément de collection en BROUILLON (article de blog, offre, réalisation, FAQ, "
         "témoignage…). Rien n'est publié.",
@@ -837,12 +1180,44 @@ TOOLS: list[Tool] = [
         perms=("cms:write",),
         write=True,
     ),
+    Tool(
+        "request_unpublish",
+        "Propose de retirer du site un contenu publié obsolète ou erroné (archivage, réversible).",
+        UnpublishArgs,
+        request_unpublish,
+        "Proposition de retrait",
+        perms=("cms:write",),
+        write=True,
+    ),
+    Tool(
+        "update_navigation",
+        "Propose un menu complet (en-tête, pied de page, mobile, boutons d'action) : liens vers les pages, "
+        "libellés, sous-menus. Lire d'abord site_config navigation.",
+        NavigationArgs,
+        update_navigation,
+        "Proposition de menu",
+        perms=("cms:write",),
+        write=True,
+    ),
+    Tool(
+        "update_site_settings",
+        "Propose de modifier les textes généraux du site : slogan, promesse, méta-description et modèle de titre "
+        "par défaut, image de partage par défaut, horaires.",
+        SiteSettingsArgs,
+        update_site_settings,
+        "Proposition de réglages du site",
+        perms=("cms:write",),
+        write=True,
+    ),
 ]
 TOOLS_BY_NAME = {t.name: t for t in TOOLS}
 
 
 def tools_for(principal: Principal) -> list[Tool]:
-    return [t for t in TOOLS if all(principal.has(p) for p in t.perms)]
+    from app.providers.imagegen import get_image_provider
+
+    images = get_image_provider() is not None
+    return [t for t in TOOLS if all(principal.has(p) for p in t.perms) and (t.name != "generate_image" or images)]
 
 
 def run_tool(ctx: ToolContext, name: str, raw_input: Any) -> tuple[Any, bool]:
@@ -871,12 +1246,24 @@ def apply_action(db: Session, principal: Principal, action: SiteAssistantAction)
     p = action.payload
     if action.tool == "update_content":
         obj = cms_ops.load(db, p["kind"], p["id"])
+        _check_version(obj, p)
         cms_ops.collection_update(db, principal, p["kind"], obj, dict(p["changes"]))
         return {"id": str(obj.id), "path": service.public_path(db, p["kind"], obj)}
     if action.tool == "save_page":
         page = cms_ops.load(db, "page", p["page_id"])
+        _check_version(page, p)
         cms_ops.page_save(db, principal, p["page"], page)
         return {"id": str(page.id), "path": page.path}
+    if action.tool == "request_unpublish":
+        obj = cms_ops.load(db, p["kind"], p["id"])
+        cms_ops.unpublish(db, principal, p["kind"], obj, p.get("note"))
+        return {"id": str(obj.id)}
+    if action.tool == "update_navigation":
+        menu = cms_ops.navigation_save(db, principal, p["key"], {"title": p["title"], "items": p["items"]})
+        return {"key": menu.key}
+    if action.tool == "update_site_settings":
+        cms_ops.site_settings_save(db, principal, dict(p["changes"]))
+        return {"fields": sorted(p["changes"])}
     if action.tool == "set_seo":
         cms_ops.seo_set(db, principal, p["target_type"], p["target_key"], dict(p["changes"]))
         return {"target": f"{p['target_type']}:{p['target_key']}"}
@@ -891,6 +1278,16 @@ def apply_action(db: Session, principal: Principal, action: SiteAssistantAction)
         cms_ops.publish(db, principal, p["kind"], obj, p.get("note"))
         return {"id": str(obj.id), "path": service.public_path(db, p["kind"], obj)}
     raise AppError("Action non applicable", code="NOT_APPLICABLE")
+
+
+def _check_version(obj: Any, payload: dict[str, Any]) -> None:
+    base = payload.get("base_version")
+    if base and base != _version(obj):
+        raise Conflict(
+            "Le contenu a été modifié depuis cette proposition : demandez à Claude de la refaire sur la version "
+            "actuelle.",
+            code="PROPOSAL_STALE",
+        )
 
 
 def add_step(db: Session, session: SiteAssistantSession, text: str) -> None:

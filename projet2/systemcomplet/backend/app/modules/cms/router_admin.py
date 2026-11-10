@@ -906,6 +906,13 @@ def get_navigation(
 def put_navigation(
     key: str, data: NavigationIn, principal: Principal = Depends(require("cms:write")), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
+    menu = save_navigation(db, key, data)
+    db.commit()
+    return {"key": menu.key, "title": menu.title, "count": len(menu.items)}
+
+
+def save_navigation(db: Session, key: str, data: NavigationIn) -> m.NavigationMenu:
+    """Remplace le contenu d'un menu (écran Navigation et assistant du site), sans valider la transaction."""
     if not key.replace("_", "").isalnum() or len(key) > 40:
         raise AppError("Clé de menu invalide")
     menu = db.execute(select(m.NavigationMenu).where(m.NavigationMenu.key == key)).scalar_one_or_none()
@@ -949,8 +956,8 @@ def put_navigation(
         resource_id=menu.id,
         diff={"key": key, "items": len(data.items)},
     )
-    db.commit()
-    return {"key": menu.key, "title": menu.title, "count": len(menu.items)}
+    db.flush()
+    return menu
 
 
 # ---------------------------------------------------------------------------- paramètres du site
@@ -1022,6 +1029,14 @@ def get_site_settings(
 def put_site_settings(
     data: dict[str, Any], principal: Principal = Depends(require("cms:publish")), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
+    site = save_site_settings(db, data)
+    db.commit()
+    return jsonable({k: getattr(site, k) for k in _SITE_FIELDS})
+
+
+def save_site_settings(db: Session, data: dict[str, Any]) -> m.SiteSettings:
+    """Réglages du site (écran Réglages et assistant du site), contrôlés, sans valider la transaction."""
+    data = dict(data)
     unknown = set(data) - _SITE_FIELDS
     if unknown:
         raise AppError(f"Champs inconnus : {', '.join(sorted(unknown))}")
@@ -1056,8 +1071,8 @@ def put_site_settings(
         resource_id=site.id,
         diff=audit.diff_dicts(before, audit.snapshot(site)),
     )
-    db.commit()
-    return jsonable({k: getattr(site, k) for k in _SITE_FIELDS})
+    db.flush()
+    return site
 
 
 @router.get("/brand/icon-pack")

@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import event, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.core import audit
@@ -404,7 +404,7 @@ def save_page(db: Session, principal: Principal, data: PageIn, page: m.CmsPage |
         resource_id=page.id,
         diff={"route_key": page.route_key, "title": page.title, "sections": len(data.sections)},
     )
-    _maybe_revalidate([page.path])
+    revalidate_after_commit(db, [page.path])
     return page
 
 
@@ -499,7 +499,7 @@ def transition(
         reason=note,
     )
     paths = [p for p in [public_path(db, entity_type, obj)] if p]
-    _maybe_revalidate(paths or ["/"])
+    revalidate_after_commit(db, paths or ["/"])
     return obj
 
 
@@ -538,6 +538,24 @@ def refresh_site(paths: list[str] | None = None) -> None:
     """Révalidation du site public sans bloquer la requête d'édition (appel HTTP en tâche de fond)."""
     if settings.WEB_INTERNAL_URL and settings.REVALIDATE_SECRET:
         threading.Thread(target=_maybe_revalidate, args=(paths or ["/"],), daemon=True).start()
+
+
+def revalidate_after_commit(db: Session, paths: list[str]) -> None:
+    """Révalidation du site APRÈS validation de la transaction : avant, le site relirait l'ancien contenu et le
+    remettrait en cache. Rien n'est envoyé si la transaction est annulée (essais à blanc, aperçus)."""
+    db.info.setdefault("revalidate_paths", set()).update(paths)
+
+
+@event.listens_for(Session, "after_commit")
+def _revalidate_committed(session: Session) -> None:
+    paths = session.info.pop("revalidate_paths", None)
+    if paths:
+        refresh_site(sorted(paths))
+
+
+@event.listens_for(Session, "after_rollback")
+def _forget_revalidation(session: Session) -> None:
+    session.info.pop("revalidate_paths", None)
 
 
 def _maybe_revalidate(paths: list[str]) -> None:

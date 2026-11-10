@@ -48,6 +48,8 @@ MANAGED_SECRETS: dict[str, str] = {
     "ORANGE_OM_MERCHANT_KEY": "Orange Money — clé marchand Web Payment",
     "APS_CLIENT_SECRET": "Secret client Autodesk Platform Services",
     "ANTHROPIC_API_KEY": "Clé API Claude (Anthropic)",
+    "OPENAI_API_KEY": "Clé API OpenAI (génération d'images)",
+    "GEMINI_API_KEY": "Clé API Google Gemini (génération d'images)",
     "STT_HTTP_TOKEN": "Jeton du service de transcription",
     "GOOGLE_MAPS_API_KEY": "Clé Google Maps",
     "GA4_CREDENTIALS_JSON": "Compte de service GA4 Data API",
@@ -185,6 +187,12 @@ def secret_need(name: str) -> tuple[str, str, str]:
         "ORANGE_OM_MERCHANT_KEY": by_provider("orange_money" in providers, "Orange Money", "payments"),
         "APS_CLIENT_SECRET": by_provider(bool(settings.APS_CLIENT_ID), "Autodesk APS (BIM)", "bim"),
         "ANTHROPIC_API_KEY": by_provider(settings.AI_PROVIDER == "anthropic", "les assistants IA (Claude)", "ai"),
+        "OPENAI_API_KEY": by_provider(
+            settings.IMAGE_GEN_PROVIDER == "openai", "la génération d'images par OpenAI", "images"
+        ),
+        "GEMINI_API_KEY": by_provider(
+            settings.IMAGE_GEN_PROVIDER == "google", "la génération d'images par Google Gemini", "images"
+        ),
         "GOOGLE_MAPS_API_KEY": (
             "optional",
             "Facultatif : carte Google des villes des visiteurs dans Analytics (API « Maps Static » à activer) ; "
