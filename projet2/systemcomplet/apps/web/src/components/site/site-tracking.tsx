@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useReportWebVitals } from "next/web-vitals";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CONSENT_EVENT, readConsent, type ConsentState } from "@/lib/consent";
 import type { SitePayload } from "@/lib/cms-types";
@@ -21,6 +21,13 @@ function injectScript(id: string, src: string | null, inline?: string): void {
 }
 
 const SAFE_ID = /^[A-Za-z0-9_-]{3,40}$/;
+
+/** Fonctions globales posées par les balises tierces une fois chargées. */
+type TagGlobals = {
+  gtag?: (...args: unknown[]) => void;
+  fbq?: (...args: unknown[]) => void;
+  ttq?: { page?: () => void };
+};
 
 /** Balises tierces (GA4, Google Ads, Meta, TikTok, LinkedIn) chargées uniquement après consentement. */
 function loadTags(tracking: SitePayload["tracking"], consent: ConsentState) {
@@ -66,15 +73,39 @@ export function SiteTracking({ tracking, policyVersion }: { tracking: SitePayloa
     return () => window.removeEventListener(CONSENT_EVENT, onConsent);
   }, [policyVersion]);
 
+  // Consentement courant, lu à chaque navigation (sans relancer l'effet de page vue).
+  const consentRef = useRef<ConsentState | null>(null);
+
   useEffect(() => {
-    if (consent) loadTags(tracking, consent);
+    consentRef.current = consent;
+    if (!consent) return;
+    loadTags(tracking, consent);
+    // Accord retiré (ou redonné) après le chargement des balises : elles restent en mémoire jusqu'au rechargement,
+    // on leur transmet donc le nouveau choix.
+    const w = window as unknown as TagGlobals;
+    w.fbq?.("consent", consent.marketing ? "grant" : "revoke");
+    const ads = consent.marketing ? "granted" : "denied";
+    w.gtag?.("consent", "update", {
+      analytics_storage: consent.analytics ? "granted" : "denied",
+      ad_storage: ads,
+      ad_user_data: ads,
+      ad_personalization: ads,
+    });
   }, [consent, tracking]);
 
   useEffect(() => {
     if (!pathname) return;
     const stop = trackPage(pathname);
-    const w = window as unknown as { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void };
-    w.gtag?.("event", "page_view", { page_path: pathname });
+    const w = window as unknown as TagGlobals;
+    const current = consentRef.current;
+    if (current?.analytics) w.gtag?.("event", "page_view", { page_path: pathname });
+    // Navigation interne (sans rechargement) : les pixels Meta et TikTok ne comptent d'eux-mêmes que la première page.
+    // Au premier affichage ils ne sont pas encore chargés (ils le sont après le consentement, page vue comprise) ;
+    // accord marketing retiré : plus aucune page vue, même si les balises sont encore en mémoire.
+    if (current?.marketing) {
+      w.fbq?.("track", "PageView");
+      w.ttq?.page?.();
+    }
     return stop;
   }, [pathname]);
 
