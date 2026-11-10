@@ -185,9 +185,14 @@ def secret_need(name: str) -> tuple[str, str, str]:
         "ORANGE_OM_MERCHANT_KEY": by_provider("orange_money" in providers, "Orange Money", "payments"),
         "APS_CLIENT_SECRET": by_provider(bool(settings.APS_CLIENT_ID), "Autodesk APS (BIM)", "bim"),
         "ANTHROPIC_API_KEY": by_provider(settings.AI_PROVIDER == "anthropic", "les assistants IA (Claude)", "ai"),
-        "GOOGLE_MAPS_API_KEY": ("optional", "Facultatif : cartes Google (sinon cartes libres OpenStreetMap).", "maps"),
+        "GOOGLE_MAPS_API_KEY": (
+            "optional",
+            "Facultatif : carte Google des villes des visiteurs dans Analytics (API « Maps Static » à activer) ; "
+            "les cartes du site restent sur OpenStreetMap.",
+            "maps",
+        ),
         "GA4_CREDENTIALS_JSON": by_provider(
-            bool(settings.GA4_PROPERTY_ID), "la lecture des statistiques Google Analytics", "analytics", optional=True
+            bool(settings.GA4_PROPERTY_ID), "la lecture des statistiques Google Analytics dans l'ERP", "analytics"
         ),
         "TURN_SHARED_SECRET": by_provider(bool(settings.TURN_URLS), "le relais des appels (TURN)", "calls"),
         "S3_SECRET_ACCESS_KEY": by_provider(

@@ -87,6 +87,18 @@ def subscribe(
         sub.interests = sorted(set(sub.interests or []) | set(interests))
         if consent_record_id:
             sub.consent_record_id = consent_record_id
+    if not sub.country:
+        # Pays de l'abonné (segments « diaspora » et « pays ») : celui du prospect lié, sinon le lieu de connexion.
+        from app.core import geoip
+        from app.modules.crm.models import Lead
+
+        lead = db.get(Lead, lead_id) if lead_id else None
+        if lead is not None and lead.country:
+            sub.country, sub.is_diaspora = lead.country, bool(lead.is_diaspora)
+        else:
+            geo = geoip.lookup(ip)
+            if geo is not None and geo.country_name:
+                sub.country, sub.is_diaspora = geo.country_name, bool(geo.is_abroad)
     if sub.status == "pending" and send_confirmation:
         link = f"{settings.API_PUBLIC_URL.rstrip('/')}{settings.API_PREFIX}/public/newsletter/confirm?token={sub.token}"
         queue_external(db, channel="email", recipient=email, template_code="newsletter.confirm", context={"link": link})
@@ -140,7 +152,8 @@ def segment_query(segment: Segment | None) -> Any:
     if rules.get("diaspora") is not None:
         stmt = stmt.where(NewsletterSubscriber.is_diaspora.is_(bool(rules["diaspora"])))
     if rules.get("countries"):
-        stmt = stmt.where(NewsletterSubscriber.country.in_(rules["countries"]))
+        wanted = [str(c).strip().lower() for c in rules["countries"] if str(c).strip()]
+        stmt = stmt.where(func.lower(NewsletterSubscriber.country).in_(wanted))
     if rules.get("engaged_days"):
         stmt = stmt.where(NewsletterSubscriber.last_engaged_at >= utcnow() - timedelta(days=int(rules["engaged_days"])))
     return stmt

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useReportWebVitals } from "next/web-vitals";
 import { useEffect, useRef, useState } from "react";
 
+import { setTagConfig } from "@/lib/ad-tags";
 import { CONSENT_EVENT, readConsent, type ConsentState } from "@/lib/consent";
 import type { SitePayload } from "@/lib/cms-types";
 import { initTracker, track, trackPage } from "@/lib/tracker";
@@ -29,16 +30,24 @@ type TagGlobals = {
   ttq?: { page?: () => void };
 };
 
-/** Balises tierces (GA4, Google Ads, Meta, TikTok, LinkedIn) chargées uniquement après consentement. */
+/** Balises tierces (GA4, Google Ads, Meta, TikTok, LinkedIn) chargées uniquement après consentement :
+ * GA4 avec l'accord « mesure d'audience », Google Ads et les pixels avec l'accord « marketing ». */
 function loadTags(tracking: SitePayload["tracking"], consent: ConsentState) {
   const { ga4_id, gads_id, meta_pixel, tiktok_pixel, linkedin_partner } = tracking;
-  if (consent.analytics && ga4_id && SAFE_ID.test(ga4_id)) {
-    injectScript("gtag-src", `https://www.googletagmanager.com/gtag/js?id=${ga4_id}`);
+  setTagConfig(tracking);
+  const ga4 = consent.analytics && ga4_id && SAFE_ID.test(ga4_id) ? ga4_id : null;
+  const ads = consent.marketing && gads_id && SAFE_ID.test(gads_id) ? gads_id : null;
+  if (ga4 || ads) {
+    // gtag.js sert GA4 et Google Ads : chargé dès qu'une des deux balises est autorisée, chacune configurée à part.
+    const ad = consent.marketing ? "granted" : "denied";
+    injectScript("gtag-src", `https://www.googletagmanager.com/gtag/js?id=${ga4 ?? ads}`);
     injectScript(
       "gtag-init",
       null,
-      `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('consent','default',{ad_storage:'${consent.marketing ? "granted" : "denied"}',analytics_storage:'granted',ad_user_data:'${consent.marketing ? "granted" : "denied"}',ad_personalization:'${consent.marketing ? "granted" : "denied"}'});gtag('config','${ga4_id}',{anonymize_ip:true});${consent.marketing && gads_id && SAFE_ID.test(gads_id) ? `gtag('config','${gads_id}');` : ""}`,
+      `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('js',new Date());gtag('consent','default',{ad_storage:'${ad}',analytics_storage:'${consent.analytics ? "granted" : "denied"}',ad_user_data:'${ad}',ad_personalization:'${ad}'});`,
     );
+    if (ga4) injectScript("gtag-ga4", null, `gtag('config','${ga4}',{anonymize_ip:true});`);
+    if (ads) injectScript("gtag-ads", null, `gtag('config','${ads}');`);
   }
   if (!consent.marketing) return;
   if (meta_pixel && SAFE_ID.test(meta_pixel))

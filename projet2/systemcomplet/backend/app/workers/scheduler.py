@@ -36,6 +36,12 @@ class Job:
 
 JOBS: list[Job] = [
     Job(
+        "geoip_update",
+        "app.core.geoip:update_database",
+        every_seconds=6 * 3600,
+        description="Base de géolocalisation des visiteurs (DB-IP) : téléchargement de l'édition du mois",
+    ),
+    Job(
         "cms_publication",
         "app.modules.cms.service:run_scheduled_publication",
         every_seconds=60,

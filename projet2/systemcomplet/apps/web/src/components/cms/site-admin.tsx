@@ -98,6 +98,13 @@ const TRACKING_KEYS: [string, string][] = [
   ["tiktok_pixel", "Pixel TikTok"],
   ["linkedin_partner", "LinkedIn Insight (partner id)"],
 ];
+/** Actions envoyées comme conversions à Google Ads (clé, libellé, ce qui déclenche la conversion). */
+const GADS_CONVERSIONS: [string, string, string][] = [
+  ["lead", "Demande envoyée", "Formulaires, « Décrire mon projet », estimation instantanée, coordonnées laissées à l'assistant."],
+  ["whatsapp", "Clic WhatsApp", "Bouton ou lien WhatsApp du site."],
+  ["phone", "Clic téléphone", "Numéro de téléphone cliqué (mobile)."],
+  ["newsletter", "Inscription newsletter", "Formulaire d'inscription à la newsletter."],
+];
 /** Même format que la validation de l'API et que la vitrine (identifiant injecté dans un script). */
 const TRACKING_ID = /^[A-Za-z0-9_-]{3,40}$/;
 const LEGAL_KEYS: [string, string][] = [
@@ -242,6 +249,28 @@ export function SiteSettingsEditor() {
             </Field>
           );
         })}
+        <div className="space-y-3 rounded-xl border border-line p-4 sm:col-span-2">
+          <div>
+            <p className="text-sm font-medium">Conversions Google Ads</p>
+            <p className="text-xs text-muted">
+              Libellé de conversion de chaque action (Google Ads › Objectifs › Conversions › l'action › Configuration de la balise : partie après « / » dans « AW-…/libellé »). Envoyé seulement après l&apos;accord du visiteur pour les cookies marketing ; Meta et TikTok reçoivent les mêmes actions automatiquement.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {GADS_CONVERSIONS.map(([k, label, help]) => {
+              const value = String(v.tracking?.gads_labels?.[k] ?? "");
+              return (
+                <Field key={k} label={label} help={help}>
+                  <Input
+                    value={value}
+                    placeholder="ex. AbC-D_efGhIjK"
+                    onChange={(e) => set({ tracking: { ...(v.tracking ?? {}), gads_labels: { ...(v.tracking?.gads_labels ?? {}), [k]: e.target.value.trim() || undefined } } })}
+                  />
+                </Field>
+              );
+            })}
+          </div>
+        </div>
         <Field label="Pages à exclure des moteurs de recherche" className="sm:col-span-2" help="Adresse de chaque page à ne pas référencer, ex. /offres/ancienne-offre (les espaces privés sont déjà exclus).">
           <TagInput
             value={robotsPaths(v.robots_extra)}

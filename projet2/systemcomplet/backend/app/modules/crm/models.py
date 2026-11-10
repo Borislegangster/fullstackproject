@@ -84,6 +84,12 @@ class Lead(UUIDPk, Timestamps, SoftDelete, Base):
     country: Mapped[str | None] = str_col(80)
     city: Mapped[str | None] = str_col(120)
     is_diaspora: Mapped[bool] = bool_col(False)
+    # Lieu détecté à l'envoi de la demande (adresse IP, sinon indicatif téléphonique) : jamais l'IP elle-même.
+    geo_country: Mapped[str | None] = str_col(2, index=True)
+    geo_region: Mapped[str | None] = str_col(100)
+    geo_city: Mapped[str | None] = str_col(100)
+    geo_continent: Mapped[str | None] = str_col(2)
+    geo_source: Mapped[str | None] = str_col(10)  # ip / phone
     preferred_channel: Mapped[str] = str_col(20, nullable=False, default="email")
     message: Mapped[str | None] = text_col()
     budget_min: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)

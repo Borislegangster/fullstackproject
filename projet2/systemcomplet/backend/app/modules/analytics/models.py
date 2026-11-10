@@ -37,6 +37,7 @@ class AnalyticsSession(Base):
     device_type: Mapped[str] = str_col(10, nullable=False, default="desktop")  # mobile / tablet / desktop / bot
     os: Mapped[str | None] = str_col(40)
     browser: Mapped[str | None] = str_col(40)
+    continent: Mapped[str | None] = str_col(2)  # AF / EU / NA / SA / AS / OC / AN
     country: Mapped[str | None] = str_col(2)
     region: Mapped[str | None] = str_col(100)
     city: Mapped[str | None] = str_col(100)

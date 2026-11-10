@@ -35,3 +35,4 @@ boto3>=1.35
 python-dateutil>=2.9
 defusedxml>=0.7.1
 anthropic>=1.13,<2
+maxminddb>=2.6,<4  # géolocalisation des visiteurs (base DB-IP City Lite, format MMDB) : pays, région, ville

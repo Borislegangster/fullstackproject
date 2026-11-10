@@ -6,7 +6,7 @@ import hashlib
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -60,7 +60,22 @@ def collect(
         visitor = hashlib.sha256(("v:" + data.visitor_id).encode()).hexdigest()
     else:
         visitor = hashlib.sha256((service.daily_salt() + (client_ip(request.scope) or "") + ua).encode()).hexdigest()
+    # Lieu du visiteur : en-têtes d'un frontal géolocalisant (Cloudflare…) s'il y en a un, sinon la base de
+    # géolocalisation du serveur. Précision limitée à la ville, aucune adresse IP conservée.
     country = (request.headers.get("cf-ipcountry") or request.headers.get("x-country-code") or "")[:2].upper() or None
+    region = request.headers.get("cf-region") or request.headers.get("x-region")
+    city = request.headers.get("cf-ipcity") or request.headers.get("x-city")
+    continent = None
+    if country is None or country in ("XX", "T1"):
+        from app.core import geoip
+
+        geo = geoip.lookup(client_ip(request.scope))
+        country, region, city = (geo.country, geo.region, geo.city) if geo else (None, None, None)
+        continent = geo.continent if geo else None
+    else:
+        from app.core.geoip import CONTINENT_OF
+
+        continent = CONTINENT_OF.get(country)
     context = {
         "visitor_hash": visitor,
         "consent": data.consent,
@@ -73,9 +88,10 @@ def collect(
             k: str(v)[:160] for k, v in data.utm.items() if k in ("source", "medium", "campaign", "content", "term")
         },
         "own_host": (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(":")[0],
+        "continent": continent,
         "country": country,
-        "region": request.headers.get("cf-region") or request.headers.get("x-region"),
-        "city": request.headers.get("cf-ipcity") or request.headers.get("x-city"),
+        "region": region,
+        "city": city,
         "user_id": principal.id if principal else None,
     }
     stored = service.ingest(
@@ -151,11 +167,89 @@ def ga4(
     principal: Principal = Depends(require("analytics:read")),
 ) -> dict[str, Any]:
     """Rapport GA4 Data API (si configuré) — complète les données propriétaires (Ads, audiences)."""
+    from app.core.errors import AppError
+    from app.providers.base import ProviderError, ProviderNotConfigured
     from app.providers.geo import ga4_report
 
-    return ga4_report(
-        start=start,
-        end=end,
-        dimensions=[d for d in dimensions.split(",") if d][:5],
-        metrics=[m for m in metrics.split(",") if m][:8],
-    )
+    try:
+        report = ga4_report(
+            start=start,
+            end=end,
+            dimensions=[d for d in dimensions.split(",") if d][:5],
+            metrics=[m for m in metrics.split(",") if m][:8],
+        )
+    except ProviderNotConfigured:
+        return {
+            "configured": False,
+            "missing": [
+                name
+                for name, ok in (
+                    ("GA4_PROPERTY_ID", bool(settings.GA4_PROPERTY_ID)),
+                    ("GA4_CREDENTIALS_JSON", _has_secret("GA4_CREDENTIALS_JSON")),
+                )
+                if not ok
+            ],
+        }
+    except ProviderError as exc:
+        raise AppError(str(exc), code="GA4_ERROR", status_code=502) from exc
+    return {"configured": True, **report}
+
+
+def _has_secret(name: str) -> bool:
+    from app.core.secrets import get_secret
+
+    return bool(get_secret(name))
+
+
+# ---------------------------------------------------------------------------- carte Google des visiteurs
+_MAP_CACHE: dict[tuple[str, str], tuple[float, bytes, str]] = {}
+_MAP_TTL = 3600.0
+
+
+@router.get("/visitor-map", response_class=Response)
+def visitor_map(
+    start: date | None = None,
+    end: date | None = None,
+    period: str | None = Query(None, pattern="^(today|7d|30d|quarter|year|12m|custom)$"),
+    principal: Principal = Depends(require("analytics:read")),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Carte Google (Maps Static API) des villes d'où viennent les visiteurs : vert = Cameroun, orange = hors
+    Cameroun. Image servie par l'API (la clé Google reste sur le serveur), mise en cache une heure."""
+    import time
+
+    import httpx
+
+    from app.core.errors import AppError, NotFound
+    from app.core.secrets import get_secret
+
+    key = get_secret("GOOGLE_MAPS_API_KEY")
+    if not key:
+        raise NotFound("Carte Google indisponible : renseignez la clé Google Maps dans Paramètres › Intégrations")
+    s, e = _range(start, end, period)
+    cached = _MAP_CACHE.get((s.isoformat(), e.isoformat()))
+    if cached and time.monotonic() - cached[0] < _MAP_TTL:
+        return Response(cached[1], media_type=cached[2], headers={"Cache-Control": "private, max-age=3600"})
+    places = service.top_places(db, s, e, limit=40)
+    if not places:
+        raise NotFound("Aucun visiteur localisé sur la période")
+    params: list[tuple[str, str]] = [("size", "640x400"), ("scale", "2"), ("language", "fr"), ("key", key)]
+    groups: dict[str, list[str]] = {}
+    for rank, (country, city, _sessions) in enumerate(places):
+        color = "0x16A34A" if country == "CM" else "0xFB8C43"
+        size = "mid" if rank < 10 else "small"
+        groups.setdefault(f"size:{size}|color:{color}", []).append(f"{city}, {country}" if city else country)
+    params += [("markers", "|".join([style, *locations])) for style, locations in groups.items()]
+    try:
+        resp = httpx.get("https://maps.googleapis.com/maps/api/staticmap", params=params, timeout=20)
+    except httpx.HTTPError as exc:
+        raise AppError("Google Maps injoignable : réessayez", code="MAPS_UNAVAILABLE", status_code=502) from exc
+    media_type = resp.headers.get("content-type", "")
+    if resp.status_code != 200 or not media_type.startswith("image/"):
+        raise AppError(
+            "Clé Google Maps refusée : activez « Maps Static API » pour cette clé dans Google Cloud",
+            code="MAPS_REFUSED",
+            status_code=502,
+        )
+    _MAP_CACHE[(s.isoformat(), e.isoformat())] = (time.monotonic(), resp.content, media_type)
+    return Response(resp.content, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})

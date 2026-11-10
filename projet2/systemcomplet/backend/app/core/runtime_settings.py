@@ -77,6 +77,12 @@ OVERRIDABLE: dict[str, dict[str, Any]] = {
     },
     "ORANGE_OM_MERCHANT_NAME": {"group": "payments", "label": "Orange Money — nom du marchand affiché"},
     "CINETPAY_SITE_ID": {"group": "payments", "label": "CinetPay — identifiant du site (Site ID)"},
+    "GA4_PROPERTY_ID": {
+        "group": "analytics",
+        "label": "Identifiant de la propriété Google Analytics 4",
+        "help": "Nombre affiché dans GA4 › Administration › Paramètres de la propriété (ex. 412345678), "
+        "à ne pas confondre avec l'ID de mesure G-… du site.",
+    },
     "AI_PROVIDER": {
         "group": "ai",
         "label": "Assistants IA",
@@ -95,6 +101,9 @@ _baseline: dict[str, Any] = {}
 
 
 def _coerce(name: str, value: Any) -> Any:
+    if name == "GA4_PROPERTY_ID" and value is not None:
+        # « properties/412345678 » ou « 412345678 » : seul le numéro compte.
+        return "".join(ch for ch in str(value) if ch.isdigit()) or None
     if name == "PAYMENT_PROVIDERS":
         if isinstance(value, str):
             value = [v.strip() for v in value.split(",") if v.strip()]

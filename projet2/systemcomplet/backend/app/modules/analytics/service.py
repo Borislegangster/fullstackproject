@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from urllib.parse import urlparse
 
-from sqlalchemy import Date, case, cast, distinct, func, literal, select
+from sqlalchemy import Date, case, cast, distinct, func, literal, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -51,11 +51,13 @@ CONVERSION_TYPES = {
     "estimator_submit",
     "instant_estimate_submit",
     "newsletter_subscribe",
+    "lead",  # coordonnées laissées dans l'assistant du site
     "whatsapp_click",
     "phone_click",
     "cta_click",
 }
 _salt_cache: dict[str, str] = {}
+_AGGREGATE_LOCK = 0x616E616C79740000  # espace de verrous consultatifs propre aux agrégats analytics
 
 
 def daily_salt(day: date | None = None) -> str:
@@ -160,9 +162,11 @@ def ingest(db: Session, *, session_id: str, events: list[dict[str, Any]], contex
             device_type=device,
             os=os_name,
             browser=browser,
+            # Ville au plus (recommandation CNIL pour la mesure d'audience sans consentement) ; jamais l'IP.
+            continent=(context.get("continent") or None),
             country=context.get("country"),
-            region=context.get("region") if context.get("consent") else None,
-            city=context.get("city") if context.get("consent") else None,
+            region=(str(context["region"])[:100] if context.get("region") else None),
+            city=(str(context["city"])[:100] if context.get("city") else None),
             language=context.get("language"),
             is_new_visitor=bool(context.get("is_new", True)),
             user_id=context.get("user_id"),
@@ -235,6 +239,10 @@ def record_server_event(
 
 # ---------------------------------------------------------------------------- agrégats
 def aggregate_day(db: Session, day: date) -> dict[str, int]:
+    # Un seul recalcul à la fois pour un même jour (deux écrans ouverts ensemble supprimaient et réinséraient
+    # les mêmes agrégats en parallèle : doublon refusé, erreur 409) : verrou PostgreSQL jusqu'à la fin de la
+    # transaction.
+    db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _AGGREGATE_LOCK + day.toordinal()})
     start = datetime(day.year, day.month, day.day, tzinfo=UTC)
     end = start + timedelta(days=1)
     for model in (SessionMetric, PageMetric, SocialClickMetric, ContentMetric, TechnicalMetric):
@@ -257,7 +265,22 @@ def aggregate_day(db: Session, day: date) -> dict[str, int]:
         "utm_term": sessions.c.utm_term,
         "landing": sessions.c.landing_path,
         "browser": sessions.c.browser,
-        "city": sessions.c.city,
+        # Lieux : « CM|Douala » (une même ville ou région peut exister dans plusieurs pays).
+        "city": case(
+            (sessions.c.city.is_(None), None),
+            else_=func.concat(func.coalesce(sessions.c.country, "??"), "|", sessions.c.city),
+        ),
+        "region": case(
+            (sessions.c.region.is_(None), None),
+            else_=func.concat(func.coalesce(sessions.c.country, "??"), "|", sessions.c.region),
+        ),
+        "continent": sessions.c.continent,
+        # Cameroun / hors Cameroun (diaspora et international)
+        "zone": case(
+            (sessions.c.country == "CM", "cameroun"),
+            (sessions.c.country.is_not(None), "hors_cameroun"),
+            else_=None,
+        ),
     }
     count = 0
     for dim, col in dims.items():
@@ -538,8 +561,13 @@ def overview(db: Session, start: date, end: date, *, compare: bool = True, granu
         ],
         "devices": breakdown("device"),
         "os": breakdown("os"),
-        "countries": breakdown("country", 20),
-        "cities": breakdown("city", 20),
+        "countries": breakdown("country", 50),
+        "cities": breakdown("city", 50),
+        "regions": breakdown("region", 30),
+        "continents": breakdown("continent", 10),
+        "zones": breakdown("zone", 5),
+        "prospects": prospects_geography(db, s, e),
+        "geoip": _geoip_status(),
         "browsers": breakdown("browser"),
         "channels": breakdown("channel"),
         "campaigns": breakdown("utm_campaign", 20),
@@ -566,6 +594,82 @@ def overview(db: Session, start: date, end: date, *, compare: bool = True, granu
             for k, key, n, p in technical
         ],
         "searches": [{"query": q, "count": n} for q, n in searches],
+    }
+
+
+def top_places(db: Session, start: date, end: date, *, limit: int = 40) -> list[tuple[str, str | None, int]]:
+    """Villes (pays, ville, sessions) les plus représentées ; à défaut de villes connues, les pays."""
+    aggregate_day(db, datetime.now(UTC).date())
+
+    def rows(dimension: str) -> list[tuple[str, int]]:
+        return [
+            (str(v), int(n or 0))
+            for v, n in db.execute(
+                select(SessionMetric.dimension_value, func.sum(SessionMetric.sessions))
+                .where(
+                    SessionMetric.dimension == dimension,
+                    SessionMetric.day >= start,
+                    SessionMetric.day <= end,
+                    SessionMetric.dimension_value != "(non défini)",
+                )
+                .group_by(SessionMetric.dimension_value)
+                .order_by(func.sum(SessionMetric.sessions).desc())
+                .limit(limit)
+            ).all()
+        ]
+
+    cities = [(v.split("|", 1)[0], v.split("|", 1)[1], n) for v, n in rows("city") if "|" in v]
+    if cities:
+        return cities
+    return [(v, None, n) for v, n in rows("country") if len(v) == 2]
+
+
+def _geoip_status() -> dict[str, Any]:
+    from app.core import geoip
+
+    return geoip.status()
+
+
+def prospects_geography(db: Session, start: date, end: date) -> dict[str, Any]:
+    """Prospects (leads CRM) de la période par lieu : pays de résidence déclaré, sinon lieu détecté à l'envoi."""
+    from app.modules.crm.models import Lead
+
+    a = datetime(start.year, start.month, start.day, tzinfo=UTC)
+    b = datetime(end.year, end.month, end.day, tzinfo=UTC) + timedelta(days=1)
+    period = (Lead.deleted_at.is_(None), Lead.created_at >= a, Lead.created_at < b)
+    total, diaspora, located = db.execute(
+        select(
+            func.count(),
+            func.coalesce(func.sum(case((Lead.is_diaspora.is_(True), 1), else_=0)), 0),
+            func.coalesce(func.sum(case((Lead.geo_country.is_not(None), 1), else_=0)), 0),
+        ).where(*period)
+    ).one()
+    countries = db.execute(
+        select(
+            Lead.geo_country,
+            func.count(),
+            func.coalesce(func.sum(case((Lead.status.in_(("qualified", "converted")), 1), else_=0)), 0),
+        )
+        .where(*period, Lead.geo_country.is_not(None))
+        .group_by(Lead.geo_country)
+        .order_by(func.count().desc())
+        .limit(30)
+    ).all()
+    cities = db.execute(
+        select(Lead.geo_country, Lead.geo_city, func.count())
+        .where(*period, Lead.geo_city.is_not(None))
+        .group_by(Lead.geo_country, Lead.geo_city)
+        .order_by(func.count().desc())
+        .limit(30)
+    ).all()
+    total = int(total or 0)
+    return {
+        "total": total,
+        "diaspora": int(diaspora or 0),
+        "cameroon": max(0, total - int(diaspora or 0)),
+        "located": int(located or 0),
+        "countries": [{"value": c, "leads": int(n), "qualified": int(q)} for c, n, q in countries],
+        "cities": [{"value": f"{c or '??'}|{city}", "leads": int(n)} for c, city, n in cities],
     }
 
 

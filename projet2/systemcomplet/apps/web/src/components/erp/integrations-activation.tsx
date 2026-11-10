@@ -16,6 +16,8 @@ const GROUPS: {
   intro: string;
   switchField: string;
   off: string;
+  /** Service sans interrupteur : ses clés sont toujours proposées. */
+  alwaysOn?: boolean;
 }[] = [
   {
     key: "whatsapp",
@@ -38,6 +40,23 @@ const GROUPS: {
     intro: "Paiement des appels de fonds et factures par les clients (Mobile Money, carte). Compte marchand requis auprès de chaque prestataire, en environnement de production.",
     switchField: "PAYMENT_PROVIDERS",
     off: "",
+  },
+  {
+    key: "analytics",
+    title: "Google Analytics 4 (statistiques dans l'ERP)",
+    intro:
+      "Affiche les chiffres de Google Analytics dans Analytics › Google Analytics 4 (pays, villes, campagnes…). L'ID de mesure G-… du site se règle à part, dans Site web › Contenus (CMS) › Réglages du site. Requis : l'identifiant de la propriété et la clé JSON d'un compte de service Google Cloud (API « Google Analytics Data » activée, compte ajouté en « Lecteur » dans GA4 › Gestion des accès).",
+    switchField: "GA4_PROPERTY_ID",
+    off: "",
+  },
+  {
+    key: "maps",
+    title: "Google Maps",
+    intro:
+      "Facultatif : carte Google des villes d'où viennent vos visiteurs, dans Analytics. Clé Google Cloud avec l'API « Maps Static » activée, restreinte à l'adresse IP du serveur. La localisation des visiteurs elle-même ne demande aucune clé.",
+    switchField: "",
+    off: "",
+    alwaysOn: true,
   },
   {
     key: "ai",
@@ -131,14 +150,16 @@ export function IntegrationsActivation({ secrets, onSecret, onSaved }: { secrets
         {GROUPS.map((g) => {
           const own = fields.filter((f) => f.group === g.key);
           const sw = own.find((f) => f.name === g.switchField);
-          const active = sw?.multiple ? (draft[g.switchField] ?? []).length > 0 : !!draft[g.switchField] && draft[g.switchField] !== g.off;
+          const active = g.alwaysOn || (sw?.multiple ? (draft[g.switchField] ?? []).length > 0 : !!draft[g.switchField] && draft[g.switchField] !== g.off);
           const keys = secrets.filter((x) => x.group === g.key && x.need !== "unused");
           const missing = keys.filter((x) => x.need === "required" && !x.configured);
           return (
             <section key={g.key} className="space-y-3 px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold">{g.title}</p>
-                <Badge tone={!active ? "neutral" : missing.length ? "warning" : "success"}>{!active ? "Désactivé" : missing.length ? `${missing.length} clé(s) à renseigner` : "Activé"}</Badge>
+                <Badge tone={!active ? "neutral" : missing.length ? "warning" : "success"}>
+                  {!active ? "Désactivé" : missing.length ? `${missing.length} clé(s) à renseigner` : g.alwaysOn ? (keys.some((x) => x.configured) ? "Activé" : "Facultatif") : "Activé"}
+                </Badge>
               </div>
               <p className="text-xs text-muted">{g.intro}</p>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -251,11 +272,13 @@ export function IntegrationsActivation({ secrets, onSecret, onSaved }: { secrets
                 </ul>
               ) : null}
               {error[g.key] ? <Alert tone="danger">{error[g.key]}</Alert> : null}
-              <div className="flex justify-end">
-                <Button size="sm" loading={busy === g.key} onClick={() => void save(g.key)}>
-                  Enregistrer — {g.title}
-                </Button>
-              </div>
+              {own.length ? (
+                <div className="flex justify-end">
+                  <Button size="sm" loading={busy === g.key} onClick={() => void save(g.key)}>
+                    Enregistrer — {g.title}
+                  </Button>
+                </div>
+              ) : null}
             </section>
           );
         })}

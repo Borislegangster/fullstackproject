@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { CONTINENT_NAMES, countryName, flag } from "@/components/erp/geo-analytics";
 import { InstantEstimatePanel } from "@/components/erp/instant-estimate-panel";
 import { CellLink, ResourceView, type Row } from "@/components/erp/resource";
 import { RolePicker } from "@/components/cms/form-editor";
@@ -49,6 +50,27 @@ function SlaCell({ due, responded }: { due?: string | null; responded?: string |
 }
 
 /* ----------------------------------------------------------------------------- tableau de bord */
+
+
+/** Pays les plus fréquents de la diaspora camerounaise (filtre « Pays détecté » des leads). */
+const LEAD_COUNTRY_FILTER = ["CM", "FR", "BE", "CH", "DE", "GB", "IT", "ES", "US", "CA", "GA", "CI", "NG", "CG", "GQ", "TD"].map((code) => ({ value: code, label: `${flag(code)} ${countryName(code)}` }));
+
+/** Lieu d'un lead : pays déclaré, sinon pays détecté ; repère « Diaspora » hors Cameroun. */
+function LeadPlace({ lead }: { lead: Row }) {
+  const code = lead.geo_country as string | null;
+  if (!code && !lead.country) return <span className="text-muted">—</span>;
+  return (
+    <span className="whitespace-nowrap">
+      {code ? <span aria-hidden="true">{flag(code)} </span> : null}
+      {lead.country || countryName(code)}
+      {lead.is_diaspora ? (
+        <Badge tone="info" className="ml-1">
+          Diaspora
+        </Badge>
+      ) : null}
+    </span>
+  );
+}
 
 export function CrmDashboard() {
   const [range, setRange] = useState({ start: "", end: "" });
@@ -278,6 +300,7 @@ export function LeadsList() {
             ) },
             { key: "universe", label: "Univers", format: "option", hideOnMobile: true },
             { key: "source", label: "Source", format: "option", hideOnMobile: true },
+            { key: "geo_country", label: "Lieu", hideOnMobile: true, render: (r) => <LeadPlace lead={r} /> },
             { key: "score", label: "Score", sortable: true, render: (r) => <TemperatureBadge temperature={r.temperature} score={r.score} /> },
             { key: "response_due_at", label: "SLA", sortable: true, render: (r) => <SlaCell due={r.response_due_at} responded={r.first_response_at} /> },
             { key: "created_at", label: "Reçu", format: "datetime", sortable: true, hideOnMobile: true },
@@ -288,6 +311,8 @@ export function LeadsList() {
             { key: "universe", label: "Univers", options: opts(UNIVERSES) },
             { key: "source", label: "Source", options: opts(LEAD_SOURCES) },
             { key: "temperature", label: "Température", options: opts(["hot", "warm", "cold"]) },
+            { key: "is_diaspora", label: "Diaspora", options: [{ value: "true", label: "Diaspora (hors Cameroun)" }, { value: "false", label: "Cameroun" }] },
+            { key: "geo_country", label: "Pays détecté", options: LEAD_COUNTRY_FILTER },
           ],
           toolbar: (
             <div className="flex flex-wrap items-center gap-3">
@@ -461,6 +486,12 @@ export function LeadDetail({ id }: { id: string }) {
                 { label: "Téléphone / WhatsApp", value: [l.phone, l.whatsapp].filter(Boolean).join(" · ") },
                 { label: "Ville / pays", value: [l.city, l.country].filter(Boolean).join(", ") },
                 { label: "Diaspora", value: l.is_diaspora ? "Oui" : "Non" },
+                {
+                  label: "Lieu détecté à la demande",
+                  value: l.geo_country
+                    ? `${flag(l.geo_country)} ${[l.geo_city, l.geo_region, countryName(l.geo_country)].filter(Boolean).join(", ")}${l.geo_continent ? ` · ${CONTINENT_NAMES[l.geo_continent] ?? l.geo_continent}` : ""} (${l.geo_source === "phone" ? "indicatif téléphonique" : "connexion"})`
+                    : "—",
+                },
                 { label: "Canal préféré", value: optionLabel(l.preferred_channel) },
                 { label: "Localisation du projet", value: l.project_location },
                 { label: "Terrain", value: l.has_land === null || l.has_land === undefined ? "—" : l.has_land ? `Oui (${optionLabel(l.land_status)})` : "Non" },
