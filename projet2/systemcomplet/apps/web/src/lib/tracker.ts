@@ -1,5 +1,6 @@
 /** Collecte analytique propriétaire (§23) : sessions, pages vues, CTA, défilement, temps de lecture, Web Vitals. */
 
+import { reportConversion } from "./ad-tags";
 import { readConsent } from "./consent";
 
 interface TrackEvent {
@@ -93,6 +94,8 @@ async function flush(useBeacon = false): Promise<void> {
 
 export function track(event: TrackEvent): void {
   if (typeof window === "undefined") return;
+  // Conversions des régies (Google Ads, GA4, Meta, TikTok) : chacune selon l'accord donné par le visiteur.
+  reportConversion(event.type, event.target);
   if (navigator.doNotTrack === "1" && !readConsent()?.analytics) return;
   queue.push({ path: location.pathname, ...event });
   if (timer) clearTimeout(timer);

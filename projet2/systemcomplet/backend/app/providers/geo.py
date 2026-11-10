@@ -71,9 +71,17 @@ def _ga_access_token() -> str:
     raw = get_secret("GA4_CREDENTIALS_JSON")
     if not raw or not settings.GA4_PROPERTY_ID:
         raise ProviderNotConfigured("ga4", "GA4_PROPERTY_ID/GA4_CREDENTIALS_JSON")
-    if _ga_token.get("exp", 0) > time.time() + 60:
+    fingerprint = hash(raw)
+    if _ga_token.get("exp", 0) > time.time() + 60 and _ga_token.get("key") == fingerprint:
         return str(_ga_token["token"])
-    account = json.loads(raw)
+    try:
+        account = json.loads(raw)
+        if not account.get("client_email") or not account.get("private_key"):
+            raise KeyError("client_email/private_key")
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise ProviderError(
+            "Compte de service GA4 invalide : collez le fichier JSON complet de la clé", provider="ga4"
+        ) from exc
     now = int(time.time())
     assertion = jwt.encode(
         {
@@ -92,17 +100,23 @@ def _ga_access_token() -> str:
         data={"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": assertion},
     )
     if resp.status_code >= 300:
-        raise ProviderError("GA4 OAuth refusé", provider="ga4")
+        raise ProviderError(
+            "Google a refusé le compte de service GA4 : vérifiez la clé JSON et l'API « Google Analytics Data »",
+            provider="ga4",
+        )
     data = resp.json()
-    _ga_token.update(token=data["access_token"], exp=time.time() + int(data.get("expires_in", 3600)))
+    _ga_token.update(token=data["access_token"], exp=time.time() + int(data.get("expires_in", 3600)), key=fingerprint)
     return str(_ga_token["token"])
 
 
 def ga4_report(*, start: str, end: str, dimensions: list[str], metrics: list[str], limit: int = 100) -> dict[str, Any]:
     """runReport GA4 (complète l'analytics propriétaire : sources, campagnes Ads)."""
     token = _ga_access_token()
+    property_id = "".join(ch for ch in str(settings.GA4_PROPERTY_ID or "") if ch.isdigit())
+    # « conversions » est devenu « keyEvents » (événements clés) dans GA4 : l'ancien nom est traduit.
+    metrics = ["keyEvents" if m == "conversions" else m for m in metrics]
     resp = httpx.post(
-        f"https://analyticsdata.googleapis.com/v1beta/properties/{settings.GA4_PROPERTY_ID}:runReport",
+        f"https://analyticsdata.googleapis.com/v1beta/properties/{property_id}:runReport",
         headers={"Authorization": f"Bearer {token}"},
         timeout=30,
         json={
@@ -113,5 +127,13 @@ def ga4_report(*, start: str, end: str, dimensions: list[str], metrics: list[str
         },
     )
     if resp.status_code >= 300:
-        raise ProviderError(f"GA4 {resp.status_code}", provider="ga4", details=resp.text[:300])
+        try:
+            message = resp.json().get("error", {}).get("message")
+        except ValueError:
+            message = None
+        raise ProviderError(
+            f"Google Analytics a refusé la demande ({resp.status_code}){f' : {message}' if message else ''}",
+            provider="ga4",
+            details=resp.text[:300],
+        )
     return resp.json()

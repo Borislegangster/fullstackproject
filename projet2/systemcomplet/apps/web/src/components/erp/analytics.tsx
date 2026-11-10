@@ -3,6 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 
+import { GeoSection } from "@/components/erp/geo-analytics";
 import { BarChartCard, DonutChart, LineChartCard } from "@/components/ui/charts";
 import { Input, Select } from "@/components/ui/form";
 import { Tabs } from "@/components/ui/overlay";
@@ -122,9 +123,13 @@ export function TrafficOverview() {
             <Breakdown title="Sources (UTM)" rows={o.sources} />
             <Breakdown title="Campagnes" rows={o.campaigns} />
             <Breakdown title="Pages d'entrée" rows={o.landing_pages} />
-            <Breakdown title="Pays" rows={o.countries} />
-            <Breakdown title="Villes" rows={o.cities} />
           </div>
+          <GeoSection
+            o={o}
+            query={new URLSearchParams(
+              Object.entries({ period, start: period === "custom" ? range.start : "", end: period === "custom" ? range.end : "" }).filter(([, v]) => v) as [string, string][],
+            ).toString()}
+          />
           <div className="grid gap-6 lg:grid-cols-3">
             <Card>
               <CardHeader title="Appareils" />
@@ -266,33 +271,39 @@ export function BlogAnalytics() {
   );
 }
 
+const GA4_DIMENSIONS = [
+  { value: "sessionSourceMedium", label: "Source / support" },
+  { value: "sessionCampaignName", label: "Campagne" },
+  { value: "continent", label: "Continent" },
+  { value: "country", label: "Pays" },
+  { value: "region", label: "Région" },
+  { value: "city", label: "Ville" },
+  { value: "deviceCategory", label: "Appareil" },
+  { value: "landingPage", label: "Page d'entrée" },
+];
+
 export function Ga4Report() {
   const [dimension, setDimension] = useState("sessionSourceMedium");
-  const report = useApi<Row>("/analytics/ga4", { dimensions: dimension, metrics: "sessions,conversions,totalUsers" });
+  const report = useApi<Row>("/analytics/ga4", { dimensions: dimension, metrics: "sessions,keyEvents,totalUsers" });
   const rows = ((report.data?.rows ?? []) as Row[]).map((r) => ({
     label: (r.dimensionValues ?? []).map((d: Row) => d.value).join(" / "),
     values: (r.metricValues ?? []).map((m: Row) => toNumber(m.value)),
   }));
+  const missing = (report.data?.missing ?? []) as string[];
   return (
     <div className="space-y-4">
-      <Select
-        value={dimension}
-        onChange={(e) => setDimension(e.target.value)}
-        options={[
-          { value: "sessionSourceMedium", label: "Source / support" },
-          { value: "sessionCampaignName", label: "Campagne" },
-          { value: "country", label: "Pays" },
-          { value: "deviceCategory", label: "Appareil" },
-          { value: "landingPage", label: "Page d'entrée" },
-        ]}
-        aria-label="Dimension"
-      />
+      <Select value={dimension} onChange={(e) => setDimension(e.target.value)} options={GA4_DIMENSIONS} aria-label="Dimension" />
       {report.loading && !report.data ? (
         <Skeleton className="h-40" />
       ) : report.error ? (
-        <Alert tone="info">Google Analytics 4 non configuré ou indisponible : {report.error}</Alert>
+        <Alert tone="danger">Google Analytics 4 indisponible : {report.error}</Alert>
       ) : report.data?.configured === false ? (
-        <Alert tone="info">Google Analytics 4 n'est pas configuré : la mesure propriétaire reste la référence.</Alert>
+        <Alert tone="info">
+          Google Analytics 4 n&apos;est pas relié à l&apos;ERP : renseignez{" "}
+          {missing.includes("GA4_PROPERTY_ID") ? "l'identifiant de la propriété GA4" : ""}
+          {missing.length === 2 ? " et " : ""}
+          {missing.includes("GA4_CREDENTIALS_JSON") ? "la clé du compte de service" : ""} dans Paramètres › Intégrations › Google Analytics 4. La mesure propriétaire (onglet « Trafic et conversions ») reste disponible.
+        </Alert>
       ) : (
         <Card>
           <table className="min-w-full text-sm">
@@ -300,7 +311,7 @@ export function Ga4Report() {
               <tr>
                 <th className="px-3 py-2">Valeur</th>
                 <th className="px-3 py-2 text-right">Sessions</th>
-                <th className="px-3 py-2 text-right">Conversions</th>
+                <th className="px-3 py-2 text-right">Événements clés</th>
                 <th className="px-3 py-2 text-right">Utilisateurs</th>
               </tr>
             </thead>

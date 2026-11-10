@@ -22,7 +22,14 @@ Lead → qualification → opportunité → **études** (projet au statut « Ét
 
 ## Onglet « Leads »
 
-Les **Leads** arrivent du site (« Décrire mon projet », estimation instantanée, formulaires, simulateurs énergie et financement, panneau de chantier, parrainage), de WhatsApp et des saisies manuelles. Affectation automatique, délai de première réponse (SLA), score et température, attribution marketing. Filtres **Statut**, **Univers**, **Source**, **Température** ; **Exporter** selon vos droits.
+Les **Leads** arrivent du site (« Décrire mon projet », estimation instantanée, formulaires, simulateurs énergie et financement, panneau de chantier, parrainage), de WhatsApp et des saisies manuelles. Affectation automatique, délai de première réponse (SLA), score et température, attribution marketing. Filtres **Statut**, **Univers**, **Source**, **Température**, **Diaspora** et **Pays détecté** ; **Exporter** selon vos droits.
+
+La colonne **Lieu** affiche le pays du prospect (drapeau) et le repère **Diaspora** quand il réside hors du Cameroun. Chaque demande est localisée à son envoi :
+
+- **pays, région et ville** d'après la connexion (l'adresse IP n'est pas conservée) ;
+- à défaut, par exemple sur WhatsApp, **le pays de l'indicatif téléphonique**.
+
+La fiche l'indique dans **Lieu détecté à la demande**. Un prospect qui n'a pas déclaré de pays reçoit le pays détecté et, hors Cameroun, le repère **Diaspora**. Ces informations alimentent les règles d'affectation, les segments de la newsletter (pays, diaspora) et la section géographie d'**Analytics**.
 
 ::: perm crm:write
 - **Nouveau lead** ouvre **Saisie d'un lead** (appel entrant, salon…) : coordonnées, origine, univers, **Offre visée** (offres du site de l'univers), **Canal de contact préféré**, projet, budget, échéance, urgence, besoin, **Étiquettes**, et — avec le droit d'affectation — **Commercial affecté** (sinon affectation automatique) ; puis **Créer le lead**.
@@ -104,7 +111,7 @@ Les **Activités et relances** de toute l'équipe (filtre **Statut**). **Marquer
 ## Onglet « Réglages »
 
 ::: perm crm:assign
-- **Règles d'affectation des leads** : critères (univers, villes, pays, diaspora, sources, urgence) → commerciaux en tour de rôle ou au moins chargé. **Nouvelle règle** : nom, priorité, critères (univers et sources à cocher, villes, pays, diaspora, score minimal, demandes urgentes ; vide = tous les leads), commerciaux choisis dans l'annuaire, stratégie.
+- **Règles d'affectation des leads** : critères (univers, villes, pays, diaspora, sources, urgence) → commerciaux en tour de rôle ou au moins chargé. Pays et villes se comparent sans tenir compte des majuscules ni des accents (« Yaounde » = « Yaoundé ») ; un code pays à deux lettres (FR, CA…) vise le pays détecté. **Nouvelle règle** : nom, priorité, critères (univers et sources à cocher, villes, pays, diaspora, score minimal, demandes urgentes ; vide = tous les leads), commerciaux choisis dans l'annuaire, stratégie.
 :::
 
 ::: perm settings:write

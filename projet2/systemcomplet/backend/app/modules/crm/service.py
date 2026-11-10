@@ -116,12 +116,32 @@ def temperature_for(score: int) -> str:
 
 
 # ---------------------------------------------------------------------------- affectation & SLA
+def _place(value: str | None) -> str:
+    """Lieu comparable : sans accents ni casse (« Cameroun » = « cameroun », « Yaoundé » = « Yaounde »)."""
+    import unicodedata
+
+    text = unicodedata.normalize("NFKD", (value or "").strip().casefold())
+    return "".join(ch for ch in text if not unicodedata.combining(ch))
+
+
+def _country_matches(wanted: list[str], lead: Lead) -> bool:
+    """Pays saisi en toutes lettres (pays déclaré) ou en code ISO à deux lettres (lieu détecté)."""
+    for item in wanted:
+        code = item.strip().upper()
+        if len(code) == 2 and code == (lead.geo_country or ""):
+            return True
+        if _place(item) and _place(item) == _place(lead.country):
+            return True
+    return False
+
+
 def _rule_matches(rule: AssignmentRule, lead: Lead) -> bool:
     c = rule.criteria or {}
+    cities = {_place(lead.city), _place(lead.geo_city)} - {""}
     checks = [
         (not c.get("universes")) or lead.universe in c["universes"],
-        (not c.get("countries")) or (lead.country or "") in c["countries"],
-        (not c.get("cities")) or (lead.city or "") in c["cities"],
+        (not c.get("countries")) or _country_matches(c["countries"], lead),
+        (not c.get("cities")) or any(_place(x) in cities for x in c["cities"]),
         c.get("diaspora") is None or bool(c["diaspora"]) == lead.is_diaspora,
         (not c.get("sources")) or lead.source in c["sources"],
         (not c.get("urgent")) or lead.urgency == "urgent",
@@ -293,6 +313,11 @@ def create_lead(
         raise BusinessRuleError("Un e-mail ou un téléphone est requis pour être recontacté", code="CONTACT_REQUIRED")
     if not consents.get("contact"):
         raise BusinessRuleError("Le consentement au traitement de la demande est obligatoire", code="CONSENT_REQUIRED")
+    # Lieu de la demande : adresse IP (jamais conservée), sinon indicatif du numéro (WhatsApp, saisie ERP).
+    from app.core import geoip
+
+    geo = geoip.locate(ip, phone)
+    declared = (data.get("country") or "").strip() or None
     lead = Lead(
         number=next_number(db, "lead"),
         source=source,
@@ -315,10 +340,17 @@ def create_lead(
         email=email,
         phone=phone,
         whatsapp=clean_phone(data.get("whatsapp")) or (phone if consents.get("whatsapp") else None),
-        country=data.get("country"),
+        country=declared or (geo.country_name if geo else None),
         city=data.get("city"),
+        # Diaspora : pays de résidence déclaré hors Cameroun, sinon lieu détecté hors Cameroun.
         is_diaspora=bool(data.get("is_diaspora"))
-        or (bool(data.get("country")) and str(data.get("country")).lower() not in ("cameroun", "cameroon", "cm")),
+        or (bool(declared) and not geoip.is_cameroon_name(declared))
+        or (not declared and bool(geo and geo.is_abroad)),
+        geo_country=geo.country if geo else None,
+        geo_region=geo.region if geo else None,
+        geo_city=geo.city if geo else None,
+        geo_continent=geo.continent if geo else None,
+        geo_source=geo.source if geo else None,
         preferred_channel=data.get("preferred_channel") or ("whatsapp" if consents.get("whatsapp") else "email"),
         message=(data.get("message") or data.get("subject") or None),
         budget_min=_dec(data.get("budget_min")),

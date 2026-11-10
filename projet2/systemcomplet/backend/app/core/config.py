@@ -204,6 +204,11 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str | None = None
     GA4_PROPERTY_ID: str | None = None
     GA4_CREDENTIALS_JSON: str | None = None
+    # Géolocalisation des visiteurs et des prospects (pays, région, ville) depuis l'adresse IP, sur le serveur :
+    # base DB-IP « IP to City Lite » (CC BY 4.0, mensuelle, sans clé). Aucune IP n'est conservée.
+    GEOIP_DIR: str | None = None  # vide = <PRIVATE_STORAGE_DIR>/geoip
+    GEOIP_DOWNLOAD_URL: str = "https://download.db-ip.com/free/dbip-city-lite-{year}-{month:02d}.mmdb.gz"
+    GEOIP_AUTO_UPDATE: bool | None = None  # vide = automatique en production uniquement (fichier d'environ 120 Mo)
 
     # ------------------------------------------------------------------ WebRTC
     STUN_URLS: CsvList = Field(default_factory=lambda: ["stun:stun.l.google.com:19302"])

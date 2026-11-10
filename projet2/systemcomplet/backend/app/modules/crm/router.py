@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
@@ -486,10 +486,16 @@ def list_leads(
     assigned_to_id: uuid.UUID | None = None,
     mine: bool = False,
     overdue: bool = False,
+    is_diaspora: bool | None = None,
+    geo_country: str | None = Query(None, min_length=2, max_length=2),
     principal: Principal = Depends(require("crm:read")),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     stmt = select(Lead).where(Lead.deleted_at.is_(None))
+    if is_diaspora is not None:
+        stmt = stmt.where(Lead.is_diaspora.is_(is_diaspora))
+    if geo_country:
+        stmt = stmt.where(Lead.geo_country == geo_country.upper())
     for col, value in (
         (Lead.status, status),
         (Lead.universe, universe),
@@ -577,7 +583,12 @@ def update_lead(
         raise BusinessRuleError("Prénom requis")
     if "country" in values:
         country = str(values["country"] or "").strip().lower()
-        values["is_diaspora"] = bool(country) and country not in ("cameroun", "cameroon", "cm")
+        # Pays effacé : le lieu détecté à l'envoi de la demande reprend la main.
+        values["is_diaspora"] = (
+            country not in ("cameroun", "cameroon", "cm", "kamerun")
+            if country
+            else bool(lead.geo_country and lead.geo_country != "CM")
+        )
     if "assigned_to_id" in values:
         principal.require("crm:assign")
     if values.get("status") == "lost" and not values.get("lost_reason") and not lead.lost_reason:

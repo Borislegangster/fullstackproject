@@ -957,6 +957,8 @@ def put_navigation(
 _SITE_FIELDS = {c.key for c in m.SiteSettings.__table__.columns} - {"id", "created_at", "updated_at"}
 _TRACKING_KEYS = {"ga4_id", "gads_id", "gads_labels", "meta_pixel", "tiktok_pixel", "linkedin_partner"}
 _TRACKING_ID = re.compile(r"^[A-Za-z0-9_-]{3,40}$")
+# Conversions Google Ads envoyées par la vitrine (libellé de conversion par action, après accord marketing).
+_GADS_CONVERSIONS = {"lead", "whatsapp", "phone", "newsletter"}
 
 
 def _check_tracking(value: Any) -> None:
@@ -969,6 +971,11 @@ def _check_tracking(value: Any) -> None:
         values = item.values() if key == "gads_labels" and isinstance(item, dict) else [item]
         if key == "gads_labels" and not isinstance(item, dict | type(None)):
             raise AppError("Suivi : gads_labels doit être un objet", code="INVALID_TRACKING")
+        if key == "gads_labels" and isinstance(item, dict) and set(item) - _GADS_CONVERSIONS:
+            raise AppError(
+                "Suivi : conversions Google Ads possibles " + ", ".join(sorted(_GADS_CONVERSIONS)),
+                code="INVALID_TRACKING",
+            )
         for v in values:
             if v not in (None, "") and not _TRACKING_ID.fullmatch(str(v)):
                 raise AppError(f"Identifiant de suivi invalide ({key})", code="INVALID_TRACKING")
