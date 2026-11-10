@@ -540,22 +540,57 @@ def refresh_site(paths: list[str] | None = None) -> None:
         threading.Thread(target=_maybe_revalidate, args=(paths or ["/"],), daemon=True).start()
 
 
+_REVALIDATE = "revalidate_paths"
+_REVALIDATE_SNAPSHOTS = "revalidate_snapshots"
+
+
 def revalidate_after_commit(db: Session, paths: list[str]) -> None:
-    """Révalidation du site APRÈS validation de la transaction : avant, le site relirait l'ancien contenu et le
-    remettrait en cache. Rien n'est envoyé si la transaction est annulée (essais à blanc, aperçus)."""
-    db.info.setdefault("revalidate_paths", set()).update(paths)
+    """Révalidation du site APRÈS validation de la transaction principale : avant, le site relirait l'ancien contenu
+    et le remettrait en cache. Les chemins ajoutés dans un point de sauvegarde annulé (essai à blanc, aperçu,
+    proposition refusée dans « Tout appliquer ») sont oubliés ; ceux d'avant ce point de sauvegarde sont gardés."""
+    db.info.setdefault(_REVALIDATE, set()).update(paths)
+
+
+# SQLAlchemy déclenche after_commit / after_rollback aussi pour un point de sauvegarde (begin_nested) : seule la
+# transaction principale envoie la révalidation ; un point de sauvegarde annulé rétablit la file d'avant.
+@event.listens_for(Session, "after_transaction_create")
+def _snapshot_revalidation(session: Session, transaction: Any) -> None:
+    if transaction.nested:
+        session.info.setdefault(_REVALIDATE_SNAPSHOTS, {})[id(transaction)] = set(session.info.get(_REVALIDATE, ()))
 
 
 @event.listens_for(Session, "after_commit")
 def _revalidate_committed(session: Session) -> None:
-    paths = session.info.pop("revalidate_paths", None)
+    if session.in_nested_transaction():
+        return  # point de sauvegarde libéré : la transaction principale n'est pas encore validée
+    paths = session.info.pop(_REVALIDATE, None)
     if paths:
         refresh_site(sorted(paths))
 
 
 @event.listens_for(Session, "after_rollback")
 def _forget_revalidation(session: Session) -> None:
-    session.info.pop("revalidate_paths", None)
+    nested = session.get_nested_transaction()
+    if nested is None:
+        session.info.pop(_REVALIDATE, None)
+        return
+    snapshot = session.info.get(_REVALIDATE_SNAPSHOTS, {}).get(id(nested))
+    if snapshot is None:
+        return
+    if snapshot:
+        session.info[_REVALIDATE] = set(snapshot)
+    else:
+        session.info.pop(_REVALIDATE, None)
+
+
+@event.listens_for(Session, "after_transaction_end")
+def _end_revalidation(session: Session, transaction: Any) -> None:
+    if transaction.nested:
+        session.info.get(_REVALIDATE_SNAPSHOTS, {}).pop(id(transaction), None)
+    elif transaction.parent is None:
+        # Fin de la transaction principale : déjà envoyée si validée, à oublier sinon.
+        session.info.pop(_REVALIDATE, None)
+        session.info.pop(_REVALIDATE_SNAPSHOTS, None)
 
 
 def _maybe_revalidate(paths: list[str]) -> None:

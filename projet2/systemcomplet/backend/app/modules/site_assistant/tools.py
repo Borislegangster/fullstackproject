@@ -136,7 +136,7 @@ def _record(
 
 def _dry_run(ctx: ToolContext, operation: Callable[[], Any]) -> None:
     """Essai à blanc d'une proposition (mêmes contrôles que l'application réelle), puis annulation."""
-    queued = set(ctx.db.info.get("revalidate_paths", ()))
+    # Point de sauvegarde annulé : rien n'est enregistré ni révalidé (voir cms.service.revalidate_after_commit).
     savepoint = ctx.db.begin_nested()
     try:
         operation()
@@ -147,11 +147,6 @@ def _dry_run(ctx: ToolContext, operation: Callable[[], Any]) -> None:
         raise ToolError(exc.message) from exc
     finally:
         savepoint.rollback()
-        # Un essai à blanc ne doit pas révalider le site au prochain enregistrement.
-        if queued:
-            ctx.db.info["revalidate_paths"] = queued
-        else:
-            ctx.db.info.pop("revalidate_paths", None)
 
 
 def _apply(ctx: ToolContext, operation: Callable[[], Any]) -> Any:

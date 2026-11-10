@@ -381,6 +381,21 @@ def test_whole_site_work_images_merged_proposals_preview_and_apply(client: Any, 
     token = service_preview.json()["token"]
     assert client.get(f"{API}/public/preview/{token}").json()["detail"]["summary"] == "Dossier complet."
     assert client.get(f"{API}/cms/services/{service_row['id']}", headers=ah).json()["summary"] == "Dossier."
+    from app.modules.site_assistant.models import SiteAssistantAction
+
+    action_row = db.get(SiteAssistantAction, uuid.UUID(pending["update_content"]["id"]))
+    action_row.payload = {
+        **action_row.payload,
+        "changes": {**action_row.payload["changes"], "slug": "permis-de-batir-diaspora"},
+    }
+    db.commit()
+    moved = client.get(f"{API}/site-assistant/actions/{pending['update_content']['id']}/preview", headers=ah).json()
+    assert moved["path"] == "/services/permis-de-batir-diaspora", moved
+    moved_detail = client.get(f"{API}/public/preview/{moved['token']}").json()["detail"]
+    assert moved_detail["slug"] == "permis-de-batir-diaspora"
+    assert (
+        client.get(f"{API}/cms/services/{service_row['id']}", headers=ah).json()["slug"] != "permis-de-batir-diaspora"
+    )
     no_preview = client.get(f"{API}/site-assistant/actions/{pending['update_navigation']['id']}/preview", headers=ah)
     assert no_preview.status_code == 404
 
@@ -481,5 +496,20 @@ def test_site_revalidated_only_after_commit(monkeypatch: Any) -> None:
         service.revalidate_after_commit(session, ["/offres", "/services"])
         session.commit()
         assert sent == [["/offres", "/services"]]
+
+        # « Tout appliquer » : une proposition appliquée (point de sauvegarde validé), une autre refusée (point de
+        # sauvegarde annulé) — rien ne part avant la fin, la première est révalidée, pas la seconde.
+        sent.clear()
+        session.connection()
+        service.revalidate_after_commit(session, ["/"])
+        accepted = session.begin_nested()
+        service.revalidate_after_commit(session, ["/services"])
+        accepted.commit()
+        assert sent == []  # point de sauvegarde libéré : la transaction principale n'est pas validée
+        refused = session.begin_nested()
+        service.revalidate_after_commit(session, ["/projets"])
+        refused.rollback()
+        session.commit()
+        assert sent == [["/", "/services"]]
     finally:
         session.close()
