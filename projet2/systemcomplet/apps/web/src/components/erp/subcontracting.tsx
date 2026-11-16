@@ -607,6 +607,7 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
               </Field>
             ) : null}
           </div>
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="text-xs text-muted">
               <tr>
@@ -647,6 +648,7 @@ export function TenderForm({ onCreated, onCancel }: { onCreated: (t: Row) => voi
               ))}
             </tbody>
           </table>
+          </div>
           <Button size="sm" variant="secondary" onClick={() => setLot(i, { items: [...lot.items, emptyItem()] })}>
             <Plus className="h-4 w-4" /> Poste
           </Button>
@@ -1243,6 +1245,7 @@ function SituationCreate({ contract, onDone, onCancel }: { contract: Row; onDone
           <Input type="date" value={period.end} onChange={(e) => setPeriod({ ...period, end: e.target.value })} />
         </Field>
       </div>
+      <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
           <tr>
@@ -1265,6 +1268,7 @@ function SituationCreate({ contract, onDone, onCancel }: { contract: Row; onDone
           ))}
         </tbody>
       </table>
+      </div>
       {error ? <Alert tone="danger">{error}</Alert> : null}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onCancel}>
@@ -1726,6 +1730,7 @@ export function SituationDetail({ id }: { id: string }) {
           </Button>
         }
       >
+        <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="text-xs text-muted">
             <tr>
@@ -1746,6 +1751,7 @@ export function SituationDetail({ id }: { id: string }) {
             ))}
           </tbody>
         </table>
+        </div>
         <Field label="Observations" className="mt-4">
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
         </Field>

@@ -519,10 +519,10 @@ function BlockCard({ block, index, count, onChange, onRemove, onMove, onDuplicat
   return (
     <div className={`rounded-2xl border ${block.visible ? "border-line bg-white" : "border-dashed border-line bg-slate-50 opacity-70"}`}>
       <div className="flex items-center gap-2 px-3 py-2">
-        <button type="button" onClick={() => setOpen(!open)} className="flex flex-1 items-center gap-2 text-left text-sm font-medium" aria-expanded={open}>
-          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-brand-700">{spec?.label ?? block.data.kind}</span>
-          <span className="truncate">{typeof title === "string" ? title : ""}</span>
+        <button type="button" onClick={() => setOpen(!open)} className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm font-medium" aria-expanded={open}>
+          {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+          <span className="shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-brand-700">{spec?.label ?? block.data.kind}</span>
+          <span className="min-w-0 truncate">{typeof title === "string" ? title : ""}</span>
         </button>
         {withVisibility ? (
           <button type="button" title={block.visible ? "Masquer" : "Afficher"} aria-label={block.visible ? "Masquer le bloc" : "Afficher le bloc"} className="rounded p-1.5 text-muted hover:bg-slate-100" onClick={() => onChange({ ...block, visible: !block.visible })}>

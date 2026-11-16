@@ -52,6 +52,9 @@
   h1, h2, h3, h4 { @apply font-title tracking-tight text-ink; }
   :focus-visible { outline: 2px solid var(--color-accent-500); outline-offset: 2px; }
   ::selection { background: var(--color-brand-200); }
+  /* Une colonne de grille ne s'élargit jamais au-delà de l'écran à cause de son contenu (tableau, titre long,
+     champ) : sans cela, sur téléphone, la page entière déborde et le navigateur la dézoome. */
+  .grid > * { min-width: 0; }
 }
 
 @layer components {

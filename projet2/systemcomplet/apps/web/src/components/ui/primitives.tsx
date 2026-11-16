@@ -11,7 +11,7 @@ export type ButtonSize = "sm" | "md" | "lg";
 
 export function buttonClass(variant: ButtonVariant = "primary", size: ButtonSize = "md", extra?: string): string {
   return clsx(
-    "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap",
+    "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-50 max-w-full max-sm:text-center sm:whitespace-nowrap",
     {
       sm: "h-8 px-3 text-xs",
       md: "h-10 px-4 text-sm",
@@ -104,7 +104,7 @@ export function CardHeader({ title, subtitle, actions, className }: { title: Rea
   return (
     <div className={clsx("flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4", className)}>
       <div className="min-w-0">
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
+        <h3 className="break-words text-base font-semibold text-ink">{title}</h3>
         {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -201,7 +201,7 @@ export function PageTitle({ title, subtitle, actions, eyebrow }: { title: ReactN
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         {eyebrow ? <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-accent-600">{eyebrow}</p> : null}
-        <h1 className="font-title text-2xl font-bold tracking-tight text-brand-900 sm:text-[2rem]">{title}</h1>
+        <h1 className="break-words font-title text-2xl font-bold tracking-tight text-brand-900 sm:text-[2rem]">{title}</h1>
         {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

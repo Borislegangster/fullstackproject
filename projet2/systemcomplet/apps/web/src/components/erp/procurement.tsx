@@ -455,6 +455,7 @@ export function RequestDetail({ id }: { id: string }) {
       >
         {ordering ? (
           <div className="space-y-4">
+            <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-xs text-muted">
                 <tr>
@@ -479,6 +480,7 @@ export function RequestDetail({ id }: { id: string }) {
                 })}
               </tbody>
             </table>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Livraison souhaitée">
                 <Input type="date" value={orderForm.expected_date} onChange={(e) => setOrderForm({ ...orderForm, expected_date: e.target.value })} />

@@ -21,6 +21,7 @@ import {
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+import { PdfViewer } from "@/components/ui/pdf-viewer";
 import { api, errorMessage } from "@/lib/api";
 import { fileSize } from "@/lib/format";
 
@@ -178,7 +179,18 @@ function Empty({ text, action }: { text: string; action?: ReactNode }) {
 
 /** Visionneuse intégrée : PDF, images (zoom), vidéo, audio, tableurs (onglets, filtre), Word / OpenDocument
  * (HTML assaini dans un cadre isolé), présentations (diapositives), CSV et texte. */
-export function FileViewer({ source, className, onResolved }: { source: PreviewSource; className?: string; onResolved?: (name: string, mime: string) => void }) {
+export function FileViewer({
+  source,
+  className,
+  onResolved,
+  fallbackAction,
+}: {
+  source: PreviewSource;
+  className?: string;
+  onResolved?: (name: string, mime: string) => void;
+  /** Remplace le bouton « Télécharger » quand l'aperçu est impossible (applications mobiles : bouton de l'application). */
+  fallbackAction?: ReactNode;
+}) {
   const resolvedCallback = useRef(onResolved);
   resolvedCallback.current = onResolved;
   const declared = previewKind(source.name, source.mime);
@@ -242,11 +254,14 @@ export function FileViewer({ source, className, onResolved }: { source: PreviewS
   }, [source.url, source.name, source.mime, source.size, declared, native]);
 
   const download = source.downloadUrl ?? source.url;
-  const fallback = (
-    <a href={download} className="btn-brand !py-2.5 text-sm" download={source.name}>
-      <Download className="h-4 w-4" /> Télécharger
-    </a>
-  );
+  const fallback =
+    fallbackAction !== undefined ? (
+      fallbackAction
+    ) : (
+      <a href={download} className="btn-brand !py-2.5 text-sm" download={source.name}>
+        <Download className="h-4 w-4" /> Télécharger
+      </a>
+    );
   const kind = resolved.kind;
   let body: ReactNode;
   if (loading)
@@ -256,7 +271,7 @@ export function FileViewer({ source, className, onResolved }: { source: PreviewS
       </div>
     );
   else if (error) body = <Empty text={error} action={fallback} />;
-  else if (kind === "pdf") body = <iframe title={`Aperçu de ${resolved.name}`} src={resolved.url} className="h-full w-full bg-slate-100" />;
+  else if (kind === "pdf") body = <PdfViewer url={resolved.url} name={resolved.name} downloadUrl={download} fallbackAction={fallbackAction} />;
   else if (kind === "image")
     body = (
       <div className="relative h-full overflow-auto bg-[conic-gradient(#f3f4f6_25%,#fff_0_50%,#f3f4f6_0_75%,#fff_0)] bg-[length:24px_24px]">

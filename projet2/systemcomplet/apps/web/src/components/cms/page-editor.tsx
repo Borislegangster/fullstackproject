@@ -528,6 +528,7 @@ export function PagesList() {
         {pages.loading && !pages.data ? (
           <Skeleton className="m-4 h-40" />
         ) : (
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
               <tr>
@@ -562,6 +563,7 @@ export function PagesList() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
         {!pages.loading && !pages.data?.length ? (
           <div className="p-6">

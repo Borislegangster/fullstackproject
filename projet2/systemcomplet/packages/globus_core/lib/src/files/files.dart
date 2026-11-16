@@ -9,9 +9,74 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../api/api_client.dart';
 import '../context.dart';
+import '../widgets/embedded_web.dart';
+
+/// Ouvre un document de l'API. Sur téléphone, il s'affiche dans l'application (PDF, Word, Excel, images, vidéos…)
+/// sans dépendre d'une application tierce ; un bouton permet de l'ouvrir ailleurs ou de le partager. Sur les autres
+/// plateformes, ou pour une adresse hors de la plateforme, il est téléchargé puis ouvert par l'application adaptée.
+Future<void> openRemoteFile(BuildContext context, String path, {String? filename, Map<String, dynamic>? query}) async {
+  final preview = _previewPath(context, path, filename: filename, query: query);
+  if (preview != null) {
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (_) => DocumentPreviewScreen(previewPath: preview, path: path, filename: filename, query: query),
+      ),
+    );
+    return;
+  }
+  await openRemoteFileExternally(context, path, filename: filename, query: query);
+}
+
+/// Page embarquée d'aperçu (`/embarque/apercu?src=…`) pour un lien d'accès de la plateforme ; null si l'aperçu
+/// intégré ne s'applique pas (plateforme sans vue web, adresse externe, lien trop long pour la passerelle).
+String? _previewPath(BuildContext context, String path, {String? filename, Map<String, dynamic>? query}) {
+  if (!embeddedWebSupported) return null;
+  final origin = context.config.origin;
+  final full = context.api.url(path);
+  if (!full.startsWith('$origin/api/v1/')) return null;
+  var source = full.substring(origin.length);
+  final extra = <String, String>{
+    for (final e in (query ?? const <String, dynamic>{}).entries)
+      if (e.value != null) e.key: '${e.value}',
+  };
+  if (extra.isNotEmpty) source += (source.contains('?') ? '&' : '?') + Uri(queryParameters: extra).query;
+  if (source.contains('//') || source.contains('..') || source.contains(r'\')) return null;
+  final name = filename ?? Uri.tryParse(source)?.pathSegments.lastOrNull ?? 'Document';
+  final target = '/embarque/apercu?${Uri(queryParameters: {'src': source, 'name': name}).query}';
+  return target.length <= 480 ? target : null;
+}
+
+/// Aperçu d'un document dans l'application, avec ouverture dans une autre application en secours.
+class DocumentPreviewScreen extends StatelessWidget {
+  const DocumentPreviewScreen({super.key, required this.previewPath, required this.path, this.filename, this.query});
+  final String previewPath;
+  final String path;
+  final String? filename;
+  final Map<String, dynamic>? query;
+
+  @override
+  Widget build(BuildContext context) {
+    void external() => unawaited(openRemoteFileExternally(context, path, filename: filename, query: query));
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(filename ?? 'Document', overflow: TextOverflow.ellipsis),
+        actions: [IconButton(onPressed: external, icon: const Icon(Icons.open_in_new), tooltip: 'Ouvrir avec une autre application')],
+      ),
+      body: SafeArea(
+        top: false,
+        child: EmbeddedWebView(
+          path: previewPath,
+          onMessage: (message) {
+            if (message.s('type') == 'open_external') external();
+          },
+        ),
+      ),
+    );
+  }
+}
 
 /// Téléchargement contrôlé d'un document de l'API puis ouverture avec l'application adaptée (PDF, image, tableur…).
-Future<void> openRemoteFile(BuildContext context, String path, {String? filename, Map<String, dynamic>? query}) async {
+Future<void> openRemoteFileExternally(BuildContext context, String path, {String? filename, Map<String, dynamic>? query}) async {
   final api = context.api;
   final progress = ValueNotifier<double?>(null);
   var closed = false;

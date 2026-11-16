@@ -419,9 +419,9 @@ function SessionsTab() {
         <ul className="divide-y divide-line">
           {(sessions.data ?? []).map((s) => (
             <li key={s.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
-              <span className="flex items-center gap-3">
-                <Monitor className="h-5 w-5 text-muted" />
-                <span>
+              <span className="flex min-w-0 items-center gap-3">
+                <Monitor className="h-5 w-5 shrink-0 text-muted" />
+               <span className="min-w-0">
                   <span className="font-medium">
                     {s.application ?? "web"} {s.current ? <Badge tone="success">Session actuelle</Badge> : null}
                   </span>

@@ -15,3 +15,4 @@ out
 .models.txt
 .getq.txt
 public/wasm/
+public/pdfjs/
