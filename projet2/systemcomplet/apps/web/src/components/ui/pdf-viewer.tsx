@@ -101,15 +101,18 @@ export function PdfViewer({ url, name, downloadUrl, fallbackAction }: { url: str
   useEffect(() => {
     let cancelled = false;
     let loaded: PdfDocument | null = null;
+    // Aperçu fermé pendant le chargement : le téléchargement est interrompu (données mobiles, mémoire).
+    const controller = new AbortController();
     setDoc(null);
     setError(null);
     setZoom(1);
     setCurrent(1);
     (async () => {
       try {
-        const [lib, response] = await Promise.all([loadPdfjs(), fetch(url, { credentials: "include", headers: { "X-Client-App": "web" } })]);
+        const [lib, response] = await Promise.all([loadPdfjs(), fetch(url, { credentials: "include", signal: controller.signal, headers: { "X-Client-App": "web" } })]);
         if (!response.ok) throw new Error(response.status === 403 ? "Accès refusé à ce document." : "Document indisponible.");
         const data = new Uint8Array(await response.arrayBuffer());
+        if (cancelled) return;
         const pdf: PdfDocument = await lib.getDocument({ data, cMapUrl: `${ASSETS}/cmaps/`, cMapPacked: true, standardFontDataUrl: `${ASSETS}/standard_fonts/` }).promise;
         loaded = pdf;
         if (cancelled) {
@@ -128,6 +131,7 @@ export function PdfViewer({ url, name, downloadUrl, fallbackAction }: { url: str
     })();
     return () => {
       cancelled = true;
+      controller.abort();
       void loaded?.destroy();
     };
   }, [url]);
