@@ -641,6 +641,7 @@ export function AiUsage() {
       </div>
       <Card>
         <CardHeader title="Requêtes des 30 derniers jours" />
+        <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
             <tr>
@@ -665,6 +666,7 @@ export function AiUsage() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   );

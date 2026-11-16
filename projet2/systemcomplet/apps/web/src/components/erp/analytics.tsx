@@ -306,6 +306,7 @@ export function Ga4Report() {
         </Alert>
       ) : (
         <Card>
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
               <tr>
@@ -335,6 +336,7 @@ export function Ga4Report() {
               ) : null}
             </tbody>
           </table>
+          </div>
         </Card>
       )}
     </div>

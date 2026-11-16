@@ -58,6 +58,8 @@ Cochez des documents dans la liste (la case de l'en-tête coche toute la page) :
 
 Cliquez un document : aperçu intégré (**Plein écran**), **Télécharger** (copie filigranée à votre nom, téléchargement tracé), et cinq onglets : **Versions**, **Approbations et signatures**, **Liens**, **Droits**, **Journal d'accès**.
 
+L'aperçu fonctionne aussi sur téléphone, dans le navigateur comme dans les applications mobiles : les PDF sont affichés page par page par la plateforme elle-même (compteur de pages, **Zoom arrière**, **Zoom avant**, retour à 100 % pour ajuster à la largeur), les documents Word, Excel, CSV et les images aussi. Aucune application tierce n'est nécessaire.
+
 - **Comparer** ouvre **Comparer deux versions** : choisissez deux versions pour voir leurs différences.
 
 ::: perm documents:write

@@ -499,6 +499,7 @@ function SituationCreate({ contract, onDone, onCancel }: { contract: Row; onDone
           <Input type="date" value={period.end} onChange={(e) => setPeriod({ ...period, end: e.target.value })} />
         </Field>
       </div>
+      <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead className="text-left text-xs uppercase text-muted">
           <tr>
@@ -521,6 +522,7 @@ function SituationCreate({ contract, onDone, onCancel }: { contract: Row; onDone
           ))}
         </tbody>
       </table>
+      </div>
       <Alert tone="info">Ajoutez ensuite des photos d'avancement géolocalisées : elles sont obligatoires pour soumettre la situation.</Alert>
       {error ? <Alert tone="danger">{error}</Alert> : null}
       <div className="flex justify-end gap-2">
@@ -609,6 +611,7 @@ export function ContractPage({ id }: { id: string }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Bordereau" />
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
               <tr>
@@ -631,6 +634,7 @@ export function ContractPage({ id }: { id: string }) {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
         <div className="space-y-6">
           <Card>
@@ -794,6 +798,7 @@ export function SituationPage({ id }: { id: string }) {
       </div>
       <Card>
         <CardHeader title="Avancement par poste" />
+        <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
             <tr>
@@ -818,6 +823,7 @@ export function SituationPage({ id }: { id: string }) {
             ))}
           </tbody>
         </table>
+        </div>
         {s.field_check_notes ? <p className="border-t border-line px-5 py-3 text-sm text-muted">Constat terrain : {s.field_check_notes}</p> : null}
       </Card>
       <Card>

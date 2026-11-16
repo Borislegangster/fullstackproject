@@ -14,3 +14,19 @@ if (existsSync(source)) {
 } else {
   console.warn("web-ifc non installé : visionneuse IFC indisponible");
 }
+
+// Visionneuse PDF intégrée (pdf.js, version « legacy » pour les navigateurs mobiles anciens) : worker, polices
+// standard et tables de caractères servis par le site lui-même (aucun CDN).
+import { cpSync } from "node:fs";
+
+const pdfjs = resolve(root, "node_modules/pdfjs-dist");
+if (existsSync(pdfjs)) {
+  const out = resolve(root, "public/pdfjs");
+  mkdirSync(out, { recursive: true });
+  copyFileSync(resolve(pdfjs, "legacy/build/pdf.worker.min.mjs"), resolve(out, "pdf.worker.min.mjs"));
+  cpSync(resolve(pdfjs, "cmaps"), resolve(out, "cmaps"), { recursive: true });
+  cpSync(resolve(pdfjs, "standard_fonts"), resolve(out, "standard_fonts"), { recursive: true });
+  console.log("pdf.js (worker, polices, cmaps) copié dans public/pdfjs/");
+} else {
+  console.warn("pdfjs-dist non installé : aperçu PDF intégré indisponible");
+}

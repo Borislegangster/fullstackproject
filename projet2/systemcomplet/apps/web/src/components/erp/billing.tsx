@@ -157,6 +157,7 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
                 <Download className="h-4 w-4" /> {r.status === "draft" ? "Facture proforma (PDF)" : "Facture définitive (PDF)"}
               </a>
             ) : null}
+            <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-xs uppercase text-muted">
                 <tr>
@@ -179,6 +180,7 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
                 ))}
               </tbody>
             </table>
+            </div>
             <div>
               <p className="mb-1 text-xs font-semibold uppercase text-muted">Règlements</p>
               <PaymentsMini payments={r.payments} />
@@ -694,6 +696,7 @@ export function SupplierInvoiceDetail({ id }: { id: string }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Lignes facturées" />
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-muted">
               <tr>
@@ -714,6 +717,7 @@ export function SupplierInvoiceDetail({ id }: { id: string }) {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
         <Card>
           <CardHeader title="Règlements" />
