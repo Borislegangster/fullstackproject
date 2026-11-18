@@ -115,11 +115,17 @@ def create_invoice(
     data: InvoiceIn, db: Session = Depends(get_db), access: Access = Depends(get_access)
 ) -> dict[str, Any]:
     _require_project_finance(access, data.project_id, "billing:write")
+    values = data.model_dump(exclude={"lines"})
+    if data.project_id and not data.organization_id:  # facture d'un projet : adressée au client du projet
+        from app.modules.projects.models import Project
+
+        project = db.get(Project, data.project_id)
+        values["organization_id"] = project.client_organization_id if project else None
     invoice = ClientInvoice(
         number=next_number(db, "client_invoice"),
         status="draft",
         created_by_id=access.p.id,
-        **data.model_dump(exclude={"lines"}),
+        **values,
     )
     for index, line in enumerate(data.lines):
         invoice.lines.append(ClientInvoiceLine(sort_order=index, **line.model_dump()))

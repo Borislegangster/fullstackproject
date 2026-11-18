@@ -278,10 +278,39 @@ export function ClientInvoicesList({ projectId }: { projectId?: string }) {
 /* ----------------------------------------------------------------------------- appels de fonds */
 
 export function FundsCallsList({ projectId }: { projectId?: string }) {
+  const { can } = useAuth();
+  const toast = useToast();
+  const [version, setVersion] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const fromMilestones = async () => {
+    setBusy(true);
+    try {
+      const res = await api<{ created: Row[]; skipped: number; total_pct: number }>(`/projects/${projectId}/funds-calls/from-milestones`, { method: "POST" });
+      const pct = toNumber(res.total_pct);
+      const warning = pct !== 100 ? ` Attention : les jalons totalisent ${number(pct, 2)} % du contrat.` : "";
+      if (res.created.length) {
+        toast.success(`${res.created.length} appel(s) de fonds préparé(s)`, `En brouillon : à émettre par une autre personne (double regard).${warning}`);
+      } else {
+        toast.info("Rien à préparer", `Chaque jalon de paiement a déjà son appel de fonds.${warning}`);
+      }
+      setVersion((v) => v + 1);
+    } catch (err) {
+      toast.error("Préparation impossible", errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <ResourceView
+      key={version}
       embedded
       config={{
+        toolbar:
+          projectId && can("billing:write") ? (
+            <Button variant="secondary" loading={busy} onClick={fromMilestones}>
+              <Wallet className="h-4 w-4" /> Créer depuis les jalons
+            </Button>
+          ) : undefined,
         title: "Appels de fonds",
         subtitle: "Échéancier client lié aux jalons ; l'émission génère la facture et la notification de paiement. Règlement en ligne par le client ou encaissement hors ligne saisi ici.",
         path: "/funds-calls",

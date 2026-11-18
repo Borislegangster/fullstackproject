@@ -23,6 +23,23 @@ Menu **Projets › Chantiers**. La liste présente les projets, sites, phases, l
 2. Renseignez au minimum le **nom** ; complétez de préférence : client (organisation), univers, offre, type de projet, statut (prospect, étude, conception, permis, préparation, exécution, réception, garantie), adresse et ville (et coordonnées GPS pour le géorepérage), surface, niveaux, dates prévues, montant du contrat et devise, responsable, directeur de projet, commercial, **Visible par le client**, **Diaspora**.
 3. Validez : le projet reçoit son code (PRJ-AAAA-NNNNN) et s'ouvre sur sa fiche.
 
+### Projet interne, client associé plus tard
+
+Laissez **Client** vide pour lancer un projet interne (prototype, étude préalable, projet propre de l'entreprise) :
+l'équipe et les corps de métier y travaillent normalement (onglet **Équipe** : rôle, lots, disciplines, sites, accès
+aux montants ; sous-traitants, planning, GED, achats, budget). Aucune facture ni aucun appel de fonds ne peut être
+émis tant que le projet n'a pas de client.
+
+Pour l'associer à un client ensuite :
+
+- **Modifier** le projet et choisir le **Client** (créé au préalable dans **Administration › Utilisateurs et rôles**, onglet **Organisations**, avec un
+  contact disposant d'une adresse e-mail dans **CRM › Contacts**) : le contact du client reçoit automatiquement son
+  invitation à l'espace client du projet, si le projet est **Visible par le client** (sinon, l'invitation part dès
+  que le projet le devient). Le message affiché indique à qui l'invitation a été envoyée, ou ce qui manque ;
+- ou passer par le CRM : **Démarrer les études** d'une opportunité, ou **Créer le projet** d'un contrat signé, en
+  choisissant ce **Projet existant** : le client de l'opportunité ou du contrat devient le client du projet et il est
+  invité. Un projet déjà associé à un autre client est refusé.
+
 > [!TIP]
 > Un projet issu d'un contrat signé se crée plutôt depuis le CRM (**Créer le projet à partir du contrat**) : client, montant et échéancier sont alors repris automatiquement et l'accès du client est ouvert. Voir [CRM](doc:erp-crm).
 :::

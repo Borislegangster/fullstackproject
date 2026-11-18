@@ -39,7 +39,7 @@ export default function ProjectsPage() {
             label: "Nouveau projet",
             perms: ["projects:write"],
             fields: {
-              client_organization_id: { ref: "clientOrganizations" },
+              client_organization_id: { ref: "clientOrganizations", label: "Client", help: "Facultatif : laisser vide pour un projet interne, à associer à un client plus tard." },
               offer_code: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> },
               settings: { hidden: true },
               tags: { span: 2 },

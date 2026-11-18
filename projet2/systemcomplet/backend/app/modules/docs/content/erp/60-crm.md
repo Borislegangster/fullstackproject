@@ -62,7 +62,7 @@ Les opportunités par étape. La liste **Étape** de chaque carte fait avancer l
 - **Opportunité** ouvre **Nouvelle opportunité**.
 - Une affaire perdue s'enregistre via **Opportunité perdue** (motif : prix, délai, concurrent, projet abandonné) : précieux pour l'analyse.
 - **Devis** depuis une opportunité crée le devis associé (rattaché au projet d'études s'il existe).
-- **Études** ouvre **Démarrer les études** : **Nom du projet**, **Chef de projet**, **E-mail du client** (laisser vide pour inviter le contact de l'opportunité) ; **Démarrer les études** crée le projet au statut « Étude » et invite le client dans son espace, sans devis. La carte affiche ensuite **Projet**, qui ouvre la fiche du projet (onglet **Études et livrables** : voir [Chantiers](doc:erp-chantiers)).
+- **Études** ouvre **Démarrer les études** : **Projet existant** (facultatif : un projet interne déjà en cours devient le projet de ce client), **Nom du projet**, **Chef de projet**, **E-mail du client** (laisser vide pour inviter le contact de l'opportunité) ; **Démarrer les études** crée le projet au statut « Étude » et invite le client dans son espace, sans devis. La carte affiche ensuite **Projet**, qui ouvre la fiche du projet (onglet **Études et livrables** : voir [Chantiers](doc:erp-chantiers)).
 :::
 
 ## Onglet « Devis »
@@ -92,7 +92,7 @@ Les **Contrats clients** (filtre **Statut**) avec leur **Échéancier contractue
 
 ::: perm crm:contracts
 ::: perm projects:write
-3. **Créer le projet** ouvre **Créer le projet à partir du contrat** : le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche. Si les études ont été lancées depuis l'opportunité, le bouton devient **Rattacher au projet PRJ-…** (fenêtre **Rattacher le contrat de travaux au projet …**) : le contrat de travaux **se rattache au projet existant** (montant du contrat, budget des travaux, lots et jalons ajoutés) au lieu d'en créer un nouveau ; le client y a déjà accès.
+3. **Créer le projet** ouvre **Créer le projet à partir du contrat** : **Projet existant** (facultatif : le contrat se rattache à un projet interne déjà en cours, qui prend ce client) ou nouveau projet ; le projet reprend client, montant et échéancier ; l'accès client est ouvert automatiquement (invitation e-mail / WhatsApp) — **Projet** ouvre ensuite la fiche. Si les études ont été lancées depuis l'opportunité, le bouton devient **Rattacher au projet PRJ-…** (fenêtre **Rattacher le contrat de travaux au projet …**) : le contrat de travaux **se rattache au projet existant** (montant du contrat, budget des travaux, lots et jalons ajoutés) au lieu d'en créer un nouveau ; le client du contrat devient le client du projet et reçoit son accès s'il ne l'a pas encore.
 :::
 :::
 
