@@ -21,12 +21,17 @@ OVERRIDABLE: dict[str, dict[str, Any]] = {
     "WHATSAPP_PROVIDER": {
         "group": "whatsapp",
         "label": "Envoi des messages WhatsApp",
-        "choices": [("console", "Désactivé"), ("meta", "WhatsApp Business (Meta)")],
+        "choices": [
+            ("console", "Désactivé"),
+            ("meta", "WhatsApp Business (Meta, en direct)"),
+            ("kapso", "WhatsApp Business via Kapso"),
+        ],
     },
     "META_WA_PHONE_NUMBER_ID": {
         "group": "whatsapp",
         "label": "Identifiant du numéro (Phone number ID)",
-        "help": "Meta for Developers › votre application › WhatsApp › Configuration de l'API.",
+        "help": "Meta for Developers › votre application › WhatsApp › Configuration de l'API ; avec Kapso : "
+        "identifiant du numéro affiché dans Kapso (WhatsApp › Phone numbers).",
     },
     "META_WA_PO_TEMPLATE": {
         "group": "whatsapp",

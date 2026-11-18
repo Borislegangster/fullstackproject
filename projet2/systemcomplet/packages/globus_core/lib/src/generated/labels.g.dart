@@ -1771,6 +1771,7 @@ const Map<String, String> kOptionLabels = {
   'issued': 'Émis',
   'journalier': 'Journalier',
   'juridique': 'Juridique',
+  'kapso': 'Kapso (WhatsApp)',
   'key_figures': 'Chiffres clés',
   'landing': 'Page d\'atterrissage',
   'late': 'En retard',

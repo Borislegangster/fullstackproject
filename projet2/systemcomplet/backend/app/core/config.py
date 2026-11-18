@@ -125,11 +125,16 @@ class Settings(BaseSettings):
     SES_CONFIGURATION_SET: str | None = None
 
     # ------------------------------------------------------------------ WhatsApp / SMS
-    WHATSAPP_PROVIDER: Literal["console", "meta"] = "console"
+    WHATSAPP_PROVIDER: Literal["console", "meta", "kapso"] = "console"
     META_WA_TOKEN: str | None = None
     META_WA_PHONE_NUMBER_ID: str | None = None
     META_WA_APP_SECRET: str | None = None
     META_WA_VERIFY_TOKEN: str | None = None
+    # Kapso (kapso.ai) : passerelle compatible avec l'API Cloud de Meta (mêmes messages, clé Kapso) ; le
+    # webhook de type « meta » relaie le contenu exact de Meta, signé avec le secret du webhook Kapso.
+    KAPSO_API_KEY: str | None = None
+    KAPSO_WEBHOOK_SECRET: str | None = None
+    KAPSO_API_BASE: str = "https://api.kapso.ai/meta/whatsapp/v24.0"
     META_WA_API_VERSION: str = "v21.0"
     META_WA_PO_TEMPLATE: str = "globus_bon_de_commande"
     # modèle approuvé : en-tête vidéo + {{1}} prénom, {{2}} projet, {{3}} semaine

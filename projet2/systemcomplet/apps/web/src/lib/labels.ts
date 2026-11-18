@@ -2095,6 +2095,7 @@ export const OPTION_LABELS: Record<string, string> = {
   inverter_ac: "Climatisation inverter",
   invoice: "Facture",
   issue: "Point BIM",
+  kapso: "Kapso (WhatsApp)",
   key_figures: "Chiffres clés",
   lax: "Souple",
   led: "Éclairage LED",

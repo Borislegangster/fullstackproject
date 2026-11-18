@@ -84,6 +84,11 @@ WhatsApp Business, SMS, paiement en ligne, Google Analytics 4, Google Maps, assi
   - définissez la clé **Compte de service GA4 Data API** : le fichier JSON complet d'un compte de service Google Cloud, avec l'API « Google Analytics Data » activée et le compte ajouté en « Lecteur » dans GA4 › Gestion des accès ;
   - l'ID de mesure G-… du site se règle à part, dans **Site web › Contenus (CMS) › Réglages du site**.
 - **Google Maps** (facultatif) : la **Clé Google Maps**, avec l'API « Maps Static » activée et restreinte à l'adresse IP du serveur, affiche la carte des villes des visiteurs dans **Analytics**. La localisation des visiteurs elle-même ne demande aucune clé.
+- **WhatsApp Business** : **Envoi des messages WhatsApp** = **WhatsApp Business (Meta, en direct)** (jeton, secret d'application et jeton de vérification de Meta) ou **WhatsApp Business via Kapso** (kapso.ai gère la connexion avec Meta). Avec Kapso :
+  - **Identifiant du numéro (Phone number ID)** : celui affiché dans Kapso ;
+  - clé **Clé API Kapso (WhatsApp)** (Kapso › API keys) ;
+  - dans Kapso, créez un webhook de type **Meta** vers l'URL affichée dans le bloc (messages reçus et statuts) et mettez son secret dans la clé **Secret du webhook Kapso (WhatsApp)** ;
+  - les modèles de messages (bon de commande, timelapse…) doivent être approuvés sur le compte WhatsApp relié à Kapso, sous les mêmes noms.
 - **Génération d'images (assistant du site)** (facultatif) : choisissez **OpenAI (GPT Image)** puis définissez la **Clé API OpenAI (génération d'images)** (platform.openai.com, crédit et organisation vérifiée), ou **Google (Gemini)** puis la **Clé API Google Gemini (génération d'images)** (aistudio.google.com, facturation activée). **Modèle d'images** : laissez vide (modèle par défaut) sauf si le prestataire retire ce modèle. **Images générées par jour (plafond)** : 40 par défaut. L'assistant du site crée alors des illustrations réalistes quand la médiathèque n'a pas d'image adaptée.
 
 1. Dans le bloc du service, choisissez le prestataire (ex. **Envoi des SMS** : Twilio ; **Prestataires de paiement activés** : cochez MTN Mobile Money, Orange Money…).
