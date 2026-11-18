@@ -112,9 +112,15 @@ def test_document_lifecycle(client: Any, db: Any) -> None:
         json={"otp_token": otp["otp_token"], "code": otp["test_code"], "consent": True, "role": "Maître d'œuvre"},
     )
     assert signed.status_code == 200, signed.text
-    assert any(
-        s["type"] == "signature" for s in client.get(f"{API}/document-versions/{v2['id']}/approvals", headers=ah).json()
-    )
+    sigs = [
+        s
+        for s in client.get(f"{API}/document-versions/{v2['id']}/approvals", headers=ah).json()
+        if s["type"] == "signature"
+    ]
+    assert len(sigs) == 1 and sigs[0]["signer_id"]  # l'interface masque « Signer » pour ce signataire
+    # Déjà signée par cette personne : aucun nouveau code envoyé
+    again = client.post(f"{API}/document-versions/{v2['id']}/sign/otp", headers=ah, json={"channel": "email"})
+    assert again.status_code == 409 and again.json()["error"]["code"] == "ALREADY_SIGNED", again.text
 
     # Suppression logique motivée
     short = client.post(f"{API}/documents/{doc['id']}/delete", headers=ah, json={"reason": "doublon"})

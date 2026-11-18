@@ -783,6 +783,17 @@ def search(
     return out
 
 
+def ensure_signable(db: Session, version: DocumentVersion, user_id: uuid.UUID) -> None:
+    """Version signable par cet utilisateur : validée ou publiée, et pas encore signée par lui."""
+    if version.status not in ("validated", "published"):
+        raise BusinessRuleError("Seule une version validée ou publiée peut être signée")
+    existing = db.execute(
+        select(Signature.id).where(Signature.version_id == version.id, Signature.signer_id == user_id).limit(1)
+    ).first()
+    if existing:
+        raise Conflict("Vous avez déjà signé cette version", code="ALREADY_SIGNED")
+
+
 def sign_version(
     db: Session,
     *,
@@ -794,13 +805,7 @@ def sign_version(
     user_agent: str | None,
     role: str | None,
 ) -> Signature:
-    if version.status not in ("validated", "published"):
-        raise BusinessRuleError("Seule une version validée ou publiée peut être signée")
-    existing = db.execute(
-        select(Signature).where(Signature.version_id == version.id, Signature.signer_id == user.id)
-    ).scalar_one_or_none()
-    if existing:
-        raise Conflict("Vous avez déjà signé cette version", code="ALREADY_SIGNED")
+    ensure_signable(db, version, user.id)
     signature = Signature(
         version_id=version.id,
         entity_type="document_version",
