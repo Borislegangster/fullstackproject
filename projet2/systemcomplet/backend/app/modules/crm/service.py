@@ -1233,24 +1233,42 @@ def project_from_contract(
     manager_id: uuid.UUID | None,
     client_user_ids: list[uuid.UUID],
     auto_invite: bool = True,
+    project_id: uuid.UUID | None = None,
 ) -> Any:
     """Contrat signé → projet (budget initial par lot, jalons et appels de fonds depuis l'échéancier) ; accès
-    client ouvert automatiquement au contact signataire (invitation) sauf rattachement explicite."""
+    client ouvert automatiquement au contact signataire (invitation) sauf rattachement explicite. Le contrat peut
+    aussi se rattacher à un projet existant (projet né des études, ou projet interne devenu projet client) : le
+    client du contrat devient alors le client du projet."""
     from app.modules.finance.models import Budget, BudgetLine
     from app.modules.projects.models import Lot, Milestone, Project, ProjectMember
 
     if contract.status not in ("signed", "active"):
         raise BusinessRuleError("Le contrat doit être signé avant de créer le projet")
     opp = db.get(Opportunity, contract.opportunity_id) if contract.opportunity_id else None
-    existing_id = contract.project_id or (opp.project_id if opp else None)
+    existing_id = project_id or contract.project_id or (opp.project_id if opp else None)
     project = db.get(Project, existing_id) if existing_id else None
+    if project_id and (project is None or project.deleted_at is not None):
+        raise NotFound("Projet introuvable")
+    if project is not None:
+        _adopt_client(project, contract.organization_id, contract.opportunity_id, opp)
+        if project_id and contract.project_id and contract.project_id != project.id:
+            raise BusinessRuleError("Ce contrat est déjà rattaché à un autre projet", code="CONTRACT_PROJECT_MISMATCH")
+        if project.contract_id and project.contract_id != contract.id and contract.nature != "etudes":
+            raise BusinessRuleError(
+                "Ce projet a déjà un contrat de travaux : établissez un avenant", code="PROJECT_HAS_CONTRACT"
+            )
     if project is not None and (project.contract_id == contract.id or contract.nature == "etudes"):
         if contract.project_id is None:
             contract.project_id = project.id
+        if opp and opp.project_id is None:
+            opp.project_id = project.id
+        if auto_invite and not client_user_ids:
+            grant_project_client_access(db, project, inviter_id=user_id, contact_id=contract.contact_id)
         return project  # contrat déjà appliqué, ou contrat d'études : le projet existe déjà
     created = project is None
     if project is not None:
-        # Projet né de la phase d'études : le contrat de travaux s'y rattache (montant, budget, lots, jalons).
+        # Projet existant (études, ou projet interne) : le contrat de travaux s'y rattache (montant, budget, lots,
+        # jalons).
         project.contract_id = contract.id
         project.contract_amount = contract.amount
         project.currency = contract.currency
@@ -1342,8 +1360,11 @@ def project_from_contract(
                 project_id=project.id, user_id=uid, project_role="client", can_view_finance=True, added_by_id=user_id
             )
         )
-    if created and not client_user_ids and auto_invite:  # projet né des études : le client a déjà son accès
-        ensure_client_access(db, project, contract, inviter_id=user_id)
+    if not client_user_ids and auto_invite:
+        if created:
+            ensure_client_access(db, project, contract, inviter_id=user_id)
+        else:  # projet existant : accès ouvert seulement si le client n'en a pas encore (projet interne)
+            grant_project_client_access(db, project, inviter_id=user_id, contact_id=contract.contact_id)
     audit.record(
         db,
         family="business",
@@ -1374,10 +1395,12 @@ def start_studies(
     name: str | None,
     manager_id: uuid.UUID | None,
     auto_invite: bool = True,
+    project_id: uuid.UUID | None = None,
 ) -> Any:
     """Phase d'études avant tout devis de travaux : le projet naît au statut « Étude » depuis l'opportunité, le
     client est invité dans son espace pour suivre et valider plans, 3D et options ; les études sont facturées après
-    validation, puis le devis de travaux se rattache à ce même projet."""
+    validation, puis le devis de travaux se rattache à ce même projet. Avec `project_id`, l'opportunité reprend un
+    projet existant (projet interne) qui devient le projet de ce client."""
     from app.modules.projects.models import Project, ProjectMember
 
     if opp.stage in ("won", "lost"):
@@ -1385,7 +1408,53 @@ def start_studies(
     if opp.project_id:
         project = db.get(Project, opp.project_id)
         if project is not None:
+            if project_id and project.id != project_id:
+                raise BusinessRuleError(
+                    "Cette opportunité est déjà rattachée à un autre projet", code="OPPORTUNITY_PROJECT_MISMATCH"
+                )
             return project
+    if project_id:
+        project = db.get(Project, project_id)
+        if project is None or project.deleted_at is not None:
+            raise NotFound("Projet introuvable")
+        if project.opportunity_id and project.opportunity_id != opp.id:
+            raise BusinessRuleError(
+                "Ce projet est déjà rattaché à une autre opportunité", code="PROJECT_HAS_OPPORTUNITY"
+            )
+        _adopt_client(project, opp.organization_id, opp.id, opp)
+        opp.project_id = project.id
+        if manager_id and not project.manager_id:
+            project.manager_id = manager_id
+        if (
+            manager_id
+            and not db.execute(
+                select(ProjectMember.id).where(
+                    ProjectMember.project_id == project.id, ProjectMember.user_id == manager_id
+                )
+            ).first()
+        ):
+            db.add(
+                ProjectMember(
+                    project_id=project.id,
+                    user_id=manager_id,
+                    project_role="chef_projet",
+                    can_view_finance=True,
+                    added_by_id=user_id,
+                )
+            )
+        if auto_invite:
+            grant_project_client_access(db, project, inviter_id=user_id, contact_id=opp.contact_id)
+        audit.record(
+            db,
+            family="business",
+            module="projects",
+            action="OPPORTUNITY_ATTACHED",
+            resource_type="project",
+            resource_id=project.id,
+            project_id=project.id,
+            diff={"opportunity": opp.number},
+        )
+        return project
     lead = db.get(Lead, opp.lead_id) if opp.lead_id else None
     project = Project(
         code=next_number(db, "project"),
@@ -1548,6 +1617,82 @@ def get_lead(db: Session, lead_id: uuid.UUID) -> Lead:
 def ensure_valid_transition(current: str, target: str, allowed: dict[str, set[str]]) -> None:
     if target not in allowed.get(current, set()):
         raise AppError(f"Transition {current} → {target} interdite", code="INVALID_TRANSITION")
+
+
+def _adopt_client(project: Any, organization_id: uuid.UUID | None, opportunity_id: uuid.UUID | None, opp: Any) -> None:
+    """Projet existant rattaché à un parcours commercial : il prend le client et l'opportunité de ce parcours (un
+    client différent de celui déjà choisi est refusé)."""
+    if organization_id and project.client_organization_id and project.client_organization_id != organization_id:
+        raise BusinessRuleError("Le projet est déjà associé à un autre client", code="PROJECT_CLIENT_MISMATCH")
+    if organization_id and not project.client_organization_id:
+        project.client_organization_id = organization_id
+    if opportunity_id and not project.opportunity_id:
+        project.opportunity_id = opportunity_id
+    if opp is not None:
+        project.commercial_id = project.commercial_id or opp.owner_id
+        project.universe = project.universe or opp.universe
+        project.offer_code = project.offer_code or opp.offer_slug
+
+
+def grant_project_client_access(
+    db: Session, project: Any, *, inviter_id: uuid.UUID, contact_id: uuid.UUID | None = None
+) -> dict[str, Any]:
+    """Client associé à un projet existant (projet interne devenu projet client, contrat ou opportunité rattachés) :
+    son contact reçoit l'accès à l'espace client du projet, une seule fois. Contact retenu : celui indiqué, sinon le
+    signataire du contrat du projet, sinon le contact de l'opportunité, sinon le premier contact du client ayant une
+    adresse e-mail. Rien n'est envoyé si le projet est masqué au client ou si un client y a déjà accès."""
+    from types import SimpleNamespace
+
+    from app.modules.identity.models import Invitation
+    from app.modules.identity.service import normalize_email
+    from app.modules.projects.models import ProjectMember
+
+    org_id = project.client_organization_id
+    if not org_id:
+        return {"status": "no_client"}
+    if not project.client_visible:
+        return {"status": "hidden"}
+    if db.execute(
+        select(ProjectMember.id).where(ProjectMember.project_id == project.id, ProjectMember.project_role == "client")
+    ).first():
+        return {"status": "already"}
+    candidates: list[uuid.UUID | None] = [contact_id]
+    if project.contract_id:
+        contract = db.get(Contract, project.contract_id)
+        candidates.append(contract.contact_id if contract else None)
+    if project.opportunity_id:
+        opp = db.get(Opportunity, project.opportunity_id)
+        candidates.append(opp.contact_id if opp else None)
+    contact = None
+    for cid in candidates:
+        found = db.get(Contact, cid) if cid else None
+        if found and found.deleted_at is None and found.email and found.organization_id in (None, org_id):
+            contact = found
+            break
+    if contact is None:
+        contact = db.execute(
+            select(Contact)
+            .where(Contact.organization_id == org_id, Contact.deleted_at.is_(None), Contact.email.is_not(None))
+            .order_by(Contact.created_at.asc())
+            .limit(1)
+        ).scalar_one_or_none()
+    if contact is None or not contact.email:
+        return {"status": "no_contact"}
+    email = normalize_email(contact.email)
+    pending = db.execute(
+        select(Invitation).where(
+            Invitation.email == email,
+            Invitation.accepted_at.is_(None),
+            Invitation.revoked_at.is_(None),
+            Invitation.expires_at > utcnow(),
+        )
+    ).scalars()
+    if any(str(project.id) in (inv.project_ids or []) for inv in pending):
+        return {"status": "pending", "email": email}
+    result = ensure_client_access(
+        db, project, SimpleNamespace(contact_id=contact.id, organization_id=org_id), inviter_id=inviter_id
+    )
+    return {**result, "email": email}
 
 
 def ensure_client_access(db: Session, project: Any, contract: Any, *, inviter_id: uuid.UUID) -> dict[str, Any]:

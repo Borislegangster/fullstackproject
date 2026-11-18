@@ -235,8 +235,19 @@ def create_project(
         aggregate_id=project.id,
         project_id=project.id,
     )
+    client_access = _client_access(db, project, access)
     db.commit()
-    return _project_out(db, project, with_kpis=True, access=access)
+    return {**_project_out(db, project, with_kpis=True, access=access), "client_access": client_access}
+
+
+def _client_access(db: Session, project: Project, access: Access) -> dict[str, Any] | None:
+    """Client associé au projet (projet interne devenu projet client) : son contact reçoit l'accès à l'espace
+    client du projet (invitation ou rattachement de son compte), une seule fois."""
+    if not project.client_organization_id:
+        return None
+    from app.modules.crm.service import grant_project_client_access
+
+    return grant_project_client_access(db, project, inviter_id=access.p.id)
 
 
 @router.get("/projects/{project_id}")
@@ -275,6 +286,7 @@ def update_project(
     ).model_dump()
     before = audit.snapshot(project, list(allowed))
     previous_status = project.status
+    previous_client = (project.client_organization_id, project.client_visible)
     for key, value in values.items():
         setattr(project, key, value)
     db.flush()
@@ -303,8 +315,10 @@ def update_project(
             aggregate_id=project.id,
             project_id=project.id,
         )
+    changed = (project.client_organization_id, project.client_visible) != previous_client
+    client_access = _client_access(db, project, access) if changed else None
     db.commit()
-    return _project_out(db, project, with_kpis=True, access=access)
+    return {**_project_out(db, project, with_kpis=True, access=access), "client_access": client_access}
 
 
 @router.post("/projects/{project_id}/archive")

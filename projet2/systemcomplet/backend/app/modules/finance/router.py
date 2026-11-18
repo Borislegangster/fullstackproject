@@ -429,6 +429,23 @@ def create_funds_call(
     return jsonable(serialize(call))
 
 
+@router.post("/projects/{project_id}/funds-calls/from-milestones", status_code=201)
+def funds_calls_from_milestones(
+    project_id: uuid.UUID, db: Session = Depends(get_db), access: Access = Depends(get_access)
+) -> dict[str, Any]:
+    """Prépare en brouillon un appel de fonds par jalon de paiement non encore appelé (pourcentage du montant du
+    contrat) ; chaque appel reste à émettre par une autre personne (double regard)."""
+    from app.modules.projects.models import Project
+
+    _require_project_finance(access, project_id, "billing:write")
+    project = db.get(Project, project_id)
+    if project is None or project.deleted_at is not None:
+        raise NotFound("Projet introuvable")
+    result = service.funds_calls_from_milestones(db, project, user_id=access.p.id)
+    db.commit()
+    return jsonable({**result, "created": [serialize(c) for c in result["created"]]})
+
+
 class FundsCallIssueIn(BaseModel):
     tax_rate: Decimal | None = Field(default=None, ge=0, le=100, description="Taux de TVA (%) ; défaut : taux légal")
 

@@ -46,6 +46,8 @@ L'échéancier client lié aux jalons ; l'émission, par une autre personne que 
 
 ::: perm billing:write
 - **Nouvel appel de fonds** : projet, libellé, montant obligatoires ; jalon, devise, échéance.
+- **Créer depuis les jalons** (onglet **Appels de fonds** de la fiche projet) : prépare en brouillon un appel de fonds par jalon de paiement qui n'en a pas encore (part du jalon × montant du contrat, échéance du jalon) ; un message signale si les jalons ne totalisent pas 100 %. Chaque appel reste à **Émettre** par une autre personne.
+- Un appel de fonds ou une facture d'un projet sans client ne peut pas être émis : associez d'abord le client au projet (voir [Chantiers](doc:erp-chantiers)).
 - **Émettre** (double regard) : la facture d'appel de fonds (TVA 19,25 %, PDF et QR) est générée et le client est notifié.
 :::
 

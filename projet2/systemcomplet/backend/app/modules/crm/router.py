@@ -1259,6 +1259,7 @@ def sign_contract(
 
 
 class StartStudiesIn(BaseModel):
+    project_id: uuid.UUID | None = None  # projet existant (projet interne) à reprendre pour ce client
     name: str | None = Field(default=None, max_length=250)
     manager_id: uuid.UUID | None = None
     invite_client_email: EmailStr | None = None
@@ -1276,6 +1277,10 @@ def start_studies(
     opp = db.get(Opportunity, opportunity_id)
     if opp is None or opp.deleted_at is not None:
         raise NotFound("Opportunité introuvable")
+    if data.project_id:
+        from app.core.access import Access
+
+        Access(principal, db).require_project(data.project_id, "projects:write")
     project = service.start_studies(
         db,
         opp,
@@ -1283,6 +1288,7 @@ def start_studies(
         name=data.name,
         manager_id=data.manager_id,
         auto_invite=not data.invite_client_email,
+        project_id=data.project_id,
     )
     invitation_id = None
     if data.invite_client_email:
@@ -1309,6 +1315,7 @@ def start_studies(
 
 
 class ProjectFromContractIn(BaseModel):
+    project_id: uuid.UUID | None = None  # projet existant (projet interne) auquel rattacher le contrat
     name: str | None = Field(default=None, max_length=250)
     manager_id: uuid.UUID | None = None
     client_user_ids: list[uuid.UUID] = Field(default_factory=list)
@@ -1323,6 +1330,10 @@ def project_from_contract(
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     principal.require("projects:write")
+    if data.project_id:
+        from app.core.access import Access
+
+        Access(principal, db).require_project(data.project_id, "projects:write")
     contract = db.get(Contract, contract_id)
     if contract is None:
         raise NotFound("Contrat introuvable")
@@ -1334,6 +1345,7 @@ def project_from_contract(
         manager_id=data.manager_id,
         client_user_ids=data.client_user_ids,
         auto_invite=not data.invite_client_email,
+        project_id=data.project_id,
     )
     invitation_id = None
     if data.invite_client_email:

@@ -778,7 +778,8 @@ export function OpportunitiesBoard() {
               params={{ opportunity_id: studying.id }}
               initial={{ name: studying.title }}
               fields={{
-                name: { label: "Nom du projet" },
+                project_id: { ref: "projects", label: "Projet existant (facultatif)", help: "Projet interne déjà en cours : il devient le projet de ce client. Laisser vide pour créer un nouveau projet." },
+                name: { label: "Nom du projet", help: "Pour un nouveau projet." },
                 manager_id: { ref: "users", label: "Chef de projet" },
                 invite_client_email: { label: "E-mail du client", help: "Laisser vide pour inviter le contact de l'opportunité." },
               }}
@@ -786,7 +787,7 @@ export function OpportunitiesBoard() {
               onCancel={() => setStudying(null)}
               onSuccess={(res: Row) => {
                 setStudying(null);
-                toast.success("Études démarrées", `Projet ${res.project_code} créé, client invité.`);
+                toast.success("Études démarrées", `Projet ${res.project_code} prêt, client invité.`);
                 router.push(`/erp/chantiers/${res.project_id}`);
               }}
               columns={1}
@@ -1360,7 +1361,7 @@ export function CrmContractDetail({ id }: { id: string }) {
   const [dialog, setDialog] = useState<null | "sign" | "project">(null);
   const [sign, setSign] = useState({ signed_by_name: "", method: "manuscrite_scannee", signed_on: new Date().toISOString().slice(0, 10) });
   const [scan, setScan] = useState<File[]>([]);
-  const [proj, setProj] = useState<{ name: string; manager_id: string | null; client_user_ids: string[]; invite_client_email: string }>({ name: "", manager_id: null, client_user_ids: [], invite_client_email: "" });
+  const [proj, setProj] = useState<{ project_id: string | null; name: string; manager_id: string | null; client_user_ids: string[]; invite_client_email: string }>({ project_id: null, name: "", manager_id: null, client_user_ids: [], invite_client_email: "" });
   const [busy, setBusy] = useState(false);
   if (contract.loading && !contract.data) return <Skeleton className="h-96 w-full" />;
   if (!contract.data) return <Alert tone="danger">{contract.error}</Alert>;
@@ -1514,9 +1515,10 @@ export function CrmContractDetail({ id }: { id: string }) {
               try {
                 const res = await api<Row>(`/crm/contracts/${id}/project`, {
                   method: "POST",
-                  body: { name: proj.name || null, manager_id: proj.manager_id, client_user_ids: proj.client_user_ids, invite_client_email: proj.invite_client_email || null },
+                  body: { project_id: c.project ? null : proj.project_id, name: proj.name || null, manager_id: proj.manager_id, client_user_ids: proj.client_user_ids, invite_client_email: proj.invite_client_email || null },
                 });
-                toast.success(c.project ? `Contrat rattaché au projet ${res.project_code}` : `Projet ${res.project_code} créé`, c.project ? "Montant, budget des travaux, lots et jalons ajoutés au projet." : res.invitation_id ? "Le client est invité à rejoindre son espace." : undefined);
+                const attached = !!c.project || !!proj.project_id;
+                toast.success(attached ? `Contrat rattaché au projet ${res.project_code}` : `Projet ${res.project_code} créé`, attached ? "Client, montant, budget des travaux, lots et jalons ajoutés au projet ; le client est invité s'il n'a pas encore accès." : res.invitation_id ? "Le client est invité à rejoindre son espace." : undefined);
                 router.push(`/erp/chantiers/${res.project_id}`);
               } catch (err) {
                 toast.error("Création impossible", errorMessage(err));
@@ -1525,14 +1527,14 @@ export function CrmContractDetail({ id }: { id: string }) {
               }
             }}
           >
-            {c.project ? "Rattacher au projet" : "Créer le projet"}
+            {c.project || proj.project_id ? "Rattacher au projet" : "Créer le projet"}
           </Button>
         }
       >
         {c.project ? (
           <div className="space-y-4">
             <Alert tone="info">
-              Le projet {c.project.code} est né de la phase d&apos;études : le contrat de travaux s&apos;y rattache (montant du contrat, budget des travaux, lots et jalons de paiement de l&apos;échéancier). Le client y a déjà accès.
+              Le contrat de travaux se rattache au projet {c.project.code} (montant du contrat, budget des travaux, lots et jalons de paiement de l&apos;échéancier). Le client du contrat devient le client du projet et reçoit son accès à l&apos;espace client s&apos;il ne l&apos;a pas encore.
             </Alert>
             <Field label="Chef de projet" help="Seulement si le projet n'en a pas encore.">
               <RefSelect source={REFS.users} value={proj.manager_id} onChange={(v) => setProj({ ...proj, manager_id: v })} />
@@ -1540,9 +1542,14 @@ export function CrmContractDetail({ id }: { id: string }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <Field label="Nom du projet">
-              <Input value={proj.name} onChange={(e) => setProj({ ...proj, name: e.target.value })} />
+            <Field label="Projet existant (facultatif)" help="Projet interne déjà en cours : le contrat s'y rattache et ce client en devient le client. Laisser vide pour créer un nouveau projet.">
+              <RefSelect source={REFS.projects} value={proj.project_id} onChange={(v) => setProj({ ...proj, project_id: v ?? null })} placeholder="Nouveau projet" />
             </Field>
+            {!proj.project_id ? (
+              <Field label="Nom du projet">
+                <Input value={proj.name} onChange={(e) => setProj({ ...proj, name: e.target.value })} />
+              </Field>
+            ) : null}
             <Field label="Chef de projet">
               <RefSelect source={REFS.users} value={proj.manager_id} onChange={(v) => setProj({ ...proj, manager_id: v })} />
             </Field>

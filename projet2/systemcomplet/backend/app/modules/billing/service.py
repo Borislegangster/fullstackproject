@@ -311,6 +311,15 @@ def validate_invoice(
         )
     if not invoice.lines:
         raise BusinessRuleError("Facture sans ligne")
+    if invoice.organization_id is None and invoice.project_id:
+        from app.modules.projects.models import Project
+
+        project = db.get(Project, invoice.project_id)
+        invoice.organization_id = project.client_organization_id if project else None
+        if invoice.organization_id is None:
+            raise BusinessRuleError(
+                "Associez d'abord un client au projet : la facture lui est adressée", code="PROJECT_WITHOUT_CLIENT"
+            )
     compute_invoice(invoice)
     invoice.status = "validated"
     invoice.validated_by_id = user_id

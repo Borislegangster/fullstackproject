@@ -343,6 +343,11 @@ def issue_funds_call(
     project = db.get(Project, call.project_id)
     if project is None:
         raise NotFound("Projet introuvable")
+    if not project.client_organization_id:
+        raise BusinessRuleError(
+            "Associez d'abord un client au projet : la facture de l'appel de fonds lui est adressée",
+            code="PROJECT_WITHOUT_CLIENT",
+        )
     invoice = ClientInvoice(
         number=next_number(db, "client_invoice"),
         project_id=project.id,
@@ -720,3 +725,72 @@ def allocated_payments(db: Session, target_type: str, target_id: uuid.UUID) -> l
         }
         for p, amount in rows
     ]
+
+
+def funds_calls_from_milestones(db: Session, project: Any, *, user_id: uuid.UUID) -> dict[str, Any]:
+    """Appels de fonds en brouillon pour chaque jalon de paiement (pourcentage du montant du contrat) qui n'en a pas
+    encore ; ils restent à émettre par une autre personne (double regard)."""
+    from app.modules.projects.models import Milestone
+
+    base = Decimal(project.contract_amount or 0)
+    if base <= 0:
+        raise BusinessRuleError(
+            "Montant du contrat non renseigné : rattachez le contrat ou saisissez le montant du projet",
+            code="NO_CONTRACT_AMOUNT",
+        )
+    milestones = (
+        db.execute(
+            select(Milestone)
+            .where(Milestone.project_id == project.id, Milestone.payment_pct.is_not(None), Milestone.payment_pct > 0)
+            .order_by(Milestone.sort_order, Milestone.due_date)
+        )
+        .scalars()
+        .all()
+    )
+    if not milestones:
+        raise BusinessRuleError(
+            "Aucun jalon de paiement : indiquez le pourcentage à appeler sur les jalons du planning",
+            code="NO_PAYMENT_MILESTONE",
+        )
+    covered = set(
+        db.execute(
+            select(FundsCall.milestone_id).where(
+                FundsCall.project_id == project.id,
+                FundsCall.milestone_id.is_not(None),
+                FundsCall.status != "cancelled",
+            )
+        ).scalars()
+    )
+    created: list[FundsCall] = []
+    skipped = 0
+    for milestone in milestones:
+        if milestone.id in covered or milestone.status == "cancelled":
+            skipped += 1
+            continue
+        pct = Decimal(milestone.payment_pct)
+        call = FundsCall(
+            number=next_number(db, "funds_call"),
+            project_id=project.id,
+            milestone_id=milestone.id,
+            label=f"{milestone.name} ({pct.normalize():f} %)",
+            amount=money(base * pct / 100),
+            currency=project.currency or "XAF",
+            due_date=milestone.due_date,
+            status="draft",
+            created_by_id=user_id,
+        )
+        db.add(call)
+        db.flush()
+        created.append(call)
+        audit.record(
+            db,
+            family="business",
+            module="finance",
+            action="CREATE",
+            resource_type="funds_call",
+            resource_id=call.id,
+            project_id=project.id,
+            diff={"amount": str(call.amount), "milestone": milestone.name},
+        )
+    total_pct = sum((Decimal(m.payment_pct) for m in milestones if m.status != "cancelled"), Decimal("0"))
+    return {"created": created, "skipped": skipped, "total_pct": total_pct, "base": base}

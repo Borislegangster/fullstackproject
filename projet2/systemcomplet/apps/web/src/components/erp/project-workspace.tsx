@@ -230,12 +230,17 @@ function Synthese({ p, reload }: { p: ProjectDetail; reload: () => void }) {
           initial={p}
           partial
           exclude={["settings"]}
-          fields={{ client_organization_id: { ref: "clientOrganizations" }, offer_code: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> } }}
+          fields={{
+            client_organization_id: { ref: "clientOrganizations", label: "Client", help: "Vide pour un projet interne. Une fois le client choisi, son contact reçoit l'accès à l'espace client du projet (si le projet est visible du client)." },
+            offer_code: { label: "Offre", render: ({ value, onChange, values }) => <OfferSelect universe={values.universe || null} value={value} onChange={(slug) => onChange(slug ?? "")} /> },
+          }}
           onCancel={() => setEditing(false)}
           onSubmit={(payload) => api(`/projects/${p.id}`, { method: "PATCH", body: payload })}
-          onSuccess={() => {
+          onSuccess={(res: Row) => {
             setEditing(false);
-            toast.success("Projet mis à jour");
+            const note = clientAccessNote(res?.client_access as Row | null | undefined);
+            if (note?.warn) toast.warning("Projet mis à jour", note.text);
+            else toast.success("Projet mis à jour", note?.text);
             reload();
           }}
         />
@@ -1084,4 +1089,22 @@ function ProjectBudget({ projectId, currency }: { projectId: string; currency: s
       </Modal>
     </div>
   );
+}
+
+/** Résultat de l'ouverture de l'accès client après le choix du client du projet. */
+export function clientAccessNote(access: Row | null | undefined): { text: string; warn?: boolean } | null {
+  switch (access?.status) {
+    case "invited":
+      return { text: `Invitation à l'espace client envoyée à ${access.email}.` };
+    case "linked":
+      return { text: `Le compte client ${access.email} a désormais accès au projet.` };
+    case "pending":
+      return { text: `Invitation déjà en attente pour ${access.email}.` };
+    case "hidden":
+      return { text: "Projet masqué au client : aucune invitation envoyée. Rendez-le visible du client pour l'inviter.", warn: true };
+    case "no_contact":
+      return { text: "Aucun contact avec e-mail pour ce client : ajoutez-en un dans CRM › Contacts, puis invitez-le (Administration › Utilisateurs et rôles › Invitations).", warn: true };
+    default:
+      return null;
+  }
 }
