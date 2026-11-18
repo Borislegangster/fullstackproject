@@ -29,6 +29,8 @@ MANAGED_SECRETS: dict[str, str] = {
     "META_WA_TOKEN": "Jeton WhatsApp Business Platform",
     "META_WA_APP_SECRET": "Secret d'application Meta (signature webhooks)",
     "META_WA_VERIFY_TOKEN": "Jeton de vérification du webhook WhatsApp",
+    "KAPSO_API_KEY": "Clé API Kapso (WhatsApp)",
+    "KAPSO_WEBHOOK_SECRET": "Secret du webhook Kapso (WhatsApp)",
     "TWILIO_AUTH_TOKEN": "Jeton Twilio (SMS)",
     "VAPID_PRIVATE_KEY": "Clé privée VAPID (Web Push)",
     "FCM_SERVICE_ACCOUNT_JSON": "Compte de service Firebase (push mobile)",
@@ -153,6 +155,10 @@ def secret_need(name: str) -> tuple[str, str, str]:
         "META_WA_TOKEN": by_provider(settings.WHATSAPP_PROVIDER == "meta", "WhatsApp Business", "whatsapp"),
         "META_WA_APP_SECRET": by_provider(settings.WHATSAPP_PROVIDER == "meta", "WhatsApp Business", "whatsapp"),
         "META_WA_VERIFY_TOKEN": by_provider(settings.WHATSAPP_PROVIDER == "meta", "WhatsApp Business", "whatsapp"),
+        "KAPSO_API_KEY": by_provider(settings.WHATSAPP_PROVIDER == "kapso", "WhatsApp via Kapso", "whatsapp"),
+        "KAPSO_WEBHOOK_SECRET": by_provider(
+            settings.WHATSAPP_PROVIDER == "kapso", "la réception des messages WhatsApp via Kapso", "whatsapp"
+        ),
         "TWILIO_AUTH_TOKEN": by_provider(settings.SMS_PROVIDER == "twilio", "l'envoi de SMS (Twilio)", "sms"),
         "VAPID_PRIVATE_KEY": by_provider(bool(settings.VAPID_PUBLIC_KEY), "les notifications push web", "push"),
         "FCM_SERVICE_ACCOUNT_JSON": ("optional", "Facultatif : notifications push des applications mobiles.", "push"),

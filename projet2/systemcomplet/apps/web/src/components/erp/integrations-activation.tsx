@@ -23,7 +23,7 @@ const GROUPS: {
     key: "whatsapp",
     title: "WhatsApp Business",
     intro:
-      "Bons de commande aux fournisseurs, rappels et timelapses envoyés sur WhatsApp. Compte requis : Meta for Developers › WhatsApp (numéro professionnel vérifié, modèles de messages approuvés).",
+      "Bons de commande aux fournisseurs, rappels et timelapses envoyés sur WhatsApp. Compte requis : Meta for Developers › WhatsApp en direct, ou Kapso (kapso.ai) qui gère la connexion avec Meta — numéro professionnel vérifié, modèles de messages approuvés.",
     switchField: "WHATSAPP_PROVIDER",
     off: "console",
   },
@@ -244,7 +244,11 @@ export function IntegrationsActivation({ secrets, onSecret, onSaved }: { secrets
               </div>
               {active && g.key === "whatsapp" && callbacks.whatsapp ? (
                 <CopyLine
-                  label="URL de rappel à déclarer chez Meta (Webhooks › URL de rappel) — jeton de vérification : la clé « Jeton de vérification du webhook WhatsApp »"
+                  label={
+                    draft.WHATSAPP_PROVIDER === "kapso"
+                      ? "URL du webhook à déclarer dans Kapso (Webhooks › type « Meta », messages reçus et statuts) — son secret va dans la clé « Secret du webhook Kapso »"
+                      : "URL de rappel à déclarer chez Meta (Webhooks › URL de rappel) — jeton de vérification : la clé « Jeton de vérification du webhook WhatsApp »"
+                  }
                   value={callbacks.whatsapp}
                 />
               ) : null}

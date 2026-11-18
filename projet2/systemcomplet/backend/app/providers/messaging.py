@@ -95,13 +95,17 @@ class MetaWhatsAppProvider:
 
     name = "meta"
 
-    def _post(self, payload: dict[str, Any]) -> SendResult:
+    def _endpoint(self) -> tuple[str, dict[str, str]]:
         token = get_secret("META_WA_TOKEN")
         if not token or not settings.META_WA_PHONE_NUMBER_ID:
             raise ProviderNotConfigured(self.name, "META_WA_TOKEN/META_WA_PHONE_NUMBER_ID")
         url = f"https://graph.facebook.com/{settings.META_WA_API_VERSION}/{settings.META_WA_PHONE_NUMBER_ID}/messages"
+        return url, {"Authorization": f"Bearer {token}"}
+
+    def _post(self, payload: dict[str, Any]) -> SendResult:
+        url, headers = self._endpoint()
         try:
-            resp = httpx.post(url, json=payload, timeout=30, headers={"Authorization": f"Bearer {token}"})
+            resp = httpx.post(url, json=payload, timeout=30, headers=headers)
         except httpx.HTTPError as exc:
             raise ProviderError(f"WhatsApp : {exc}", provider=self.name) from exc
         data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
@@ -178,14 +182,44 @@ class MetaWhatsAppProvider:
         return self._post({"messaging_product": "whatsapp", "to": _wa_number(to), "type": "video", "video": video})
 
 
+class KapsoWhatsAppProvider(MetaWhatsAppProvider):
+    """WhatsApp Business via Kapso : passerelle compatible avec l'API Cloud de Meta (mêmes messages), authentifiée
+    par la clé API Kapso (en-tête X-API-Key) au lieu du jeton Meta."""
+
+    name = "kapso"
+
+    def _endpoint(self) -> tuple[str, dict[str, str]]:
+        key = get_secret("KAPSO_API_KEY")
+        if not key or not settings.META_WA_PHONE_NUMBER_ID:
+            raise ProviderNotConfigured(self.name, "KAPSO_API_KEY/META_WA_PHONE_NUMBER_ID")
+        base = settings.KAPSO_API_BASE.rstrip("/")
+        return f"{base}/{settings.META_WA_PHONE_NUMBER_ID}/messages", {"X-API-Key": key}
+
+
 def get_whatsapp_provider() -> WhatsAppProvider:
-    return MetaWhatsAppProvider() if settings.WHATSAPP_PROVIDER == "meta" else ConsoleWhatsAppProvider()
+    if settings.WHATSAPP_PROVIDER == "meta":
+        return MetaWhatsAppProvider()
+    if settings.WHATSAPP_PROVIDER == "kapso":
+        return KapsoWhatsAppProvider()
+    return ConsoleWhatsAppProvider()
 
 
 def whatsapp_available() -> bool:
     if settings.WHATSAPP_PROVIDER == "meta":
         return bool(get_secret("META_WA_TOKEN") and settings.META_WA_PHONE_NUMBER_ID)
+    if settings.WHATSAPP_PROVIDER == "kapso":
+        return bool(get_secret("KAPSO_API_KEY") and settings.META_WA_PHONE_NUMBER_ID)
     return settings.is_dev
+
+
+def verify_kapso_signature(body: bytes, header: str | None) -> bool:
+    """Webhook Kapso : X-Webhook-Signature = HMAC-SHA256 (hexadécimal, sans préfixe) du corps reçu, avec le secret
+    du webhook déclaré dans Kapso."""
+    secret = get_secret("KAPSO_WEBHOOK_SECRET")
+    if not secret or not header:
+        return False
+    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, header.strip().removeprefix("sha256="))
 
 
 def verify_meta_signature(body: bytes, header: str | None) -> bool:

@@ -1646,10 +1646,13 @@ def whatsapp_verify(
 
 @whatsapp.post("")
 async def whatsapp_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
-    from app.providers.messaging import parse_meta_webhook, verify_meta_signature
+    from app.providers.messaging import parse_meta_webhook, verify_kapso_signature, verify_meta_signature
 
     body = await request.body()
-    signature_ok = verify_meta_signature(body, request.headers.get("x-hub-signature-256"))
+    # Meta en direct (X-Hub-Signature-256) ou relais Kapso de type « meta » (même contenu, X-Webhook-Signature).
+    signature_ok = verify_meta_signature(body, request.headers.get("x-hub-signature-256")) or verify_kapso_signature(
+        body, request.headers.get("x-webhook-signature")
+    )
     if not signature_ok and not (settings.WHATSAPP_PROVIDER == "console" and not settings.is_production):
         audit.record_independent(
             family="security",
