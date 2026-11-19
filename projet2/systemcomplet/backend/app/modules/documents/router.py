@@ -808,6 +808,7 @@ def request_sign_otp(
         raise NotFound("Version introuvable")
     document = service.get_document(db, version.document_id)
     service.require_read(access, db, document)
+    service.ensure_signable(db, version, access.p.id)  # aucun code envoyé pour une signature impossible
     user = db.get(User, access.p.id)
     result = issue_otp(
         db,

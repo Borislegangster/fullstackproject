@@ -89,7 +89,7 @@ Cycle : brouillon → en revue → (correction) → validé → publié → obso
 
 ## Signer une version
 
-Sur une version validée ou publiée, **Signer** ouvre **Signer la version** : cochez le consentement à la signature électronique, recevez un code (e-mail, SMS ou WhatsApp) et saisissez-le. La signature (identité, horodatage, empreinte) apparaît dans **Approbations et signatures** et constitue une preuve opposable.
+Sur une version validée ou publiée, **Signer** ouvre **Signer la version** : cochez le consentement à la signature électronique, recevez un code (e-mail, SMS ou WhatsApp) et saisissez-le. La signature (identité, horodatage, empreinte) apparaît dans **Approbations et signatures** et constitue une preuve opposable. Une fois la version signée par vous, le bouton laisse place à l'indication **Signée par vous** : chaque personne ne signe une version qu'une fois (une nouvelle version peut être signée à son tour).
 
 ## Liens
 
