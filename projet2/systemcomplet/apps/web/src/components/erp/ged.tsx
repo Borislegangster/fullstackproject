@@ -1232,7 +1232,11 @@ export function DocumentDetail({ id }: { id: string }) {
   const version = versions.find((v) => v.id === versionId) ?? d.current_version;
   const nextStates = (VERSION_FLOW[version?.status ?? ""] ?? []).filter((s) => can(TRANSITION_PERMS[s]));
   // Signature de l'utilisateur sur la version affichée : une seule par personne et par version.
-  const mySignature = (approvals.data ?? []).find((a) => a.type === "signature" && String(a.signer_id) === String(user?.id ?? ""));
+  // Données des signatures à jour pour la version affichée seulement (pas celles d'une version consultée avant).
+  const signaturesReady = !!version && !approvals.loading && !approvals.error && !!approvals.data;
+  const mySignature = signaturesReady
+    ? (approvals.data ?? []).find((a) => a.type === "signature" && String(a.version_id) === String(version?.id) && String(a.signer_id) === String(user?.id ?? ""))
+    : undefined;
   const viewable = !!version && canPreview(String(version.original_name ?? ""), version.mime_type);
   const previewSource: PreviewSource | null = version
     ? {
@@ -1323,7 +1327,7 @@ export function DocumentDetail({ id }: { id: string }) {
                       <span className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-emerald-50 px-3 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200" title={`Signée le ${dateTime(mySignature.signed_at)}`}>
                         <ShieldCheck className="h-3.5 w-3.5" /> Signée par vous
                       </span>
-                    ) : ["validated", "published"].includes(version.status) && approvals.data ? (
+                    ) : ["validated", "published"].includes(version.status) && signaturesReady ? (
                       <Button size="sm" variant="accent" onClick={() => setDialog("sign")}>
                         <PenLine className="h-4 w-4" /> Signer
                       </Button>
